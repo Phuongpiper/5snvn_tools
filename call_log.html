@@ -414,34 +414,53 @@
 
       /* ── Copy Block ── */
       td.copyable-cell {
-        position: relative;
         cursor: pointer;
+        transition: background-color 0.15s;
+      }
+      td.col-details.copyable-cell {
+        position: relative;
         padding-right: 42px !important;
         white-space: pre-wrap;
         word-break: break-word;
-        transition: background-color 0.15s;
+      }
+      td.col-dist.copyable-cell,
+      td.col-user.copyable-cell,
+      td.col-hotline.copyable-cell {
+        white-space: nowrap;
       }
       td.copyable-cell:hover {
         color: var(--accent-dark);
       }
+      .cell-copy-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        vertical-align: middle;
+      }
       .copy-btn {
-        position: absolute;
-        right: 8px;
-        top: 8px;
         background: #f1f5f9;
         border: 1px solid #e2e8f0;
         color: var(--text-secondary);
         opacity: 0.75;
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
         padding: 0;
         border-radius: var(--radius-sm);
         cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
+      }
+      td.col-details .copy-btn {
+        position: absolute;
+        right: 8px;
+        top: 7px;
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
       }
       .copyable-cell:hover .copy-btn {
         opacity: 1;
@@ -453,7 +472,7 @@
         background: var(--accent) !important;
         color: #ffffff !important;
         border-color: var(--accent) !important;
-        transform: scale(1.18);
+        transform: scale(1.15);
       }
       .copy-btn.copied {
         background: var(--green-bg) !important;
@@ -540,14 +559,49 @@
       }
 
       /* Dist code */
+      th.col-dist,
+      td.col-dist {
+        width: 130px;
+        white-space: nowrap;
+      }
       td.col-dist {
         font-weight: 600;
         color: var(--accent-dark);
       }
 
-      /* Call details — full wrap */
+      /* User code */
+      th.col-user,
+      td.col-user {
+        width: 145px;
+        white-space: nowrap;
+      }
+      td.col-user {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      /* Hotline */
+      th.col-hotline,
+      td.col-hotline {
+        width: 155px;
+        white-space: nowrap;
+      }
+      td.col-hotline {
+        font-variant-numeric: tabular-nums;
+        color: var(--text-primary);
+      }
+
+      /* Date column */
+      th.col-date,
+      td.col-date {
+        width: 115px;
+        white-space: nowrap;
+      }
+
+      /* Call details — takes remaining width */
+      th.col-details,
       td.col-details {
-        max-width: 420px;
+        width: auto;
         word-break: break-word;
       }
 
@@ -1161,6 +1215,24 @@
           return;
         }
         headers = Object.keys(rows[0]);
+        // Tự động trích xuất User code nếu chưa có trong dữ liệu
+        const detailsCol = headers.find((h) => {
+          const n = normalizeForSearch(h);
+          return n === "call details" || n.includes("call details");
+        }) || "Call Details";
+        rows.forEach((row) => {
+          if (row["User code"] === undefined || !String(row["User code"]).trim()) {
+            row["User code"] = extractUserCodeFromCallDetails(row[detailsCol] || row["Call Details"] || "");
+          }
+        });
+        if (!headers.some((h) => normalizeForSearch(h) === "user code")) {
+          const distIdx = headers.findIndex((h) => normalizeForSearch(h).includes("dist code"));
+          if (distIdx !== -1) {
+            headers.splice(distIdx + 1, 0, "User code");
+          } else {
+            headers.unshift("User code");
+          }
+        }
         displayColumns = findDisplayColumns();
         if (!options.keepFilters) {
           dateFilterValue = "";
@@ -1281,7 +1353,7 @@
       /* ─── Column detection ─── */
       function findDisplayColumns() {
         /* BUG FIX: use partial-match fallback so columns are found even with spacing/case differences */
-        const targets = ["dist code", "hotline", "date", "call details"];
+        const targets = ["dist code", "user code", "hotline", "date", "call details"];
         return targets
           .map((target) => {
             let col = headers.find((h) => normalizeForSearch(h) === target);
@@ -1304,14 +1376,15 @@
       function buildCallLogIndex(row) {
         const distNameCol = findColumn("dist name");
         const distCodeCol = findColumn("dist code");
+        const userCodeCol = findColumn("user code");
         const hotlineCol = findColumn("hotline");
         const detailsCol = findColumn("call details");
-        const nvbhFromDetails = extractNvbhFromCallDetails(row[detailsCol]);
+        const userCodeVal = (userCodeCol && row[userCodeCol]) ? row[userCodeCol] : extractUserCodeFromCallDetails(row[detailsCol]);
         const solutionFromDetails = extractSolutionFromCallDetails(row[detailsCol]);
         return {
           npp: buildSearchText([row[distNameCol], row[detailsCol]].join(" ")),
           nppCode: buildSearchText(String(row[distCodeCol] || "")),
-          nvbh: buildSearchText(nvbhFromDetails),
+          nvbh: buildSearchText([userCodeVal, extractUserCodeFromCallDetails(row[detailsCol])].join(" ")),
           hotline: buildSearchText(
             [row[hotlineCol], row[detailsCol]].join(" "),
           ),
@@ -1324,10 +1397,22 @@
         return /^[\d\s]+$/.test(value.trim()) && value.trim().length > 0;
       }
 
+      function extractUserCodeFromCallDetails(value) {
+        const text = String(value || "").trim();
+        if (!text) return "";
+        const match = text.match(/_([^_]+)_Hotline/i);
+        if (match) {
+          const candidate = match[1].trim();
+          if (!/^NPP\s/i.test(candidate) && !/^\d{10,}$/.test(candidate) && !/^Ticket/i.test(candidate)) {
+            return candidate;
+          }
+        }
+        const fallback = text.match(/_(HQ\s+[^_]+|\d+G\d+|ADMIN)(?:_|$)/i);
+        return fallback ? fallback[1].trim() : "";
+      }
+
       function extractNvbhFromCallDetails(value) {
-        const text = String(value || "");
-        const match = text.match(/_([^_]+)_Hotline\b/i);
-        return match ? match[1].trim() : "";
+        return extractUserCodeFromCallDetails(value);
       }
 
       /**
@@ -1481,8 +1566,8 @@
                 displayColumns
                   .map((col, i) => {
                     const cls = getColumnClass(col, i);
-                    const isDetails = cls === "col-details";
-                    return `<td class="${cls}${isDetails ? ' copyable-cell' : ''}">${highlightCell(row, col)}</td>`;
+                    const isCopyable = cls === "col-details" || cls === "col-dist" || cls === "col-user" || cls === "col-hotline";
+                    return `<td class="${cls}${isCopyable ? ' copyable-cell' : ''}">${highlightCell(row, col)}</td>`;
                   })
                   .join("") +
                 "</tr>"
@@ -1504,6 +1589,8 @@
         const n = normalizeForSearch(col);
         if (n === "date") return "col-date";
         if (n === "dist code" || n.includes("dist code")) return "col-dist";
+        if (n === "user code" || n.includes("user code")) return "col-user";
+        if (n === "hotline" || n.includes("hotline")) return "col-hotline";
         if (n === "call details" || n.includes("call details"))
           return "col-details";
         return "";
@@ -1513,18 +1600,36 @@
         const value = row[col] || "";
         const n = normalizeForSearch(col);
         if (n === "dist code" || n.includes("dist code")) {
+          let content = escapeHTML(value);
           if (isNumericQuery(nppInput.value)) {
-            return highlight(value, [nppInput.value.trim()].filter(Boolean));
+            content = highlight(value, [nppInput.value.trim()].filter(Boolean));
           }
-          return escapeHTML(value);
+          if (value && String(value).trim()) {
+            const rawEscaped = escapeHTML(value);
+            return `<div class="cell-copy-wrap"><span class="dist-content">${content}</span><button type="button" class="copy-btn" title="Copy Dist code" data-copy="${rawEscaped}" data-label="Dist code" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button></div>`;
+          }
+          return content;
+        }
+        if (n === "user code" || n.includes("user code")) {
+          const content = highlight(value, [nvbhInput.value.trim()].filter(Boolean));
+          if (value && String(value).trim()) {
+            const rawEscaped = escapeHTML(value);
+            return `<div class="cell-copy-wrap"><span class="user-content">${content}</span><button type="button" class="copy-btn" title="Copy User code" data-copy="${rawEscaped}" data-label="User code" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button></div>`;
+          }
+          return content;
         }
         if (n === "hotline" || n.includes("hotline")) {
-          return highlight(value, [hotlineInput.value.trim()].filter(Boolean));
+          const content = highlight(value, [hotlineInput.value.trim()].filter(Boolean));
+          if (value && String(value).trim()) {
+            const rawEscaped = escapeHTML(value);
+            return `<div class="cell-copy-wrap"><span class="hotline-content">${content}</span><button type="button" class="copy-btn" title="Copy Hotline" data-copy="${rawEscaped}" data-label="Hotline" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button></div>`;
+          }
+          return content;
         }
         if (n === "call details" || n.includes("call details")) {
           const content = highlightCallDetails(value, row);
           const rawEscaped = escapeHTML(value);
-          return `<span class="details-content">${content}</span><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button>`;
+          return `<span class="details-content">${content}</span><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button>`;
         }
         return escapeHTML(value);
       }
@@ -1585,11 +1690,13 @@
 
         return data
           .map((item) => {
+            const callDetails = item.columnN || item["Call Details"] || "";
             return {
               "Dist code": item.columnB || item["Dist code"] || "",
+              "User code": item["User code"] || item.columnUserCode || extractUserCodeFromCallDetails(callDetails),
               Hotline: item.columnF || item.Hotline || "",
               Date: item.columnG || item.Date || "",
-              "Call Details": item.columnN || item["Call Details"] || "",
+              "Call Details": callDetails,
             };
           })
           .filter((row) => {
@@ -1666,18 +1773,21 @@
 
       function findNvbhRanges(plain, tokens) {
         if (!tokens.length) return [];
-        const nvbhMatch = String(plain).match(/_([^_]+)_Hotline\b/i);
-        if (!nvbhMatch) return [];
+        const text = String(plain || "");
+        const userCode = extractUserCodeFromCallDetails(text);
+        if (!userCode) return [];
 
-        const nvbhValue = nvbhMatch[1];
-        const nvbhStart = nvbhMatch.index + 1;
-        const normalizedNvbh = normalizeForSearch(nvbhValue);
+        const userCodeStart = text.indexOf(userCode);
+        if (userCodeStart === -1) return [];
+
+        const normalizedUserCode = normalizeForSearch(userCode);
         const ranges = [];
 
         tokens.forEach((token) => {
-          const index = normalizedNvbh.indexOf(token);
-          if (index !== -1) {
-            ranges.push([nvbhStart + index, nvbhStart + index + token.length]);
+          let index = normalizedUserCode.indexOf(token);
+          while (index !== -1) {
+            ranges.push([userCodeStart + index, userCodeStart + index + token.length]);
+            index = normalizedUserCode.indexOf(token, index + 1);
           }
         });
 
@@ -1744,6 +1854,7 @@
         if (e) e.stopPropagation();
         const text = btnElement ? btnElement.getAttribute("data-copy") : "";
         if (!text) return;
+        const label = btnElement ? (btnElement.getAttribute("data-label") || "dữ liệu") : "dữ liệu";
 
         // Decode HTML entities if needed
         const txtarea = document.createElement("textarea");
@@ -1751,7 +1862,7 @@
         const plainText = txtarea.value;
 
         const onCopied = () => {
-          showToast("Đã copy Call Details vào bộ nhớ tạm!");
+          showToast(`Đã copy ${label} vào bộ nhớ tạm!`);
           if (btnElement) {
             btnElement.classList.add("copied");
             btnElement.innerHTML = `<i class="fa-solid fa-check" style="color:var(--green);"></i>`;
@@ -1797,11 +1908,12 @@
         }, 2500);
       }
 
-      // Hỗ trợ click vào bất cứ vị trí nào trong ô Call Details để copy
+      // Hỗ trợ click vào bất cứ vị trí nào trong ô copyable để copy
       document.addEventListener("click", (e) => {
-        const cell = e.target.closest(".col-details.copyable-cell");
+        const cell = e.target.closest(".copyable-cell");
         if (!cell) return;
         if (e.target.closest(".copy-btn")) return;
+        if (window.getSelection && window.getSelection().toString()) return;
         const btn = cell.querySelector(".copy-btn");
         if (btn) {
           copyCallDetailText(e, btn);
