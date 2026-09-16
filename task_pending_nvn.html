@@ -2062,8 +2062,8 @@
       <td class="col-status">${statusBadge}</td>
       <td class="col-actions">
         <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
-          <button class="btn-action-edit" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openEditTask(${t.id})" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-action-delete" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="deleteTask(${t.id},'${esc(t.issue).substring(0, 40)}')" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn-action-edit" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openEditTask('${t.id}')" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-action-delete" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="deleteTask('${t.id}')" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
         </div>
       </td>
     `;
@@ -2074,7 +2074,7 @@
     function esc(str) {
       return String(str || "")
         .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
     function formatDate(dateStr) {
@@ -2489,7 +2489,7 @@
     }
 
     function openEditTask(id) {
-      const t = allTasks.find(x => Number(x.id) === Number(id));
+      const t = allTasks.find(x => String(x.id) === String(id) || Number(x.id) === Number(id));
       if (!t) return;
       document.getElementById("taskModalTitle").textContent = "Chỉnh sửa Task";
       document.getElementById("editId").value = id;
@@ -2578,10 +2578,14 @@
       }
     }
 
-    async function deleteTask(id, label) {
-      if (!confirm(`Xóa task này?\n"${label}..."`)) return;
+    async function deleteTask(id) {
+      const t = allTasks.find(x => String(x.id) === String(id) || Number(x.id) === Number(id));
+      const rawLabel = t ? (t.issue || "") : "";
+      const label = rawLabel.replace(/[\r\n]+/g, " ").trim().substring(0, 50);
+      const confirmMsg = label ? `Xóa task này?\n"${label}..."` : "Xóa task này?";
+      if (!confirm(confirmMsg)) return;
       try {
-        const res = await apiPost({ action: "delete_task", id });
+        const res = await apiPost({ action: "delete_task", id: Number(id) || id });
         if (res.status === "success") {
           toast("Đã xóa task!", "s");
           loadTasks();
@@ -2696,7 +2700,7 @@
         li.innerHTML = `
       <span class="member-name"><i class="fa-solid fa-folder" style="color:var(--accent);margin-right:6px;"></i>${esc(p.name)}</span>
       <div class="member-actions">
-        <button class="btn-danger btn-sm" onclick="deleteProject('${esc(p.name)}')" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="btn-danger btn-sm" data-name="${esc(p.name)}" onclick="deleteProject(this.dataset.name)" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     `;
         ul.appendChild(li);
@@ -2791,7 +2795,7 @@
         li.innerHTML = `
       <span class="member-name">${esc(m.name)}</span>
       <div class="member-actions">
-        <button class="btn-danger btn-sm" onclick="deleteMember('${esc(m.name)}')" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+        <button class="btn-danger btn-sm" data-name="${esc(m.name)}" onclick="deleteMember(this.dataset.name)" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
       </div>
     `;
         ul.appendChild(li);

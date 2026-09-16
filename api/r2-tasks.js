@@ -262,7 +262,7 @@ module.exports = async function handler(req, res) {
 
       if (action === "delete_task") {
         const { id } = payload;
-        currentData.tasks = currentData.tasks.filter(t => Number(t.id) !== Number(id));
+        currentData.tasks = currentData.tasks.filter(t => String(t.id) !== String(id) && Number(t.id) !== Number(id));
         await saveTasksData(currentData);
         return res.status(200).json({ status: "success" });
       }
