@@ -576,6 +576,8 @@
       border-bottom: 1px solid var(--border);
       padding-bottom: 12px;
       margin-bottom: 16px;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .detail-card-header h2 {
@@ -585,23 +587,57 @@
       margin: 0;
     }
 
+    .detail-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .detail-badge {
       background: rgba(120, 53, 15, 0.06);
       color: #78350f;
       border: 1px solid rgba(120, 53, 15, 0.25);
       font-size: 11px;
       font-weight: 600;
-      padding: 3px 9px;
+      padding: 4px 10px;
       border-radius: 999px;
       cursor: pointer;
       user-select: none;
       transition: all 0.15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      line-height: 1.3;
     }
 
     .detail-badge:hover {
       background: #78350f;
       color: #ffffff;
       border-color: #78350f;
+    }
+
+    .detail-badge.otrs-badge {
+      background: rgba(37, 99, 235, 0.08);
+      color: #1d4ed8;
+      border-color: rgba(37, 99, 235, 0.28);
+    }
+
+    .detail-badge.otrs-badge:hover {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+
+    .detail-badge.otrs-badge.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: var(--bg);
+      border-color: var(--border-strong);
+      color: var(--text-muted);
+      pointer-events: none;
     }
 
     .detail-grid {
@@ -2516,7 +2552,13 @@
       // Get ticket id/code for modal title
       const ticketCol = findColumnByKeywords(["ticket", "ma", "id", "code", "ten"]);
       const ticketCode = ticketCol ? String(row[ticketCol] || "").split(" — ")[0].split(" - ")[0] : "";
-      modalTitle.innerHTML = `Lịch sử cập nhật & phản hồi <span style="font-size: 13px; color: #3b82f6; font-weight: 500; margin-left: 12px;">#${escapeHTML(ticketCode)}</span>`;
+      const modalTicketNum = extractTicketNumber(row);
+      const otrsModalBtn = modalTicketNum
+        ? `<a href="https://man.np.accenture.com/otrs/customer.pl?Action=CustomerTicketZoom;TicketNumber=${encodeURIComponent(modalTicketNum)}" target="_blank" rel="noopener noreferrer" class="detail-badge otrs-badge" style="margin-left: 10px; font-size: 11px;" title="Mở ticket #${escapeHTML(modalTicketNum)} trên OTRS">
+             <i class="fa-solid fa-arrow-up-right-from-square"></i> #${escapeHTML(modalTicketNum)}
+           </a>`
+        : (ticketCode ? `<span style="font-size: 13px; color: #3b82f6; font-weight: 500; margin-left: 12px;">#${escapeHTML(ticketCode)}</span>` : "");
+      modalTitle.innerHTML = `Lịch sử cập nhật & phản hồi ${otrsModalBtn}`;
 
       if (merged.length === 0) {
         container.innerHTML = `<div style="color: var(--text-muted); padding: 32px 0; font-style: italic; font-size: 14px; text-align: center;">Không có lịch sử cập nhật hoặc phản hồi cho ticket này.</div>`;
@@ -2574,6 +2616,52 @@
       modal.classList.add("show");
     }
 
+    /* ─── Ticket Number Extractor for OTRS ─── */
+    function extractTicketNumber(row) {
+      if (!row) return "";
+
+      // 1. Tìm cột mã ticket chuyên biệt nếu có
+      const explicitCol = findColumnByKeywords([
+        "ma ticket",
+        "ticket number",
+        "so ticket",
+        "ticket id",
+        "ticket#",
+        "ticket no"
+      ]);
+      if (explicitCol && row[explicitCol]) {
+        const val = String(row[explicitCol]).trim();
+        const m = val.match(/\b(20\d{12,16})\b/) || val.match(/(\d{10,20})/) || val.match(/^([A-Za-z0-9_-]+)$/);
+        if (m) return m[1];
+      }
+
+      // 2. Tìm theo cột ticket chính (ví dụ "Tên Ticket", "Ticket", "Code", "Mã")
+      const ticketCol = findColumnByKeywords(["ticket", "ma", "id", "code", "ten"]);
+      if (ticketCol && row[ticketCol]) {
+        const text = String(row[ticketCol]).trim();
+        // Ưu tiên chuỗi số OTRS (ví dụ: 2026091855000273)
+        const mYear = text.match(/\b(20\d{12,16})\b/);
+        if (mYear) return mYear[1];
+
+        // Chuỗi số đứng đầu (ví dụ: Ticket#2026091855000273 hoặc 2026091855000273 DMS1...)
+        const leadMatch = text.match(/^(?:Ticket\s*#?\s*)?(\d{10,20})\b/i);
+        if (leadMatch) return leadMatch[1];
+
+        // Bất kỳ chuỗi số nào từ 10-20 chữ số
+        const anyNum = text.match(/\b(\d{10,20})\b/);
+        if (anyNum) return anyNum[1];
+      }
+
+      // 3. Quét toàn bộ các cột tìm chuỗi số OTRS 16 chữ số
+      for (const key of Object.keys(row)) {
+        const v = String(row[key] || "");
+        const m = v.match(/\b(20\d{14})\b/);
+        if (m) return m[1];
+      }
+
+      return "";
+    }
+
     function renderTicketDetail(row) {
       if (!row) {
         currentSelectedRow = null;
@@ -2614,10 +2702,22 @@
         ? `<span class="detail-badge" id="toggleTimelineBtn"> Xem chi tiết phản hồi</span>`
         : `<span class="detail-badge" style="opacity: 0.5; cursor: not-allowed; background: var(--bg); border-color: var(--border-strong); color: var(--text-muted);" title="Không có lịch sử cập nhật hoặc phản hồi">Xem chi tiết</span>`;
 
+      const ticketNum = extractTicketNumber(row);
+      const otrsBtnHTML = ticketNum
+        ? `<a class="detail-badge otrs-badge" href="https://man.np.accenture.com/otrs/customer.pl?Action=CustomerTicketZoom;TicketNumber=${encodeURIComponent(ticketNum)}" target="_blank" rel="noopener noreferrer" title="Mở ticket #${escapeHTML(ticketNum)} trên OTRS">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem trên OTRS
+           </a>`
+        : `<span class="detail-badge otrs-badge disabled" title="Không tìm thấy mã ticket">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem trên OTRS
+           </span>`;
+
       ticketDetail.innerHTML = `
           <div class="detail-card-header">
             <h2>🎫 Chi Tiết Ticket</h2>
-            ${badgeHTML}
+            <div class="detail-card-actions">
+              ${otrsBtnHTML}
+              ${badgeHTML}
+            </div>
           </div>
           <div class="detail-grid">
             ${fields
