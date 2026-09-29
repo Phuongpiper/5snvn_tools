@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Call Log</title>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
       * {
@@ -12,48 +16,48 @@
         padding: 0;
       }
 
-      /* ── Tokens ── */
+      /* ── Tokens (Indigo Precision) ── */
       :root {
-        --bg: #f0f4f8;
+        --bg: #f8fafc;
         --surface: #ffffff;
         --border: #e2e8f0;
         --border-strong: #cbd5e1;
         --text-primary: #0f172a;
-        --text-secondary: #64748b;
-        --text-muted: #94a3b8;
-        --accent: #0ea5e9;
-        --accent-dark: #0284c7;
-        --accent-bg: #e0f2fe;
-        --accent-border: #bae6fd;
-        --header-bg: #1e293b;
-        --header-text: #f8fafc;
-        --mark-bg: #fbbf24;
-        --row-alt: #f8fafc;
-        --green: #16a34a;
-        --green-bg: #dcfce7;
-        --green-border: #86efac;
+        --text-secondary: #334155;
+        --text-muted: #64748b;
+        --accent: #4f46e5;
+        --accent-dark: #4338ca;
+        --accent-bg: #eef2ff;
+        --accent-border: #c7d2fe;
+        --header-bg: #f8fafc;
+        --header-text: #475569;
+        --mark-bg: #fef08a;
+        --row-alt: #fcfcfd;
+        --green: #10b981;
+        --green-bg: #ecfdf5;
+        --green-border: #a7f3d0;
         --radius-sm: 6px;
         --radius-md: 10px;
-        --radius-lg: 14px;
-        --shadow-sm:
-          0 1px 3px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --radius-lg: 12px;
+        --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+        --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
       }
 
       body {
         background: var(--bg);
         color: var(--text-primary);
-        font-family: "Segoe UI", Arial, sans-serif;
-        font-size: 14px;
-        line-height: 1.6;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13.5px;
+        line-height: 1.55;
         min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
       }
 
       /* ── Layout ── */
       .page {
-        max-width: 1160px;
+        max-width: 1560px;
         margin: 0 auto;
-        padding: 28px 20px;
+        padding: 24px 20px;
       }
 
       /* ── Hero ── */
@@ -362,17 +366,19 @@
       }
 
       th {
-        background: var(--header-bg) !important;
-        color: var(--header-text);
-        font-weight: 600;
-        font-size: 12px;
-        letter-spacing: 0.03em;
-        padding: 11px 13px;
+        background: #1e293b !important;
+        color: #f8fafc !important;
+        font-weight: 700;
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 14px;
         text-align: left;
         position: sticky;
         top: 0;
         z-index: 10;
         white-space: nowrap;
+        border-bottom: 2px solid #0f172a;
       }
       th:first-child {
         border-radius: 0;
@@ -380,10 +386,11 @@
 
       td {
         border-bottom: 1px solid var(--border);
-        padding: 10px 13px;
+        padding: 11px 14px;
         vertical-align: top;
         color: var(--text-primary);
         line-height: 1.5;
+        font-size: 13px;
       }
       tr:last-child td {
         border-bottom: none;
@@ -515,14 +522,19 @@
       th.col-date {
         cursor: pointer;
         user-select: none;
+        transition: background 0.15s;
+      }
+      th.col-date:hover {
+        background: #334155 !important;
       }
       th.col-date.active-filter {
-        color: #facc15;
+        color: #fbbf24 !important;
       }
       .date-filter-trigger {
         align-items: center;
         display: inline-flex;
         gap: 6px;
+        color: #f8fafc;
       }
       .date-filter-popover {
         background: var(--surface);

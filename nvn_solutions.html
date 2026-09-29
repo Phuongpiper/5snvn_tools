@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tìm kiếm nhanh dữ liệu Excel</title>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
       * {
@@ -12,29 +16,31 @@
         padding: 0;
       }
       body {
-        font-family: Arial, sans-serif;
-        background: #f4f6f8;
-        color: #1f2937;
-        font-size: 15px;
-        line-height: 1.6;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+        font-size: 13.5px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
       }
       .page {
-        max-width: 1100px;
+        max-width: 1560px;
         margin: 0 auto;
-        padding: 28px 20px;
+        padding: 24px 20px;
       }
       .hero {
-        margin-bottom: 28px;
+        margin-bottom: 24px;
       }
       .hero h1 {
-        font-size: 24px;
-        font-weight: 600;
-        color: #111827;
-        margin-bottom: 4px;
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 3px;
+        letter-spacing: -0.3px;
       }
       .hero p {
-        font-size: 14px;
-        color: #6b7280;
+        font-size: 13px;
+        color: #64748b;
       }
 
       /* Cards */
@@ -510,22 +516,27 @@
         font-size: 14px;
       }
       th {
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-        padding: 10px 12px;
-        font-weight: 600;
-        font-size: 13px;
-        color: #374151;
+        background: #1e293b;
+        border-bottom: 2px solid #0f172a;
+        padding: 12px 14px;
+        font-weight: 700;
+        font-size: 11.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #f8fafc;
         text-align: left;
         position: sticky;
         top: 0;
         z-index: 1;
+        white-space: nowrap;
       }
       td {
-        border-bottom: 1px solid #f3f4f6;
-        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 11px 14px;
         vertical-align: top;
-        color: #1f2937;
+        color: #0f172a;
+        font-size: 13px;
+        line-height: 1.5;
       }
       tr:last-child td {
         border-bottom: none;
