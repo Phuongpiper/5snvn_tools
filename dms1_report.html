@@ -290,6 +290,29 @@
     }
 
     /* Action buttons in rows */
+    .btn-action-view {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #2563eb;
+      padding: 5px;
+      width: 28px;
+      height: 28px;
+      border-radius: 5px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-action-view:hover {
+      background: #dbeafe;
+      border-color: #60a5fa;
+      color: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
     .btn-action-edit {
       background: #f1f5f9;
       border: 1px solid #cbd5e1;
@@ -416,7 +439,7 @@
     }
 
     .col-actions {
-      width: 80px;
+      width: 112px;
       text-align: center;
     }
 
@@ -579,6 +602,7 @@
 
     .modal-container {
       background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       width: 90%;
       max-width: 640px;
@@ -602,6 +626,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .modal-header h3 {
@@ -629,6 +655,10 @@
     .modal-body {
       padding: 20px;
       overflow-y: auto;
+      overflow-x: hidden;
+      flex: 1;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .modal-footer {
@@ -638,6 +668,7 @@
       display: flex;
       justify-content: flex-end;
       gap: 10px;
+      flex-shrink: 0;
     }
 
     .form-group {
@@ -675,6 +706,9 @@
 
     .detail-section {
       margin-bottom: 16px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .detail-section-label {
@@ -689,6 +723,7 @@
     .detail-section-content {
       white-space: pre-wrap;
       word-break: break-word;
+      overflow-wrap: anywhere;
       font-size: 14px;
       line-height: 1.6;
       color: var(--text-primary);
@@ -698,6 +733,17 @@
       padding: 12px 14px;
       position: relative;
       padding-right: 44px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .detail-section-content pre {
+      margin: 0;
+      font-family: inherit;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      max-width: 100%;
     }
 
     .detail-copy-btn {
@@ -1273,13 +1319,13 @@
             };
 
             td.onclick = (e) => {
-              if (e.target.closest(".copy-btn") || e.target.closest(".btn-view-detail")) return;
+              if (e.target.closest(".copy-btn")) return;
               copyText(text, copyBtn);
             };
             td.appendChild(copyBtn);
           }
 
-          // Detail button (eye)
+          // Detail button (eye) nếu có cấu hình riêng
           if (hasDetail) {
             td.style.position = "relative";
             td.style.paddingRight = "36px";
@@ -1308,14 +1354,20 @@
         // Đường dẫn (không copy)
         tr.appendChild(makeCell("col-path", item.path, true, false, false));
 
-        // Ý nghĩa báo cáo (không copy, có icon xem chi tiết)
-        tr.appendChild(makeCell("col-desc", item.meaning, false, true, false));
+        // Ý nghĩa báo cáo (có copy, không gắn nút mắt ở đây nữa)
+        tr.appendChild(makeCell("col-desc", item.meaning, false, false, true));
 
-        // Thao tác (Edit / Delete)
+        // Thao tác (View / Edit / Delete)
         const tdActions = document.createElement("td");
         tdActions.className = "col-actions";
         const actionBox = document.createElement("div");
         actionBox.style.cssText = "display:flex; align-items:center; justify-content:center; gap:6px;";
+
+        const btnView = document.createElement("button");
+        btnView.className = "btn-action-view";
+        btnView.title = "Xem chi tiết báo cáo";
+        btnView.innerHTML = `<i class="fa-regular fa-eye"></i>`;
+        btnView.onclick = () => openDetailModal(item);
 
         const btnEdit = document.createElement("button");
         btnEdit.className = "btn-action-edit";
@@ -1329,6 +1381,7 @@
         btnDel.innerHTML = `<i class="fa-solid fa-trash-can"></i>`;
         btnDel.onclick = () => handleDelete(item);
 
+        actionBox.appendChild(btnView);
         actionBox.appendChild(btnEdit);
         actionBox.appendChild(btnDel);
         tdActions.appendChild(actionBox);
@@ -1391,8 +1444,8 @@
             <div class="detail-section">
               <div class="detail-section-label">${label}</div>
               <div class="detail-section-content">
-                <pre style="margin:0;font-family:inherit;white-space:pre-wrap;word-break:break-word;">${escapeHTML(text)}</pre>
-                <button class="detail-copy-btn" title="Copy" onclick="detailCopy(this, ${JSON.stringify(text)})">
+                <pre>${escapeHTML(text)}</pre>
+                <button class="detail-copy-btn" title="Copy" onclick="detailCopy(this)">
                   <i class="fa-regular fa-copy"></i>
                 </button>
               </div>
@@ -1406,10 +1459,14 @@
         sectionHTML("📍 Đường dẫn truy cập", item.path) +
         sectionHTML("📝 Ý nghĩa & Mô tả báo cáo", item.meaning);
 
+      body.scrollTop = 0;
+      body.scrollLeft = 0;
       document.getElementById("detailModal").classList.add("show");
     }
 
-    function detailCopy(btn, text) {
+    function detailCopy(btn) {
+      const pre = btn.closest(".detail-section-content")?.querySelector("pre");
+      const text = pre ? pre.textContent : "";
       copyText(text, btn);
     }
 

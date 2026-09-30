@@ -571,15 +571,18 @@
       padding: 32px;
     }
 
-    /* ── Ticket Detail Sticky Card ── */
+    /* ── Ticket Detail Sticky Card (Refined Indigo Precision) ── */
     .detail-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       padding: 20px;
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
       position: sticky;
       top: 20px;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .detail-card-header {
@@ -587,17 +590,68 @@
       justify-content: space-between;
       align-items: center;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 12px;
+      padding-bottom: 14px;
       margin-bottom: 16px;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
-    .detail-card-header h2 {
+    .detail-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .detail-header-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: rgba(79, 70, 229, 0.08);
+      border: 1px solid rgba(79, 70, 229, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    .detail-header-titles {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .detail-header-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .detail-header-title-row h2 {
       font-size: 15px;
       font-weight: 700;
       color: var(--text-primary);
       margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .detail-ticket-hash {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .detail-header-subtitle {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 400;
     }
 
     .detail-card-actions {
@@ -611,17 +665,17 @@
       background: rgba(120, 53, 15, 0.06);
       color: #78350f;
       border: 1px solid rgba(120, 53, 15, 0.25);
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 999px;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
       user-select: none;
       transition: all 0.15s ease;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       line-height: 1.3;
     }
 
@@ -629,6 +683,7 @@
       background: #78350f;
       color: #ffffff;
       border-color: #78350f;
+      transform: translateY(-1px);
     }
 
     .detail-badge.otrs-badge {
@@ -641,10 +696,10 @@
       background: #2563eb;
       color: #ffffff;
       border-color: #2563eb;
-      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
     }
 
-    .detail-badge.otrs-badge.disabled {
+    .detail-badge.disabled {
       opacity: 0.5;
       cursor: not-allowed;
       background: var(--bg);
@@ -653,19 +708,288 @@
       pointer-events: none;
     }
 
-    .detail-grid {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 12px 16px;
+    /* ── Ticket Detail Stack Layout (Frictionless Density) ── */
+    .detail-body-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Ticket Identity Card (Mã & Tên riêng biệt - Cân đối, Thẩm mỹ) ── */
+    .ticket-identity-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .ticket-identity-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 12px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ticket-identity-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .ticket-identity-title i {
+      color: var(--accent);
+      font-size: 11.5px;
+    }
+
+    .ticket-identity-title .identity-title-sub {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 10.5px;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .ticket-identity-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .ticket-identity-body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ticket-field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 12px;
+      background: #ffffff;
+      transition: background 0.15s ease;
+    }
+
+    .ticket-field-row:not(:last-child) {
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .ticket-field-row:hover {
+      background: #f8fafc;
+    }
+
+    .ticket-field-label {
+      width: 98px;
+      min-width: 98px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .ticket-field-label i {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .ticket-field-val {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticket-code-badge {
+      font-family: 'JetBrains Mono', Consolas, monospace;
       font-size: 13px;
-      max-height: 440px;
-      overflow-y: auto;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid var(--accent-border);
+      padding: 2.5px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
+      display: inline-block;
+    }
+
+    .ticket-name-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .ticket-field-action {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Icon-Only Copy Button Modifier */
+    .btn-icon-only {
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 12.5px !important;
+      line-height: 1 !important;
+      border-radius: 6px !important;
+      flex-shrink: 0;
+    }
+
+    /* Copy Chip Buttons */
+    .btn-copy-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      background: #ffffff;
+      border: 1px solid var(--border-strong);
+      color: #475569;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .btn-copy-chip:hover {
+      background: #f8fafc;
+      color: var(--accent);
+      border-color: var(--accent-border);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.08);
+    }
+
+    .btn-copy-chip:active {
+      transform: scale(0.96);
+    }
+
+    .btn-copy-chip.copied {
+      background: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+      color: #059669 !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    .btn-copy-code {
+      color: var(--accent);
+      border-color: var(--accent-border);
+      background: #fafaff;
+    }
+
+    .btn-copy-code:hover {
+      background: var(--accent-bg);
+      border-color: var(--accent);
+    }
+
+    .btn-copy-both-ticket {
+      color: #047857;
+      border-color: #a7f3d0;
+      background: #f0fdf4;
+    }
+
+    .btn-copy-both-ticket:hover {
+      background: #dcfce7;
+      border-color: #34d399;
+      color: #065f46;
+    }
+
+    .btn-copy-name {
+      color: #334155;
+      border-color: var(--border-strong);
+      background: #ffffff;
+    }
+
+    .btn-copy-name:hover {
+      color: var(--accent);
+      border-color: var(--accent-border);
+      background: #f8fafc;
+    }
+
+    /* ── Compact Metadata Strip (Phân Loại, Ngày Raise, RCA) ── */
+    .ticket-meta-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+    }
+
+    .meta-strip-col {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .meta-strip-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .meta-strip-val {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      min-height: 24px;
+    }
+
+    /* Other fields grid */
+    .detail-other-fields {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 8px 12px;
+      padding: 10px 12px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
     }
 
     .dlabel {
       font-weight: 600;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       word-break: break-word;
+      font-size: 12px;
+      padding-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .dval {
@@ -673,6 +997,334 @@
       white-space: pre-wrap;
       word-break: break-word;
       line-height: 1.5;
+    }
+
+    /* Badges for metadata */
+    .field-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .field-badge .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .badge-issue {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+    }
+    .badge-issue .badge-dot {
+      background: #dc2626;
+    }
+
+    .badge-request {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #2563eb;
+    }
+    .badge-request .badge-dot {
+      background: #2563eb;
+    }
+
+    .badge-neutral {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+    }
+
+    .badge-generic {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+    }
+
+    /* ── Chi Tiết Lỗi Section (Dedicated Container) ── */
+    .detail-error-section {
+      grid-column: 1 / -1;
+      margin-top: 6px;
+      background: #ffffff;
+      border: 1px solid #fecdd3;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: 0 2px 8px -2px rgba(225, 29, 72, 0.06);
+    }
+
+    .detail-error-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #fecdd3;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .detail-error-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .error-title-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #fee2e2;
+      color: #e11d48;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .error-title-main {
+      font-size: 13px;
+      font-weight: 700;
+      color: #9f1239;
+      letter-spacing: 0.01em;
+    }
+
+    .detail-error-subtitle {
+      font-size: 11.5px;
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    .btn-copy-error-all {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-copy-error-all:hover {
+      background: #f8fafc;
+      color: var(--accent);
+      border-color: var(--accent-border);
+      transform: translateY(-1px);
+    }
+
+    .btn-copy-error-all.copied {
+      background: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+      color: #059669 !important;
+    }
+
+    /* Bilingual Grid (TA & TV) */
+    .error-bilingual-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* Individual Error Box */
+    .error-box {
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid;
+      background: #ffffff;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .error-box-ta {
+      border-color: #fecdd3;
+      background: linear-gradient(180deg, #fff5f6 0%, #ffffff 40%);
+    }
+
+    .error-box-tv {
+      border-color: #fde68a;
+      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 40%);
+    }
+
+    .error-box-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 12px;
+      border-bottom: 1px solid;
+      gap: 10px;
+    }
+
+    .error-box-ta .error-box-bar {
+      border-color: #ffe4e6;
+    }
+
+    .error-box-tv .error-box-bar {
+      border-color: #fef3c7;
+    }
+
+    .error-lang-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lang-tag {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .lang-tag-ta {
+      background: #ffe4e6;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+    }
+
+    .lang-tag-tv {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .lang-label {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    /* Copy Button Pills */
+    .btn-copy-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #ffffff;
+      border: 1px solid;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .btn-copy-pill:active {
+      transform: scale(0.96);
+    }
+
+    .btn-copy-ta {
+      color: #be123c;
+      border-color: #fecdd3;
+    }
+
+    .btn-copy-ta:hover {
+      background: #fff1f2;
+      border-color: #fda4af;
+      box-shadow: 0 2px 6px rgba(225, 29, 72, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn-copy-tv {
+      color: #b45309;
+      border-color: #fde68a;
+    }
+
+    .btn-copy-tv:hover {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .btn-copy-pill.copied {
+      background: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
+      color: #059669 !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
+    /* Error Text Body */
+    .error-box-body {
+      padding: 10px 12px;
+      background: #ffffff;
+    }
+
+    .single-error-body {
+      padding: 12px 14px;
+    }
+
+    .error-code-text {
+      display: block;
+      font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #0f172a;
+      white-space: pre-wrap;
+      word-break: break-word;
+      user-select: all;
+    }
+
+    .btn-copy-general {
+      color: #be123c;
+      border-color: #fecdd3;
+    }
+
+    .btn-copy-general:hover {
+      background: #fff1f2;
+      border-color: #fda4af;
+    }
+
+    /* ── Global Floating Toast Notification ── */
+    .global-toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 99999;
+      pointer-events: none;
+    }
+
+    .global-toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #0f172a;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3), 0 8px 10px -6px rgba(15, 23, 42, 0.2);
+      font-size: 13px;
+      font-weight: 500;
+      pointer-events: auto;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .global-toast.toast-show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .global-toast .toast-icon {
+      font-size: 15px;
+      display: flex;
+      align-items: center;
     }
 
     /* ── Timeline blocks (cột M & N) ── */
@@ -1787,6 +2439,19 @@
     });
 
     ticketDetail.addEventListener("click", (event) => {
+      const copyAllErrorsBtn = event.target.closest(".btn-copy-error-all");
+      if (copyAllErrorsBtn) {
+        handleCopyBothErrors(copyAllErrorsBtn);
+        return;
+      }
+
+      const copyBtn = event.target.closest(
+        ".btn-copy-pill, .btn-copy-inline, .btn-copy-chip",
+      );
+      if (copyBtn) {
+        handleCopyDetail(copyBtn);
+        return;
+      }
       const toggleBtn = event.target.closest("#toggleTimelineBtn");
       if (!toggleBtn) return;
       if (currentSelectedRow) {
@@ -2675,6 +3340,144 @@
       return "";
     }
 
+    function isErrorField(label, val) {
+      const norm = normalizeForSearch(label || "");
+      const errorKeywords = [
+        "chi tiet loi",
+        "noi dung loi",
+        "thong tin loi",
+        "mo ta loi",
+        "error detail",
+        "error",
+        "loi",
+      ];
+      const isKeywordMatch = errorKeywords.some((kw) => norm.includes(kw));
+      const hasBilingualPattern = /\bTA\s*:/i.test(val) || /\bTV\s*:/i.test(val);
+      return isKeywordMatch || hasBilingualPattern;
+    }
+
+    function parseErrorDetail(val) {
+      const str = String(val || "").trim();
+      const hasTA = /\bTA\s*:/i.test(str);
+      const hasTV = /\bTV\s*:/i.test(str);
+
+      if (hasTA || hasTV) {
+        let ta = "";
+        let tv = "";
+
+        if (hasTA && hasTV) {
+          const taMatch = str.match(/\bTA\s*:\s*([^]*?)(?=(?:\r?\n\s*TV\s*:|\s+TV\s*:|$))/i);
+          const tvMatch = str.match(/\bTV\s*:\s*([^]*?)(?=(?:\r?\n\s*TA\s*:|\s+TA\s*:|$))/i);
+          ta = taMatch ? taMatch[1].trim() : "";
+          tv = tvMatch ? tvMatch[1].trim() : "";
+        } else if (hasTA) {
+          ta = str.replace(/^\s*TA\s*:\s*/i, "").trim();
+        } else {
+          tv = str.replace(/^\s*TV\s*:\s*/i, "").trim();
+        }
+
+        return {
+          isBilingual: !!(ta && tv),
+          ta,
+          tv,
+          raw: str,
+        };
+      }
+
+      return {
+        isBilingual: false,
+        ta: "",
+        tv: "",
+        raw: str,
+      };
+    }
+
+    function renderClassificationBadge(val) {
+      const norm = String(val || "").trim().toLowerCase();
+      if (norm === "issue" || norm.includes("issue")) {
+        return `<span class="field-badge badge-issue"><span class="badge-dot"></span>${escapeHTML(val)}</span>`;
+      }
+      if (norm === "request" || norm.includes("request")) {
+        return `<span class="field-badge badge-request"><span class="badge-dot"></span>${escapeHTML(val)}</span>`;
+      }
+      return `<span class="field-badge badge-generic">${escapeHTML(val)}</span>`;
+    }
+
+    function renderRcaBadge(val) {
+      const str = String(val || "").trim();
+      if (!str || str.toUpperCase() === "NA") {
+        return `<span class="field-badge badge-neutral">NA</span>`;
+      }
+      return `<span class="field-badge badge-generic">${escapeHTML(str)}</span>`;
+    }
+
+    function splitTicketCodeAndName(rawText, fallbackCode = "") {
+      const raw = String(rawText || "").trim();
+      const codeCandidate = fallbackCode || "";
+
+      // 1. Regex match leading 10-20 digits or Ticket#123456...
+      const mDigits = raw.match(/^(?:Ticket\s*#?\s*)?(\d{10,20})[\s\t\-—:]+([^]*)$/i);
+      if (mDigits) {
+        const code = mDigits[1].trim();
+        const name = mDigits[2].replace(/\s+/g, " ").trim();
+        return {
+          hasSplit: true,
+          code,
+          name: name || code,
+          cleanFull: name ? `${code} ${name}` : code,
+        };
+      }
+
+      // 2. Regex match leading alphanumeric code
+      const mAlpha = raw.match(/^([A-Za-z0-9_#-]{6,25})[\s\t\-—:]+([^]*)$/);
+      if (mAlpha) {
+        const code = mAlpha[1].trim();
+        const name = mAlpha[2].replace(/\s+/g, " ").trim();
+        if (name && isNaN(Number(name))) {
+          return {
+            hasSplit: true,
+            code,
+            name,
+            cleanFull: `${code} ${name}`,
+          };
+        }
+      }
+
+      // 3. If fallbackCode exists and is in rawText
+      if (codeCandidate && raw.includes(codeCandidate)) {
+        const name = raw
+          .replace(codeCandidate, "")
+          .replace(/^[\s\t\-—:]+|[\s\t\-—:]+$/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (name) {
+          return {
+            hasSplit: true,
+            code: codeCandidate,
+            name,
+            cleanFull: `${codeCandidate} ${name}`,
+          };
+        }
+      }
+
+      // 4. If raw is only digits
+      if (/^\d{10,20}$/.test(raw)) {
+        return {
+          hasSplit: true,
+          code: raw,
+          name: raw,
+          cleanFull: raw,
+        };
+      }
+
+      return {
+        hasSplit: false,
+        code: codeCandidate || "",
+        name: raw.replace(/\s+/g, " ").trim(),
+        cleanFull: raw.replace(/\s+/g, " ").trim(),
+      };
+    }
+
     function renderTicketDetail(row) {
       if (!row) {
         currentSelectedRow = null;
@@ -2686,21 +3489,30 @@
       currentSelectedRow = row;
 
       // Tìm cột M và N theo nhãn label ("Nội dung update" / "Nội dung ACN feedback")
-      const colM = headers.find(h => {
+      const colM = headers.find((h) => {
         const lbl = normalizeForSearch(columnLabels[h] || h);
-        return lbl.includes("noi dung update") || lbl.includes("noidung update") || h.toLowerCase() === "columnm";
+        return (
+          lbl.includes("noi dung update") ||
+          lbl.includes("noidung update") ||
+          h.toLowerCase() === "columnm"
+        );
       });
-      const colN = headers.find(h => {
+      const colN = headers.find((h) => {
         const lbl = normalizeForSearch(columnLabels[h] || h);
-        return lbl.includes("noi dung acn") || lbl.includes("feedback") || h.toLowerCase() === "columnn";
+        return (
+          lbl.includes("noi dung acn") ||
+          lbl.includes("feedback") ||
+          h.toLowerCase() === "columnn"
+        );
       });
 
       const timelineCols = new Set([colM, colN].filter(Boolean));
 
       // Các field thường (loại trừ cột M và N)
       const fields = headers
-        .filter(col => !timelineCols.has(col))
+        .filter((col) => !timelineCols.has(col))
         .map((col) => ({
+          col,
           label: columnLabels[col] || col,
           val: String(row[col] || "").trim(),
           isDate: col === dateColumn,
@@ -2712,8 +3524,8 @@
 
       const hasTimeline = !!(rawM || rawN);
       const badgeHTML = hasTimeline
-        ? `<span class="detail-badge" id="toggleTimelineBtn"> Xem chi tiết phản hồi</span>`
-        : `<span class="detail-badge" style="opacity: 0.5; cursor: not-allowed; background: var(--bg); border-color: var(--border-strong); color: var(--text-muted);" title="Không có lịch sử cập nhật hoặc phản hồi">Xem chi tiết</span>`;
+        ? `<span class="detail-badge" id="toggleTimelineBtn" title="Xem lịch sử cập nhật và phản hồi của ticket"><i class="fa-solid fa-clock-rotate-left"></i> Xem chi tiết</span>`
+        : `<span class="detail-badge disabled" style="opacity: 0.5; cursor: not-allowed; background: var(--bg); border-color: var(--border-strong); color: var(--text-muted);" title="Không có lịch sử cập nhật hoặc phản hồi"><i class="fa-solid fa-clock-rotate-left"></i> Xem chi tiết</span>`;
 
       const ticketNum = extractTicketNumber(row);
       const otrsBtnHTML = ticketNum
@@ -2724,26 +3536,487 @@
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem trên OTRS
            </span>`;
 
+      // 1. Phân loại các trường đặc thù
+      const ticketField = fields.find((f) => {
+        const norm = normalizeForSearch(f.label);
+        return (
+          norm.includes("ticket") ||
+          norm.includes("ten") ||
+          norm.includes("ma") ||
+          norm.includes("code") ||
+          norm.includes("id")
+        );
+      });
+
+      const classField = fields.find((f) => {
+        const norm = normalizeForSearch(f.label);
+        return norm.includes("phan loai") || norm.includes("classification");
+      });
+
+      const dateField = fields.find((f) => {
+        return f.isDate || normalizeForSearch(f.label).includes("ngay");
+      });
+
+      const rcaField = fields.find((f) => {
+        return normalizeForSearch(f.label) === "rca";
+      });
+
+      const errorField = fields.find((f) => isErrorField(f.label, f.val));
+
+      const specialFields = new Set(
+        [ticketField, classField, dateField, rcaField, errorField].filter(Boolean),
+      );
+      const otherFields = fields.filter((f) => !specialFields.has(f));
+
+      // 2. Block Mã & Tên Ticket (chia riêng biệt + 3 nút copy)
+      const rawTicketText = ticketField ? ticketField.val : ticketNum || "";
+      const split = splitTicketCodeAndName(rawTicketText, ticketNum);
+
+      let ticketIdentityHTML = "";
+      if (split.code && split.name && split.code !== split.name) {
+        ticketIdentityHTML = `
+          <div class="ticket-identity-card">
+            <!-- Header: Tiêu đề & Copy Cả 2 -->
+            <div class="ticket-identity-header">
+              <div class="ticket-identity-title">
+                <i class="fa-solid fa-id-card"></i>
+                <span class="identity-title-main">Thông Tin Ticket</span>
+                <span class="identity-title-sub">| Ticket Info</span>
+              </div>
+              <div class="ticket-identity-actions">
+                <button type="button" class="btn-copy-chip btn-copy-both-ticket" data-copy-text="${escapeHTML(split.cleanFull)}" data-copy-label="mã & tên ticket" title="Sao chép cả mã và tên ticket">
+                  <i class="fa-regular fa-copy"></i>
+                  <span>Copy Cả 2</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Body: 2 hàng lưới cân xứng hoàn hảo -->
+            <div class="ticket-identity-body">
+              <!-- Hàng 1: Mã Ticket -->
+              <div class="ticket-field-row">
+                <div class="ticket-field-label">
+                  <i class="fa-solid fa-hashtag"></i>
+                  <span>MÃ TICKET</span>
+                </div>
+                <div class="ticket-field-val">
+                  <span class="ticket-code-badge font-mono">${escapeHTML(split.code)}</span>
+                </div>
+                <div class="ticket-field-action">
+                  <button type="button" class="btn-copy-chip btn-copy-code btn-icon-only" data-copy-text="${escapeHTML(split.code)}" data-copy-label="mã ticket" title="Sao chép mã ticket">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Hàng 2: Tên Ticket -->
+              <div class="ticket-field-row">
+                <div class="ticket-field-label">
+                  <i class="fa-solid fa-file-lines"></i>
+                  <span>TÊN TICKET</span>
+                </div>
+                <div class="ticket-field-val">
+                  <div class="ticket-name-text">${highlightMultiple(split.name)}</div>
+                </div>
+                <div class="ticket-field-action">
+                  <button type="button" class="btn-copy-chip btn-copy-name btn-icon-only" data-copy-text="${escapeHTML(split.name)}" data-copy-label="tên ticket" title="Sao chép tên ticket">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        const displayName = split.name || rawTicketText || "Ticket";
+        const displayCode = split.code || ticketNum || "";
+        ticketIdentityHTML = `
+          <div class="ticket-identity-card">
+            <!-- Header: Tiêu đề & Copy Cả 2 (nếu có đủ thông tin) -->
+            <div class="ticket-identity-header">
+              <div class="ticket-identity-title">
+                <i class="fa-solid fa-id-card"></i>
+                <span class="identity-title-main">Thông Tin Ticket</span>
+                <span class="identity-title-sub">| Ticket Info</span>
+              </div>
+              <div class="ticket-identity-actions">
+                ${
+                  displayCode && displayName && displayCode !== displayName
+                    ? `
+                  <button type="button" class="btn-copy-chip btn-copy-both-ticket" data-copy-text="${escapeHTML(displayCode + " " + displayName)}" data-copy-label="mã & tên ticket" title="Sao chép cả mã và tên ticket">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy Cả 2</span>
+                  </button>
+                `
+                    : ""
+                }
+              </div>
+            </div>
+
+            <div class="ticket-identity-body">
+              ${
+                displayCode
+                  ? `
+                <div class="ticket-field-row">
+                  <div class="ticket-field-label">
+                    <i class="fa-solid fa-hashtag"></i>
+                    <span>MÃ TICKET</span>
+                  </div>
+                  <div class="ticket-field-val">
+                    <span class="ticket-code-badge font-mono">${escapeHTML(displayCode)}</span>
+                  </div>
+                  <div class="ticket-field-action">
+                    <button type="button" class="btn-copy-chip btn-copy-code btn-icon-only" data-copy-text="${escapeHTML(displayCode)}" data-copy-label="mã ticket" title="Sao chép mã ticket">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              `
+                  : ""
+              }
+              <div class="ticket-field-row">
+                <div class="ticket-field-label">
+                  <i class="fa-solid fa-file-lines"></i>
+                  <span>TÊN TICKET</span>
+                </div>
+                <div class="ticket-field-val">
+                  <div class="ticket-name-text">${highlightMultiple(displayName)}</div>
+                </div>
+                <div class="ticket-field-action">
+                  <button type="button" class="btn-copy-chip btn-copy-name btn-icon-only" data-copy-text="${escapeHTML(displayName)}" data-copy-label="tên ticket" title="Sao chép tên ticket">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 3. Compact Meta Strip: Phân Loại, Ngày Raise, RCA
+      let metaStripHTML = "";
+      if (classField || dateField || rcaField) {
+        metaStripHTML = `
+          <div class="ticket-meta-strip">
+            <div class="meta-strip-col">
+              <span class="meta-strip-label"><i class="fa-solid fa-layer-group"></i> Phân Loại</span>
+              <div class="meta-strip-val">${classField ? renderClassificationBadge(classField.val) : '<span style="color:var(--text-muted)">—</span>'}</div>
+            </div>
+            <div class="meta-strip-col">
+              <span class="meta-strip-label"><i class="fa-regular fa-calendar-days"></i> Ngày Raise</span>
+              <div class="meta-strip-val font-mono">${dateField ? escapeHTML(formatDateVN(dateField.val)) : '<span style="color:var(--text-muted)">—</span>'}</div>
+            </div>
+            <div class="meta-strip-col">
+              <span class="meta-strip-label"><i class="fa-solid fa-magnifying-glass-chart"></i> RCA</span>
+              <div class="meta-strip-val">${rcaField ? renderRcaBadge(rcaField.val) : '<span style="color:var(--text-muted)">—</span>'}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      // 4. Chi tiết Lỗi (Bilingual Error Details)
+      let errorSectionHTML = "";
+      if (errorField) {
+        const parsed = parseErrorDetail(errorField.val);
+        if (parsed.isBilingual) {
+          const bothText = `TA: ${parsed.ta}\nTV: ${parsed.tv}`;
+          errorSectionHTML = `
+            <div class="detail-error-section">
+              <div class="detail-error-header">
+                <div class="detail-error-title">
+                  <span class="error-title-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                  <span class="error-title-main">${escapeHTML(errorField.label || "Chi Tiết Lỗi")}</span>
+                  <span class="detail-error-subtitle">| Error Details</span>
+                </div>
+                <div class="detail-error-actions">
+                  <button type="button" class="btn-copy-error-all" data-copy-text="${escapeHTML(bothText)}" data-copy-label="cả 2 ngôn ngữ lỗi" title="Tự động sao chép riêng biệt cả TA và TV vào Clipboard (Win + V)">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy Cả 2</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="error-bilingual-grid">
+                <!-- Box TA (English) -->
+                <div class="error-box error-box-ta">
+                  <div class="error-box-bar">
+                    <div class="error-lang-badge-wrap">
+                      <span class="lang-tag lang-tag-ta">TA</span>
+                      <span class="lang-label">Tiếng Anh / English</span>
+                    </div>
+                    <button type="button" class="btn-copy-pill btn-copy-ta btn-icon-only" data-copy-text="${escapeHTML(parsed.ta)}" data-copy-label="nội dung TA" title="Sao chép lỗi Tiếng Anh">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                  <div class="error-box-body">
+                    <code class="error-code-text">${highlightMultiple(parsed.ta)}</code>
+                  </div>
+                </div>
+
+                <!-- Box TV (Tiếng Việt) -->
+                <div class="error-box error-box-tv">
+                  <div class="error-box-bar">
+                    <div class="error-lang-badge-wrap">
+                      <span class="lang-tag lang-tag-tv">TV</span>
+                      <span class="lang-label">Tiếng Việt</span>
+                    </div>
+                    <button type="button" class="btn-copy-pill btn-copy-tv btn-icon-only" data-copy-text="${escapeHTML(parsed.tv)}" data-copy-label="nội dung TV" title="Sao chép lỗi Tiếng Việt">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </div>
+                  <div class="error-box-body">
+                    <code class="error-code-text">${highlightMultiple(parsed.tv)}</code>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          errorSectionHTML = `
+            <div class="detail-error-section">
+              <div class="detail-error-header">
+                <div class="detail-error-title">
+                  <span class="error-title-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                  <span class="error-title-main">${escapeHTML(errorField.label || "Chi Tiết Lỗi")}</span>
+                </div>
+                <div class="detail-error-actions">
+                  <button type="button" class="btn-copy-pill btn-copy-general" data-copy-text="${escapeHTML(errorField.val)}" data-copy-label="nội dung lỗi" title="Sao chép nội dung lỗi">
+                    <i class="fa-regular fa-copy"></i>
+                    <span>Copy Lỗi</span>
+                  </button>
+                </div>
+              </div>
+              <div class="error-box-body single-error-body">
+                <code class="error-code-text">${highlightMultiple(errorField.val)}</code>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      // 5. Các trường còn lại (nếu có)
+      let otherFieldsHTML = "";
+      if (otherFields.length > 0) {
+        otherFieldsHTML = `
+          <div class="detail-other-fields">
+            ${otherFields
+              .map(
+                (f) => `
+              <div class="dlabel">${escapeHTML(f.label)}</div>
+              <div class="dval">${f.isDate ? escapeHTML(formatDateVN(f.val)) : highlightMultiple(f.val)}</div>
+            `,
+              )
+              .join("")}
+          </div>
+        `;
+      }
+
       ticketDetail.innerHTML = `
           <div class="detail-card-header">
-            <h2>🎫 Chi Tiết Ticket</h2>
+            <div class="detail-header-left">
+              <div class="detail-header-icon-box">🎫</div>
+              <div class="detail-header-titles">
+                <div class="detail-header-title-row">
+                  <h2>Chi Tiết Ticket</h2>
+                  ${ticketNum ? `<span class="detail-ticket-hash">#${escapeHTML(ticketNum)}</span>` : ""}
+                </div>
+                <div class="detail-header-subtitle">Hệ thống hỗ trợ tra cứu & đối soát DMS1</div>
+              </div>
+            </div>
             <div class="detail-card-actions">
               ${otrsBtnHTML}
               ${badgeHTML}
             </div>
           </div>
-          <div class="detail-grid">
-            ${fields
-          .map(
-            (f) => `
-                  <div class="dlabel">${escapeHTML(f.label)}</div>
-                  <div class="dval">${f.isDate ? escapeHTML(formatDateVN(f.val)) : highlightMultiple(f.val)}</div>
-                `,
-          )
-          .join("")}
+          <div class="detail-body-stack">
+            ${ticketIdentityHTML}
+            ${metaStripHTML}
+            ${errorSectionHTML}
+            ${otherFieldsHTML}
           </div>
         `;
       ticketDetail.style.display = "block";
+    }
+
+    /* ─── Copy & Feedback Handlers ─── */
+    function triggerButtonFeedback(
+      btn,
+      feedbackText = "Đã copy!",
+      duration = 1800,
+    ) {
+      if (!btn) return;
+      btn.classList.add("copied");
+      const icon = btn.querySelector("i");
+      const span = btn.querySelector("span");
+      const prevIconClass = icon ? icon.className : "";
+      const prevText = span ? span.textContent : "";
+
+      if (icon) icon.className = "fa-solid fa-check";
+      if (span) span.textContent = feedbackText;
+
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        if (icon) icon.className = prevIconClass;
+        if (span) span.textContent = prevText;
+      }, duration);
+    }
+
+    async function handleCopyBothErrors(allBtn) {
+      if (!allBtn) return;
+      const container = allBtn.closest(".detail-error-section") || ticketDetail;
+      const btnTA = container.querySelector(".btn-copy-ta");
+      const btnTV = container.querySelector(".btn-copy-tv");
+
+      if (!btnTA || !btnTV) {
+        handleCopyDetail(allBtn);
+        return;
+      }
+
+      const textTA = btnTA.getAttribute("data-copy-text") || "";
+      const textTV = btnTV.getAttribute("data-copy-text") || "";
+
+      if (!textTA && !textTV) {
+        showToast("Không có nội dung lỗi để sao chép!", "warning");
+        return;
+      }
+
+      // 1. Sao chép nội dung TA (Tiếng Anh) trước
+      let okTA = false;
+      if (textTA) {
+        okTA = await copyToClipboard(textTA);
+        if (okTA) {
+          triggerButtonFeedback(btnTA, "Đã copy TA!");
+        }
+      }
+
+      // Đổi tạm trạng thái nút "Sao chép cả 2" trong lúc chờ Windows Clipboard History lưu mục 1
+      const allSpan = allBtn.querySelector("span");
+      const allIcon = allBtn.querySelector("i");
+      const origAllIcon = allIcon ? allIcon.className : "";
+      const origAllText = allSpan ? allSpan.textContent : "";
+      if (allIcon) allIcon.className = "fa-solid fa-spinner fa-spin";
+      if (allSpan) allSpan.textContent = "Đang copy TV...";
+
+      // Giãn cách 750ms để Windows Clipboard Service (Win + V) và background listeners kịp ghi nhận TA thành 1 mục riêng biệt
+      await new Promise((resolve) => setTimeout(resolve, 750));
+
+      // 2. Sao chép nội dung TV (Tiếng Việt) tiếp theo
+      let okTV = false;
+      if (textTV) {
+        okTV = await copyToClipboard(textTV);
+        if (okTV) {
+          triggerButtonFeedback(btnTV, "Đã copy TV!");
+        }
+      }
+
+      // Khôi phục icon trước khi trigger feedback thành công
+      if (allIcon) allIcon.className = origAllIcon;
+      if (allSpan) allSpan.textContent = origAllText;
+
+      // Phản hồi trực tiếp trên nút "Sao chép cả 2"
+      if (okTA || okTV) {
+        triggerButtonFeedback(allBtn, "Đã copy cả 2!");
+        showToast(
+          "Đã tự động sao chép riêng TA & TV (2 mục vào bộ nhớ tạm / Win+V)!",
+          "success",
+        );
+      } else {
+        showToast("Không thể sao chép vào bộ nhớ tạm!", "error");
+      }
+    }
+
+    function handleCopyDetail(btn) {
+      if (!btn) return;
+      if (btn.classList.contains("btn-copy-error-all")) {
+        return handleCopyBothErrors(btn);
+      }
+      const text = btn.getAttribute("data-copy-text") || "";
+      const label = btn.getAttribute("data-copy-label") || "nội dung";
+
+      if (!text) {
+        showToast("Không có nội dung để sao chép!", "warning");
+        return;
+      }
+
+      copyToClipboard(text).then((success) => {
+        if (success) {
+          triggerButtonFeedback(btn, "Đã copy!");
+          showToast(`Đã sao chép ${label}!`, "success");
+        } else {
+          showToast("Không thể sao chép vào bộ nhớ tạm!", "error");
+        }
+      });
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard
+          .writeText(text)
+          .then(() => true)
+          .catch(() => fallbackCopy(text));
+      }
+      return Promise.resolve(fallbackCopy(text));
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.top = "-9999px";
+        textarea.style.left = "-9999px";
+        textarea.setAttribute("readonly", "");
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand("copy");
+        document.body.removeChild(textarea);
+        return successful;
+      } catch (err) {
+        console.error("Fallback copy failed:", err);
+        return false;
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(message, type = "success") {
+      let toastContainer = document.getElementById("globalToastContainer");
+      if (!toastContainer) {
+        toastContainer = document.createElement("div");
+        toastContainer.id = "globalToastContainer";
+        toastContainer.className = "global-toast-container";
+        document.body.appendChild(toastContainer);
+      }
+
+      toastContainer.innerHTML = "";
+      clearTimeout(toastTimer);
+
+      const toast = document.createElement("div");
+      toast.className = `global-toast toast-${type}`;
+
+      const iconHtml =
+        type === "success"
+          ? '<i class="fa-solid fa-circle-check" style="color: #34d399;"></i>'
+          : type === "warning"
+            ? '<i class="fa-solid fa-triangle-exclamation" style="color: #fbbf24;"></i>'
+            : '<i class="fa-solid fa-circle-xmark" style="color: #f87171;"></i>';
+
+      toast.innerHTML = `
+        <span class="toast-icon">${iconHtml}</span>
+        <span class="toast-msg">${escapeHTML(message)}</span>
+      `;
+
+      toastContainer.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.add("toast-show");
+      });
+
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("toast-show");
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 2500);
     }
 
     /* ─── Highlighting ─── */

@@ -472,6 +472,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .modal-header h3 {
@@ -495,6 +497,11 @@
 
     .modal-body {
       padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex: 1;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .form-group {
@@ -1182,8 +1189,8 @@
           <div class="detail-section">
             <div class="detail-section-label">${label}</div>
             <div class="detail-section-content" style="padding-right:44px;">
-              <pre style="margin:0;font-family:inherit;white-space:pre-wrap;word-break:break-word;">${safe}</pre>
-              <button class="detail-copy-btn" title="Copy" onclick="detailCopy(this, ${JSON.stringify(text)})">
+              <pre style="margin:0;font-family:inherit;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${safe}</pre>
+              <button class="detail-copy-btn" title="Copy" onclick="detailCopy(this)">
                 <i class="fa-regular fa-copy"></i>
               </button>
             </div>
@@ -1192,11 +1199,15 @@
       body.innerHTML =
         sectionHTML("🇬🇧 Tiếng Anh", item.english) +
         sectionHTML("🇻🇳 Tiếng Việt", item.vietnamese) +
-        (item.note ? `<div class="detail-section"><div class="detail-section-label">📝 Note</div><div class="detail-section-content">${item.note.replace(/</g,"&lt;")}</div></div>` : "");
+        (item.note ? `<div class="detail-section"><div class="detail-section-label">📝 Note</div><div class="detail-section-content" style="padding-right:44px;"><pre style="margin:0;font-family:inherit;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${item.note.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre><button class="detail-copy-btn" title="Copy" onclick="detailCopy(this)"><i class="fa-regular fa-copy"></i></button></div></div>` : "");
+      body.scrollTop = 0;
+      body.scrollLeft = 0;
       document.getElementById("detailModal").classList.add("show");
     }
 
-    function detailCopy(btn, text) {
+    function detailCopy(btn) {
+      const pre = btn.closest(".detail-section-content")?.querySelector("pre");
+      const text = pre ? pre.textContent : "";
       navigator.clipboard.writeText(text).then(() => {
         btn.innerHTML = `<i class="fa-solid fa-check"></i>`;
         btn.classList.add("copied");
