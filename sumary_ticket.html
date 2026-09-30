@@ -734,6 +734,24 @@
       padding: 7px 12px;
       background: #f8fafc;
       border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .ticket-identity-header:hover {
+      background: #f1f5f9;
+    }
+
+    .ticket-identity-header:hover .btn-copy-both-ticket {
+      background: #dcfce7;
+      border-color: #34d399;
+      color: #065f46;
+      box-shadow: 0 2px 4px rgba(5, 150, 105, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .ticket-identity-header.row-copied {
+      background: #ecfdf5 !important;
     }
 
     .ticket-identity-title {
@@ -779,7 +797,8 @@
       gap: 12px;
       padding: 9px 12px;
       background: #ffffff;
-      transition: background 0.15s ease;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
     }
 
     .ticket-field-row:not(:last-child) {
@@ -788,6 +807,19 @@
 
     .ticket-field-row:hover {
       background: #f8fafc;
+    }
+
+    .ticket-field-row:hover .btn-copy-chip {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: #ffffff;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .ticket-field-row.row-copied {
+      background: #ecfdf5 !important;
+      transition: background 0.12s ease;
     }
 
     .ticket-field-label {
@@ -1142,7 +1174,8 @@
       overflow: hidden;
       border: 1px solid;
       background: #ffffff;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
 
     .error-box-ta {
@@ -1153,6 +1186,35 @@
     .error-box-tv {
       border-color: #fde68a;
       background: linear-gradient(180deg, #fffbeb 0%, #ffffff 40%);
+    }
+
+    .error-box-ta:hover {
+      border-color: #fb7185;
+      box-shadow: 0 2px 8px rgba(225, 29, 72, 0.08);
+    }
+
+    .error-box-ta:hover .btn-copy-ta {
+      background: #fff1f2;
+      border-color: #fda4af;
+      box-shadow: 0 2px 6px rgba(225, 29, 72, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .error-box-tv:hover {
+      border-color: #f59e0b;
+      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08);
+    }
+
+    .error-box-tv:hover .btn-copy-tv {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .error-box.row-copied {
+      background: #ecfdf5 !important;
+      border-color: #a7f3d0 !important;
     }
 
     .error-box-bar {
@@ -1261,11 +1323,21 @@
     /* Error Text Body */
     .error-box-body {
       padding: 10px 12px;
-      background: #ffffff;
+      background: transparent;
     }
 
     .single-error-body {
       padding: 12px 14px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .single-error-body:hover {
+      background: #fff5f6;
+    }
+
+    .single-error-body.row-copied {
+      background: #ecfdf5 !important;
     }
 
     .error-code-text {
@@ -1276,7 +1348,7 @@
       color: #0f172a;
       white-space: pre-wrap;
       word-break: break-word;
-      user-select: all;
+      user-select: text;
     }
 
     .btn-copy-general {
@@ -2439,25 +2511,102 @@
     });
 
     ticketDetail.addEventListener("click", (event) => {
+      // 1. Nút mở Timeline modal ("Xem chi tiết")
+      const toggleBtn = event.target.closest("#toggleTimelineBtn");
+      if (toggleBtn) {
+        if (currentSelectedRow) {
+          openTimelineModal(currentSelectedRow);
+        }
+        return;
+      }
+
+      // 2. Click trực tiếp vào nút "Copy Cả 2" lỗi
       const copyAllErrorsBtn = event.target.closest(".btn-copy-error-all");
       if (copyAllErrorsBtn) {
         handleCopyBothErrors(copyAllErrorsBtn);
         return;
       }
 
+      // 3. Click trực tiếp vào bất kỳ nút copy nào (.btn-copy-pill, .btn-copy-inline, .btn-copy-chip)
       const copyBtn = event.target.closest(
         ".btn-copy-pill, .btn-copy-inline, .btn-copy-chip",
       );
       if (copyBtn) {
         handleCopyDetail(copyBtn);
+        const parentHighlight = copyBtn.closest(
+          ".ticket-field-row, .error-box, .ticket-identity-header, .single-error-body",
+        );
+        if (parentHighlight) highlightRowFeedback(parentHighlight);
         return;
       }
-      const toggleBtn = event.target.closest("#toggleTimelineBtn");
-      if (!toggleBtn) return;
-      if (currentSelectedRow) {
-        openTimelineModal(currentSelectedRow);
+
+      // 4. Nếu người dùng đang quét / bôi đen văn bản (drag selection) thì không kích hoạt copy cả dòng
+      const selectedText = window.getSelection
+        ? window.getSelection().toString().trim()
+        : "";
+      if (selectedText.length > 0) {
+        return;
+      }
+
+      // 5. Click vào dòng MÃ TICKET hoặc TÊN TICKET (.ticket-field-row)
+      const fieldRow = event.target.closest(".ticket-field-row");
+      if (fieldRow) {
+        const rowCopyBtn = fieldRow.querySelector(
+          ".btn-copy-chip, .btn-copy-pill",
+        );
+        if (rowCopyBtn) {
+          handleCopyDetail(rowCopyBtn);
+          highlightRowFeedback(fieldRow);
+          return;
+        }
+      }
+
+      // 6. Click vào khối/dòng lỗi TA hoặc TV (.error-box)
+      const errorBox = event.target.closest(".error-box");
+      if (errorBox) {
+        const boxCopyBtn = errorBox.querySelector(
+          ".btn-copy-pill, .btn-copy-chip",
+        );
+        if (boxCopyBtn) {
+          handleCopyDetail(boxCopyBtn);
+          highlightRowFeedback(errorBox);
+          return;
+        }
+      }
+
+      // 7. Click vào thanh Header Thông tin Ticket (Copy Cả 2)
+      const identityHeader = event.target.closest(".ticket-identity-header");
+      if (identityHeader) {
+        const bothBtn = identityHeader.querySelector(".btn-copy-both-ticket");
+        if (bothBtn) {
+          handleCopyDetail(bothBtn);
+          highlightRowFeedback(identityHeader);
+          return;
+        }
+      }
+
+      // 8. Click vào hộp lỗi đơn (nếu có .single-error-body)
+      const singleErrorBody = event.target.closest(".single-error-body");
+      if (singleErrorBody) {
+        const parentSec = singleErrorBody.closest(".detail-error-section");
+        const generalBtn = parentSec
+          ? parentSec.querySelector(".btn-copy-general")
+          : null;
+        if (generalBtn) {
+          handleCopyDetail(generalBtn);
+          highlightRowFeedback(singleErrorBody);
+          return;
+        }
       }
     });
+
+    function highlightRowFeedback(el) {
+      if (!el) return;
+      el.classList.add("row-copied");
+      setTimeout(() => {
+        el.classList.remove("row-copied");
+      }, 600);
+    }
 
     const timelineModal = document.getElementById("timelineModal");
     const closeModalBtn = document.getElementById("closeModalBtn");
@@ -3577,7 +3726,7 @@
         ticketIdentityHTML = `
           <div class="ticket-identity-card">
             <!-- Header: Tiêu đề & Copy Cả 2 -->
-            <div class="ticket-identity-header">
+            <div class="ticket-identity-header" title="Nhấp để sao chép cả mã và tên ticket">
               <div class="ticket-identity-title">
                 <i class="fa-solid fa-id-card"></i>
                 <span class="identity-title-main">Thông Tin Ticket</span>
@@ -3594,7 +3743,7 @@
             <!-- Body: 2 hàng lưới cân xứng hoàn hảo -->
             <div class="ticket-identity-body">
               <!-- Hàng 1: Mã Ticket -->
-              <div class="ticket-field-row">
+              <div class="ticket-field-row" title="Nhấp vào dòng để sao chép mã ticket">
                 <div class="ticket-field-label">
                   <i class="fa-solid fa-hashtag"></i>
                   <span>MÃ TICKET</span>
@@ -3610,7 +3759,7 @@
               </div>
 
               <!-- Hàng 2: Tên Ticket -->
-              <div class="ticket-field-row">
+              <div class="ticket-field-row" title="Nhấp vào dòng để sao chép tên ticket">
                 <div class="ticket-field-label">
                   <i class="fa-solid fa-file-lines"></i>
                   <span>TÊN TICKET</span>
@@ -3633,7 +3782,7 @@
         ticketIdentityHTML = `
           <div class="ticket-identity-card">
             <!-- Header: Tiêu đề & Copy Cả 2 (nếu có đủ thông tin) -->
-            <div class="ticket-identity-header">
+            <div class="ticket-identity-header" title="Nhấp để sao chép cả mã và tên ticket">
               <div class="ticket-identity-title">
                 <i class="fa-solid fa-id-card"></i>
                 <span class="identity-title-main">Thông Tin Ticket</span>
@@ -3657,7 +3806,7 @@
               ${
                 displayCode
                   ? `
-                <div class="ticket-field-row">
+                <div class="ticket-field-row" title="Nhấp vào dòng để sao chép mã ticket">
                   <div class="ticket-field-label">
                     <i class="fa-solid fa-hashtag"></i>
                     <span>MÃ TICKET</span>
@@ -3674,7 +3823,7 @@
               `
                   : ""
               }
-              <div class="ticket-field-row">
+              <div class="ticket-field-row" title="Nhấp vào dòng để sao chép tên ticket">
                 <div class="ticket-field-label">
                   <i class="fa-solid fa-file-lines"></i>
                   <span>TÊN TICKET</span>
@@ -3738,7 +3887,7 @@
 
               <div class="error-bilingual-grid">
                 <!-- Box TA (English) -->
-                <div class="error-box error-box-ta">
+                <div class="error-box error-box-ta" title="Nhấp vào để sao chép lỗi Tiếng Anh">
                   <div class="error-box-bar">
                     <div class="error-lang-badge-wrap">
                       <span class="lang-tag lang-tag-ta">TA</span>
@@ -3754,7 +3903,7 @@
                 </div>
 
                 <!-- Box TV (Tiếng Việt) -->
-                <div class="error-box error-box-tv">
+                <div class="error-box error-box-tv" title="Nhấp vào để sao chép lỗi Tiếng Việt">
                   <div class="error-box-bar">
                     <div class="error-lang-badge-wrap">
                       <span class="lang-tag lang-tag-tv">TV</span>
@@ -3786,7 +3935,7 @@
                   </button>
                 </div>
               </div>
-              <div class="error-box-body single-error-body">
+              <div class="error-box-body single-error-body" title="Nhấp vào để sao chép nội dung lỗi">
                 <code class="error-code-text">${highlightMultiple(errorField.val)}</code>
               </div>
             </div>
