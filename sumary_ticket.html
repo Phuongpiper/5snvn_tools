@@ -236,19 +236,53 @@
     .panel-toggles {
       display: flex;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 0;
     }
 
     .panel-toggle {
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .panel-toggle:hover {
+      background: #f1f5f9;
+      border-color: var(--border-strong);
+      color: var(--text-primary);
     }
 
     .panel-toggle.active {
       background: var(--accent);
       border-color: var(--accent);
       color: #ffffff;
+      box-shadow: 0 1px 3px rgba(99, 102, 241, 0.25);
+    }
+
+    .panel-toggle.active:hover {
+      background: var(--accent-dark);
+      border-color: var(--accent-dark);
+      color: #ffffff;
+    }
+
+    #toggleUploadBtn {
+      transition: all 0.15s ease;
+    }
+
+    #toggleUploadBtn:hover {
+      background: #f1f5f9;
+      border-color: var(--border-strong);
+      color: var(--text-primary);
     }
 
     /* ── Grid Config ── */
@@ -2015,16 +2049,23 @@
           Tự động tổng hợp, tìm kiếm và tra cứu nhanh trạng thái phiếu hỗ trợ.
         </p>
       </div>
-      <button id="toggleUploadBtn" type="button" style="
-          font-size:12px; font-weight:600; color:var(--text-muted);
-          background:var(--surface); border:1px solid var(--border);
-          border-radius:var(--radius-sm); padding:6px 12px;
-          cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px;
-          box-shadow:var(--shadow-sm); white-space:nowrap;
-        ">
-        <i class="fa-solid fa-cloud-arrow-up"></i>
-        Tải dữ liệu <span id="toggleUploadArrow"><i class="fa-solid fa-chevron-down" style="font-size:10px;"></i></span>
-      </button>
+      <div class="hero-actions" style="display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap;">
+        <div class="panel-toggles" id="panelToggles" style="display: none; margin-bottom: 0;">
+          <button class="panel-toggle" id="toggleColumnPanelButton" type="button">
+            <i class="fa-solid fa-table-columns"></i> Hiện cấu hình cột
+          </button>
+        </div>
+        <button id="toggleUploadBtn" type="button" style="
+            font-size:12px; font-weight:600; color:var(--text-muted);
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:var(--radius-sm); padding:6px 12px;
+            cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px;
+            box-shadow:var(--shadow-sm); white-space:nowrap;
+          ">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          Tải dữ liệu <span id="toggleUploadArrow"><i class="fa-solid fa-chevron-down" style="font-size:10px;"></i></span>
+        </button>
+      </div>
     </div>
 
     <!-- Upload Zone (hidden by default) -->
@@ -2058,13 +2099,6 @@
           <div id="uploadLoadingText">Đang tải dữ liệu...</div>
         </div>
       </div>
-    </div>
-
-    <!-- Toggles -->
-    <div class="panel-toggles" id="panelToggles" style="display: none">
-      <button class="panel-toggle" id="toggleColumnPanelButton" type="button">
-        <i class="fa-solid fa-table-columns"></i> Hiện cấu hình cột
-      </button>
     </div>
 
     <!-- Column Configuration Panel -->
@@ -2411,9 +2445,9 @@
       const isOpen = columnPanel.style.display !== "none";
       columnPanel.style.display = isOpen ? "none" : "block";
       toggleColumnPanelButton.classList.toggle("active", !isOpen);
-      toggleColumnPanelButton.textContent = isOpen
-        ? "Hiện cấu hình cột"
-        : "Ẩn cấu hình cột";
+      toggleColumnPanelButton.innerHTML = isOpen
+        ? '<i class="fa-solid fa-table-columns"></i> Hiện cấu hình cột'
+        : '<i class="fa-solid fa-table-columns"></i> Ẩn cấu hình cột';
     });
 
     function bindClearButton(inp, btn) {
