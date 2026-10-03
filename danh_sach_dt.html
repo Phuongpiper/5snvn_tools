@@ -1,0 +1,2662 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh Sách Đối Tác & NPP (DT List) – DMS Hub</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- SheetJS with styling support for professional Excel XLSX Export/Import -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+  <style>
+    /* ── RESET & TOKENS (STITCH MODERN DESIGN) ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --surface-active: #e2e8f0;
+      --border: #e2e8f0;
+      --border-dark: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #eef2ff;
+      --primary-border: #c7d2fe;
+
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --success-text: #065f46;
+
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --warning-text: #92400e;
+
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --danger-text: #991b1b;
+
+      --info: #0284c7;
+      --info-light: #e0f2fe;
+      --info-text: #075985;
+
+      --purple: #8b5cf6;
+      --purple-light: #f3e8ff;
+      --purple-text: #6b21a8;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+
+      --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.09), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
+
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13.5px;
+      line-height: 1.5;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOP HEADER / CONTROLS ── */
+    .top-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-xs);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .table-badge-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.25);
+    }
+
+    .header-title-box {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .header-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.01em;
+    }
+
+    .mode-pill {
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--info-light);
+      color: var(--info-text);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .header-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-center {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-input-wrap i.search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 7px 32px 7px 34px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .search-input:focus {
+      background: var(--surface);
+      border-color: var(--info);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+    }
+
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 4px;
+      display: none;
+    }
+
+    .search-clear-btn:hover {
+      color: var(--text);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ── BUTTON STYLES ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 5px rgba(79, 70, 229, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+    }
+
+    .btn-outline {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-dark);
+    }
+
+    .btn-excel {
+      background: #ecfdf5;
+      color: #065f46;
+      border-color: #a7f3d0;
+    }
+
+    .btn-excel:hover {
+      background: #d1fae5;
+      color: #047857;
+      border-color: #6ee7b7;
+    }
+
+    .btn-import {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .btn-import:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* ── TOOLBAR / ACTIONS BAR ── */
+    .toolbar-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .bulk-actions-group {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding-left: 10px;
+      border-left: 2px solid var(--border);
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .bulk-actions-group.active {
+      display: inline-flex;
+    }
+
+    .selected-count-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      margin-right: 4px;
+    }
+
+    /* ── TABLE CONTAINER ── */
+    .table-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+    }
+
+    .table-scroll-area {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+
+    .stitch-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+      color: var(--text);
+      min-width: 800px;
+    }
+
+    /* ── THEAD & TH ── */
+    .stitch-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .stitch-table th {
+      background: #f8fafc;
+      border-bottom: 2px solid var(--border-dark);
+      border-right: 1px solid var(--border);
+      padding: 8px 12px;
+      font-weight: 700;
+      color: #334155;
+      text-align: left;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      user-select: none;
+      position: relative;
+      white-space: nowrap;
+      transition: background 0.12s ease;
+    }
+
+    .stitch-table th:hover {
+      background: #f1f5f9;
+    }
+
+    .th-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .th-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .th-name {
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .col-drag-grip {
+      color: var(--text-light);
+      font-size: 10px;
+      cursor: grab;
+      opacity: 0.4;
+      transition: opacity 0.15s;
+    }
+
+    .th-content:hover .col-drag-grip {
+      opacity: 1;
+    }
+
+    .th-menu-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 3px 5px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: all 0.15s;
+      font-size: 11px;
+    }
+
+    .th-content:hover .th-menu-btn,
+    .th-menu-btn.active {
+      opacity: 1;
+    }
+
+    .th-menu-btn:hover {
+      background: var(--surface-active);
+      color: var(--text);
+    }
+
+    /* Resizer */
+    .col-resizer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      bottom: 0;
+      cursor: col-resize;
+      user-select: none;
+      z-index: 25;
+    }
+
+    .col-resizer:hover,
+    .col-resizer.is-resizing {
+      background-color: var(--info);
+    }
+
+    .th-select-all {
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
+      text-align: center !important;
+      padding: 8px 0 !important;
+    }
+
+    .th-stt {
+      width: 52px;
+      min-width: 52px;
+      max-width: 52px;
+      text-align: center !important;
+      padding: 8px 0 !important;
+      color: var(--text-muted);
+    }
+
+    .th-add-col {
+      width: 120px;
+      min-width: 120px;
+      background: #f8fafc;
+      border-bottom: 2px solid var(--border-dark);
+      border-right: none;
+      padding: 4px 8px;
+    }
+
+    .btn-add-col-th {
+      background: transparent;
+      border: 1px dashed var(--border-dark);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      width: 100%;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+
+    .btn-add-col-th:hover {
+      background: var(--surface-hover);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* ── TBODY & TD ── */
+    .stitch-table tbody tr {
+      background: var(--surface);
+      transition: background-color 0.1s ease;
+    }
+
+    .stitch-table tbody tr:hover {
+      background-color: #f8fafc;
+    }
+
+    .stitch-table tbody tr.row-selected {
+      background-color: #f0f7ff !important;
+    }
+
+    .stitch-table tbody tr.row-locked {
+      background-color: #fafafa;
+    }
+
+    .stitch-table td {
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 7px 12px;
+      vertical-align: middle;
+      position: relative;
+      transition: background 0.12s ease;
+    }
+
+    .td-select {
+      text-align: center;
+      width: 44px;
+      min-width: 44px;
+      max-width: 44px;
+      padding: 7px 0 !important;
+    }
+
+    .td-stt {
+      text-align: center;
+      width: 52px;
+      min-width: 52px;
+      max-width: 52px;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      padding: 7px 0 !important;
+      position: relative;
+    }
+
+    .td-stt .row-lock-indicator {
+      color: #f59e0b;
+      font-size: 11px;
+      margin-right: 3px;
+    }
+
+    .td-actions {
+      width: 76px;
+      min-width: 76px;
+      text-align: center;
+      padding: 4px 6px !important;
+    }
+
+    .btn-row-action {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      font-size: 12px;
+      transition: all 0.15s;
+    }
+
+    .btn-row-action:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .btn-row-action.btn-row-lock.is-locked {
+      color: #f59e0b;
+    }
+
+    .btn-row-action:hover.btn-row-lock.is-locked {
+      color: #d97706;
+    }
+
+    /* ── CELL EDITABLE & STYLING ── */
+    .cell-editable {
+      cursor: text;
+      position: relative;
+      word-break: break-word;
+    }
+
+    .cell-editable:hover {
+      outline: 1px solid #94a3b8;
+      outline-offset: -1px;
+    }
+
+    .cell-editable.cell-active {
+      outline: 2px solid var(--primary) !important;
+      outline-offset: -2px;
+      z-index: 10;
+      background-color: #ffffff;
+    }
+
+    .cell-editable.cell-locked {
+      cursor: not-allowed !important;
+      color: #64748b;
+    }
+
+    .cell-editable.cell-locked:hover {
+      outline: none;
+    }
+
+    /* Inline Editor input */
+    .inline-editor {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    /* DT Code Badge */
+    .dt-code-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #0369a1;
+      background: #e0f2fe;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #bae6fd;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .dt-code-badge:hover {
+      background: #bae6fd;
+      color: #0284c7;
+      transform: translateY(-1px);
+    }
+
+    .dt-code-badge .copy-icon {
+      font-size: 10px;
+      opacity: 0.5;
+    }
+
+    .dt-code-badge:hover .copy-icon {
+      opacity: 1;
+    }
+
+    /* Prefix Badge */
+    .prefix-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: #6d28d9;
+      background: #f5f3ff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd6fe;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .prefix-badge:hover {
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    /* Issue Name Badge */
+    .issue-name-badge {
+      font-weight: 600;
+      color: #1e293b;
+      cursor: pointer;
+    }
+
+    .issue-name-badge:hover {
+      color: var(--primary);
+    }
+
+    /* NPP Name text */
+    .npp-name-text {
+      color: #0f172a;
+      font-weight: 500;
+    }
+
+    /* ── HIGHLIGHT COLORS ── */
+    .highlight-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid rgba(0,0,0,0.12);
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+
+    .highlight-swatch:hover {
+      transform: scale(1.15);
+    }
+
+    .highlight-swatch.active {
+      outline: 2px solid var(--text);
+      outline-offset: 1px;
+    }
+
+    /* ── FOOTER / STATS ── */
+    .table-footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-stat-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .footer-stat-item strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .auto-save-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--success);
+      font-weight: 500;
+      font-size: 11.5px;
+    }
+
+    .auto-save-indicator.saving {
+      color: var(--warning);
+    }
+
+    .auto-save-indicator.error {
+      color: var(--danger);
+    }
+
+    /* ── CONTEXT MENU & MODALS ── */
+    .dropdown-menu {
+      position: fixed;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      padding: 6px;
+      min-width: 200px;
+      z-index: 1000;
+      display: none;
+      animation: fadeIn 0.12s ease-out;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .dropdown-item:hover {
+      background: var(--surface-hover);
+    }
+
+    .dropdown-item i {
+      width: 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .dropdown-item:hover i {
+      color: var(--primary);
+    }
+
+    .dropdown-item.danger {
+      color: var(--danger);
+    }
+
+    .dropdown-item.danger i {
+      color: var(--danger);
+    }
+
+    .dropdown-item.danger:hover {
+      background: var(--danger-light);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* Modal Backdrop & Box */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      width: 90%;
+      max-width: 480px;
+      overflow: hidden;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      font-size: 15px;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .btn-modal-close:hover {
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Toast Container */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: auto;
+    }
+
+    .toast.success i { color: #34d399; }
+    .toast.warning i { color: #fbbf24; }
+    .toast.danger i { color: #f87171; }
+    .toast.info i { color: #60a5fa; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── TOP HEADER ── -->
+  <header class="top-header">
+    <div class="header-left">
+      <div class="table-badge-icon">
+        <i class="fa-solid fa-address-book"></i>
+      </div>
+      <div class="header-title-box">
+        <div class="header-title-row">
+          <span class="header-title">Danh Sách Đối Tác &amp; NPP (DT List)</span>
+          <span class="mode-pill">Tra cứu &amp; Sửa</span>
+        </div>
+        <span class="header-desc">Quản lý mã DT, Tên nhà phân phối, Tên đặt issue và Prefix linh hoạt như Excel</span>
+      </div>
+    </div>
+
+    <!-- Quick Search -->
+    <div class="header-center">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="globalSearchInput" class="search-input" placeholder="Tìm theo Mã DT, Tên NPP, Tên issue, Prefix..." />
+        <button id="searchClearBtn" class="search-clear-btn" title="Xoá tìm kiếm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="btn btn-import" id="btnImportFile" title="Tải file Excel / CSV nạp vào danh sách">
+        <i class="fa-solid fa-file-arrow-up"></i> Nhập File Excel
+      </button>
+      <button class="btn btn-excel" id="btnExportExcel" title="Xuất toàn bộ danh sách ra file Excel chuẩn đẹp">
+        <i class="fa-solid fa-file-excel"></i> Xuất Excel
+      </button>
+      <button class="btn btn-primary" id="btnAddRow" title="Thêm dòng đối tác mới">
+        <i class="fa-solid fa-plus"></i> Thêm dòng
+      </button>
+      <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" />
+    </div>
+  </header>
+
+  <!-- ── TOOLBAR / BULK CONTROLS ── -->
+  <div class="toolbar-bar">
+    <div class="toolbar-left">
+      <!-- Bulk actions -->
+      <div class="bulk-actions-group" id="bulkActionsGroup">
+        <span class="selected-count-badge" id="selectedCountBadge">0 đã chọn</span>
+        <button class="btn btn-outline btn-sm" id="btnHighlightSelected" title="Tô màu dòng đã chọn">
+          <i class="fa-solid fa-highlighter" style="color: #eab308;"></i> Tô màu
+        </button>
+        <button class="btn btn-outline btn-sm" id="btnLockSelected" title="Khoá các dòng đã chọn">
+          <i class="fa-solid fa-lock" style="color: #f59e0b;"></i> Khoá
+        </button>
+        <button class="btn btn-outline btn-sm" id="btnUnockSelected" title="Mở khoá các dòng đã chọn">
+          <i class="fa-solid fa-lock-open" style="color: var(--primary);"></i> Mở khoá
+        </button>
+        <button class="btn btn-outline btn-sm" id="btnDeleteSelected" style="color: var(--danger);" title="Xoá các dòng đã chọn">
+          <i class="fa-solid fa-trash-can"></i> Xoá
+        </button>
+      </div>
+
+      <!-- Quick highlight picker button -->
+      <button class="btn btn-outline btn-sm" id="btnHighlightMenu" title="Bảng màu Highlight">
+        <i class="fa-solid fa-highlighter" style="color: #eab308;"></i> Highlight
+      </button>
+
+      <!-- Undo / Redo -->
+      <button class="btn btn-outline btn-sm" id="btnUndo" title="Hoàn tác (Ctrl+Z)">
+        <i class="fa-solid fa-rotate-left"></i> Hoàn tác
+      </button>
+      <button class="btn btn-outline btn-sm" id="btnRedo" title="Làm lại (Ctrl+Y)">
+        <i class="fa-solid fa-rotate-right"></i> Làm lại
+      </button>
+
+      <button class="btn btn-outline btn-sm" id="btnAddColumnBtn" title="Thêm cột mới vào bảng">
+        <i class="fa-solid fa-plus"></i> Thêm cột
+      </button>
+    </div>
+
+    <div class="toolbar-right">
+      <span style="font-size: 12px; color: var(--text-muted);"><i class="fa-regular fa-lightbulb" style="color: #f59e0b;"></i> Mẹo: Nhấp đúp vào ô để sửa • Nhấp vào Mã DT hoặc Prefix để copy nhanh</span>
+    </div>
+  </div>
+
+  <!-- ── TABLE CONTAINER ── -->
+  <main class="table-container">
+    <div class="table-scroll-area" id="tableScrollArea">
+      <table class="stitch-table" id="dtTable">
+        <thead>
+          <tr id="tableHeaderRow">
+            <!-- Rendered by JS -->
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Rendered by JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── FOOTER STATS ── -->
+    <footer class="table-footer">
+      <div class="footer-left">
+        <span class="footer-stat-item">
+          <i class="fa-solid fa-list-ol"></i>
+          <span>Tổng số: <strong id="statTotalRows">0</strong> đối tác/NPP</span>
+        </span>
+        <span class="footer-stat-item" id="statFilterBox" style="display: none;">
+          <i class="fa-solid fa-filter"></i>
+          <span>Đang hiển thị: <strong id="statVisibleRows">0</strong></span>
+        </span>
+      </div>
+
+      <div class="footer-right">
+        <span class="auto-save-indicator" id="autoSaveIndicator">
+          <i class="fa-solid fa-circle-check"></i>
+          <span id="autoSaveText">Đã lưu</span>
+        </span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ── MODAL: THÊM / SỬA CỘT ── -->
+  <div class="modal-overlay" id="columnModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="colModalTitle"><i class="fa-solid fa-table-columns"></i> Thêm cột mới</h3>
+        <button class="btn-modal-close" onclick="closeColumnModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editColId" />
+        <div class="form-group">
+          <label>Tên tiêu đề cột:</label>
+          <input type="text" id="colNameInput" class="form-control" placeholder="Ví dụ: Khu vực, Ghi chú..." />
+        </div>
+        <div class="form-group">
+          <label>Kiểu dữ liệu:</label>
+          <select id="colTypeInput" class="form-control">
+            <option value="text">Văn bản (Text)</option>
+            <option value="number">Số (Number)</option>
+            <option value="date">Ngày tháng (Date)</option>
+            <option value="link">Đường dẫn liên kết (Link / URL)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeColumnModal()">Huỷ</button>
+        <button class="btn btn-primary" id="btnSaveColumn">Lưu cột</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: NHẬP FILE EXCEL / CSV ── -->
+  <div class="modal-overlay" id="importModal">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-import" style="color: var(--primary);"></i> Nhập dữ liệu Đối Tác / NPP</h3>
+        <button class="btn-modal-close" onclick="closeImportModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+          Tệp tải lên có <strong id="importFileRowCount" style="color: var(--primary);">0</strong> dòng dữ liệu. Hệ thống đã tự động nhận diện các cột:
+        </div>
+        <div id="importColMappingSummary" style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px; font-size: 12.5px;">
+          <!-- Dynamically populated -->
+        </div>
+        <div class="form-group">
+          <label style="font-weight: 700; color: var(--text);">Phương thức nhập:</label>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+              <input type="radio" name="importMode" value="replace" checked />
+              <span><strong>Thay thế toàn bộ</strong> (Xoá bảng cũ và nhập danh sách mới)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;">
+              <input type="radio" name="importMode" value="append" />
+              <span><strong>Nối tiếp thêm</strong> (Giữ lại danh sách cũ và thêm các dòng mới vào cuối)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeImportModal()">Huỷ</button>
+        <button class="btn btn-primary" id="btnConfirmImport"><i class="fa-solid fa-check"></i> Xác nhận nhập</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTEXT MENUS ── -->
+  <!-- Row Context Menu -->
+  <div class="dropdown-menu" id="rowContextMenu">
+    <div class="dropdown-item" id="ctxToggleLock" onclick="triggerToggleLockRowContext()"><i class="fa-solid fa-lock"></i> <span>Khoá dòng này</span></div>
+    <div class="dropdown-divider"></div>
+    <div style="padding: 6px 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fa-solid fa-highlighter" style="color: #eab308;"></i> Màu dòng</span>
+        <span onclick="triggerClearRowHighlight(event)" style="cursor: pointer; font-size: 10.5px; color: var(--danger); font-weight: 600;">Xoá màu</span>
+      </div>
+      <div class="ctx-highlight-swatches" id="ctxRowHighlightSwatches" style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;"></div>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="triggerInsertRow('above')"><i class="fa-solid fa-arrow-up"></i> Chèn dòng ở trên</div>
+    <div class="dropdown-item" onclick="triggerInsertRow('below')"><i class="fa-solid fa-arrow-down"></i> Chèn dòng ở dưới</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="triggerInsertColFromContext('left')"><i class="fa-solid fa-arrow-left"></i> <span id="ctxInsertColLeftText">Thêm cột bên trái</span></div>
+    <div class="dropdown-item" onclick="triggerInsertColFromContext('right')"><i class="fa-solid fa-arrow-right"></i> <span id="ctxInsertColRightText">Thêm cột bên phải</span></div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="triggerDuplicateRow()"><i class="fa-solid fa-copy"></i> Nhân bản dòng này</div>
+    <div class="dropdown-item" onclick="triggerClearRow()"><i class="fa-solid fa-eraser"></i> Xoá trắng dữ liệu dòng</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item danger" onclick="triggerDeleteRowContext()"><i class="fa-solid fa-trash-can"></i> Xoá dòng này</div>
+  </div>
+
+  <!-- Column Context Menu -->
+  <div class="dropdown-menu" id="colContextMenu">
+    <div class="dropdown-item" onclick="triggerEditColumn()"><i class="fa-solid fa-pen"></i> Đổi tên cột</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="sortCurrentColumn('asc')"><i class="fa-solid fa-arrow-up-a-z"></i> Sắp xếp A → Z</div>
+    <div class="dropdown-item" onclick="sortCurrentColumn('desc')"><i class="fa-solid fa-arrow-down-z-a"></i> Sắp xếp Z → A</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="insertColumnRelative('left')"><i class="fa-solid fa-arrow-left"></i> Thêm cột bên trái</div>
+    <div class="dropdown-item" onclick="insertColumnRelative('right')"><i class="fa-solid fa-arrow-right"></i> Thêm cột bên phải</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item danger" onclick="triggerDeleteColumn()"><i class="fa-solid fa-trash-can"></i> Xoá cột này</div>
+  </div>
+
+  <!-- Highlight Palette Dropdown -->
+  <div class="dropdown-menu" id="highlightPaletteDropdown" style="width: 250px; padding: 12px; z-index: 1050;">
+    <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+      <span><i class="fa-solid fa-highlighter" style="color: #eab308;"></i> Tô màu Highlight</span>
+      <span id="highlightTargetLabel" style="font-size: 10.5px; padding: 2px 7px; background: #f1f5f9; border-radius: 4px; color: var(--primary); font-weight: 700;">Ô</span>
+    </div>
+    <div class="highlight-target-selector" style="display: flex; gap: 4px; margin-bottom: 10px; background: #f1f5f9; padding: 3px; border-radius: 6px;">
+      <button type="button" class="hl-target-tab active" id="hlTabCell" onclick="setHighlightTarget('cell')" style="flex: 1; padding: 5px; font-size: 11px; border: none; border-radius: 4px; background: #fff; color: var(--text); font-weight: 600; cursor: pointer;">
+        <i class="fa-regular fa-square"></i> Ô
+      </button>
+      <button type="button" class="hl-target-tab" id="hlTabRow" onclick="setHighlightTarget('row')" style="flex: 1; padding: 5px; font-size: 11px; border: none; border-radius: 4px; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer;">
+        <i class="fa-solid fa-grip-lines"></i> Dòng
+      </button>
+    </div>
+    <div class="highlight-swatches-grid" id="highlightSwatchesGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;"></div>
+    <button class="btn btn-outline btn-sm" onclick="clearActiveHighlight()" style="width: 100%; color: var(--danger); justify-content: center;">
+      <i class="fa-solid fa-eraser"></i> Xoá màu Highlight
+    </button>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    /* ──────────────────────────────────────────────────────────────────────────
+       DATA MODEL & STATE
+    ────────────────────────────────────────────────────────────────────────── */
+    const STORAGE_KEY = "DMS_DT_LIST_DATA_V1";
+
+    const HIGHLIGHT_COLORS = [
+      { name: "Vàng", bg: "#fef9c3", border: "#fde047" },
+      { name: "Xanh lá", bg: "#dcfce7", border: "#86efac" },
+      { name: "Xanh dương", bg: "#e0f2fe", border: "#7dd3fc" },
+      { name: "Đỏ hồng", bg: "#fee2e2", border: "#fca5a5" },
+      { name: "Tím nhạt", bg: "#f3e8ff", border: "#d8b4fe" },
+      { name: "Cam nhạt", bg: "#ffedd5", border: "#fdba74" },
+      { name: "Hồng", bg: "#fce7f3", border: "#f9a8d4" },
+      { name: "Xám bạc", bg: "#f1f5f9", border: "#cbd5e1" }
+    ];
+
+    // Default 4 columns matching user request exactly
+    const DEFAULT_COLUMNS = [
+      { id: "col_dt_code", name: "DT code", type: "text", width: 140 },
+      { id: "col_npp_name", name: "TÊN NPP", type: "text", width: 360 },
+      { id: "col_issue_name", name: "Tên đặt issue", type: "text", width: 220 },
+      { id: "col_prefix", name: "PREFIX", type: "text", width: 120 }
+    ];
+
+    // Sample Rows extracted directly from user's image
+    const SAMPLE_ROWS = [
+      { id: "row_1", col_dt_code: "6243208", col_npp_name: "Cong ty TNHH DT va TM Dich Vu Phuc Hung", col_issue_name: "NPP Phuc Hung", col_prefix: "243G" },
+      { id: "row_2", col_dt_code: "6243223", col_npp_name: "Cong ty TNHH Gia Phat", col_issue_name: "NPP Gia Phat 244", col_prefix: "244G" },
+      { id: "row_3", col_dt_code: "6081632", col_npp_name: "Cty TNHH MTV TM Duc Tai - Lai Chau", col_issue_name: "NPP Duc Tai", col_prefix: "209G" },
+      { id: "row_4", col_dt_code: "6147584", col_npp_name: "Cty Co Phan Luong Hang", col_issue_name: "NPP Luong Hang", col_prefix: "215G" },
+      { id: "row_5", col_dt_code: "6736235", col_npp_name: "Cong ty TNHH MTV Van Anh Vinh Long", col_issue_name: "NPP Van Anh", col_prefix: "278G" },
+      { id: "row_6", col_dt_code: "6177941", col_npp_name: "Cty TNHH Tan Thinh Hung Thai Binh", col_issue_name: "NPP Thinh Hung", col_prefix: "228G" },
+      { id: "row_7", col_dt_code: "6231480", col_npp_name: "Cong ty TNHH Thuong Mai Vinh Chau", col_issue_name: "NPP Vinh Chau", col_prefix: "242G" },
+      { id: "row_8", col_dt_code: "6290148", col_npp_name: "Cong ty TNHH TM Phap Van", col_issue_name: "NPP Phap Van", col_prefix: "254G" },
+      { id: "row_9", col_dt_code: "6181234", col_npp_name: "Cty Co Phan Dau Tu & Phat Trien PMC Viet Nam", col_issue_name: "NPP PMC", col_prefix: "229G" },
+      { id: "row_10", col_dt_code: "6181235", col_npp_name: "Cty TNHH Thuong Mai Va Dich Vu Hung Thinh", col_issue_name: "NPP Hung Thinh", col_prefix: "230G" },
+      { id: "row_11", col_dt_code: "6218262", col_npp_name: "Cong ty TNHH Dau Tu Huong Phat", col_issue_name: "NPP Huong Phat", col_prefix: "239G" },
+      { id: "row_12", col_dt_code: "2529564", col_npp_name: "Cty TNHH Chau Hiep", col_issue_name: "NPP Chau Hiep", col_prefix: "037G" },
+      { id: "row_13", col_dt_code: "2529650", col_npp_name: "Cong Ty TNHH Phuc Dai Viet", col_issue_name: "NPP Phuc Dai Viet", col_prefix: "003G", highlight: "#fee2e2" },
+      { id: "row_14", col_dt_code: "3864654", col_npp_name: "Cty TNHH Thuong Mai AT", col_issue_name: "NPP AT", col_prefix: "011G", highlight: "#fee2e2" },
+      { id: "row_15", col_dt_code: "2529582", col_npp_name: "CTY TNHH TMDV Hang Thuan", col_issue_name: "NPP Hang Thuan", col_prefix: "018G" },
+      { id: "row_16", col_dt_code: "2529543", col_npp_name: "CTY TNHH TM&DV Mesa", col_issue_name: "NPP Mesa HN", col_prefix: "019G" },
+      { id: "row_17", col_dt_code: "4108499", col_npp_name: "Cty CPDT Thuong Mai Hoang Son", col_issue_name: "NPP Hoang Son", col_prefix: "020G" },
+      { id: "row_18", col_dt_code: "2529672", col_npp_name: "Cty TNHH 1 TV Thai Duong", col_issue_name: "NPP Thai Duong", col_prefix: "027G", highlight: "#fef9c3" },
+      { id: "row_19", col_dt_code: "5049456", col_npp_name: "Cong ty TNHH Dau Tu Thuong Mai Va Dich Vu Lan Chi", col_issue_name: "NPP Lan Chi", col_prefix: "028G" },
+      { id: "row_20", col_dt_code: "5636676", col_npp_name: "Cty TNHH Dich Vu Ha Phuong Viet Nam", col_issue_name: "NPP Ha Phuong", col_prefix: "176G" },
+      { id: "row_21", col_dt_code: "2529565", col_npp_name: "CTY TNHH Phu Phuong", col_issue_name: "NPP Phu Phuong", col_prefix: "029G" },
+      { id: "row_22", col_dt_code: "5198514", col_npp_name: "Cong ty TNHH Mot Thanh Vien Ho Nham", col_issue_name: "NPP Ho Nham", col_prefix: "040G" },
+      { id: "row_23", col_dt_code: "2529562", col_npp_name: "Cong Ty TNHH Ngoc Vinh", col_issue_name: "NPP Ngoc Vinh", col_prefix: "042G" }
+    ];
+
+    let dtData = {
+      columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)),
+      rows: JSON.parse(JSON.stringify(SAMPLE_ROWS))
+    };
+
+    let historyStack = [];
+    let historyIndex = -1;
+    let selectedRowIds = new Set();
+    let currentContextColId = null;
+    let currentContextRowId = null;
+    let activeSelectedCell = null;
+    let insertColRelativeConfig = null;
+    let pendingImportRows = [];
+
+    // Cloud sync state
+    let dtSyncIntervalId = null;
+    let currentDtEtag = localStorage.getItem("r2_dt_etag") || "";
+    let cloudSaveTimer = null;
+    let isCloudSaving = false;
+
+    function getDtApiEndpoint() {
+      let base = "";
+      if (window.location.protocol === "file:") {
+        const wUrl = localStorage.getItem("NVN_TASK_WORKER_URL") || localStorage.getItem("r2_worker_url") || "";
+        if (wUrl) {
+          try { base = new URL(wUrl).origin; } catch (e) { base = "https://search-dms-tool.vercel.app"; }
+        } else {
+          base = "https://search-dms-tool.vercel.app";
+        }
+      }
+      return base + "/api/r2-dt";
+    }
+
+    function initApp() {
+      loadState();
+      renderTable();
+      fetchDtFromCloud();
+      startDtAutoSync();
+      setupEventListeners();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+      initApp();
+    }
+
+    window.addEventListener("pageshow", () => fetchDtFromCloud(true));
+    window.addEventListener("message", (e) => {
+      if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
+        fetchDtFromCloud(true);
+      }
+    });
+
+    /* ── STATE MANAGEMENT & HISTORY ── */
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.rows)) {
+            dtData = parsed;
+          }
+        }
+      } catch (e) {
+        console.warn("Lỗi đọc localStorage:", e);
+      }
+      recordHistory(false);
+    }
+
+    function saveState(markDirty = true) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dtData));
+        showAutoSaveIndicator("saving");
+        if (markDirty) {
+          recordHistory(true);
+          scheduleCloudSave();
+        } else {
+          showAutoSaveIndicator("saved");
+        }
+      } catch (e) {
+        console.error("Lỗi lưu dữ liệu:", e);
+      }
+      updateStats();
+    }
+
+    function recordHistory(pushNew = true) {
+      const snap = JSON.stringify(dtData);
+      if (pushNew) {
+        if (historyIndex < historyStack.length - 1) {
+          historyStack = historyStack.slice(0, historyIndex + 1);
+        }
+        historyStack.push(snap);
+        if (historyStack.length > 50) historyStack.shift();
+        historyIndex = historyStack.length - 1;
+      } else {
+        historyStack = [snap];
+        historyIndex = 0;
+      }
+    }
+
+    function undo() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        dtData = JSON.parse(historyStack[historyIndex]);
+        saveState(false);
+        renderTable();
+        toast("Đã hoàn tác thao tác", "info");
+      }
+    }
+
+    function redo() {
+      if (historyIndex < historyStack.length - 1) {
+        historyIndex++;
+        dtData = JSON.parse(historyStack[historyIndex]);
+        saveState(false);
+        renderTable();
+        toast("Đã làm lại thao tác", "info");
+      }
+    }
+
+    /* ── CLOUD SYNC (R2) ── */
+    function scheduleCloudSave() {
+      if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
+      showAutoSaveIndicator("saving");
+      cloudSaveTimer = setTimeout(pushDtToCloud, 400);
+    }
+
+    async function pushDtToCloud() {
+      if (isCloudSaving) return;
+      isCloudSaving = true;
+      try {
+        const endpoint = getDtApiEndpoint();
+        const payload = {
+          columns: dtData.columns,
+          rows: dtData.rows,
+          updatedAt: Date.now()
+        };
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const newEtag = res.headers.get("ETag") || String(json.updatedAt || Date.now());
+          currentDtEtag = newEtag;
+          localStorage.setItem("r2_dt_etag", newEtag);
+          showAutoSaveIndicator("saved");
+        } else {
+          showAutoSaveIndicator("error");
+        }
+      } catch (err) {
+        showAutoSaveIndicator("error");
+      } finally {
+        isCloudSaving = false;
+        cloudSaveTimer = null;
+      }
+    }
+
+    async function fetchDtFromCloud(silent = false) {
+      try {
+        if (!silent) showAutoSaveIndicator("saving");
+        const endpoint = getDtApiEndpoint();
+        const sep = endpoint.includes("?") ? "&" : "?";
+        const res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
+        if (!res.ok) {
+          if (!silent) showAutoSaveIndicator("saved");
+          return;
+        }
+        const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
+        if (newEtag) {
+          currentDtEtag = newEtag;
+          localStorage.setItem("r2_dt_etag", newEtag);
+        }
+        const data = await res.json();
+        if (data && Array.isArray(data.rows) && data.rows.length > 0) {
+          const currentJson = JSON.stringify(dtData);
+          const incomingJson = JSON.stringify({ columns: data.columns || dtData.columns, rows: data.rows });
+          if (currentJson !== incomingJson) {
+            const activeTag = document.activeElement ? document.activeElement.tagName : "";
+            const isEditing = activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT";
+            if (silent && isEditing) return;
+
+            dtData.columns = data.columns || dtData.columns;
+            dtData.rows = data.rows;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dtData));
+
+            const scrollArea = document.getElementById("tableScrollArea");
+            const prevTop = scrollArea ? scrollArea.scrollTop : 0;
+            const prevLeft = scrollArea ? scrollArea.scrollLeft : 0;
+            renderTable();
+            if (scrollArea) {
+              scrollArea.scrollTop = prevTop;
+              scrollArea.scrollLeft = prevLeft;
+            }
+          }
+        }
+        showAutoSaveIndicator("saved");
+      } catch (err) {
+        if (!silent) showAutoSaveIndicator("saved");
+      }
+    }
+
+    function startDtAutoSync() {
+      if (dtSyncIntervalId) return;
+      dtSyncIntervalId = setInterval(async () => {
+        try {
+          if (cloudSaveTimer || isCloudSaving) return;
+          const endpoint = getDtApiEndpoint();
+          const sep = endpoint.includes("?") ? "&" : "?";
+          const res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
+          if (!res.ok) return;
+          const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
+          if (newEtag && newEtag !== currentDtEtag) {
+            currentDtEtag = newEtag;
+            localStorage.setItem("r2_dt_etag", newEtag);
+            await fetchDtFromCloud(true);
+          }
+        } catch (_) {}
+      }, 5000);
+    }
+
+    function showAutoSaveIndicator(status = "saved") {
+      const container = document.getElementById("autoSaveIndicator");
+      const el = document.getElementById("autoSaveText");
+      if (!el || !container) return;
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      if (status === "saving") {
+        container.className = "auto-save-indicator saving";
+        el.textContent = "Đang lưu...";
+      } else if (status === "error") {
+        container.className = "auto-save-indicator error";
+        el.textContent = `Lưu cục bộ (${timeStr})`;
+      } else {
+        container.className = "auto-save-indicator";
+        el.textContent = `Đã lưu lúc ${timeStr}`;
+      }
+    }
+
+    /* ── RENDERING ── */
+    function renderTable() {
+      renderTableHeader();
+      renderTableBody();
+      updateStats();
+    }
+
+    function renderTableHeader() {
+      const tr = document.getElementById("tableHeaderRow");
+      if (!tr) return;
+
+      let html = `
+        <th class="th-select-all">
+          <input type="checkbox" id="selectAllCheckbox" class="cell-checkbox" title="Chọn tất cả dòng" />
+        </th>
+        <th class="th-stt">STT</th>
+      `;
+
+      dtData.columns.forEach(col => {
+        const colWidth = col.width || 180;
+        html += `
+          <th data-col-id="${col.id}" style="width: ${colWidth}px; min-width: 80px;" oncontextmenu="event.preventDefault(); openColContextMenu(event, '${col.id}')">
+            <div class="th-content">
+              <div class="th-title-wrap" ondblclick="editColumnById('${col.id}')">
+                <i class="fa-solid fa-grip-vertical col-drag-grip" title="Kéo để đổi vị trí cột"></i>
+                <span class="th-name">${escapeHtml(col.name)}</span>
+              </div>
+              <button class="th-menu-btn" onclick="openColContextMenu(event, '${col.id}')" title="Tuỳ chọn cột">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+              </button>
+            </div>
+            <div class="col-resizer" data-col-id="${col.id}" title="Kéo để chỉnh độ rộng cột"></div>
+          </th>
+        `;
+      });
+
+      html += `
+        <th class="th-add-col">
+          <button class="btn-add-col-th" onclick="openAddColumnModal()">
+            <i class="fa-solid fa-plus"></i> Thêm cột
+          </button>
+        </th>
+        <th class="td-actions" style="width: 76px; min-width: 76px;"></th>
+      `;
+
+      tr.innerHTML = html;
+      attachColResizers();
+      attachColDragAndDrop();
+
+      const selectAll = document.getElementById("selectAllCheckbox");
+      if (selectAll) {
+        selectAll.addEventListener("change", (e) => {
+          if (e.target.checked) {
+            getFilteredRows().forEach(r => selectedRowIds.add(r.id));
+          } else {
+            selectedRowIds.clear();
+          }
+          renderTableBody();
+          updateStats();
+        });
+      }
+    }
+
+    function getFilteredRows() {
+      const query = (document.getElementById("globalSearchInput")?.value || "").trim().toLowerCase();
+      if (!query) return dtData.rows;
+      return dtData.rows.filter(r => {
+        return dtData.columns.some(c => {
+          const val = String(r[c.id] || "").toLowerCase();
+          return val.includes(query);
+        });
+      });
+    }
+
+    function renderTableBody() {
+      const tbody = document.getElementById("tableBody");
+      if (!tbody) return;
+
+      const filtered = getFilteredRows();
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="${dtData.columns.length + 4}" style="text-align: center; padding: 48px 16px; color: var(--text-muted);">
+              <i class="fa-regular fa-folder-open" style="font-size: 36px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
+              <div style="font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px;">Không tìm thấy dữ liệu đối tác phù hợp</div>
+              <div style="font-size: 12.5px;">Thử xoá tìm kiếm hoặc nhấn nút "Thêm dòng" / "Nhập File Excel" ở góc trên.</div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      let tbodyHtml = "";
+      filtered.forEach((row, idx) => {
+        const isSelected = selectedRowIds.has(row.id);
+        const isLocked = !!row.locked;
+        const rowHl = row.highlight || "";
+        const trStyle = rowHl ? `background-color: ${rowHl};` : "";
+
+        tbodyHtml += `
+          <tr class="${isSelected ? 'row-selected' : ''} ${isLocked ? 'row-locked' : ''}" data-row-id="${row.id}" style="${trStyle}">
+            <td class="td-select" style="${trStyle}">
+              <input type="checkbox" class="cell-checkbox row-select-cb" data-id="${row.id}" ${isSelected ? 'checked' : ''} />
+            </td>
+            <td class="td-stt" style="${trStyle}" title="${isLocked ? 'Dòng này đang bị khoá' : ''}">
+              ${isLocked ? `<i class="fa-solid fa-lock row-lock-indicator"></i>` : ''}
+              <span>${idx + 1}</span>
+            </td>
+        `;
+
+        dtData.columns.forEach(col => {
+          const val = row[col.id];
+          const cellHl = (row.highlights && row.highlights[col.id]) || "";
+          const effectiveBg = cellHl || rowHl || "";
+          const tdStyle = effectiveBg ? `background-color: ${effectiveBg};` : "";
+          const content = renderCellView(col, val, row.id, isLocked);
+
+          tbodyHtml += `
+            <td class="cell-editable ${isLocked ? 'cell-locked' : ''}" data-col-id="${col.id}" data-row-id="${row.id}" style="${tdStyle}">
+              ${content}
+            </td>
+          `;
+        });
+
+        tbodyHtml += `
+            <td style="border-right: none; ${trStyle ? `background-color: ${trStyle};` : 'background: #f8fafc;'}" ></td>
+            <td class="td-actions" style="${trStyle}">
+              <button class="btn-row-action btn-row-lock ${isLocked ? 'is-locked' : ''}" onclick="toggleLockRowById('${row.id}', event)" title="${isLocked ? 'Mở khoá dòng' : 'Khoá dòng'}">
+                <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
+              </button>
+              <button class="btn-row-action" onclick="deleteRowById('${row.id}', event)" title="Xoá dòng này" ${isLocked ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''}>
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = tbodyHtml;
+      attachCellInteractions();
+    }
+
+    function renderCellView(col, val, rowId, isLocked) {
+      if (val === undefined || val === null || String(val).trim() === "") {
+        return `<span style="color: var(--text-light); font-style: italic;">—</span>`;
+      }
+      const valStr = String(val).trim();
+
+      // Special visual badges for primary columns
+      if (col.id === "col_dt_code" || col.name.toLowerCase().includes("dt code") || col.name.toLowerCase().includes("mã dt")) {
+        return `
+          <span class="dt-code-badge" onclick="copyValueToClipboard(event, '${escapeHtml(valStr)}', 'mã DT')" title="Nhấp để sao chép mã DT">
+            <i class="fa-solid fa-hashtag" style="font-size: 10px;"></i>
+            <span>${escapeHtml(valStr)}</span>
+            <i class="fa-regular fa-copy copy-icon"></i>
+          </span>
+        `;
+      }
+
+      if (col.id === "col_prefix" || col.name.toLowerCase().includes("prefix")) {
+        return `
+          <span class="prefix-badge" onclick="copyValueToClipboard(event, '${escapeHtml(valStr)}', 'Prefix')" title="Nhấp để sao chép Prefix">
+            <span>${escapeHtml(valStr)}</span>
+            <i class="fa-regular fa-copy" style="font-size: 10px; opacity: 0.6;"></i>
+          </span>
+        `;
+      }
+
+      if (col.id === "col_issue_name" || col.name.toLowerCase().includes("issue")) {
+        return `
+          <span class="issue-name-badge" onclick="copyValueToClipboard(event, '${escapeHtml(valStr)}', 'tên Issue')" title="Nhấp để sao chép">
+            ${escapeHtml(valStr)}
+          </span>
+        `;
+      }
+
+      return `<span class="npp-name-text">${escapeHtml(valStr)}</span>`;
+    }
+
+    function copyValueToClipboard(e, text, label = "dữ liệu") {
+      if (e) e.stopPropagation();
+      navigator.clipboard.writeText(text).then(() => {
+        toast(`Đã sao chép ${label}: ${text}`, "success");
+      }).catch(() => {
+        toast(`Không thể sao chép: ${text}`, "warning");
+      });
+    }
+
+    function updateStats() {
+      const total = dtData.rows.length;
+      const filtered = getFilteredRows().length;
+      const statTotal = document.getElementById("statTotalRows");
+      const statVis = document.getElementById("statVisibleRows");
+      const statBox = document.getElementById("statFilterBox");
+
+      if (statTotal) statTotal.textContent = total;
+      if (statVis) statVis.textContent = filtered;
+      if (statBox) {
+        statBox.style.display = (filtered !== total) ? "inline-flex" : "none";
+      }
+
+      // Update bulk selection count
+      const selCount = selectedRowIds.size;
+      const bulkGroup = document.getElementById("bulkActionsGroup");
+      const selBadge = document.getElementById("selectedCountBadge");
+      if (bulkGroup && selBadge) {
+        if (selCount > 0) {
+          bulkGroup.classList.add("active");
+          selBadge.textContent = `${selCount} đã chọn`;
+        } else {
+          bulkGroup.classList.remove("active");
+        }
+      }
+
+      const selectAll = document.getElementById("selectAllCheckbox");
+      if (selectAll) {
+        selectAll.checked = (total > 0 && selCount === total);
+        selectAll.indeterminate = (selCount > 0 && selCount < total);
+      }
+    }
+
+    /* ── IN-CELL EDITING INTERACTION ── */
+    function attachCellInteractions() {
+      // Row Checkbox toggle
+      document.querySelectorAll(".row-select-cb").forEach(cb => {
+        cb.addEventListener("change", (e) => {
+          const id = e.target.dataset.id;
+          if (e.target.checked) selectedRowIds.add(id);
+          else selectedRowIds.delete(id);
+          updateStats();
+        });
+      });
+
+      // Cell click & double click to edit
+      document.querySelectorAll(".cell-editable").forEach(td => {
+        td.addEventListener("click", (e) => {
+          document.querySelectorAll(".cell-editable.cell-active").forEach(c => c.classList.remove("cell-active"));
+          td.classList.add("cell-active");
+          activeSelectedCell = { rowId: td.dataset.rowId, colId: td.dataset.colId };
+        });
+
+        td.addEventListener("dblclick", (e) => {
+          openCellEditor(td, td.dataset.colId, td.dataset.rowId);
+        });
+      });
+
+      // Row Right-click context menu
+      document.querySelectorAll("#tableBody tr").forEach(tr => {
+        tr.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          openRowContextMenu(tr.dataset.rowId, e);
+        });
+      });
+    }
+
+    function openCellEditor(td, colId, rowId) {
+      const row = dtData.rows.find(r => r.id === rowId);
+      if (!row || row.locked) return;
+
+      const currentVal = row[colId] || "";
+      td.innerHTML = "";
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "inline-editor";
+      input.value = currentVal;
+      td.appendChild(input);
+      input.focus();
+      input.select();
+
+      let isSaved = false;
+      const save = () => {
+        if (isSaved) return;
+        isSaved = true;
+        const newVal = input.value.trim();
+        row[colId] = newVal;
+        saveState(true);
+        renderTableBody();
+      };
+
+      input.addEventListener("blur", save);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          save();
+        } else if (e.key === "Escape") {
+          isSaved = true;
+          renderTableBody();
+        } else if (e.key === "Tab") {
+          e.preventDefault();
+          save();
+          // Move to next cell
+          const nextTd = td.nextElementSibling;
+          if (nextTd && nextTd.classList.contains("cell-editable")) {
+            nextTd.click();
+            openCellEditor(nextTd, nextTd.dataset.colId, nextTd.dataset.rowId);
+          }
+        }
+      });
+    }
+
+    /* ── ROW ACTIONS (ADD, DELETE, LOCK, HIGHLIGHT) ── */
+    function addNewRow() {
+      const newRow = {
+        id: "row_" + Date.now(),
+        col_dt_code: "",
+        col_npp_name: "",
+        col_issue_name: "",
+        col_prefix: ""
+      };
+      dtData.rows.unshift(newRow);
+      saveState(true);
+      renderTableBody();
+      toast("Đã thêm dòng mới ở đầu bảng", "success");
+
+      // Auto focus on the first cell of new row
+      setTimeout(() => {
+        const firstTd = document.querySelector(`tr[data-row-id="${newRow.id}"] td.cell-editable`);
+        if (firstTd) {
+          firstTd.click();
+          openCellEditor(firstTd, firstTd.dataset.colId, newRow.id);
+        }
+      }, 50);
+    }
+
+    function deleteRowById(rowId, e) {
+      if (e) e.stopPropagation();
+      const row = dtData.rows.find(r => r.id === rowId);
+      if (row && row.locked) {
+        toast("Dòng này đang bị khoá, không thể xoá!", "warning");
+        return;
+      }
+      dtData.rows = dtData.rows.filter(r => r.id !== rowId);
+      selectedRowIds.delete(rowId);
+      saveState(true);
+      renderTableBody();
+      toast("Đã xoá dòng", "info");
+    }
+
+    function toggleLockRowById(rowId, e) {
+      if (e) e.stopPropagation();
+      const row = dtData.rows.find(r => r.id === rowId);
+      if (!row) return;
+      row.locked = !row.locked;
+      saveState(true);
+      renderTableBody();
+      toast(row.locked ? "Đã khoá dòng này" : "Đã mở khoá dòng", "info");
+    }
+
+    /* ── CONTEXT MENU CONTROLS ── */
+    function openRowContextMenu(rowId, e) {
+      currentContextRowId = rowId;
+      const menu = document.getElementById("rowContextMenu");
+      if (!menu) return;
+
+      const targetTd = e.target ? (e.target.closest("td.cell-editable") || e.target.closest("td[data-col-id]")) : null;
+      if (targetTd && targetTd.dataset.colId) {
+        currentContextColId = targetTd.dataset.colId;
+      } else if (activeSelectedCell && activeSelectedCell.colId) {
+        currentContextColId = activeSelectedCell.colId;
+      } else if (dtData.columns.length > 0) {
+        currentContextColId = dtData.columns[0].id;
+      }
+
+      const col = dtData.columns.find(c => c.id === currentContextColId);
+      const colLeft = document.getElementById("ctxInsertColLeftText");
+      const colRight = document.getElementById("ctxInsertColRightText");
+      if (colLeft) colLeft.textContent = col ? `Thêm cột bên trái "${col.name}"` : "Thêm cột bên trái";
+      if (colRight) colRight.textContent = col ? `Thêm cột bên phải "${col.name}"` : "Thêm cột bên phải";
+
+      const row = dtData.rows.find(r => r.id === rowId);
+      const isLocked = row ? !!row.locked : false;
+
+      const ctxLock = document.getElementById("ctxToggleLock");
+      if (ctxLock) {
+        ctxLock.innerHTML = isLocked
+          ? `<i class="fa-solid fa-lock-open" style="color: var(--primary);"></i> <span>Mở khoá dòng này</span>`
+          : `<i class="fa-solid fa-lock" style="color: #d97706;"></i> <span>Khoá dòng này</span>`;
+      }
+
+      // Swatches
+      const swatchesBox = document.getElementById("ctxRowHighlightSwatches");
+      if (swatchesBox) {
+        swatchesBox.innerHTML = HIGHLIGHT_COLORS.map(c => {
+          const isAct = row && row.highlight === c.bg;
+          return `<div class="highlight-swatch ${isAct ? 'active' : ''}"
+            style="background: ${c.bg}; border-color: ${c.border};"
+            title="${c.name}"
+            onclick="event.stopPropagation(); setRowHighlight('${rowId}', '${c.bg}')"></div>`;
+        }).join("");
+      }
+
+      menu.style.display = "block";
+      menu.style.top = `${e.clientY + 4}px`;
+      menu.style.left = `${Math.min(e.clientX, window.innerWidth - 220)}px`;
+    }
+
+    function openColContextMenu(e, colId) {
+      e.stopPropagation();
+      currentContextColId = colId;
+      const menu = document.getElementById("colContextMenu");
+      if (!menu) return;
+      menu.style.display = "block";
+      menu.style.top = `${e.clientY + 5}px`;
+      menu.style.left = `${Math.min(e.clientX, window.innerWidth - 200)}px`;
+    }
+
+    function triggerInsertRow(position) {
+      if (!currentContextRowId) return;
+      const idx = dtData.rows.findIndex(r => r.id === currentContextRowId);
+      if (idx === -1) return;
+
+      const newRow = {
+        id: "row_" + Date.now(),
+        col_dt_code: "",
+        col_npp_name: "",
+        col_issue_name: "",
+        col_prefix: ""
+      };
+      const insertIdx = position === "above" ? idx : idx + 1;
+      dtData.rows.splice(insertIdx, 0, newRow);
+      saveState(true);
+      renderTableBody();
+      toast(position === "above" ? "Đã chèn dòng ở trên" : "Đã chèn dòng ở dưới", "success");
+    }
+
+    function triggerInsertColFromContext(position) {
+      const menu = document.getElementById("rowContextMenu");
+      if (menu) menu.style.display = "none";
+      insertColumnRelative(position);
+    }
+
+    function insertColumnRelative(position) {
+      if (!currentContextColId) {
+        currentContextColId = dtData.columns[0]?.id || null;
+      }
+      insertColRelativeConfig = { colId: currentContextColId, position };
+      openAddColumnModal();
+    }
+
+    function triggerDuplicateRow() {
+      if (!currentContextRowId) return;
+      const idx = dtData.rows.findIndex(r => r.id === currentContextRowId);
+      if (idx === -1) return;
+      const clone = JSON.parse(JSON.stringify(dtData.rows[idx]));
+      clone.id = "row_" + Date.now();
+      delete clone.locked;
+      dtData.rows.splice(idx + 1, 0, clone);
+      saveState(true);
+      renderTableBody();
+      toast("Đã nhân bản dòng này", "success");
+    }
+
+    function triggerClearRow() {
+      if (!currentContextRowId) return;
+      const row = dtData.rows.find(r => r.id === currentContextRowId);
+      if (row && row.locked) {
+        toast("Dòng này đang bị khoá!", "warning");
+        return;
+      }
+      if (row) {
+        dtData.columns.forEach(c => row[c.id] = "");
+        saveState(true);
+        renderTableBody();
+        toast("Đã xoá trắng dữ liệu dòng", "info");
+      }
+    }
+
+    function triggerDeleteRowContext() {
+      if (currentContextRowId) {
+        deleteRowById(currentContextRowId);
+      }
+    }
+
+    function setRowHighlight(rowId, color) {
+      const row = dtData.rows.find(r => r.id === rowId);
+      if (row) {
+        row.highlight = color;
+        saveState(true);
+        renderTableBody();
+        const menu = document.getElementById("rowContextMenu");
+        if (menu) menu.style.display = "none";
+      }
+    }
+
+    function triggerClearRowHighlight(e) {
+      if (e) e.stopPropagation();
+      if (currentContextRowId) {
+        setRowHighlight(currentContextRowId, null);
+      }
+    }
+
+    /* ── COLUMN OPERATIONS (ADD, EDIT, SORT, DELETE) ── */
+    function openAddColumnModal() {
+      const titleEl = document.getElementById("colModalTitle");
+      if (insertColRelativeConfig) {
+        const refCol = dtData.columns.find(c => c.id === insertColRelativeConfig.colId);
+        const refName = refCol ? ` "${refCol.name}"` : "";
+        titleEl.innerHTML = insertColRelativeConfig.position === "left"
+          ? `<i class="fa-solid fa-arrow-left"></i> Thêm cột bên trái${refName}`
+          : `<i class="fa-solid fa-arrow-right"></i> Thêm cột bên phải${refName}`;
+      } else {
+        titleEl.innerHTML = `<i class="fa-solid fa-plus"></i> Thêm cột mới`;
+      }
+      document.getElementById("editColId").value = "";
+      document.getElementById("colNameInput").value = "";
+      document.getElementById("colTypeInput").value = "text";
+      document.getElementById("columnModal").classList.add("active");
+      setTimeout(() => document.getElementById("colNameInput").focus(), 100);
+    }
+
+    function closeColumnModal() {
+      document.getElementById("columnModal").classList.remove("active");
+      insertColRelativeConfig = null;
+    }
+
+    function saveColumnFromModal() {
+      const name = document.getElementById("colNameInput").value.trim();
+      const type = document.getElementById("colTypeInput").value;
+      const editId = document.getElementById("editColId").value;
+
+      if (!name) {
+        toast("Vui lòng nhập tên cột!", "warning");
+        return;
+      }
+
+      if (editId) {
+        const col = dtData.columns.find(c => c.id === editId);
+        if (col) {
+          col.name = name;
+          col.type = type;
+        }
+        toast(`Đã cập nhật cột: ${name}`, "success");
+      } else {
+        const newCol = {
+          id: "col_" + Date.now(),
+          name,
+          type,
+          width: 180
+        };
+        if (insertColRelativeConfig) {
+          const idx = dtData.columns.findIndex(c => c.id === insertColRelativeConfig.colId);
+          if (idx !== -1) {
+            const insertIdx = insertColRelativeConfig.position === "left" ? idx : idx + 1;
+            dtData.columns.splice(insertIdx, 0, newCol);
+          } else {
+            dtData.columns.push(newCol);
+          }
+          insertColRelativeConfig = null;
+        } else {
+          dtData.columns.push(newCol);
+        }
+        toast(`Đã thêm cột mới: ${name}`, "success");
+      }
+
+      closeColumnModal();
+      saveState(true);
+      renderTable();
+    }
+
+    function editColumnById(colId) {
+      const col = dtData.columns.find(c => c.id === colId);
+      if (!col) return;
+      document.getElementById("colModalTitle").innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Đổi tên cột`;
+      document.getElementById("editColId").value = col.id;
+      document.getElementById("colNameInput").value = col.name;
+      document.getElementById("colTypeInput").value = col.type || "text";
+      document.getElementById("columnModal").classList.add("active");
+    }
+
+    function triggerEditColumn() {
+      if (currentContextColId) editColumnById(currentContextColId);
+    }
+
+    function triggerDeleteColumn() {
+      if (!currentContextColId) return;
+      if (dtData.columns.length <= 1) {
+        toast("Bảng cần có ít nhất 1 cột!", "warning");
+        return;
+      }
+      const col = dtData.columns.find(c => c.id === currentContextColId);
+      if (!col) return;
+
+      if (confirm(`Bạn có chắc chắn muốn xoá cột "${col.name}"? Toàn bộ dữ liệu của cột này sẽ bị xoá.`)) {
+        const delId = currentContextColId;
+        dtData.columns = dtData.columns.filter(c => c.id !== delId);
+        dtData.rows.forEach(r => delete r[delId]);
+        saveState(true);
+        renderTable();
+        toast(`Đã xoá cột "${col.name}"`, "info");
+      }
+    }
+
+    function sortCurrentColumn(direction) {
+      if (!currentContextColId) return;
+      const colId = currentContextColId;
+      dtData.rows.sort((a, b) => {
+        let valA = String(a[colId] || "").toLowerCase();
+        let valB = String(b[colId] || "").toLowerCase();
+        if (valA < valB) return direction === "asc" ? -1 : 1;
+        if (valA > valB) return direction === "asc" ? 1 : -1;
+        return 0;
+      });
+      saveState(true);
+      renderTableBody();
+      toast(`Đã sắp xếp theo ${direction === 'asc' ? 'A → Z' : 'Z → A'}`, "info");
+    }
+
+    /* ── COLUMN RESIZING & DRAG-DROP ── */
+    function attachColResizers() {
+      const resizers = document.querySelectorAll(".col-resizer");
+      resizers.forEach(resizer => {
+        const colId = resizer.dataset.colId;
+        const th = resizer.closest("th");
+        if (!th) return;
+
+        let startX = 0;
+        let startWidth = 0;
+
+        const onMouseMove = (e) => {
+          const delta = e.clientX - startX;
+          const newWidth = Math.max(60, startWidth + delta);
+          th.style.width = `${newWidth}px`;
+        };
+
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+          const col = dtData.columns.find(c => c.id === colId);
+          if (col) {
+            col.width = parseInt(th.style.width, 10);
+            saveState(true);
+          }
+        };
+
+        resizer.addEventListener("mousedown", (e) => {
+          e.stopPropagation();
+          startX = e.clientX;
+          startWidth = th.offsetWidth;
+          document.addEventListener("mousemove", onMouseMove);
+          document.addEventListener("mouseup", onMouseUp);
+        });
+      });
+    }
+
+    function attachColDragAndDrop() {
+      const ths = document.querySelectorAll("#tableHeaderRow th[data-col-id]");
+      let draggedColId = null;
+
+      ths.forEach(th => {
+        th.setAttribute("draggable", "true");
+        th.addEventListener("dragstart", (e) => {
+          draggedColId = th.dataset.colId;
+          e.dataTransfer.setData("text/plain", draggedColId);
+          th.style.opacity = "0.5";
+        });
+
+        th.addEventListener("dragend", () => {
+          th.style.opacity = "1";
+        });
+
+        th.addEventListener("dragover", (e) => {
+          e.preventDefault();
+        });
+
+        th.addEventListener("drop", (e) => {
+          e.preventDefault();
+          const targetColId = th.dataset.colId;
+          if (draggedColId && targetColId && draggedColId !== targetColId) {
+            const fromIdx = dtData.columns.findIndex(c => c.id === draggedColId);
+            const toIdx = dtData.columns.findIndex(c => c.id === targetColId);
+            if (fromIdx !== -1 && toIdx !== -1) {
+              const [moved] = dtData.columns.splice(fromIdx, 1);
+              dtData.columns.splice(toIdx, 0, moved);
+              saveState(true);
+              renderTable();
+            }
+          }
+        });
+      });
+    }
+
+    /* ── EXCEL EXPORT (PRO WITH XLSX-JS-STYLE) ── */
+    function exportToExcel() {
+      if (typeof XLSX === "undefined") {
+        toast("Thư viện SheetJS chưa sẵn sàng!", "warning");
+        return;
+      }
+
+      try {
+        const headerRow = ["STT", ...dtData.columns.map(c => c.name)];
+        const dataRows = dtData.rows.map((r, rIdx) => {
+          return [
+            rIdx + 1,
+            ...dtData.columns.map(c => r[c.id] || "")
+          ];
+        });
+
+        const wsData = [headerRow, ...dataRows];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Styling tokens
+        const headerFill = { fgColor: { rgb: "F1F5F9" } };
+        const headerFont = { name: "Segoe UI", sz: 11, bold: true, color: { rgb: "0F172A" } };
+        const headerBorder = {
+          top: { style: "thin", color: { rgb: "CBD5E1" } },
+          bottom: { style: "medium", color: { rgb: "94A3B8" } },
+          left: { style: "thin", color: { rgb: "E2E8F0" } },
+          right: { style: "thin", color: { rgb: "E2E8F0" } }
+        };
+        const cellBorder = {
+          top: { style: "thin", color: { rgb: "E2E8F0" } },
+          bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+          left: { style: "thin", color: { rgb: "E2E8F0" } },
+          right: { style: "thin", color: { rgb: "E2E8F0" } }
+        };
+
+        // Auto widths
+        const colWidths = [{ wch: 7 }]; // STT
+        dtData.columns.forEach((col, cIdx) => {
+          let maxLen = col.name.length;
+          dtData.rows.forEach(r => {
+            const val = String(r[col.id] || "");
+            if (val.length > maxLen) maxLen = val.length;
+          });
+          colWidths.push({ wch: Math.min(60, Math.max(12, maxLen + 4)) });
+        });
+        ws["!cols"] = colWidths;
+        ws["!rows"] = [{ hpt: 26 }];
+
+        // Apply styles to all cells
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellAddr]) continue;
+
+            if (R === 0) {
+              // Header
+              ws[cellAddr].s = {
+                fill: headerFill,
+                font: headerFont,
+                alignment: { vertical: "center", horizontal: C === 0 ? "center" : "left", wrapText: false },
+                border: headerBorder
+              };
+            } else {
+              // Data row
+              const rowObj = dtData.rows[R - 1];
+              let rowBg = null;
+              if (rowObj && rowObj.highlight) {
+                const hex = rowObj.highlight.replace("#", "").toUpperCase();
+                if (hex.length === 6) rowBg = { rgb: hex };
+              }
+              const isCenter = (C === 0 || C === 1 || C === 4); // STT, DT code, PREFIX
+              ws[cellAddr].s = {
+                font: { name: "Segoe UI", sz: 10, bold: C === 1, color: { rgb: C === 1 ? "0369A1" : "0F172A" } },
+                alignment: { vertical: "center", horizontal: isCenter ? "center" : "left", wrapText: false },
+                border: cellBorder,
+                fill: rowBg ? { fgColor: rowBg } : undefined
+              };
+            }
+          }
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_DT");
+        const todayIso = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `Danh_Sach_DT_${todayIso}.xlsx`);
+        toast("Đã xuất file thành công", "success");
+      } catch (err) {
+        console.error("Lỗi xuất Excel:", err);
+        toast("Lỗi khi xuất file Excel!", "danger");
+      }
+    }
+
+    /* ── EXCEL / CSV IMPORT ── */
+    function triggerImportFile() {
+      document.getElementById("excelFileInput").click();
+    }
+
+    function handleFileImport(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = evt.target.result;
+          const workbook = XLSX.read(data, { type: "binary" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawJson = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          if (!rawJson || rawJson.length < 2) {
+            toast("Tệp tải lên không có đủ dữ liệu hàng hoặc tiêu đề!", "warning");
+            return;
+          }
+
+          processImportData(rawJson);
+        } catch (err) {
+          console.error("Lỗi đọc file:", err);
+          toast("Không thể đọc tệp Excel/CSV này. Vui lòng thử lại!", "danger");
+        } finally {
+          e.target.value = "";
+        }
+      };
+
+      reader.readAsBinaryString(file);
+    }
+
+    function processImportData(rawJson) {
+      const headers = rawJson[0].map(h => String(h || "").trim());
+      const rowsData = rawJson.slice(1);
+
+      // Intelligent mapping for the 4 core columns
+      let dtColIdx = -1;
+      let nppColIdx = -1;
+      let issueColIdx = -1;
+      let prefixColIdx = -1;
+
+      headers.forEach((h, idx) => {
+        const lower = h.toLowerCase();
+        if (dtColIdx === -1 && (lower.includes("dt code") || lower.includes("mã dt") || lower === "dt" || lower === "code")) {
+          dtColIdx = idx;
+        } else if (nppColIdx === -1 && (lower.includes("npp") || lower.includes("nhà phân phối") || lower.includes("tên npp") || lower.includes("công ty"))) {
+          nppColIdx = idx;
+        } else if (issueColIdx === -1 && (lower.includes("issue") || lower.includes("tên đặt issue") || lower.includes("tên issue"))) {
+          issueColIdx = idx;
+        } else if (prefixColIdx === -1 && (lower.includes("prefix") || lower.includes("tiền tố"))) {
+          prefixColIdx = idx;
+        }
+      });
+
+      // Fallback by index if headers didn't match (0: DT, 1: NPP, 2: Issue, 3: Prefix)
+      if (dtColIdx === -1 && headers.length >= 1) dtColIdx = 0;
+      if (nppColIdx === -1 && headers.length >= 2) nppColIdx = 1;
+      if (issueColIdx === -1 && headers.length >= 3) issueColIdx = 2;
+      if (prefixColIdx === -1 && headers.length >= 4) prefixColIdx = 3;
+
+      const newRows = [];
+      rowsData.forEach(rowArr => {
+        if (!rowArr || rowArr.length === 0 || rowArr.every(val => val === undefined || val === null || String(val).trim() === "")) return;
+        const rowObj = {
+          id: "row_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+          col_dt_code: dtColIdx !== -1 ? String(rowArr[dtColIdx] || "").trim() : "",
+          col_npp_name: nppColIdx !== -1 ? String(rowArr[nppColIdx] || "").trim() : "",
+          col_issue_name: issueColIdx !== -1 ? String(rowArr[issueColIdx] || "").trim() : "",
+          col_prefix: prefixColIdx !== -1 ? String(rowArr[prefixColIdx] || "").trim() : ""
+        };
+        newRows.push(rowObj);
+      });
+
+      if (newRows.length === 0) {
+        toast("Không tìm thấy dòng dữ liệu hợp lệ trong file!", "warning");
+        return;
+      }
+
+      pendingImportRows = newRows;
+
+      // Populate summary modal
+      document.getElementById("importFileRowCount").textContent = `${newRows.length} dòng`;
+      const summaryBox = document.getElementById("importColMappingSummary");
+      summaryBox.innerHTML = `
+        <div style="margin-bottom: 4px;">• Cột <strong>DT code</strong> ➔ Cột [${dtColIdx + 1}]: <em>"${escapeHtml(headers[dtColIdx] || 'Không xác định')}"</em></div>
+        <div style="margin-bottom: 4px;">• Cột <strong>TÊN NPP</strong> ➔ Cột [${nppColIdx + 1}]: <em>"${escapeHtml(headers[nppColIdx] || 'Không xác định')}"</em></div>
+        <div style="margin-bottom: 4px;">• Cột <strong>Tên đặt issue</strong> ➔ Cột [${issueColIdx + 1}]: <em>"${escapeHtml(headers[issueColIdx] || 'Không xác định')}"</em></div>
+        <div>• Cột <strong>PREFIX</strong> ➔ Cột [${prefixColIdx + 1}]: <em>"${escapeHtml(headers[prefixColIdx] || 'Không xác định')}"</em></div>
+      `;
+
+      document.getElementById("importModal").classList.add("active");
+    }
+
+    function closeImportModal() {
+      document.getElementById("importModal").classList.remove("active");
+      pendingImportRows = [];
+    }
+
+    function confirmImport() {
+      if (!pendingImportRows || pendingImportRows.length === 0) return;
+      const mode = document.querySelector('input[name="importMode"]:checked')?.value || "replace";
+
+      if (mode === "replace") {
+        dtData.rows = pendingImportRows;
+      } else {
+        dtData.rows = [...dtData.rows, ...pendingImportRows];
+      }
+
+      closeImportModal();
+      saveState(true);
+      renderTable();
+      toast(`Đã nhập thành công ${pendingImportRows.length} đối tác/NPP!`, "success");
+    }
+
+    /* ── HIGHLIGHT PALETTE ── */
+    let currentHighlightTarget = 'cell';
+
+    function initHighlightSwatches() {
+      const grid = document.getElementById("highlightSwatchesGrid");
+      if (!grid) return;
+      grid.innerHTML = HIGHLIGHT_COLORS.map(c => `
+        <div class="highlight-swatch"
+          style="background: ${c.bg}; border-color: ${c.border}; width: 100%; height: 26px; border-radius: 4px;"
+          title="${c.name}"
+          onclick="applyHighlightColor('${c.bg}')"></div>
+      `).join("");
+    }
+
+    function setHighlightTarget(target) {
+      currentHighlightTarget = target;
+      document.getElementById("hlTabCell")?.classList.toggle("active", target === 'cell');
+      document.getElementById("hlTabRow")?.classList.toggle("active", target === 'row');
+      const label = document.getElementById("highlightTargetLabel");
+      if (label) label.textContent = target === 'cell' ? 'Ô' : 'Dòng';
+    }
+
+    function openHighlightPalette(e, forceTarget) {
+      if (e) e.stopPropagation();
+      if (forceTarget) setHighlightTarget(forceTarget);
+      const menu = document.getElementById("highlightPaletteDropdown");
+      if (!menu) return;
+      const btn = e.target.closest("button") || document.getElementById("btnHighlightMenu");
+      const rect = btn.getBoundingClientRect();
+      menu.style.display = "block";
+      menu.style.top = `${rect.bottom + 6}px`;
+      menu.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`;
+    }
+
+    function applyHighlightColor(color) {
+      const dropdown = document.getElementById("highlightPaletteDropdown");
+      if (dropdown) dropdown.style.display = "none";
+
+      if (currentHighlightTarget === 'row') {
+        if (selectedRowIds.size > 0) {
+          selectedRowIds.forEach(id => {
+            const row = dtData.rows.find(r => r.id === id);
+            if (row) row.highlight = color;
+          });
+          toast(`Đã tô màu cho ${selectedRowIds.size} dòng đã chọn`, "success");
+        } else if (activeSelectedCell) {
+          const row = dtData.rows.find(r => r.id === activeSelectedCell.rowId);
+          if (row) row.highlight = color;
+          toast("Đã tô màu dòng", "success");
+        }
+      } else {
+        // Cell highlight
+        if (activeSelectedCell) {
+          const row = dtData.rows.find(r => r.id === activeSelectedCell.rowId);
+          if (row) {
+            if (!row.highlights) row.highlights = {};
+            row.highlights[activeSelectedCell.colId] = color;
+            toast("Đã tô màu ô đang chọn", "success");
+          }
+        } else {
+          toast("Vui lòng chọn 1 ô trước khi tô màu!", "info");
+        }
+      }
+
+      saveState(true);
+      renderTableBody();
+    }
+
+    function clearActiveHighlight() {
+      const dropdown = document.getElementById("highlightPaletteDropdown");
+      if (dropdown) dropdown.style.display = "none";
+
+      if (selectedRowIds.size > 0) {
+        selectedRowIds.forEach(id => {
+          const row = dtData.rows.find(r => r.id === id);
+          if (row) {
+            delete row.highlight;
+            delete row.highlights;
+          }
+        });
+      } else if (activeSelectedCell) {
+        const row = dtData.rows.find(r => r.id === activeSelectedCell.rowId);
+        if (row) {
+          if (currentHighlightTarget === 'row') {
+            delete row.highlight;
+          } else if (row.highlights) {
+            delete row.highlights[activeSelectedCell.colId];
+          }
+        }
+      }
+      saveState(true);
+      renderTableBody();
+      toast("Đã xoá màu Highlight", "info");
+    }
+
+    /* ── BULK ACTIONS ── */
+    function lockSelectedRows(lock) {
+      if (selectedRowIds.size === 0) return;
+      selectedRowIds.forEach(id => {
+        const row = dtData.rows.find(r => r.id === id);
+        if (row) row.locked = lock;
+      });
+      saveState(true);
+      renderTableBody();
+      toast(lock ? `Đã khoá ${selectedRowIds.size} dòng đã chọn` : `Đã mở khoá ${selectedRowIds.size} dòng`, "info");
+    }
+
+    function deleteSelectedRows() {
+      if (selectedRowIds.size === 0) return;
+      const count = selectedRowIds.size;
+      if (confirm(`Bạn có chắc chắn muốn xoá ${count} dòng đã chọn không?`)) {
+        dtData.rows = dtData.rows.filter(r => !selectedRowIds.has(r.id) || r.locked);
+        selectedRowIds.clear();
+        saveState(true);
+        renderTableBody();
+        toast(`Đã xoá các dòng đã chọn`, "info");
+      }
+    }
+
+    /* ── HELPER UTILS ── */
+    function escapeHtml(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function toast(msg, type = "info") {
+      const container = document.getElementById("toastContainer");
+      if (!container) return;
+      const t = document.createElement("div");
+      t.className = `toast ${type}`;
+      const icon = type === "success" ? "fa-circle-check" : type === "warning" ? "fa-triangle-exclamation" : type === "danger" ? "fa-circle-exclamation" : "fa-circle-info";
+      t.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+      container.appendChild(t);
+      setTimeout(() => {
+        t.style.opacity = "0";
+        t.style.transform = "translateY(10px)";
+        t.style.transition = "all 0.2s";
+        setTimeout(() => t.remove(), 200);
+      }, 3000);
+    }
+
+    /* ── EVENT LISTENERS ── */
+    function setupEventListeners() {
+      initHighlightSwatches();
+      const on = (id, event, handler) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+      };
+
+      on("btnAddRow", "click", addNewRow);
+      on("btnExportExcel", "click", exportToExcel);
+      on("btnImportFile", "click", triggerImportFile);
+      on("excelFileInput", "change", handleFileImport);
+      on("btnConfirmImport", "click", confirmImport);
+
+      on("btnAddColumnBtn", "click", openAddColumnModal);
+      on("btnSaveColumn", "click", saveColumnFromModal);
+      const colNameInp = document.getElementById("colNameInput");
+      if (colNameInp) {
+        colNameInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            saveColumnFromModal();
+          }
+        });
+      }
+
+      on("btnHighlightMenu", "click", (e) => openHighlightPalette(e));
+      on("btnHighlightSelected", "click", (e) => openHighlightPalette(e, 'row'));
+      on("btnLockSelected", "click", () => lockSelectedRows(true));
+      on("btnUnockSelected", "click", () => lockSelectedRows(false));
+      on("btnDeleteSelected", "click", deleteSelectedRows);
+
+      on("btnUndo", "click", undo);
+      on("btnRedo", "click", redo);
+      window.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+          e.preventDefault();
+          undo();
+        } else if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
+          e.preventDefault();
+          redo();
+        }
+      });
+
+      // Quick Search
+      const searchInp = document.getElementById("globalSearchInput");
+      const clearBtn = document.getElementById("searchClearBtn");
+      if (searchInp) {
+        searchInp.addEventListener("input", () => {
+          if (clearBtn) clearBtn.style.display = searchInp.value ? "block" : "none";
+          renderTableBody();
+          updateStats();
+        });
+        searchInp.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            searchInp.value = "";
+            if (clearBtn) clearBtn.style.display = "none";
+            renderTableBody();
+            updateStats();
+          }
+        });
+      }
+      if (clearBtn && searchInp) {
+        clearBtn.addEventListener("click", () => {
+          searchInp.value = "";
+          clearBtn.style.display = "none";
+          renderTableBody();
+          updateStats();
+        });
+      }
+
+      // Close dropdown menus on outside click
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#highlightPaletteDropdown") && !e.target.closest("#btnHighlightMenu") && !e.target.closest("#btnHighlightSelected")) {
+          const hl = document.getElementById("highlightPaletteDropdown");
+          if (hl) hl.style.display = "none";
+        }
+        document.querySelectorAll(".dropdown-menu:not(#highlightPaletteDropdown)").forEach(m => m.style.display = "none");
+      });
+    }
+  </script>
+</body>
+</html>
