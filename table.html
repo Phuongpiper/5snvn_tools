@@ -1593,6 +1593,170 @@
       color: var(--danger);
     }
 
+    /* ── DT CODE & DT NAME BADGES & PICKER ── */
+    .dt-code-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      transition: all 0.15s ease;
+    }
+    .dt-code-badge i {
+      font-size: 11px;
+      color: #6366f1;
+    }
+    .dt-code-badge:hover {
+      background: #e0e7ff;
+      border-color: #a5b4fc;
+    }
+
+    .dt-name-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      background: #f0f9ff;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+      font-weight: 600;
+      font-size: 12.5px;
+      transition: all 0.15s ease;
+    }
+    .dt-name-badge i {
+      font-size: 11px;
+      color: #0284c7;
+    }
+    .dt-name-badge:hover {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+    }
+
+    /* DT Picker Popup */
+    .dt-picker-popup {
+      position: fixed;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xl);
+      padding: 10px;
+      width: 360px;
+      max-height: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1000;
+      animation: fadeIn 0.12s ease-out;
+    }
+
+    .dt-picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .dt-picker-search {
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .dt-picker-search:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .dt-picker-list {
+      overflow-y: auto;
+      max-height: 270px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .dt-picker-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 12.5px;
+      gap: 10px;
+      border: 1px solid transparent;
+      transition: all 0.12s;
+    }
+
+    .dt-picker-item:hover {
+      background: var(--surface-hover);
+      border-color: var(--border);
+    }
+
+    .dt-picker-item.active {
+      background: var(--primary-light);
+      border-color: var(--primary-border);
+    }
+
+    .dt-code-pill {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 5px;
+      background: #eef2ff;
+      color: #4338ca;
+      border: 1px solid #c7d2fe;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .dt-picker-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dt-picker-name {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 12.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dt-picker-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     /* ── TOAST NOTIFICATIONS ── */
     .toast-container {
       position: fixed;
@@ -1824,6 +1988,8 @@
           <label>Kiểu dữ liệu ô:</label>
           <select id="colTypeInput" class="form-control">
             <option value="text">📝 Văn bản (Text)</option>
+            <option value="dt_code">🏢 DT code (Mã NPP - Gợi ý từ Danh sách DT)</option>
+            <option value="dt_name">🏪 DT name (Tên NPP - Gợi ý từ Danh sách DT)</option>
             <option value="project">📁 Dự án (Project - Link từ Task)</option>
             <option value="date">📅 Chọn ngày (Date Picker)</option>
             <option value="member">👤 Chọn nhân viên (Assignee - Link từ Task)</option>
@@ -2075,6 +2241,125 @@
       return base + "/api/r2-table" + (queryParam ? sep + queryParam : "");
     }
 
+    /* ──────────────────────────────────────────────────────────────────────────
+       DANH SÁCH ĐỐI TÁC & NPP (DT LIST INTEGRATION)
+    ────────────────────────────────────────────────────────────────────────── */
+    const DEFAULT_DT_PARTNERS = [
+      { code: "6243208", name: "Cong ty TNHH DT va TM Dich Vu Phuc Hung", issue: "NPP Phuc Hung", prefix: "243G" },
+      { code: "6243223", name: "Cong ty TNHH Gia Phat", issue: "NPP Gia Phat 244", prefix: "244G" },
+      { code: "6081632", name: "Cty TNHH MTV TM Duc Tai - Lai Chau", issue: "NPP Duc Tai", prefix: "209G" },
+      { code: "6147584", name: "Cty Co Phan Luong Hang", issue: "NPP Luong Hang", prefix: "215G" },
+      { code: "6736235", name: "Cong ty TNHH MTV Van Anh Vinh Long", issue: "NPP Van Anh", prefix: "278G" },
+      { code: "6177941", name: "Cty TNHH Tan Thinh Hung Thai Binh", issue: "NPP Thinh Hung", prefix: "228G" },
+      { code: "6231480", name: "Cong ty TNHH Thuong Mai Vinh Chau", issue: "NPP Vinh Chau", prefix: "242G" },
+      { code: "6290148", name: "Cong ty TNHH TM Phap Van", issue: "NPP Phap Van", prefix: "254G" },
+      { code: "6181234", name: "Cty Co Phan Dau Tu & Phat Trien PMC Viet Nam", issue: "NPP PMC", prefix: "229G" },
+      { code: "6181235", name: "Cty TNHH Thuong Mai Va Dich Vu Hung Thinh", issue: "NPP Hung Thinh", prefix: "230G" },
+      { code: "6218262", name: "Cong ty TNHH Dau Tu Huong Phat", issue: "NPP Huong Phat", prefix: "239G" },
+      { code: "2529564", name: "Cty TNHH Chau Hiep", issue: "NPP Chau Hiep", prefix: "037G" },
+      { code: "2529650", name: "Cong Ty TNHH Phuc Dai Viet", issue: "NPP Phuc Dai Viet", prefix: "003G" },
+      { code: "3864654", name: "Cty TNHH Thuong Mai AT", issue: "NPP AT", prefix: "011G" },
+      { code: "2529582", name: "CTY TNHH TMDV Hang Thuan", issue: "NPP Hang Thuan", prefix: "018G" },
+      { code: "2529543", name: "CTY TNHH TM&DV Mesa", issue: "NPP Mesa HN", prefix: "019G" },
+      { code: "4108499", name: "Cty CPDT Thuong Mai Hoang Son", issue: "NPP Hoang Son", prefix: "020G" },
+      { code: "2529672", name: "Cty TNHH 1 TV Thai Duong", issue: "NPP Thai Duong", prefix: "027G" },
+      { code: "5049456", name: "Cong ty TNHH Dau Tu Thuong Mai Va Dich Vu Lan Chi", issue: "NPP Lan Chi", prefix: "028G" },
+      { code: "5636676", name: "Cty TNHH Dich Vu Ha Phuong Viet Nam", issue: "NPP Ha Phuong", prefix: "176G" },
+      { code: "2529565", name: "CTY TNHH Phu Phuong", issue: "NPP Phu Phuong", prefix: "029G" },
+      { code: "5198514", name: "Cong ty TNHH Mot Thanh Vien Ho Nham", issue: "NPP Ho Nham", prefix: "040G" },
+      { code: "2529562", name: "Cong Ty TNHH Ngoc Vinh", issue: "NPP Ngoc Vinh", prefix: "042G" },
+      { code: "4366629", name: "NPP Phuc Thinh (Thang 08/2026)", issue: "PhiTBThang082026_Hang", prefix: "" },
+      { code: "7288950", name: "NPP Tan Tien", issue: "PhiTBThang082026_Hang", prefix: "" },
+      { code: "3953467", name: "NPP Hung Phat", issue: "NCF_RURAL_1026_C", prefix: "" },
+      { code: "2529648", name: "NPP Phuong Dong", issue: "PhiTBThang082026_Hang", prefix: "" }
+    ];
+
+    let cachedDtList = [];
+
+    function extractDtItem(row, columns = []) {
+      if (!row || typeof row !== "object") return { code: "", name: "", issue: "", prefix: "" };
+      let code = row.col_dt_code || row.dt_code || row.dtCode || row["DT code"] || row["Mã DT"] || row["DT Code"] || "";
+      let name = row.col_npp_name || row.npp_name || row.nppName || row["TÊN NPP"] || row["Tên NPP"] || row["Ten NPP"] || "";
+      let issue = row.col_issue_name || row.issue_name || row.issueName || row["Tên đặt issue"] || "";
+      let prefix = row.col_prefix || row.prefix || row["PREFIX"] || "";
+
+      if ((!code || !name) && Array.isArray(columns) && columns.length > 0) {
+        columns.forEach(col => {
+          const lower = String(col.name || "").toLowerCase();
+          if (!code && (lower.includes("dt code") || lower.includes("mã dt") || lower.includes("mã npp"))) {
+            code = String(row[col.id] || "").trim();
+          }
+          if (!name && (lower.includes("tên npp") || lower.includes("nhà phân phối") || lower.includes("ten npp"))) {
+            name = String(row[col.id] || "").trim();
+          }
+          if (!issue && (lower.includes("issue") || lower.includes("tên đặt"))) {
+            issue = String(row[col.id] || "").trim();
+          }
+          if (!prefix && lower.includes("prefix")) {
+            prefix = String(row[col.id] || "").trim();
+          }
+        });
+      }
+      return {
+        code: String(code || "").trim(),
+        name: String(name || "").trim(),
+        issue: String(issue || "").trim(),
+        prefix: String(prefix || "").trim()
+      };
+    }
+
+    function getAvailableDtList() {
+      if (cachedDtList && cachedDtList.length > 0) return cachedDtList;
+      try {
+        const raw = localStorage.getItem("DMS_DT_LIST_DATA_V1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.rows) && parsed.rows.length > 0) {
+            cachedDtList = parsed.rows.map(r => extractDtItem(r, parsed.columns)).filter(item => item.code || item.name);
+            if (cachedDtList.length > 0) return cachedDtList;
+          }
+        }
+      } catch (e) {}
+      cachedDtList = DEFAULT_DT_PARTNERS.map(r => extractDtItem(r));
+      return cachedDtList;
+    }
+
+    async function syncDtListFromCloud() {
+      try {
+        let endpoint = "/api/r2-dt";
+        if (window.location.protocol === "file:") {
+          endpoint = "https://search-dms-tool.vercel.app/api/r2-dt";
+        } else if (tableApiBaseOverride) {
+          endpoint = tableApiBaseOverride + "/api/r2-dt";
+        }
+        const sep = endpoint.includes("?") ? "&" : "?";
+        let res;
+        try {
+          res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
+        } catch (_) {
+          if (!endpoint.includes("search-dms-tool.vercel.app")) {
+            res = await fetch(`https://search-dms-tool.vercel.app/api/r2-dt?t=${Date.now()}`, { cache: "no-cache" });
+          }
+        }
+        if (res && res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.rows) && data.rows.length > 0) {
+            cachedDtList = data.rows.map(r => extractDtItem(r, data.columns)).filter(item => item.code || item.name);
+            localStorage.setItem("DMS_DT_LIST_DATA_V1", JSON.stringify(data));
+          }
+        }
+      } catch (e) {}
+    }
+
+    const dtSyncChannel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("DMS_DT_SYNC") : null;
+    if (dtSyncChannel) {
+      dtSyncChannel.onmessage = (e) => {
+        if (e.data && e.data.type === "DT_UPDATED") {
+          syncDtListFromCloud();
+        }
+      };
+    }
+
     function getMemberInfo(name) {
       if (!name) return { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
       let hash = 0;
@@ -2276,6 +2561,7 @@
       renderAll();
       syncProjectsFromTaskBackend();
       syncMembersFromTaskBackend();
+      syncDtListFromCloud();
       fetchTableFromCloud();
       startTableAutoSync();
       try {
@@ -2297,6 +2583,7 @@
       startTableAutoSync();
       syncProjectsFromTaskBackend();
       syncMembersFromTaskBackend();
+      syncDtListFromCloud();
     });
 
     window.addEventListener("message", (e) => {
@@ -2305,6 +2592,7 @@
         startTableAutoSync();
         syncProjectsFromTaskBackend();
         syncMembersFromTaskBackend();
+        syncDtListFromCloud();
       }
     });
 
@@ -2314,6 +2602,7 @@
       } else {
         fetchTableFromCloud(true);
         startTableAutoSync();
+        syncDtListFromCloud();
       }
     });
 
@@ -2321,6 +2610,9 @@
       if (e.key === "app_projects_data" || e.key === "app_tasks_data" || e.key === "app_members_data") {
         initMembers();
         renderFilterOptions();
+      }
+      if (e.key === "DMS_DT_LIST_DATA_V1") {
+        cachedDtList = null;
       }
     });
 
@@ -3014,8 +3306,9 @@
         headerHtml += `
           <th data-col-id="${col.id}" style="width: ${colWidth}px; min-width: 60px;" title="Kéo thả để đổi thứ tự cột (Nhấp đúp để đổi tên, Chuột phải để mở menu cột)" oncontextmenu="event.preventDefault(); openColContextMenu(event, '${col.id}')">
             <div class="th-content">
-              <div class="th-title-wrap" ondblclick="editColumnById('${col.id}')">
+              <div class="th-title-wrap" ondblclick="editColumnById('${col.id}')" title="Kiểu dữ liệu: ${typeName}">
                 <i class="fa-solid fa-grip-vertical col-drag-grip" title="Kéo để đổi vị trí cột"></i>
+                <span class="th-type-icon" style="font-size:11px; opacity:0.65; margin-right:3px; display:inline-flex; align-items:center;">${typeIcon}</span>
                 <span class="th-name">${escapeHtml(col.name)}</span>
               </div>
               <button class="th-menu-btn" onclick="openColContextMenu(event, '${col.id}')" title="Tuỳ chọn cột">
@@ -3151,6 +3444,26 @@
       }
 
       switch (col.type) {
+        case "dt_code":
+          const partnerForCode = getAvailableDtList().find(d => d.code === String(val).trim());
+          const codeTip = partnerForCode ? `${partnerForCode.code} - ${partnerForCode.name}` : String(val);
+          return `
+            <span class="dt-code-badge" title="${escapeHtml(codeTip)}">
+              <i class="fa-solid fa-id-badge"></i>
+              ${escapeHtml(String(val))}
+            </span>
+          `;
+
+        case "dt_name":
+          const partnerForName = getAvailableDtList().find(d => d.name === String(val).trim());
+          const nameTip = partnerForName ? `Mã DT: ${partnerForName.code}` : String(val);
+          return `
+            <span class="dt-name-badge" title="${escapeHtml(nameTip)}">
+              <i class="fa-solid fa-store"></i>
+              ${escapeHtml(String(val))}
+            </span>
+          `;
+
         case "project":
           const pInfo = getProjectInfo(val);
           return `
@@ -3278,6 +3591,12 @@
       if (!row || row.locked) return;
 
       const currentVal = row[colId] || "";
+
+      // 0. DT CODE / DT NAME PICKER (LINK TỪ DANH SÁCH DT)
+      if (type === "dt_code" || type === "dt_name") {
+        openDtPicker(td, rowId, colId, type, currentVal);
+        return;
+      }
 
       // 0. PROJECT PICKER
       if (type === "project") {
@@ -3712,8 +4031,191 @@
       toast(`Đã thêm dự án: ${cleanName}`, "success");
     }
 
+    /* ── DT CODE & DT NAME PICKER POPUP (LINK TỪ DANH SÁCH DT) ── */
+    function openDtPicker(td, rowId, colId, type, currentVal) {
+      closeAllPickers();
+
+      const rect = td.getBoundingClientRect();
+      const popup = document.createElement("div");
+      popup.className = "dt-picker-popup";
+      popup.id = "activeDtPicker";
+
+      const popupWidth = 360;
+      let left = rect.left;
+      if (left + popupWidth > window.innerWidth - 16) {
+        left = window.innerWidth - popupWidth - 16;
+      }
+      if (left < 16) left = 16;
+
+      let top = rect.bottom + 4;
+      if (top + 400 > window.innerHeight) {
+        top = Math.max(10, rect.top - 405);
+      }
+
+      popup.style.top = `${top}px`;
+      popup.style.left = `${left}px`;
+
+      const isCode = type === "dt_code";
+      const titleIcon = isCode ? `<i class="fa-solid fa-id-badge" style="color:#6366f1; margin-right:5px;"></i>` : `<i class="fa-solid fa-store" style="color:#0284c7; margin-right:5px;"></i>`;
+      const titleText = isCode ? "Chọn Mã DT (DT code)" : "Chọn Tên NPP (DT name)";
+
+      popup.innerHTML = `
+        <div class="dt-picker-header">
+          <span>${titleIcon} ${titleText}</span>
+          <span style="font-size:10.5px; color:var(--text-light); font-weight:normal;">Từ Danh sách DT</span>
+        </div>
+        <input type="text" class="dt-picker-search" id="dtSearchInp" placeholder="Tìm theo Mã DT, Tên NPP, Prefix..." value="${escapeHtml(currentVal || '')}" />
+        <div class="dt-picker-list" id="dtPickerList"></div>
+        <div class="member-picker-clear" id="dtClearBtn">
+          <i class="fa-regular fa-circle-xmark"></i> Bỏ chọn (để trống ô)
+        </div>
+      `;
+
+      document.body.appendChild(popup);
+
+      const searchInput = popup.querySelector("#dtSearchInp");
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+
+      const listEl = popup.querySelector("#dtPickerList");
+      const clearBtn = popup.querySelector("#dtClearBtn");
+      if (clearBtn) {
+        clearBtn.onclick = (e) => {
+          e.stopPropagation();
+          updateCellValue(rowId, colId, "");
+          popup.remove();
+        };
+      }
+
+      const allDtList = getAvailableDtList();
+
+      const renderList = (filter = "") => {
+        if (!listEl) return;
+        listEl.innerHTML = "";
+        const cleanFilter = filter.toLowerCase().trim();
+
+        const filtered = allDtList.filter(item => {
+          if (!cleanFilter) return true;
+          return (
+            (item.code && item.code.toLowerCase().includes(cleanFilter)) ||
+            (item.name && item.name.toLowerCase().includes(cleanFilter)) ||
+            (item.issue && item.issue.toLowerCase().includes(cleanFilter)) ||
+            (item.prefix && item.prefix.toLowerCase().includes(cleanFilter))
+          );
+        });
+
+        if (filtered.length === 0 && !cleanFilter) {
+          listEl.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:16px 10px; font-size:12px;">Chưa có dữ liệu trong Danh sách DT.<br>Vui lòng nạp dữ liệu tại tab Danh sách DT.</div>`;
+        }
+
+        filtered.slice(0, 100).forEach(item => {
+          const div = document.createElement("div");
+          const isSelected = isCode ? (item.code === currentVal) : (item.name === currentVal);
+          div.className = `dt-picker-item ${isSelected ? 'active' : ''}`;
+          div.innerHTML = `
+            <span class="dt-code-pill">${escapeHtml(item.code || '—')}</span>
+            <div class="dt-picker-info">
+              <div class="dt-picker-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name || '—')}</div>
+              ${item.issue || item.prefix ? `
+                <div class="dt-picker-sub">
+                  ${item.issue ? `<span><i class="fa-solid fa-tag"></i> ${escapeHtml(item.issue)}</span>` : ''}
+                  ${item.prefix ? `<span style="background:#f1f5f9; padding:1px 5px; border-radius:4px; font-family:var(--font-mono);">${escapeHtml(item.prefix)}</span>` : ''}
+                </div>
+              ` : ''}
+            </div>
+            ${isSelected ? '<i class="fa-solid fa-check check-icon" style="color:var(--primary); font-size:11px;"></i>' : ''}
+          `;
+
+          div.onclick = (e) => {
+            e.stopPropagation();
+            applyDtSelection(item);
+            popup.remove();
+          };
+
+          listEl.appendChild(div);
+        });
+
+        // If filter has value, allow using custom typed value
+        if (cleanFilter) {
+          const customItem = document.createElement("div");
+          customItem.className = "dt-picker-item";
+          customItem.style.color = "var(--primary)";
+          customItem.style.fontWeight = "600";
+          customItem.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-check-to-slot"></i>
+              <span>Sử dụng giá trị: "${escapeHtml(filter.trim())}"</span>
+            </div>
+          `;
+          customItem.onclick = (e) => {
+            e.stopPropagation();
+            updateCellValue(rowId, colId, filter.trim());
+            popup.remove();
+          };
+          listEl.appendChild(customItem);
+        }
+      };
+
+      const applyDtSelection = (item) => {
+        const valToSet = isCode ? item.code : item.name;
+        updateCellValue(rowId, colId, valToSet);
+
+        // Auto-pair with counterpart column in the same sheet if present
+        const sheet = getActiveSheet();
+        if (sheet && Array.isArray(sheet.columns)) {
+          const counterpartType = isCode ? "dt_name" : "dt_code";
+          const counterpartCol = sheet.columns.find(c => c.type === counterpartType);
+          if (counterpartCol) {
+            const counterpartVal = isCode ? item.name : item.code;
+            if (counterpartVal) {
+              const row = sheet.rows.find(r => r.id === rowId);
+              if (row && (!row[counterpartCol.id] || row[counterpartCol.id] === "")) {
+                updateCellValue(rowId, counterpartCol.id, counterpartVal);
+                toast(`Đã tự động điền ${counterpartCol.name}: ${counterpartVal}`, "info");
+              }
+            }
+          }
+        }
+      };
+
+      renderList(searchInput.value || "");
+
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          renderList(e.target.value);
+        });
+
+        searchInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const firstItem = listEl.querySelector(".dt-picker-item");
+            if (firstItem) {
+              firstItem.click();
+            } else if (searchInput.value.trim()) {
+              updateCellValue(rowId, colId, searchInput.value.trim());
+              popup.remove();
+            }
+          } else if (e.key === "Escape") {
+            popup.remove();
+          }
+        });
+      }
+
+      setTimeout(() => {
+        const closeHandler = (e) => {
+          if (!popup.contains(e.target) && e.target !== td) {
+            popup.remove();
+            document.removeEventListener("click", closeHandler);
+          }
+        };
+        document.addEventListener("click", closeHandler);
+      }, 10);
+    }
+
     function closeAllPickers() {
-      document.querySelectorAll(".member-picker-popup, .status-picker-popup, .project-picker-popup").forEach(el => el.remove());
+      document.querySelectorAll(".member-picker-popup, .status-picker-popup, .project-picker-popup, .dt-picker-popup").forEach(el => el.remove());
     }
 
     function updateCellValue(rowId, colId, value) {
@@ -4592,11 +5094,21 @@
         toast(`Đã cập nhật cột: ${name}`, "success");
       } else {
         // Add new
+        const defaultWidths = {
+          dt_code: 140,
+          dt_name: 260,
+          date: 135,
+          status: 140,
+          member: 160,
+          project: 180,
+          checkbox: 90
+        };
         const newCol = {
           id: "col_" + Date.now(),
           name,
           type,
-          options
+          options,
+          width: defaultWidths[type] || 160
         };
 
         if (insertColRelativeConfig) {
@@ -4773,6 +5285,8 @@
       if (col.type === "member") extra = 80;
       if (col.type === "status") extra = 80;
       if (col.type === "date") extra = 95;
+      if (col.type === "dt_code") extra = 70;
+      if (col.type === "dt_name") extra = 85;
 
       const fittedWidth = Math.max(90, Math.min(500, Math.round(maxLen * 8.5 + extra)));
       col.width = fittedWidth;
@@ -5233,6 +5747,8 @@
             if (c.type === "project" && colWidths[colPos] < 15) colWidths[colPos] = 15;
             if (c.type === "member" && colWidths[colPos] < 18) colWidths[colPos] = 18;
             if (c.type === "checkbox" && colWidths[colPos] < 10) colWidths[colPos] = 10;
+            if (c.type === "dt_code" && colWidths[colPos] < 16) colWidths[colPos] = 16;
+            if (c.type === "dt_name" && colWidths[colPos] < 28) colWidths[colPos] = 28;
           });
 
           const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -5315,6 +5831,15 @@
               if (col.type === "date") {
                 alignH = "center";
                 fontColor = "334155";
+              } else if (col.type === "dt_code") {
+                alignH = "center";
+                ws[cellRef].t = "s"; // Ensure string format to preserve leading zeroes
+                ws[cellRef].v = String(val !== undefined && val !== null ? val : "");
+                fontColor = "4338CA";
+                isBold = true;
+              } else if (col.type === "dt_name") {
+                alignH = "left";
+                fontColor = "0F172A";
               } else if (col.type === "number") {
                 alignH = "right";
                 if (typeof ws[cellRef].v === "number") {
@@ -5648,6 +6173,8 @@
 
     function getTypeIcon(type) {
       switch (type) {
+        case "dt_code": return `<i class="fa-solid fa-id-badge" style="color:#6366f1;"></i>`;
+        case "dt_name": return `<i class="fa-solid fa-store" style="color:#0284c7;"></i>`;
         case "project": return `<i class="fa-solid fa-folder-open" style="color:#0ea5e9;"></i>`;
         case "date": return `<i class="fa-regular fa-calendar" style="color:#0284c7;"></i>`;
         case "member": return `<i class="fa-solid fa-user-tag" style="color:#4f46e5;"></i>`;
@@ -5662,6 +6189,8 @@
 
     function getTypeName(type) {
       switch (type) {
+        case "dt_code": return "DT code (Mã NPP)";
+        case "dt_name": return "DT name (Tên NPP)";
         case "project": return "Project";
         case "date": return "Date";
         case "member": return "User";
@@ -5818,6 +6347,11 @@
         colTypeInput.addEventListener("change", (e) => {
           const optGroup = document.getElementById("colOptionsGroup");
           if (optGroup) optGroup.style.display = e.target.value === "status" ? "flex" : "none";
+          const colNameInp = document.getElementById("colNameInput");
+          if (colNameInp && !colNameInp.value.trim()) {
+            if (e.target.value === "dt_code") colNameInp.value = "DT Code";
+            else if (e.target.value === "dt_name") colNameInp.value = "DT Name";
+          }
         });
       }
 
