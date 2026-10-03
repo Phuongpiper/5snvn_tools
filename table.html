@@ -865,6 +865,21 @@
       gap: 6px;
       color: var(--success-text);
       font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .autosave-status.saving {
+      color: var(--warning-text);
+    }
+    .autosave-status.saving .autosave-dot {
+      background: var(--warning);
+    }
+
+    .autosave-status.error {
+      color: var(--danger-text);
+    }
+    .autosave-status.error .autosave-dot {
+      background: var(--danger);
     }
 
     .autosave-dot {
@@ -874,6 +889,7 @@
       background: var(--success);
       display: inline-block;
       animation: pulse 2s infinite;
+      transition: background 0.2s;
     }
 
     @keyframes pulse {
@@ -1844,6 +1860,25 @@
       return base + "/api/r2-tasks" + (queryParam ? sep + queryParam : "");
     }
 
+    function getTableApiEndpoint(queryParam = "") {
+      let base = "";
+      if (window.location.protocol === "file:") {
+        const wUrl = localStorage.getItem("NVN_TASK_WORKER_URL") || localStorage.getItem("r2_worker_url") || "";
+        if (wUrl) {
+          try {
+            const urlObj = new URL(wUrl);
+            base = urlObj.origin;
+          } catch (e) {
+            base = "https://search-dms-tool.vercel.app";
+          }
+        } else {
+          base = "https://search-dms-tool.vercel.app";
+        }
+      }
+      const sep = queryParam ? (queryParam.startsWith("?") ? "" : "?") : "";
+      return base + "/api/r2-table" + (queryParam ? sep + queryParam : "");
+    }
+
     function getMemberInfo(name) {
       if (!name) return { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
       let hash = 0;
@@ -2032,14 +2067,21 @@
     let insertColRelativeConfig = null;
 
     /* ──────────────────────────────────────────────────────────────────────────
-       INITIALIZATION
+       INITIALIZATION & CLOUD SYNC
     ────────────────────────────────────────────────────────────────────────── */
+    let tableSyncIntervalId = null;
+    let currentTableEtag = localStorage.getItem("r2_table_etag") || "";
+    let cloudSaveTimer = null;
+    let isCloudSaving = false;
+
     function initApp() {
       initMembers();
       loadState();
       renderAll();
       syncProjectsFromTaskBackend();
       syncMembersFromTaskBackend();
+      fetchTableFromCloud();
+      startTableAutoSync();
       try {
         setupEventListeners();
       } catch (err) {
@@ -2055,18 +2097,27 @@
 
     // Re-render / sync when iframe tab is activated or becomes visible
     window.addEventListener("pageshow", () => {
-      loadState();
-      renderAll();
+      fetchTableFromCloud(true);
+      startTableAutoSync();
       syncProjectsFromTaskBackend();
       syncMembersFromTaskBackend();
     });
 
     window.addEventListener("message", (e) => {
       if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
-        loadState();
-        renderAll();
+        fetchTableFromCloud(true);
+        startTableAutoSync();
         syncProjectsFromTaskBackend();
         syncMembersFromTaskBackend();
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        stopTableAutoSync();
+      } else {
+        fetchTableFromCloud(true);
+        startTableAutoSync();
       }
     });
 
@@ -2148,20 +2199,152 @@
     function saveState(markDirty = true) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-        showAutoSaveIndicator();
+        showAutoSaveIndicator("saving");
         if (markDirty) {
           recordHistory(true);
+          scheduleCloudSave();
+        } else {
+          showAutoSaveIndicator("saved");
         }
       } catch (e) {
         console.error("Lỗi lưu LocalStorage:", e);
       }
     }
 
-    function showAutoSaveIndicator() {
+    function scheduleCloudSave() {
+      if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
+      showAutoSaveIndicator("saving");
+      cloudSaveTimer = setTimeout(pushTableToCloud, 400);
+    }
+
+    async function pushTableToCloud() {
+      if (isCloudSaving) return;
+      isCloudSaving = true;
+      try {
+        const endpoint = getTableApiEndpoint();
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(appData)
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const newEtag = res.headers.get("ETag") || String(json.updatedAt || Date.now());
+          currentTableEtag = newEtag;
+          localStorage.setItem("r2_table_etag", newEtag);
+          showAutoSaveIndicator("saved");
+        } else {
+          showAutoSaveIndicator("error");
+        }
+      } catch (err) {
+        console.warn("[Cloud Sync] Lỗi lưu lên đám mây:", err);
+        showAutoSaveIndicator("error");
+      } finally {
+        isCloudSaving = false;
+        cloudSaveTimer = null;
+      }
+    }
+
+    async function fetchTableFromCloud(silent = false) {
+      try {
+        if (!silent) showAutoSaveIndicator("saving");
+        const endpoint = getTableApiEndpoint();
+        const separator = endpoint.includes("?") ? "&" : "?";
+        const res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
+          cache: "no-cache"
+        });
+        if (!res.ok) {
+          if (!silent) showAutoSaveIndicator("saved");
+          return;
+        }
+        const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
+        if (newEtag) {
+          currentTableEtag = newEtag;
+          localStorage.setItem("r2_table_etag", newEtag);
+        }
+        const data = await res.json();
+        if (data && Array.isArray(data.sheets) && data.sheets.length > 0) {
+          const currentJson = JSON.stringify(appData);
+          const incomingJson = JSON.stringify(data);
+          if (currentJson !== incomingJson) {
+            const activeTag = document.activeElement ? document.activeElement.tagName : "";
+            if (silent && (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT")) {
+              console.log("[Auto-Sync] Đang nhập liệu, hoãn cập nhật giao diện");
+              return;
+            }
+            appData = data;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            renderAll();
+          }
+        } else if (data && (data.status === "not_found" || !data.sheets || data.sheets.length === 0)) {
+          // If cloud has no sheets yet but local does, upload local data to cloud
+          if (appData && Array.isArray(appData.sheets) && appData.sheets.length > 0) {
+            pushTableToCloud();
+          }
+        }
+        showAutoSaveIndicator("saved");
+      } catch (err) {
+        console.warn("[Cloud Sync] Lỗi tải từ đám mây:", err);
+        if (!silent) showAutoSaveIndicator("saved");
+      }
+    }
+
+    async function checkTableEtag() {
+      try {
+        if (cloudSaveTimer || isCloudSaving) return;
+        const endpoint = getTableApiEndpoint();
+        const separator = endpoint.includes("?") ? "&" : "?";
+        const res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
+          method: "HEAD",
+          cache: "no-cache"
+        });
+        if (!res.ok) return;
+        const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
+        if (newEtag && newEtag !== currentTableEtag) {
+          console.log("[Auto-Sync Table] Dữ liệu thay đổi từ máy khác:", currentTableEtag, "→", newEtag);
+          currentTableEtag = newEtag;
+          localStorage.setItem("r2_table_etag", newEtag);
+          await fetchTableFromCloud(true);
+        }
+      } catch (err) {
+        // Silent catch for background poll
+      }
+    }
+
+    function startTableAutoSync() {
+      if (tableSyncIntervalId) return;
+      tableSyncIntervalId = setInterval(checkTableEtag, 4000);
+    }
+
+    function stopTableAutoSync() {
+      if (tableSyncIntervalId) {
+        clearInterval(tableSyncIntervalId);
+        tableSyncIntervalId = null;
+      }
+    }
+
+    function showAutoSaveIndicator(status = "saved") {
+      const container = document.getElementById("autoSaveIndicator");
       const el = document.getElementById("autoSaveText");
-      if (el) {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      if (!el) return;
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      if (status === "saving") {
+        if (container) {
+          container.classList.add("saving");
+          container.classList.remove("error");
+        }
+        el.textContent = "Đang đồng bộ đám mây...";
+      } else if (status === "error") {
+        if (container) {
+          container.classList.remove("saving");
+          container.classList.add("error");
+        }
+        el.textContent = `Lưu cục bộ (${timeStr})`;
+      } else {
+        if (container) {
+          container.classList.remove("saving", "error");
+        }
         el.textContent = `Đã lưu lúc ${timeStr}`;
       }
     }
