@@ -154,12 +154,16 @@ module.exports = async function handler(req, res) {
       const putR = await r2Fetch("PUT", putBody);
 
       if (putR.statusCode >= 200 && putR.statusCode < 300) {
+        let etag = "";
         if (putR.headers) {
-          const etag = putR.headers["etag"] || putR.headers["ETag"] || "";
-          if (etag) res.setHeader("ETag", etag);
+          etag = putR.headers["etag"] || putR.headers["ETag"] || "";
         }
+        if (!etag) {
+          etag = `"${bodyData.updatedAt}"`;
+        }
+        res.setHeader("ETag", etag);
         res.setHeader("Content-Type", "application/json; charset=utf-8");
-        return res.status(200).json({ status: "success", updatedAt: bodyData.updatedAt });
+        return res.status(200).json({ status: "success", updatedAt: bodyData.updatedAt, etag: etag });
       } else {
         return res.status(502).json({ error: "R2 PUT failed", status: putR.statusCode, detail: putR.body });
       }

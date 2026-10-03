@@ -1027,6 +1027,9 @@
     </div>
 
     <div class="header-right">
+      <button class="btn btn-outline" id="btnManualSync" onclick="forceSyncWithCloud()" title="Đồng bộ ngay với đám mây Cloudflare R2">
+        <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ
+      </button>
       <button class="btn btn-import" id="btnImportFile" title="Tải file Excel / CSV nạp vào danh sách">
         <i class="fa-solid fa-file-arrow-up"></i> Nhập File Excel
       </button>
@@ -1112,9 +1115,9 @@
       </div>
 
       <div class="footer-right">
-        <span class="auto-save-indicator" id="autoSaveIndicator">
+        <span class="auto-save-indicator" id="autoSaveIndicator" onclick="forceSyncWithCloud()" style="cursor: pointer;" title="Bấm để kiểm tra và đồng bộ ngay với đám mây Cloudflare R2">
           <i class="fa-solid fa-circle-check"></i>
-          <span id="autoSaveText">Đã lưu</span>
+          <span id="autoSaveText">Đã đồng bộ đám mây</span>
         </span>
       </div>
     </footer>
@@ -1313,19 +1316,39 @@
     let pendingImportRows = [];
 
     // Cloud sync state
+    let dtApiBaseOverride = null;
     let dtSyncIntervalId = null;
     let currentDtEtag = localStorage.getItem("r2_dt_etag") || "";
     let cloudSaveTimer = null;
     let isCloudSaving = false;
+    let isCloudFetching = false;
+    const dtBroadcast = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("DMS_DT_SYNC") : null;
+
+    if (dtBroadcast) {
+      dtBroadcast.onmessage = async (e) => {
+        if (e.data && e.data.type === "DT_UPDATED") {
+          if (e.data.etag && e.data.etag !== currentDtEtag) {
+            currentDtEtag = e.data.etag;
+            localStorage.setItem("r2_dt_etag", currentDtEtag);
+          }
+          await fetchDtFromCloud(true);
+        }
+      };
+    }
 
     function getDtApiEndpoint() {
-      let base = "";
-      if (window.location.protocol === "file:") {
-        const wUrl = localStorage.getItem("NVN_TASK_WORKER_URL") || localStorage.getItem("r2_worker_url") || "";
-        if (wUrl) {
-          try { base = new URL(wUrl).origin; } catch (e) { base = "https://search-dms-tool.vercel.app"; }
-        } else {
+      let base = dtApiBaseOverride;
+      if (base === null) {
+        if (window.location.protocol === "file:") {
           base = "https://search-dms-tool.vercel.app";
+        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          if (window.location.port !== "3000") {
+            base = "http://localhost:3000";
+          } else {
+            base = "";
+          }
+        } else {
+          base = "";
         }
       }
       return base + "/api/r2-dt";
@@ -1346,6 +1369,10 @@
     }
 
     window.addEventListener("pageshow", () => fetchDtFromCloud(true));
+    window.addEventListener("focus", () => fetchDtFromCloud(true));
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") fetchDtFromCloud(true);
+    });
     window.addEventListener("message", (e) => {
       if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
         fetchDtFromCloud(true);
@@ -1430,27 +1457,59 @@
       if (isCloudSaving) return;
       isCloudSaving = true;
       try {
-        const endpoint = getDtApiEndpoint();
+        let endpoint = getDtApiEndpoint();
         const payload = {
           columns: dtData.columns,
           rows: dtData.rows,
           updatedAt: Date.now()
         };
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
+        let res;
+        try {
+          res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        } catch (fetchErr) {
+          if (!endpoint.includes("search-dms-tool.vercel.app")) {
+            dtApiBaseOverride = "https://search-dms-tool.vercel.app";
+            endpoint = getDtApiEndpoint();
+            res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } else {
+            throw fetchErr;
+          }
+        }
+
+        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("search-dms-tool.vercel.app")) {
+          dtApiBaseOverride = "https://search-dms-tool.vercel.app";
+          endpoint = getDtApiEndpoint();
+          res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        if (res && res.ok) {
           const json = await res.json();
-          const newEtag = res.headers.get("ETag") || String(json.updatedAt || Date.now());
+          const newEtag = res.headers.get("ETag") || json.etag || String(json.updatedAt || Date.now());
           currentDtEtag = newEtag;
           localStorage.setItem("r2_dt_etag", newEtag);
           showAutoSaveIndicator("saved");
+          if (dtBroadcast) {
+            try {
+              dtBroadcast.postMessage({ type: "DT_UPDATED", etag: newEtag, timestamp: Date.now() });
+            } catch (_) {}
+          }
         } else {
           showAutoSaveIndicator("error");
         }
       } catch (err) {
+        console.warn("[Cloud Sync DT] Lỗi đẩy dữ liệu:", err);
         showAutoSaveIndicator("error");
       } finally {
         isCloudSaving = false;
@@ -1459,12 +1518,34 @@
     }
 
     async function fetchDtFromCloud(silent = false) {
+      if (isCloudFetching) return;
+      isCloudFetching = true;
       try {
         if (!silent) showAutoSaveIndicator("saving");
-        const endpoint = getDtApiEndpoint();
+        let endpoint = getDtApiEndpoint();
         const sep = endpoint.includes("?") ? "&" : "?";
-        const res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
-        if (!res.ok) {
+        let res;
+        try {
+          res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
+        } catch (fetchErr) {
+          if (!endpoint.includes("search-dms-tool.vercel.app")) {
+            dtApiBaseOverride = "https://search-dms-tool.vercel.app";
+            endpoint = getDtApiEndpoint();
+            const sep2 = endpoint.includes("?") ? "&" : "?";
+            res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
+          } else {
+            throw fetchErr;
+          }
+        }
+
+        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("search-dms-tool.vercel.app")) {
+          dtApiBaseOverride = "https://search-dms-tool.vercel.app";
+          endpoint = getDtApiEndpoint();
+          const sep2 = endpoint.includes("?") ? "&" : "?";
+          res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
+        }
+
+        if (!res || !res.ok) {
           if (!silent) showAutoSaveIndicator("saved");
           return;
         }
@@ -1480,7 +1561,9 @@
           if (currentJson !== incomingJson) {
             const activeTag = document.activeElement ? document.activeElement.tagName : "";
             const isEditing = activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT";
-            if (silent && isEditing) return;
+            if (silent && isEditing) {
+              return;
+            }
 
             dtData.columns = data.columns || dtData.columns;
             dtData.rows = data.rows;
@@ -1495,10 +1578,17 @@
               scrollArea.scrollLeft = prevLeft;
             }
           }
+        } else if (data && (data.status === "not_found" || !data.rows || data.rows.length === 0)) {
+          if (dtData && Array.isArray(dtData.rows) && dtData.rows.length > 0) {
+            pushDtToCloud();
+          }
         }
         showAutoSaveIndicator("saved");
       } catch (err) {
+        console.warn("[Cloud Sync DT] Lỗi tải dữ liệu:", err);
         if (!silent) showAutoSaveIndicator("saved");
+      } finally {
+        isCloudFetching = false;
       }
     }
 
@@ -1506,11 +1596,21 @@
       if (dtSyncIntervalId) return;
       dtSyncIntervalId = setInterval(async () => {
         try {
-          if (cloudSaveTimer || isCloudSaving) return;
-          const endpoint = getDtApiEndpoint();
+          if (cloudSaveTimer || isCloudSaving || isCloudFetching) return;
+          let endpoint = getDtApiEndpoint();
           const sep = endpoint.includes("?") ? "&" : "?";
-          const res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
-          if (!res.ok) return;
+          let res;
+          try {
+            res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
+          } catch (e) {
+            if (!endpoint.includes("search-dms-tool.vercel.app")) {
+              dtApiBaseOverride = "https://search-dms-tool.vercel.app";
+              endpoint = getDtApiEndpoint();
+              const sep2 = endpoint.includes("?") ? "&" : "?";
+              res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
+            }
+          }
+          if (!res || !res.ok) return;
           const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
           if (newEtag && newEtag !== currentDtEtag) {
             currentDtEtag = newEtag;
@@ -1518,7 +1618,15 @@
             await fetchDtFromCloud(true);
           }
         } catch (_) {}
-      }, 5000);
+      }, 3000);
+    }
+
+    async function forceSyncWithCloud() {
+      showAutoSaveIndicator("saving");
+      toast("Đang đồng bộ dữ liệu đám mây...", "info");
+      await pushDtToCloud();
+      await fetchDtFromCloud(false);
+      toast("Đã đồng bộ dữ liệu thành công!", "success");
     }
 
     function showAutoSaveIndicator(status = "saved") {
@@ -1529,13 +1637,13 @@
       const timeStr = now.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       if (status === "saving") {
         container.className = "auto-save-indicator saving";
-        el.textContent = "Đang lưu...";
+        el.textContent = "Đang đồng bộ đám mây...";
       } else if (status === "error") {
         container.className = "auto-save-indicator error";
-        el.textContent = `Lưu cục bộ (${timeStr})`;
+        el.textContent = `Tạm lưu cục bộ (${timeStr}) - Đang thử kết nối lại...`;
       } else {
         container.className = "auto-save-indicator";
-        el.textContent = `Đã lưu lúc ${timeStr}`;
+        el.textContent = `Đã đồng bộ đám mây (${timeStr})`;
       }
     }
 

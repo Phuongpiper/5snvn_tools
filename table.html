@@ -1661,6 +1661,11 @@
 
     <!-- Header Actions -->
     <div class="header-actions">
+      <button class="btn btn-outline" id="btnSyncTable" onclick="forceSyncTableWithCloud()" title="Đồng bộ ngay với đám mây Cloudflare R2">
+        <i class="fa-solid fa-arrows-rotate" style="color: #0284c7;"></i>
+        <span>Đồng bộ</span>
+      </button>
+
       <button class="btn btn-outline" id="btnExportExcel" title="Xuất toàn bộ dữ liệu ra Excel (.xlsx)">
         <i class="fa-solid fa-file-excel" style="color: #10b981;"></i>
         <span>Xuất Excel</span>
@@ -1785,9 +1790,9 @@
     </div>
 
     <div class="summary-right">
-      <div class="autosave-status" id="autoSaveIndicator">
+      <div class="autosave-status" id="autoSaveIndicator" onclick="forceSyncTableWithCloud()" style="cursor: pointer;" title="Bấm để kiểm tra và đồng bộ ngay với đám mây Cloudflare R2">
         <span class="autosave-dot"></span>
-        <span id="autoSaveText">Tự động đồng bộ</span>
+        <span id="autoSaveText">Đã đồng bộ đám mây</span>
       </div>
     </div>
   </div>
@@ -2036,19 +2041,34 @@
       return base + "/api/r2-tasks" + (queryParam ? sep + queryParam : "");
     }
 
+    let tableApiBaseOverride = null;
+    const tableBroadcast = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("DMS_TABLE_SYNC") : null;
+
+    if (tableBroadcast) {
+      tableBroadcast.onmessage = async (e) => {
+        if (e.data && e.data.type === "TABLE_UPDATED") {
+          if (e.data.etag && e.data.etag !== currentTableEtag) {
+            currentTableEtag = e.data.etag;
+            localStorage.setItem("r2_table_etag", currentTableEtag);
+          }
+          await fetchTableFromCloud(true);
+        }
+      };
+    }
+
     function getTableApiEndpoint(queryParam = "") {
-      let base = "";
-      if (window.location.protocol === "file:") {
-        const wUrl = localStorage.getItem("NVN_TASK_WORKER_URL") || localStorage.getItem("r2_worker_url") || "";
-        if (wUrl) {
-          try {
-            const urlObj = new URL(wUrl);
-            base = urlObj.origin;
-          } catch (e) {
-            base = "https://search-dms-tool.vercel.app";
+      let base = tableApiBaseOverride;
+      if (base === null) {
+        if (window.location.protocol === "file:") {
+          base = "https://search-dms-tool.vercel.app";
+        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          if (window.location.port !== "3000") {
+            base = "http://localhost:3000";
+          } else {
+            base = "";
           }
         } else {
-          base = "https://search-dms-tool.vercel.app";
+          base = "";
         }
       }
       const sep = queryParam ? (queryParam.startsWith("?") ? "" : "?") : "";
@@ -2397,7 +2417,7 @@
       if (isCloudSaving) return;
       isCloudSaving = true;
       try {
-        const endpoint = getTableApiEndpoint();
+        let endpoint = getTableApiEndpoint();
 
         // Safe sheet-level merge: check if other sheets were updated in cloud by other users
         try {
@@ -2408,7 +2428,6 @@
             if (cloudData && Array.isArray(cloudData.sheets)) {
               const currentActive = appData.activeSheetId;
               cloudData.sheets.forEach(cSheet => {
-                // If cloud has an update for a sheet that is NOT the one currently active/edited here, keep cloud version
                 if (cSheet && cSheet.id !== currentActive) {
                   const idx = appData.sheets.findIndex(s => s.id === cSheet.id);
                   if (idx !== -1) {
@@ -2428,23 +2447,54 @@
           updatedAt: Date.now()
         };
 
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
+        let res;
+        try {
+          res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        } catch (fetchErr) {
+          if (!endpoint.includes("search-dms-tool.vercel.app")) {
+            tableApiBaseOverride = "https://search-dms-tool.vercel.app";
+            endpoint = getTableApiEndpoint();
+            res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } else {
+            throw fetchErr;
+          }
+        }
+
+        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("search-dms-tool.vercel.app")) {
+          tableApiBaseOverride = "https://search-dms-tool.vercel.app";
+          endpoint = getTableApiEndpoint();
+          res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        if (res && res.ok) {
           const json = await res.json();
-          const newEtag = res.headers.get("ETag") || String(json.updatedAt || Date.now());
+          const newEtag = res.headers.get("ETag") || json.etag || String(json.updatedAt || Date.now());
           currentTableEtag = newEtag;
           localStorage.setItem("r2_table_etag", newEtag);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
           showAutoSaveIndicator("saved");
+          if (tableBroadcast) {
+            try {
+              tableBroadcast.postMessage({ type: "TABLE_UPDATED", etag: newEtag, timestamp: Date.now() });
+            } catch (_) {}
+          }
         } else {
           showAutoSaveIndicator("error");
         }
       } catch (err) {
-        console.warn("[Cloud Sync] Lỗi lưu lên đám mây:", err);
+        console.warn("[Cloud Sync Table] Lỗi lưu lên đám mây:", err);
         showAutoSaveIndicator("error");
       } finally {
         isCloudSaving = false;
@@ -2455,12 +2505,30 @@
     async function fetchTableFromCloud(silent = false) {
       try {
         if (!silent) showAutoSaveIndicator("saving");
-        const endpoint = getTableApiEndpoint();
+        let endpoint = getTableApiEndpoint();
         const separator = endpoint.includes("?") ? "&" : "?";
-        const res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
-          cache: "no-cache"
-        });
-        if (!res.ok) {
+        let res;
+        try {
+          res = await fetch(`${endpoint}${separator}t=${Date.now()}`, { cache: "no-cache" });
+        } catch (fetchErr) {
+          if (!endpoint.includes("search-dms-tool.vercel.app")) {
+            tableApiBaseOverride = "https://search-dms-tool.vercel.app";
+            endpoint = getTableApiEndpoint();
+            const sep2 = endpoint.includes("?") ? "&" : "?";
+            res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
+          } else {
+            throw fetchErr;
+          }
+        }
+
+        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("search-dms-tool.vercel.app")) {
+          tableApiBaseOverride = "https://search-dms-tool.vercel.app";
+          endpoint = getTableApiEndpoint();
+          const sep2 = endpoint.includes("?") ? "&" : "?";
+          res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
+        }
+
+        if (!res || !res.ok) {
           if (!silent) showAutoSaveIndicator("saved");
           return;
         }
@@ -2471,7 +2539,6 @@
         }
         const data = await res.json();
         if (data && Array.isArray(data.sheets) && data.sheets.length > 0) {
-          // Compare sheets content only (exclude activeSheetId so users don't trigger updates on each other's view changes)
           const currentSheetsJson = JSON.stringify(appData.sheets);
           const incomingSheetsJson = JSON.stringify(data.sheets);
           if (currentSheetsJson !== incomingSheetsJson) {
@@ -2483,27 +2550,21 @@
               Boolean(document.querySelector(".context-menu[style*='display: block']"));
 
             if (silent && isEditingCell) {
-              console.log("[Auto-Sync] Đang thao tác/nhập liệu, hoãn cập nhật giao diện");
               return;
             }
 
-            // CRITICAL: Preserve the local user's current activeSheetId!
-            // Do NOT let another user's active table switch this user's view!
             const myCurrentSheetId = appData.activeSheetId;
             appData.sheets = data.sheets;
 
-            // Check if my current sheet still exists in the incoming sheets
             const sheetExists = appData.sheets.some(s => s.id === myCurrentSheetId);
             if (sheetExists) {
               appData.activeSheetId = myCurrentSheetId;
             } else if (appData.sheets.length > 0) {
-              // Only fallback if the sheet was actually deleted by another user
               appData.activeSheetId = appData.sheets[0].id;
             }
 
             localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
 
-            // Preserve scroll position when re-rendering
             const scrollArea = document.getElementById("tableScrollArea");
             const prevTop = scrollArea ? scrollArea.scrollTop : 0;
             const prevLeft = scrollArea ? scrollArea.scrollLeft : 0;
@@ -2516,14 +2577,13 @@
             }
           }
         } else if (data && (data.status === "not_found" || !data.sheets || data.sheets.length === 0)) {
-          // If cloud has no sheets yet but local does, upload local data to cloud
           if (appData && Array.isArray(appData.sheets) && appData.sheets.length > 0) {
             pushTableToCloud();
           }
         }
         showAutoSaveIndicator("saved");
       } catch (err) {
-        console.warn("[Cloud Sync] Lỗi tải từ đám mây:", err);
+        console.warn("[Cloud Sync Table] Lỗi tải từ đám mây:", err);
         if (!silent) showAutoSaveIndicator("saved");
       }
     }
@@ -2531,28 +2591,35 @@
     async function checkTableEtag() {
       try {
         if (cloudSaveTimer || isCloudSaving) return;
-        const endpoint = getTableApiEndpoint();
+        let endpoint = getTableApiEndpoint();
         const separator = endpoint.includes("?") ? "&" : "?";
-        const res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
-          method: "HEAD",
-          cache: "no-cache"
-        });
-        if (!res.ok) return;
+        let res;
+        try {
+          res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
+            method: "HEAD",
+            cache: "no-cache"
+          });
+        } catch (e) {
+          if (!endpoint.includes("search-dms-tool.vercel.app")) {
+            tableApiBaseOverride = "https://search-dms-tool.vercel.app";
+            endpoint = getTableApiEndpoint();
+            const sep2 = endpoint.includes("?") ? "&" : "?";
+            res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
+          }
+        }
+        if (!res || !res.ok) return;
         const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
         if (newEtag && newEtag !== currentTableEtag) {
-          console.log("[Auto-Sync Table] Dữ liệu thay đổi từ máy khác:", currentTableEtag, "→", newEtag);
           currentTableEtag = newEtag;
           localStorage.setItem("r2_table_etag", newEtag);
           await fetchTableFromCloud(true);
         }
-      } catch (err) {
-        // Silent catch for background poll
-      }
+      } catch (err) {}
     }
 
     function startTableAutoSync() {
       if (tableSyncIntervalId) return;
-      tableSyncIntervalId = setInterval(checkTableEtag, 4000);
+      tableSyncIntervalId = setInterval(checkTableEtag, 3000);
     }
 
     function stopTableAutoSync() {
@@ -2561,6 +2628,20 @@
         tableSyncIntervalId = null;
       }
     }
+
+    async function forceSyncTableWithCloud() {
+      showAutoSaveIndicator("saving");
+      toast("Đang đồng bộ dữ liệu Bảng tính với đám mây...", "info");
+      await pushTableToCloud();
+      await fetchTableFromCloud(false);
+      toast("Đã đồng bộ Bảng tính thành công!", "success");
+    }
+
+    // Auto-sync on window focus and visibility
+    window.addEventListener("focus", () => fetchTableFromCloud(true));
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") fetchTableFromCloud(true);
+    });
 
     function showAutoSaveIndicator(status = "saved") {
       const container = document.getElementById("autoSaveIndicator");
@@ -2579,12 +2660,12 @@
           container.classList.remove("saving");
           container.classList.add("error");
         }
-        el.textContent = `Lưu cục bộ (${timeStr})`;
+        el.textContent = `Tạm lưu cục bộ (${timeStr}) - Đang thử kết nối lại...`;
       } else {
         if (container) {
           container.classList.remove("saving", "error");
         }
-        el.textContent = `Đã lưu lúc ${timeStr}`;
+        el.textContent = `Đã đồng bộ đám mây (${timeStr})`;
       }
     }
 
