@@ -2685,6 +2685,7 @@
         const res = await apiGet("action=read_projects");
         if (res.status === "success") {
           allProjects = res.data || res.projects || [];
+          try { localStorage.setItem("app_projects_data", JSON.stringify(allProjects)); } catch (e) { }
           populateProjectFilter();
           populateProjectSelect();
           renderProjectList();
@@ -2782,6 +2783,7 @@
         const res = await apiGet("action=read_members");
         if (res.status === "success") {
           allMembers = res.data || []; // m.name
+          try { localStorage.setItem("app_members_data", JSON.stringify(allMembers)); } catch (e) { }
           populateMemberFilter();
           renderMemberList();
         }

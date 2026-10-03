@@ -570,6 +570,13 @@
             >
               <i class="fa-solid fa-list-check"></i> Task Pending NVN
             </button>
+            <button
+              class="tab-button"
+              type="button"
+              data-frame-target="tableFrame"
+            >
+              <i class="fa-solid fa-table"></i> Table
+            </button>
           </div>
           <div class="top-actions">
             <!-- Upcoming Tasks Button -->
@@ -645,6 +652,12 @@
         src="task_pending_nvn.html"
         title="Task Pending NVN"
       ></iframe>
+      <iframe
+        class="tab-frame"
+        id="tableFrame"
+        src="table.html"
+        title="Table"
+      ></iframe>
     </div>
 
     <script>
@@ -658,7 +671,13 @@
             item.classList.toggle("active", item === button);
           });
           tabFrames.forEach((frame) => {
-            frame.classList.toggle("active", frame.id === targetId);
+            const isActive = frame.id === targetId;
+            frame.classList.toggle("active", isActive);
+            if (isActive && frame.contentWindow) {
+              try {
+                frame.contentWindow.postMessage({ type: "TAB_ACTIVATED" }, "*");
+              } catch (e) {}
+            }
           });
         });
       });
