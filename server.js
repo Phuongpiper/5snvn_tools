@@ -9,10 +9,10 @@ try { require("dotenv").config(); } catch(_) {}
 const START_PORT = parseInt(process.env.PORT, 10) || 3000;
 const PUBLIC_DIR = __dirname;
 
-const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID        || "";
-const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID     || "";
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || "";
-const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME       || "";
+const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.env.R2_ACCOUNT_ID        || "";
+const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "";
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.env.R2_SECRET_ACCESS_KEY || "";
+const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "";
 const R2_OBJECT_KEY        = "system_urls.json";
 
 const MIME_TYPES = {
