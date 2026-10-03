@@ -1874,8 +1874,8 @@
     <div class="dropdown-item" onclick="sortCurrentColumn('asc')"><i class="fa-solid fa-arrow-up-a-z"></i> Sắp xếp A → Z</div>
     <div class="dropdown-item" onclick="sortCurrentColumn('desc')"><i class="fa-solid fa-arrow-down-z-a"></i> Sắp xếp Z → A</div>
     <div class="dropdown-divider"></div>
-    <div class="dropdown-item" onclick="insertColumnRelative('left')"><i class="fa-solid fa-arrow-left"></i> Chèn cột bên trái</div>
-    <div class="dropdown-item" onclick="insertColumnRelative('right')"><i class="fa-solid fa-arrow-right"></i> Chèn cột bên phải</div>
+    <div class="dropdown-item" onclick="insertColumnRelative('left')"><i class="fa-solid fa-arrow-left"></i> Thêm cột bên trái</div>
+    <div class="dropdown-item" onclick="insertColumnRelative('right')"><i class="fa-solid fa-arrow-right"></i> Thêm cột bên phải</div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-item danger" onclick="triggerDeleteColumn()"><i class="fa-solid fa-trash-can"></i> Xoá cột này</div>
   </div>
@@ -1930,6 +1930,10 @@
     <div class="dropdown-item" onclick="triggerDuplicateRow()"><i class="fa-solid fa-copy"></i> Nhân bản dòng này</div>
     <div class="dropdown-item" onclick="triggerInsertRow('above')"><i class="fa-solid fa-arrow-up"></i> Chèn dòng ở trên</div>
     <div class="dropdown-item" onclick="triggerInsertRow('below')"><i class="fa-solid fa-arrow-down"></i> Chèn dòng ở dưới</div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="triggerInsertColFromContext('left')"><i class="fa-solid fa-arrow-left"></i> <span id="ctxInsertColLeftText">Thêm cột bên trái</span></div>
+    <div class="dropdown-item" onclick="triggerInsertColFromContext('right')"><i class="fa-solid fa-arrow-right"></i> <span id="ctxInsertColRightText">Thêm cột bên phải</span></div>
+    <div class="dropdown-divider"></div>
     <div class="dropdown-item" onclick="triggerClearRow()"><i class="fa-solid fa-eraser"></i> Xoá trắng dữ liệu dòng</div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-item danger" onclick="triggerDeleteRowContext()"><i class="fa-solid fa-trash-can"></i> Xoá dòng này</div>
@@ -2927,7 +2931,7 @@
         const typeName = getTypeName(col.type);
         const colWidth = col.width || 150;
         headerHtml += `
-          <th data-col-id="${col.id}" style="width: ${colWidth}px; min-width: 60px;" title="Kéo thả để đổi thứ tự cột (Nhấp đúp để đổi tên)">
+          <th data-col-id="${col.id}" style="width: ${colWidth}px; min-width: 60px;" title="Kéo thả để đổi thứ tự cột (Nhấp đúp để đổi tên, Chuột phải để mở menu cột)" oncontextmenu="event.preventDefault(); openColContextMenu(event, '${col.id}')">
             <div class="th-content">
               <div class="th-title-wrap" ondblclick="editColumnById('${col.id}')">
                 <i class="fa-solid fa-grip-vertical col-drag-grip" title="Kéo để đổi vị trí cột"></i>
@@ -4025,13 +4029,35 @@
       }
     }
 
-    /* ── ROW CONTEXT MENU ── */
+    /* ── ROW / CELL CONTEXT MENU ── */
     function openRowContextMenu(rowId, e) {
       currentContextRowId = rowId;
       const menu = document.getElementById("rowContextMenu");
       if (!menu) return;
 
       const sheet = getActiveSheet();
+
+      // Detect which column was clicked from the target element
+      const targetTd = e.target ? (e.target.closest("td.cell-editable") || e.target.closest("td[data-col-id]")) : null;
+      if (targetTd && targetTd.dataset.colId) {
+        currentContextColId = targetTd.dataset.colId;
+      } else if (activeSelectedCell && activeSelectedCell.colId) {
+        currentContextColId = activeSelectedCell.colId;
+      } else if (sheet && sheet.columns && sheet.columns.length > 0) {
+        currentContextColId = sheet.columns[0].id;
+      }
+
+      // Update text in rowContextMenu if column is found
+      const col = sheet?.columns?.find(c => c.id === currentContextColId);
+      const colLeftSpan = document.getElementById("ctxInsertColLeftText");
+      const colRightSpan = document.getElementById("ctxInsertColRightText");
+      if (colLeftSpan) {
+        colLeftSpan.textContent = col ? `Thêm cột bên trái "${col.name}"` : "Thêm cột bên trái";
+      }
+      if (colRightSpan) {
+        colRightSpan.textContent = col ? `Thêm cột bên phải "${col.name}"` : "Thêm cột bên phải";
+      }
+
       const row = sheet?.rows?.find(r => r.id === rowId);
       const isLocked = row ? !!row.locked : false;
 
@@ -4056,7 +4082,13 @@
 
       menu.style.display = "block";
       menu.style.top = `${e.clientY + 4}px`;
-      menu.style.left = `${Math.min(e.clientX, window.innerWidth - 200)}px`;
+      menu.style.left = `${Math.min(e.clientX, window.innerWidth - 220)}px`;
+    }
+
+    function triggerInsertColFromContext(position) {
+      const menu = document.getElementById("rowContextMenu");
+      if (menu) menu.style.display = "none";
+      insertColumnRelative(position);
     }
 
     function triggerToggleLockRowContext() {
@@ -4400,7 +4432,19 @@
        COLUMN OPERATIONS (ADD, EDIT, DELETE, REORDER, SORT)
     ────────────────────────────────────────────────────────────────────────── */
     function openAddColumnModal() {
-      document.getElementById("colModalTitle").innerHTML = `<i class="fa-solid fa-plus"></i> Thêm cột mới`;
+      const titleEl = document.getElementById("colModalTitle");
+      if (insertColRelativeConfig) {
+        const sheet = getActiveSheet();
+        const refCol = sheet?.columns?.find(c => c.id === insertColRelativeConfig.colId);
+        const refName = refCol ? ` "${refCol.name}"` : "";
+        if (insertColRelativeConfig.position === "left") {
+          titleEl.innerHTML = `<i class="fa-solid fa-arrow-left"></i> Thêm cột bên trái${refName}`;
+        } else {
+          titleEl.innerHTML = `<i class="fa-solid fa-arrow-right"></i> Thêm cột bên phải${refName}`;
+        }
+      } else {
+        titleEl.innerHTML = `<i class="fa-solid fa-plus"></i> Thêm cột mới`;
+      }
       document.getElementById("editColId").value = "";
       document.getElementById("colNameInput").value = "";
       document.getElementById("colTypeInput").value = "text";
@@ -4557,7 +4601,15 @@
     }
 
     function insertColumnRelative(position) {
-      if (!currentContextColId) return;
+      if (!currentContextColId) {
+        const sheet = getActiveSheet();
+        if (sheet && sheet.columns && sheet.columns.length > 0) {
+          currentContextColId = position === "left" ? sheet.columns[0].id : sheet.columns[sheet.columns.length - 1].id;
+        } else {
+          openAddColumnModal();
+          return;
+        }
+      }
       insertColRelativeConfig = { colId: currentContextColId, position };
       openAddColumnModal();
     }
@@ -5583,6 +5635,15 @@
       // Add & Save Column
       on("btnAddColumnBtn", "click", openAddColumnModal);
       on("btnSaveColumn", "click", saveColumnFromModal);
+      const colNameInp = document.getElementById("colNameInput");
+      if (colNameInp) {
+        colNameInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            saveColumnFromModal();
+          }
+        });
+      }
 
       // Sheet Rename Modal
       on("btnSaveSheetRename", "click", saveSheetRename);
