@@ -5233,9 +5233,13 @@
           const cleanSheetName = sheet.name.replace(/[:\\/?*\[\]]/g, "_").slice(0, 31) || "Sheet1";
           XLSX.utils.book_append_sheet(wb, ws, cleanSheetName);
 
-          const fileName = `DMS_BangTinh_${sheet.name.replace(/\s+/g, '_')}_${getTodayIso()}.xlsx`;
+          const safeSheetName = (sheet.name || "BangTinh")
+            .replace(/[\\/:*?"<>|]/g, "_")
+            .trim()
+            .replace(/\s+/g, "_");
+          const fileName = `${safeSheetName}_${getTodayIso()}.xlsx`;
           XLSX.writeFile(wb, fileName);
-          toast("Đã xuất file Excel chuẩn đẹp (.xlsx) thành công!", "success");
+          toast("Đã xuất file thành công", "success");
           return;
         }
       } catch (err) {
@@ -5267,11 +5271,15 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `DMS_Table_${sheet.name.replace(/\s+/g, '_')}.csv`;
+      const safeSheetName = (sheet.name || "BangTinh")
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .trim()
+        .replace(/\s+/g, "_");
+      a.download = `${safeSheetName}_${getTodayIso()}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      toast("Đã xuất file CSV thành công!", "success");
+      toast("Đã xuất file thành công", "success");
     }
 
     function triggerImportExcel() {
