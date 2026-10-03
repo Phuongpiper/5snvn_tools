@@ -13,8 +13,8 @@
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
-  <!-- SheetJS for Excel XLSX Export/Import -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- SheetJS with styling support for professional Excel XLSX Export/Import -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
   <style>
     /* ── RESET & TOKENS (STITCH MODERN DESIGN) ── */
@@ -778,10 +778,11 @@
 
     /* Row actions cell */
     .td-actions {
-      width: 70px;
-      min-width: 70px;
+      width: 76px;
+      min-width: 76px;
       text-align: center;
-      padding: 4px 8px !important;
+      padding: 4px 6px !important;
+      white-space: nowrap;
     }
 
     .btn-row-action {
@@ -793,11 +794,124 @@
       border-radius: 4px;
       font-size: 13px;
       transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
     }
 
     .btn-row-action:hover {
       color: var(--danger);
       background: var(--danger-light);
+    }
+
+    .btn-row-lock {
+      color: var(--text-light);
+    }
+
+    .btn-row-lock:hover {
+      color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .btn-row-lock.is-locked {
+      color: #d97706;
+      background: #fef3c7;
+    }
+
+    .btn-row-lock.is-locked:hover {
+      color: #b45309;
+      background: #fde68a;
+    }
+
+    /* Locked row styling */
+    .stitch-table tbody tr.row-locked {
+      background-color: #fafbfc;
+    }
+
+    .stitch-table tbody tr.row-locked td {
+      background-color: #fafbfc;
+      color: #64748b;
+    }
+
+    .stitch-table tbody tr.row-locked.row-selected td {
+      background-color: #f1f5f9;
+    }
+
+    .stitch-table tbody tr.row-locked td.cell-editable {
+      cursor: not-allowed;
+    }
+
+    .stitch-table tbody tr.row-locked td.cell-editable:hover {
+      box-shadow: none;
+      background-color: #f1f5f9;
+    }
+
+    .row-lock-indicator {
+      color: #d97706;
+      font-size: 11px;
+      margin-right: 4px;
+      display: inline-block;
+    }
+
+    /* Highlight Styles */
+    .stitch-table tbody tr.row-highlighted td {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      border-right: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .stitch-table tbody tr.row-highlighted:hover td {
+      filter: brightness(0.97);
+    }
+
+    .stitch-table td.cell-highlighted {
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+
+    .stitch-table td.cell-highlighted.cell-active {
+      box-shadow: inset 0 0 0 2px var(--primary) !important;
+    }
+
+    .highlight-swatch {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 1.5px solid rgba(0,0,0,0.15);
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+
+    .highlight-swatch:hover {
+      transform: scale(1.22);
+      border-color: rgba(0,0,0,0.3);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .highlight-swatch.active {
+      border-color: var(--primary) !important;
+      box-shadow: 0 0 0 2px var(--primary-border);
+    }
+
+    .hl-swatch-btn {
+      border-radius: 6px;
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .hl-swatch-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.12);
     }
 
     /* Empty state */
@@ -1599,13 +1713,32 @@
       <div class="divider-v"></div>
 
       <!-- Bulk Selection Actions -->
-      <button class="btn btn-subtle" id="btnDeleteSelected" style="display: none; color: var(--danger);">
-        <i class="fa-solid fa-trash-can"></i>
-        <span>Xoá <span id="selectedCountBadge">0</span> dòng đã chọn</span>
-      </button>
+      <div id="bulkActionsGroup" style="display: none; align-items: center; gap: 6px;">
+        <button class="btn btn-subtle" id="btnHighlightSelected" style="color: #eab308;" title="Tô màu highlight các dòng đã chọn">
+          <i class="fa-solid fa-highlighter"></i>
+          <span>Tô màu dòng</span>
+        </button>
+        <button class="btn btn-subtle" id="btnLockSelected" style="color: #d97706;" title="Khoá các dòng đã chọn">
+          <i class="fa-solid fa-lock"></i>
+          <span>Khoá dòng (<span id="lockCountBadge">0</span>)</span>
+        </button>
+        <button class="btn btn-subtle" id="btnUnockSelected" style="color: var(--primary);" title="Mở khoá các dòng đã chọn">
+          <i class="fa-solid fa-lock-open"></i>
+          <span>Mở khoá</span>
+        </button>
+        <button class="btn btn-subtle" id="btnDeleteSelected" style="color: var(--danger);" title="Xoá các dòng đã chọn">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>Xoá <span id="selectedCountBadge">0</span> dòng</span>
+        </button>
+      </div>
     </div>
 
     <div class="toolbar-right">
+      <button class="btn btn-subtle" id="btnHighlightMenu" title="Tô màu Highlight (Dòng / Ô)">
+        <i class="fa-solid fa-highlighter" style="color: #eab308;"></i>
+        <span>Highlight</span>
+      </button>
+      <div class="divider-v"></div>
       <button class="btn btn-subtle" id="btnUndo" title="Hoàn tác (Ctrl+Z)">
         <i class="fa-solid fa-rotate-left"></i> Hoàn tác
       </button>
@@ -1778,6 +1911,16 @@
 
   <!-- Row Context Menu -->
   <div class="dropdown-menu" id="rowContextMenu">
+    <div class="dropdown-item" id="ctxToggleLock" onclick="triggerToggleLockRowContext()"><i class="fa-solid fa-lock"></i> <span>Khoá dòng này</span></div>
+    <div class="dropdown-divider"></div>
+    <div style="padding: 6px 12px 6px 12px;">
+      <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+        <span><i class="fa-solid fa-highlighter" style="color: #eab308;"></i> Màu dòng</span>
+        <span onclick="triggerClearRowHighlight(event)" style="cursor: pointer; font-size: 10.5px; color: var(--danger); font-weight: 600;" title="Xoá màu dòng">Xoá màu</span>
+      </div>
+      <div class="ctx-highlight-swatches" id="ctxRowHighlightSwatches" style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;"></div>
+    </div>
+    <div class="dropdown-divider"></div>
     <div class="dropdown-item" onclick="triggerMoveRow('up')"><i class="fa-solid fa-arrow-up"></i> Di chuyển dòng lên trên</div>
     <div class="dropdown-item" onclick="triggerMoveRow('down')"><i class="fa-solid fa-arrow-down"></i> Di chuyển dòng xuống dưới</div>
     <div class="dropdown-divider"></div>
@@ -1790,6 +1933,35 @@
     <div class="dropdown-item" onclick="triggerClearRow()"><i class="fa-solid fa-eraser"></i> Xoá trắng dữ liệu dòng</div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-item danger" onclick="triggerDeleteRowContext()"><i class="fa-solid fa-trash-can"></i> Xoá dòng này</div>
+  </div>
+
+  <!-- Highlight Palette Dropdown -->
+  <div class="dropdown-menu highlight-palette-dropdown" id="highlightPaletteDropdown" style="width: 250px; padding: 12px; z-index: 1050;">
+    <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+      <span><i class="fa-solid fa-highlighter" style="color: #eab308;"></i> Tô màu Highlight</span>
+      <span id="highlightTargetLabel" style="font-size: 10.5px; padding: 2px 7px; background: #f1f5f9; border-radius: 4px; color: var(--primary); font-weight: 700;">Ô</span>
+    </div>
+
+    <!-- Target selector buttons -->
+    <div class="highlight-target-selector" style="display: flex; gap: 4px; margin-bottom: 10px; background: #f1f5f9; padding: 3px; border-radius: 6px;">
+      <button type="button" class="hl-target-tab active" id="hlTabCell" onclick="setHighlightTarget('cell')" style="flex: 1; padding: 5px; font-size: 11px; border: none; border-radius: 4px; background: #fff; color: var(--text); font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.06); transition: all 0.15s;">
+        <i class="fa-regular fa-square"></i> Ô đang chọn
+      </button>
+      <button type="button" class="hl-target-tab" id="hlTabRow" onclick="setHighlightTarget('row')" style="flex: 1; padding: 5px; font-size: 11px; border: none; border-radius: 4px; background: transparent; color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.15s;">
+        <i class="fa-solid fa-grip-lines"></i> Dòng
+      </button>
+    </div>
+
+    <!-- Swatches Grid -->
+    <div class="highlight-swatches-grid" id="highlightSwatchesGrid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px;">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="dropdown-divider" style="margin: 8px 0;"></div>
+
+    <button type="button" class="dropdown-item" onclick="applyHighlightColor(null)" style="color: var(--danger); font-size: 12px; padding: 6px 8px; border-radius: 4px; display: flex; align-items: center; gap: 6px; width: 100%; border: none; background: transparent; cursor: pointer;">
+      <i class="fa-solid fa-ban"></i> <span>Xoá màu highlight</span>
+    </button>
   </div>
 
   <!-- More Options Dropdown -->
@@ -2222,16 +2394,47 @@
       isCloudSaving = true;
       try {
         const endpoint = getTableApiEndpoint();
+
+        // Safe sheet-level merge: check if other sheets were updated in cloud by other users
+        try {
+          const sep = endpoint.includes("?") ? "&" : "?";
+          const checkRes = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
+          if (checkRes.ok) {
+            const cloudData = await checkRes.json();
+            if (cloudData && Array.isArray(cloudData.sheets)) {
+              const currentActive = appData.activeSheetId;
+              cloudData.sheets.forEach(cSheet => {
+                // If cloud has an update for a sheet that is NOT the one currently active/edited here, keep cloud version
+                if (cSheet && cSheet.id !== currentActive) {
+                  const idx = appData.sheets.findIndex(s => s.id === cSheet.id);
+                  if (idx !== -1) {
+                    appData.sheets[idx] = cSheet;
+                  } else {
+                    appData.sheets.push(cSheet);
+                  }
+                }
+              });
+            }
+          }
+        } catch (_) {}
+
+        // Never persist activeSheetId to cloud so other users' active view is never hijacked
+        const payload = {
+          sheets: appData.sheets,
+          updatedAt: Date.now()
+        };
+
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(appData)
+          body: JSON.stringify(payload)
         });
         if (res.ok) {
           const json = await res.json();
           const newEtag = res.headers.get("ETag") || String(json.updatedAt || Date.now());
           currentTableEtag = newEtag;
           localStorage.setItem("r2_table_etag", newEtag);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
           showAutoSaveIndicator("saved");
         } else {
           showAutoSaveIndicator("error");
@@ -2264,17 +2467,49 @@
         }
         const data = await res.json();
         if (data && Array.isArray(data.sheets) && data.sheets.length > 0) {
-          const currentJson = JSON.stringify(appData);
-          const incomingJson = JSON.stringify(data);
-          if (currentJson !== incomingJson) {
+          // Compare sheets content only (exclude activeSheetId so users don't trigger updates on each other's view changes)
+          const currentSheetsJson = JSON.stringify(appData.sheets);
+          const incomingSheetsJson = JSON.stringify(data.sheets);
+          if (currentSheetsJson !== incomingSheetsJson) {
             const activeTag = document.activeElement ? document.activeElement.tagName : "";
-            if (silent && (activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT")) {
-              console.log("[Auto-Sync] Đang nhập liệu, hoãn cập nhật giao diện");
+            const isEditingCell = activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT" ||
+              Boolean(document.querySelector(".inline-editor")) ||
+              Boolean(document.querySelector(".picker-popup.show")) ||
+              Boolean(document.querySelector(".modal-backdrop.show")) ||
+              Boolean(document.querySelector(".context-menu[style*='display: block']"));
+
+            if (silent && isEditingCell) {
+              console.log("[Auto-Sync] Đang thao tác/nhập liệu, hoãn cập nhật giao diện");
               return;
             }
-            appData = data;
+
+            // CRITICAL: Preserve the local user's current activeSheetId!
+            // Do NOT let another user's active table switch this user's view!
+            const myCurrentSheetId = appData.activeSheetId;
+            appData.sheets = data.sheets;
+
+            // Check if my current sheet still exists in the incoming sheets
+            const sheetExists = appData.sheets.some(s => s.id === myCurrentSheetId);
+            if (sheetExists) {
+              appData.activeSheetId = myCurrentSheetId;
+            } else if (appData.sheets.length > 0) {
+              // Only fallback if the sheet was actually deleted by another user
+              appData.activeSheetId = appData.sheets[0].id;
+            }
+
             localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+
+            // Preserve scroll position when re-rendering
+            const scrollArea = document.getElementById("tableScrollArea");
+            const prevTop = scrollArea ? scrollArea.scrollTop : 0;
+            const prevLeft = scrollArea ? scrollArea.scrollLeft : 0;
+
             renderAll();
+
+            if (scrollArea) {
+              scrollArea.scrollTop = prevTop;
+              scrollArea.scrollLeft = prevLeft;
+            }
           }
         } else if (data && (data.status === "not_found" || !data.sheets || data.sheets.length === 0)) {
           // If cloud has no sheets yet but local does, upload local data to cloud
@@ -2714,7 +2949,7 @@
             <i class="fa-solid fa-plus"></i> Thêm cột
           </button>
         </th>
-        <th class="td-actions" style="width: 50px;"></th>
+        <th class="td-actions" style="width: 76px; min-width: 76px;"></th>
       `;
       theadTr.innerHTML = headerHtml;
       attachColResizers();
@@ -2765,34 +3000,54 @@
       let tbodyHtml = "";
       filteredRows.forEach((row, idx) => {
         const isSelected = selectedRowIds.has(row.id);
-        const rowHeightStyle = row.height ? `style="height: ${row.height}px;"` : "";
+        const isLocked = !!row.locked;
+        const rowHighlight = row.highlight || "";
+        const rowHeightStyle = row.height ? `height: ${row.height}px;` : "";
         const customHeightClass = (row.height && row.height > 50) ? "has-custom-height" : "";
+        const highlightClass = rowHighlight ? "row-highlighted" : "";
+        const trStyle = `${rowHeightStyle} ${rowHighlight ? `background-color: ${rowHighlight};` : ''}`.trim();
+        const trStyleAttr = trStyle ? `style="${trStyle}"` : "";
+
         tbodyHtml += `
-          <tr class="${isSelected ? 'row-selected' : ''} ${customHeightClass}" data-row-id="${row.id}" ${rowHeightStyle}>
-            <td class="td-select" ${rowHeightStyle}>
+          <tr class="${isSelected ? 'row-selected' : ''} ${isLocked ? 'row-locked' : ''} ${highlightClass} ${customHeightClass}" data-row-id="${row.id}" ${trStyleAttr}>
+            <td class="td-select" style="${rowHeightStyle} ${rowHighlight ? `background-color: ${rowHighlight};` : ''}">
               <input type="checkbox" class="cell-checkbox row-select-cb" data-id="${row.id}" ${isSelected ? 'checked' : ''} />
             </td>
-            <td class="td-stt" ${rowHeightStyle} title="Kéo thả để đổi thứ tự dòng">
-              <i class="fa-solid fa-grip-vertical row-grip-icon" title="Kéo để đổi vị trí dòng"></i>
+            <td class="td-stt ${isLocked ? 'is-locked' : ''}" style="${rowHeightStyle} ${rowHighlight ? `background-color: ${rowHighlight};` : ''}" title="${isLocked ? 'Dòng này đang bị khoá' : 'Kéo thả để đổi thứ tự dòng'}">
+              ${isLocked
+                ? `<i class="fa-solid fa-lock row-lock-indicator" title="Dòng này đang bị khoá"></i>`
+                : `<i class="fa-solid fa-grip-vertical row-grip-icon" title="Kéo để đổi vị trí dòng"></i>`
+              }
               <span>${idx + 1}</span>
-              <div class="row-resizer" data-row-id="${row.id}" title="Kéo để chỉnh chiều cao dòng (Nhấp đúp để đặt lại)"></div>
+              ${!isLocked ? `<div class="row-resizer" data-row-id="${row.id}" title="Kéo để chỉnh chiều cao dòng (Nhấp đúp để đặt lại)"></div>` : ''}
             </td>
         `;
 
         sheet.columns.forEach(col => {
           const val = row[col.id];
-          const cellContent = renderCellContent(col, val, row.id);
+          const cellContent = renderCellContent(col, val, row.id, isLocked);
+          const cellHighlight = (row.highlights && row.highlights[col.id]) || "";
+          const effectiveBg = cellHighlight || rowHighlight || "";
+          const tdStyle = `${rowHeightStyle} ${effectiveBg ? `background-color: ${effectiveBg};` : ''}`.trim();
+          const tdStyleAttr = tdStyle ? `style="${tdStyle}"` : "";
+          const cellHlClass = cellHighlight ? "cell-highlighted" : "";
+
           tbodyHtml += `
-            <td class="cell-editable" data-col-id="${col.id}" data-row-id="${row.id}" data-type="${col.type}" ${rowHeightStyle}>
+            <td class="cell-editable ${isLocked ? 'cell-locked' : ''} ${cellHlClass}" data-col-id="${col.id}" data-row-id="${row.id}" data-type="${col.type}" ${tdStyleAttr} ${isLocked ? 'title="Dòng đang bị khoá"' : ''}>
               ${cellContent}
             </td>
           `;
         });
 
         tbodyHtml += `
-            <td style="background: #f8fafc; border-right: none;" ${rowHeightStyle}></td>
-            <td class="td-actions" ${rowHeightStyle}>
-              <button class="btn-row-action" onclick="deleteRowById('${row.id}', event)" title="Xoá dòng"><i class="fa-solid fa-trash-can"></i></button>
+            <td style="border-right: none; ${rowHeightStyle} ${rowHighlight ? `background-color: ${rowHighlight};` : 'background: #f8fafc;'}" ></td>
+            <td class="td-actions" style="${rowHeightStyle} ${rowHighlight ? `background-color: ${rowHighlight};` : ''}">
+              <button class="btn-row-action btn-row-lock ${isLocked ? 'is-locked' : ''}" onclick="toggleLockRowById('${row.id}', event)" title="${isLocked ? 'Mở khoá dòng này' : 'Khoá dòng này'}">
+                <i class="fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}"></i>
+              </button>
+              <button class="btn-row-action" onclick="deleteRowById('${row.id}', event)" title="${isLocked ? 'Dòng này đang bị khoá, không thể xoá' : 'Xoá dòng'}" ${isLocked ? 'disabled style="opacity: 0.25; cursor: not-allowed;"' : ''}>
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
             </td>
           </tr>
         `;
@@ -2802,10 +3057,10 @@
       attachCellEventListeners();
     }
 
-    function renderCellContent(col, val, rowId) {
+    function renderCellContent(col, val, rowId, isLocked = false) {
       if (val === undefined || val === null || val === "") {
         if (col.type === "checkbox") {
-          return `<input type="checkbox" class="cell-check-toggle" data-col="${col.id}" data-row="${rowId}" />`;
+          return `<input type="checkbox" class="cell-check-toggle" data-col="${col.id}" data-row="${rowId}" ${isLocked ? 'disabled style="cursor: not-allowed; opacity: 0.5;"' : ''} />`;
         }
         return `<span style="color: var(--text-light); font-style: italic;">—</span>`;
       }
@@ -2849,7 +3104,7 @@
 
         case "checkbox":
           const isChecked = val === true || val === "true" || val === 1 || val === "1";
-          return `<input type="checkbox" class="cell-check-toggle" data-col="${col.id}" data-row="${rowId}" ${isChecked ? 'checked' : ''} />`;
+          return `<input type="checkbox" class="cell-check-toggle" data-col="${col.id}" data-row="${rowId}" ${isChecked ? 'checked' : ''} ${isLocked ? 'disabled style="cursor: not-allowed; opacity: 0.5;"' : ''} />`;
 
         case "number":
           const num = Number(val);
@@ -2884,6 +3139,14 @@
         cb.addEventListener("change", (e) => {
           const colId = e.target.dataset.col;
           const rowId = e.target.dataset.row;
+          const sheet = getActiveSheet();
+          const row = sheet?.rows?.find(r => r.id === rowId);
+          if (row && row.locked) {
+            e.preventDefault();
+            cb.checked = !cb.checked;
+            toast("Dòng này đang bị khoá, không thể sửa đổi!", "warning");
+            return;
+          }
           updateCellValue(rowId, colId, e.target.checked);
         });
       });
@@ -2904,6 +3167,13 @@
           const rowId = td.dataset.rowId;
           const type = td.dataset.type;
 
+          const sheet = getActiveSheet();
+          const row = sheet?.rows?.find(r => r.id === rowId);
+          if (row && row.locked) {
+            toast("Dòng này đang bị khoá, không thể chỉnh sửa!", "warning");
+            return;
+          }
+
           document.querySelectorAll(".cell-editable.cell-active").forEach(c => c.classList.remove("cell-active"));
           td.classList.add("cell-active");
           activeSelectedCell = { td, colId, rowId, type };
@@ -2920,7 +3190,7 @@
     function openCellEditor(td, colId, rowId, type) {
       const sheet = getActiveSheet();
       const row = sheet.rows.find(r => r.id === rowId);
-      if (!row) return;
+      if (!row || row.locked) return;
 
       const currentVal = row[colId] || "";
 
@@ -3367,6 +3637,11 @@
       const row = sheet.rows.find(r => r.id === rowId);
       if (!row) return;
 
+      if (row.locked) {
+        toast("Dòng này đang bị khoá, không thể chỉnh sửa!", "warning");
+        return;
+      }
+
       if (row[colId] === value) return;
 
       row[colId] = value;
@@ -3469,6 +3744,44 @@
     }
 
     /* ── ROW OPERATIONS ── */
+    function toggleLockRowById(rowId, e) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const sheet = getActiveSheet();
+      if (!sheet) return;
+
+      const row = sheet.rows.find(r => r.id === rowId);
+      if (!row) return;
+
+      row.locked = !row.locked;
+      saveState(true);
+      renderTableRowsOnly();
+      toast(row.locked ? "Đã khoá dòng dữ liệu 🔒" : "Đã mở khoá dòng dữ liệu 🔓", row.locked ? "info" : "success");
+    }
+
+    function lockSelectedRows(lock = true) {
+      if (selectedRowIds.size === 0) return;
+      const sheet = getActiveSheet();
+      if (!sheet) return;
+
+      let count = 0;
+      sheet.rows.forEach(r => {
+        if (selectedRowIds.has(r.id)) {
+          r.locked = lock;
+          count++;
+        }
+      });
+
+      if (count > 0) {
+        saveState(true);
+        renderTableRowsOnly();
+        updateFooterStats();
+        toast(lock ? `Đã khoá ${count} dòng đã chọn 🔒` : `Đã mở khoá ${count} dòng đã chọn 🔓`, "success");
+      }
+    }
+
     function deleteRowById(rowId, e) {
       if (e) {
         e.stopPropagation();
@@ -3481,6 +3794,11 @@
       if (rowIdx === -1) return;
 
       const removedRow = sheet.rows[rowIdx];
+      if (removedRow.locked) {
+        toast("Dòng này đang bị khoá, không thể xoá!", "warning");
+        return;
+      }
+
       sheet.rows.splice(rowIdx, 1);
       selectedRowIds.delete(rowId);
       saveState(true);
@@ -3498,22 +3816,34 @@
 
     function deleteSelectedRows() {
       if (selectedRowIds.size === 0) return;
-      const count = selectedRowIds.size;
+      const sheet = getActiveSheet();
+      if (!sheet) return;
+
+      const lockedCount = sheet.rows.filter(r => selectedRowIds.has(r.id) && r.locked).length;
+      const deletableIds = sheet.rows.filter(r => selectedRowIds.has(r.id) && !r.locked).map(r => r.id);
+
+      if (deletableIds.length === 0) {
+        toast("Tất cả các dòng được chọn đều đang bị khoá, không thể xoá!", "warning");
+        return;
+      }
+
+      const warningMsg = lockedCount > 0
+        ? `Có ${lockedCount} dòng đang bị khoá sẽ được bỏ qua. Bạn có chắc chắn muốn xoá ${deletableIds.length} dòng còn lại?`
+        : `Bạn có chắc chắn muốn xoá ${deletableIds.length} dòng đã chọn không? Thao tác có thể khôi phục qua nút Hoàn tác hoặc Ctrl+Z.`;
+
       openConfirmModal(
         "Xoá các dòng đã chọn",
-        `Bạn có chắc chắn muốn xoá ${count} dòng đã chọn không? Thao tác có thể khôi phục qua nút Hoàn tác hoặc Ctrl+Z.`,
-        `Xoá ${count} dòng`,
+        warningMsg,
+        `Xoá ${deletableIds.length} dòng`,
         () => {
-          const sheet = getActiveSheet();
-          if (!sheet) return;
           const backupRows = [...sheet.rows];
-          sheet.rows = sheet.rows.filter(r => !selectedRowIds.has(r.id));
-          selectedRowIds.clear();
+          sheet.rows = sheet.rows.filter(r => !deletableIds.includes(r.id));
+          deletableIds.forEach(id => selectedRowIds.delete(id));
           saveState(true);
           renderTableRowsOnly();
           updateFooterStats();
 
-          showUndoToast(`Đã xoá ${count} dòng.`, () => {
+          showUndoToast(`Đã xoá ${deletableIds.length} dòng.`, () => {
             sheet.rows = backupRows;
             saveState(true);
             renderTableRowsOnly();
@@ -3524,14 +3854,215 @@
       );
     }
 
+    /* ── HIGHLIGHT SYSTEM ── */
+    const HIGHLIGHT_COLORS = [
+      { name: "Vàng", bg: "#fef9c3", border: "#fde047", text: "#854d0e" },
+      { name: "Xanh lá", bg: "#dcfce7", border: "#86efac", text: "#166534" },
+      { name: "Xanh dương", bg: "#e0f2fe", border: "#7dd3fc", text: "#075985" },
+      { name: "Đỏ hồng", bg: "#fee2e2", border: "#fca5a5", text: "#991b1b" },
+      { name: "Tím", bg: "#f3e8ff", border: "#d8b4fe", text: "#6b21a8" },
+      { name: "Cam", bg: "#ffedd5", border: "#fdba74", text: "#9a3412" },
+      { name: "Hồng", bg: "#fce7f3", border: "#f9a8d4", text: "#9d174d" },
+      { name: "Xám", bg: "#f1f5f9", border: "#cbd5e1", text: "#334155" }
+    ];
+
+    let currentHighlightTarget = 'cell'; // 'cell' or 'row'
+
+    function setHighlightTarget(target) {
+      currentHighlightTarget = target;
+      const tabCell = document.getElementById("hlTabCell");
+      const tabRow = document.getElementById("hlTabRow");
+      const label = document.getElementById("highlightTargetLabel");
+
+      if (target === 'cell') {
+        if (tabCell) {
+          tabCell.style.background = "#fff";
+          tabCell.style.color = "var(--text)";
+          tabCell.style.boxShadow = "0 1px 2px rgba(0,0,0,0.06)";
+        }
+        if (tabRow) {
+          tabRow.style.background = "transparent";
+          tabRow.style.color = "var(--text-muted)";
+          tabRow.style.boxShadow = "none";
+        }
+        if (label) label.textContent = "Ô";
+      } else {
+        if (tabRow) {
+          tabRow.style.background = "#fff";
+          tabRow.style.color = "var(--text)";
+          tabRow.style.boxShadow = "0 1px 2px rgba(0,0,0,0.06)";
+        }
+        if (tabCell) {
+          tabCell.style.background = "transparent";
+          tabCell.style.color = "var(--text-muted)";
+          tabCell.style.boxShadow = "none";
+        }
+        if (label) {
+          label.textContent = selectedRowIds.size > 1 ? `${selectedRowIds.size} dòng` : "Dòng";
+        }
+      }
+    }
+
+    function openHighlightPalette(e, defaultTarget = null) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const menu = document.getElementById("highlightPaletteDropdown");
+      if (!menu) return;
+
+      initHighlightSwatches();
+
+      if (defaultTarget) {
+        setHighlightTarget(defaultTarget);
+      } else if (!activeSelectedCell && selectedRowIds.size > 0) {
+        setHighlightTarget('row');
+      } else if (activeSelectedCell) {
+        setHighlightTarget('cell');
+      } else {
+        setHighlightTarget('row');
+      }
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      menu.style.display = "block";
+      menu.style.top = `${rect.bottom + 6}px`;
+      menu.style.left = `${Math.max(10, Math.min(rect.left, window.innerWidth - 260))}px`;
+    }
+
+    function initHighlightSwatches() {
+      const grid = document.getElementById("highlightSwatchesGrid");
+      if (!grid || grid.children.length > 0) return;
+      grid.innerHTML = HIGHLIGHT_COLORS.map(c => `
+        <button type="button" class="hl-swatch-btn" onclick="applyHighlightColor('${c.bg}')" style="background: ${c.bg}; border: 1.5px solid ${c.border}; color: ${c.text};">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: ${c.border}; display: inline-block;"></span>
+          ${c.name}
+        </button>
+      `).join("");
+    }
+
+    function applyHighlightColor(color) {
+      const sheet = getActiveSheet();
+      if (!sheet) return;
+
+      const menu = document.getElementById("highlightPaletteDropdown");
+      if (menu) menu.style.display = "none";
+
+      if (currentHighlightTarget === 'cell') {
+        if (!activeSelectedCell || !activeSelectedCell.rowId || !activeSelectedCell.colId) {
+          toast("Vui lòng nhấp chọn 1 ô trước khi tô màu ô!", "warning");
+          return;
+        }
+        const row = sheet.rows.find(r => r.id === activeSelectedCell.rowId);
+        if (!row) return;
+
+        if (row.locked) {
+          toast("Dòng này đang bị khoá, không thể chỉnh sửa!", "warning");
+          return;
+        }
+
+        if (!row.highlights) row.highlights = {};
+        if (color) {
+          row.highlights[activeSelectedCell.colId] = color;
+        } else {
+          delete row.highlights[activeSelectedCell.colId];
+          if (Object.keys(row.highlights).length === 0) delete row.highlights;
+        }
+
+        saveState(true);
+        renderTableRowsOnly();
+        toast(color ? "Đã tô màu ô dữ liệu" : "Đã xoá màu ô dữ liệu", "success");
+      } else {
+        const targetIds = selectedRowIds.size > 0
+          ? Array.from(selectedRowIds)
+          : (activeSelectedCell?.rowId ? [activeSelectedCell.rowId] : (currentContextRowId ? [currentContextRowId] : []));
+
+        if (targetIds.length === 0) {
+          toast("Vui lòng chọn ít nhất 1 dòng hoặc 1 ô để tô màu dòng!", "warning");
+          return;
+        }
+
+        let updatedCount = 0;
+        sheet.rows.forEach(r => {
+          if (targetIds.includes(r.id)) {
+            if (color) {
+              r.highlight = color;
+            } else {
+              delete r.highlight;
+              delete r.highlights;
+            }
+            updatedCount++;
+          }
+        });
+
+        saveState(true);
+        renderTableRowsOnly();
+        toast(color ? `Đã tô màu ${updatedCount} dòng` : `Đã xoá màu ${updatedCount} dòng`, "success");
+      }
+    }
+
+    function setRowHighlight(rowId, color) {
+      const sheet = getActiveSheet();
+      if (!sheet) return;
+      const row = sheet.rows.find(r => r.id === rowId);
+      if (!row) return;
+
+      if (color) {
+        row.highlight = color;
+      } else {
+        delete row.highlight;
+      }
+
+      document.querySelectorAll(".dropdown-menu").forEach(el => el.style.display = "none");
+      saveState(true);
+      renderTableRowsOnly();
+      toast(color ? "Đã tô màu dòng" : "Đã xoá màu dòng", "success");
+    }
+
+    function triggerClearRowHighlight(e) {
+      if (e) e.stopPropagation();
+      if (currentContextRowId) {
+        setRowHighlight(currentContextRowId, null);
+      }
+    }
+
     /* ── ROW CONTEXT MENU ── */
     function openRowContextMenu(rowId, e) {
       currentContextRowId = rowId;
       const menu = document.getElementById("rowContextMenu");
       if (!menu) return;
+
+      const sheet = getActiveSheet();
+      const row = sheet?.rows?.find(r => r.id === rowId);
+      const isLocked = row ? !!row.locked : false;
+
+      const ctxLock = document.getElementById("ctxToggleLock");
+      if (ctxLock) {
+        ctxLock.innerHTML = isLocked
+          ? `<i class="fa-solid fa-lock-open" style="color: var(--primary);"></i> <span>Mở khoá dòng này</span>`
+          : `<i class="fa-solid fa-lock" style="color: #d97706;"></i> <span>Khoá dòng này</span>`;
+      }
+
+      // Populate context menu highlight swatches
+      const swatchesContainer = document.getElementById("ctxRowHighlightSwatches");
+      if (swatchesContainer) {
+        swatchesContainer.innerHTML = HIGHLIGHT_COLORS.map(c => {
+          const isAct = row && row.highlight === c.bg;
+          return `<div class="highlight-swatch ${isAct ? 'active' : ''}"
+            style="background: ${c.bg}; border-color: ${c.border};"
+            title="${c.name}"
+            onclick="event.stopPropagation(); setRowHighlight('${rowId}', '${c.bg}')"></div>`;
+        }).join("");
+      }
+
       menu.style.display = "block";
       menu.style.top = `${e.clientY + 4}px`;
       menu.style.left = `${Math.min(e.clientX, window.innerWidth - 200)}px`;
+    }
+
+    function triggerToggleLockRowContext() {
+      if (currentContextRowId) {
+        toggleLockRowById(currentContextRowId);
+      }
     }
 
     function triggerDuplicateRow() {
@@ -3584,6 +4115,11 @@
       if (!sheet) return;
       const row = sheet.rows.find(r => r.id === currentContextRowId);
       if (!row) return;
+
+      if (row.locked) {
+        toast("Dòng này đang bị khoá, không thể xoá trắng!", "warning");
+        return;
+      }
 
       sheet.columns.forEach(col => {
         if (col.type === "checkbox") row[col.id] = false;
@@ -3718,6 +4254,13 @@
             e.preventDefault();
             return;
           }
+          const sheet = getActiveSheet();
+          const r = sheet?.rows?.find(item => item.id === tr.dataset.rowId);
+          if (r && r.locked) {
+            e.preventDefault();
+            toast("Dòng này đang bị khoá, không thể kéo di chuyển!", "warning");
+            return;
+          }
           draggedRowId = tr.dataset.rowId;
           tr.classList.add("row-dragging");
           e.dataTransfer.effectAllowed = "move";
@@ -3787,6 +4330,12 @@
       if (!sheet) return;
       const idx = sheet.rows.findIndex(r => r.id === rowId);
       if (idx === -1) return;
+
+      const targetRow = sheet.rows[idx];
+      if (targetRow.locked) {
+        toast("Dòng này đang bị khoá, không thể di chuyển!", "warning");
+        return;
+      }
 
       const targetIdx = direction === "up" ? idx - 1 : idx + 1;
       if (targetIdx < 0 || targetIdx >= sheet.rows.length) {
@@ -4503,27 +5052,190 @@
 
       try {
         if (typeof XLSX !== "undefined") {
-          // Prepare headers and data for SheetJS
-          const headers = sheet.columns.map(c => c.name);
-          const data = [headers];
+          const columns = sheet.columns || [];
+          const headers = ["STT", ...columns.map(c => c.name)];
+          const aoa = [headers];
 
-          sheet.rows.forEach(r => {
-            const rowArr = sheet.columns.map(c => {
-              const val = r[c.id];
-              if (val === undefined || val === null) return "";
-              if (c.type === "checkbox") return val ? "Có" : "Không";
-              return val;
+          // Track column widths
+          const colWidths = headers.map(h => Math.max(8, String(h).length + 4));
+          colWidths[0] = 7; // STT width
+
+          sheet.rows.forEach((r, rIdx) => {
+            const rowArr = [rIdx + 1]; // STT
+
+            columns.forEach((c, cIdx) => {
+              let val = r[c.id];
+              let displayVal = val;
+
+              if (val === undefined || val === null) {
+                displayVal = "";
+              } else if (c.type === "checkbox") {
+                displayVal = (val === true || val === "true" || val === 1) ? "Có" : "Không";
+              } else if (c.type === "date") {
+                displayVal = formatDisplayDate(val) || String(val);
+              } else if (c.type === "number") {
+                const num = Number(val);
+                displayVal = isNaN(num) ? val : num;
+              } else {
+                displayVal = String(val);
+              }
+
+              rowArr.push(displayVal);
+
+              // Update column width estimate (ensure long descriptions fit in 1 clean line)
+              const len = String(displayVal).length;
+              if (len + 4 > colWidths[cIdx + 1]) {
+                colWidths[cIdx + 1] = Math.min(100, Math.max(colWidths[cIdx + 1], len + 4));
+              }
             });
-            data.push(rowArr);
+
+            aoa.push(rowArr);
           });
 
-          const ws = XLSX.utils.aoa_to_sheet(data);
+          // Ensure proper minimum widths by column type
+          columns.forEach((c, idx) => {
+            const colPos = idx + 1;
+            if (c.type === "date" && colWidths[colPos] < 15) colWidths[colPos] = 15;
+            if (c.type === "status" && colWidths[colPos] < 16) colWidths[colPos] = 16;
+            if (c.type === "project" && colWidths[colPos] < 15) colWidths[colPos] = 15;
+            if (c.type === "member" && colWidths[colPos] < 18) colWidths[colPos] = 18;
+            if (c.type === "checkbox" && colWidths[colPos] < 10) colWidths[colPos] = 10;
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+          // Apply column widths
+          ws['!cols'] = colWidths.map(w => ({ wch: w }));
+
+          // Apply header row height cleanly (let data rows auto-fit smoothly)
+          ws['!rows'] = [{ hpt: 26 }];
+
+          // Freeze top header row
+          ws['!views'] = [{ state: 'frozen', ySplit: 1 }];
+
+          // Borders definition
+          const borderStyle = {
+            top: { style: "thin", color: { rgb: "E2E8F0" } },
+            bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+            left: { style: "thin", color: { rgb: "E2E8F0" } },
+            right: { style: "thin", color: { rgb: "E2E8F0" } }
+          };
+
+          const headerBorder = {
+            top: { style: "thin", color: { rgb: "1E3A8A" } },
+            bottom: { style: "medium", color: { rgb: "0F172A" } },
+            left: { style: "thin", color: { rgb: "3B82F6" } },
+            right: { style: "thin", color: { rgb: "3B82F6" } }
+          };
+
+          // Color helper
+          const toRgb = (hex) => {
+            if (!hex) return null;
+            let c = hex.replace("#", "").trim();
+            if (c.length === 3) c = c.split("").map(ch => ch + ch).join("");
+            return c.toUpperCase();
+          };
+
+          // Style Header Cells
+          for (let c = 0; c <= columns.length; c++) {
+            const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+            if (ws[cellRef]) {
+              ws[cellRef].s = {
+                fill: { fgColor: { rgb: "1E3A8A" } }, // Deep royal navy
+                font: { name: "Segoe UI", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+                alignment: { vertical: "center", horizontal: "center", wrapText: false },
+                border: headerBorder
+              };
+            }
+          }
+
+          // Style Data Cells
+          sheet.rows.forEach((r, rIdx) => {
+            const excelRowIdx = rIdx + 1;
+            const rowHighlightRgb = toRgb(r.highlight);
+            const isEven = rIdx % 2 === 1;
+            const defaultBgRgb = rowHighlightRgb || (isEven ? "F8FAFC" : "FFFFFF");
+
+            // STT cell (Column 0)
+            const sttRef = XLSX.utils.encode_cell({ r: excelRowIdx, c: 0 });
+            if (ws[sttRef]) {
+              ws[sttRef].s = {
+                fill: { fgColor: { rgb: rowHighlightRgb || (isEven ? "F1F5F9" : "F8FAFC") } },
+                font: { name: "Segoe UI", sz: 10, color: { rgb: "475569" }, bold: true },
+                alignment: { vertical: "center", horizontal: "center" },
+                border: borderStyle
+              };
+            }
+
+            // Other columns
+            columns.forEach((col, cIdx) => {
+              const cellRef = XLSX.utils.encode_cell({ r: excelRowIdx, c: cIdx + 1 });
+              if (!ws[cellRef]) return;
+
+              const val = r[col.id];
+              const cellHighlightRgb = toRgb(r.highlights?.[col.id]);
+              let cellBg = cellHighlightRgb || defaultBgRgb;
+              let fontColor = "1E293B";
+              let isBold = false;
+              let alignH = "left";
+
+              if (col.type === "date") {
+                alignH = "center";
+                fontColor = "334155";
+              } else if (col.type === "number") {
+                alignH = "right";
+                if (typeof ws[cellRef].v === "number") {
+                  ws[cellRef].z = "#,##0";
+                }
+              } else if (col.type === "checkbox") {
+                alignH = "center";
+                const isChecked = val === true || val === "true" || val === 1;
+                fontColor = isChecked ? "16A34A" : "94A3B8";
+                isBold = true;
+              } else if (col.type === "status") {
+                alignH = "center";
+                isBold = true;
+                const sStr = String(val || "").toLowerCase();
+                if (!cellHighlightRgb && !rowHighlightRgb) {
+                  if (sStr.includes("pending") || sStr.includes("chờ")) {
+                    cellBg = "FEF3C7"; // Amber
+                    fontColor = "92400E";
+                  } else if (sStr.includes("done") || sStr.includes("hoàn thành") || sStr.includes("success")) {
+                    cellBg = "DCFCE7"; // Green
+                    fontColor = "166534";
+                  } else if (sStr.includes("progress") || sStr.includes("đang")) {
+                    cellBg = "DBEAFE"; // Blue
+                    fontColor = "1E40AF";
+                  } else if (sStr.includes("reject") || sStr.includes("huỷ") || sStr.includes("lỗi")) {
+                    cellBg = "FEE2E2"; // Red
+                    fontColor = "991B1B";
+                  }
+                }
+              } else if (col.type === "project") {
+                alignH = "center";
+                isBold = true;
+                fontColor = "1D4ED8";
+              } else if (col.type === "member") {
+                alignH = "left";
+                fontColor = "0F172A";
+              }
+
+              ws[cellRef].s = {
+                fill: { fgColor: { rgb: cellBg } },
+                font: { name: "Segoe UI", sz: 10, bold: isBold, color: { rgb: fontColor } },
+                alignment: { vertical: "center", horizontal: alignH, wrapText: false },
+                border: borderStyle
+              };
+            });
+          });
+
           const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, sheet.name.replace(/[:\\/?*\[\]]/g, "_").slice(0, 31));
+          const cleanSheetName = sheet.name.replace(/[:\\/?*\[\]]/g, "_").slice(0, 31) || "Sheet1";
+          XLSX.utils.book_append_sheet(wb, ws, cleanSheetName);
 
           const fileName = `DMS_BangTinh_${sheet.name.replace(/\s+/g, '_')}_${getTodayIso()}.xlsx`;
           XLSX.writeFile(wb, fileName);
-          toast("Đã xuất file Excel (.xlsx) thành công!", "success");
+          toast("Đã xuất file Excel chuẩn đẹp (.xlsx) thành công!", "success");
           return;
         }
       } catch (err) {
@@ -4535,14 +5247,17 @@
     }
 
     function exportToCsvFallback(sheet) {
-      const headers = sheet.columns.map(c => `"${c.name.replace(/"/g, '""')}"`);
+      const headers = ["STT", ...sheet.columns.map(c => `"${c.name.replace(/"/g, '""')}"`)];
       const lines = [headers.join(",")];
 
-      sheet.rows.forEach(r => {
-        const rowArr = sheet.columns.map(c => {
-          let val = r[c.id] || "";
-          if (c.type === "checkbox") val = val ? "Có" : "Không";
-          return `"${String(val).replace(/"/g, '""')}"`;
+      sheet.rows.forEach((r, rIdx) => {
+        const rowArr = [rIdx + 1];
+        sheet.columns.forEach(c => {
+          let val = r[c.id];
+          if (val === undefined || val === null) val = "";
+          else if (c.type === "checkbox") val = val ? "Có" : "Không";
+          else if (c.type === "date") val = formatDisplayDate(val) || val;
+          rowArr.push(`"${String(val).replace(/"/g, '""')}"`);
         });
         lines.push(rowArr.join(","));
       });
@@ -4733,14 +5448,16 @@
         filteredStatEl.style.display = "none";
       }
 
-      // Selected rows action button
-      const delSelectedBtn = document.getElementById("btnDeleteSelected");
+      // Selected rows action buttons
+      const bulkActionsGroup = document.getElementById("bulkActionsGroup");
       const selCountBadge = document.getElementById("selectedCountBadge");
+      const lockCountBadge = document.getElementById("lockCountBadge");
       if (selectedRowIds.size > 0) {
-        delSelectedBtn.style.display = "inline-flex";
-        selCountBadge.textContent = selectedRowIds.size;
+        if (bulkActionsGroup) bulkActionsGroup.style.display = "inline-flex";
+        if (selCountBadge) selCountBadge.textContent = selectedRowIds.size;
+        if (lockCountBadge) lockCountBadge.textContent = selectedRowIds.size;
       } else {
-        delSelectedBtn.style.display = "none";
+        if (bulkActionsGroup) bulkActionsGroup.style.display = "none";
       }
 
       // Check for numeric columns to show sum/avg
@@ -4845,6 +5562,7 @@
        EVENT LISTENERS ATTACHMENT
     ────────────────────────────────────────────────────────────────────────── */
     function setupEventListeners() {
+      initHighlightSwatches();
       const on = (id, event, handler) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, handler);
@@ -4861,8 +5579,14 @@
       // Sheet Rename Modal
       on("btnSaveSheetRename", "click", saveSheetRename);
 
-      // Bulk Delete
+      // Bulk Actions
+      on("btnHighlightSelected", "click", (e) => openHighlightPalette(e, 'row'));
+      on("btnLockSelected", "click", () => lockSelectedRows(true));
+      on("btnUnockSelected", "click", () => lockSelectedRows(false));
       on("btnDeleteSelected", "click", deleteSelectedRows);
+
+      // Highlight Menu Button
+      on("btnHighlightMenu", "click", (e) => openHighlightPalette(e));
 
       // Undo / Redo Shortcuts
       on("btnUndo", "click", undo);
@@ -4964,8 +5688,13 @@
             return;
           }
           if (activeSelectedCell && activeSelectedCell.rowId && activeSelectedCell.colId) {
-            e.preventDefault();
             const sheet = getActiveSheet();
+            const row = sheet?.rows?.find(r => r.id === activeSelectedCell.rowId);
+            if (row && row.locked) {
+              toast("Dòng này đang bị khoá, không thể chỉnh sửa!", "warning");
+              return;
+            }
+            e.preventDefault();
             const col = sheet && sheet.columns.find(c => c.id === activeSelectedCell.colId);
             const clearVal = (col && col.type === "checkbox") ? false : "";
             updateCellValue(activeSelectedCell.rowId, activeSelectedCell.colId, clearVal);
@@ -4976,8 +5705,12 @@
 
       // Global click outside to close dropdown menus & clear cell focus
       document.addEventListener("click", (e) => {
-        document.querySelectorAll(".dropdown-menu").forEach(el => el.style.display = "none");
-        if (!e.target.closest(".cell-editable")) {
+        if (!e.target.closest("#highlightPaletteDropdown") && !e.target.closest("#btnHighlightMenu") && !e.target.closest("#btnHighlightSelected")) {
+          const hlMenu = document.getElementById("highlightPaletteDropdown");
+          if (hlMenu) hlMenu.style.display = "none";
+        }
+        document.querySelectorAll(".dropdown-menu:not(#highlightPaletteDropdown)").forEach(el => el.style.display = "none");
+        if (!e.target.closest(".cell-editable") && !e.target.closest("#btnHighlightMenu") && !e.target.closest("#highlightPaletteDropdown") && !e.target.closest("#btnHighlightSelected")) {
           document.querySelectorAll(".cell-editable.cell-active").forEach(c => c.classList.remove("cell-active"));
           activeSelectedCell = null;
         }

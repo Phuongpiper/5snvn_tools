@@ -150,6 +150,10 @@ module.exports = async function handler(req, res) {
 
       // Add server-side timestamp
       bodyData.updatedAt = Date.now();
+      // Active sheet is client-local view state; do not store or propagate globally across users
+      if (bodyData.activeSheetId) {
+        delete bodyData.activeSheetId;
+      }
 
       const putBody = JSON.stringify(bodyData);
       const putR = await r2Fetch("PUT", putBody);
