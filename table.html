@@ -679,30 +679,42 @@
     }
 
     /* ── BADGES & CELL CONTENT TYPES ── */
-    /* Member Badge */
+    /* Member Badge & Wrapper for Multiple Members */
+    .member-badges-wrap {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      max-width: 100%;
+      vertical-align: middle;
+    }
+
     .member-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
+      gap: 5px;
+      padding: 2.5px 8px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       line-height: 1.2;
       border: 1px solid transparent;
       user-select: none;
+      white-space: nowrap;
+      transition: transform 0.1s, box-shadow 0.1s;
     }
 
     .member-avatar {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       color: #fff;
+      flex-shrink: 0;
     }
 
     /* Status Badge */
@@ -1368,7 +1380,7 @@
       box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);
     }
 
-    /* Member Picker Dropdown */
+    /* Member Picker Dropdown (Multi-Select) */
     .member-picker-popup {
       position: fixed;
       background: #ffffff;
@@ -1376,11 +1388,11 @@
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-xl);
       padding: 10px;
-      width: 270px;
-      max-height: 350px;
+      width: 285px;
+      max-height: 400px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
       z-index: 1000;
       animation: fadeIn 0.12s ease-out;
     }
@@ -1398,8 +1410,44 @@
       border-bottom: 1px solid var(--border-light);
     }
 
+    .member-picker-quick-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 1px 0;
+    }
+
+    .btn-picker-quick {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-picker-quick:hover {
+      background: var(--primary-light);
+    }
+
+    .btn-picker-quick.danger {
+      color: var(--text-muted);
+    }
+
+    .btn-picker-quick.danger:hover {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
     .member-picker-search {
-      height: 34px;
+      height: 33px;
       padding: 0 10px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -1418,18 +1466,20 @@
       max-height: 200px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
+      padding-right: 2px;
     }
 
     .member-picker-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 8px;
+      padding: 5px 8px;
       border-radius: var(--radius-sm);
       cursor: pointer;
       font-size: 12.5px;
       transition: background 0.12s;
+      user-select: none;
     }
 
     .member-picker-item:hover {
@@ -1441,23 +1491,59 @@
       font-weight: 600;
     }
 
-    .member-picker-item .check-icon {
+    .member-item-checkbox {
+      width: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #94a3b8;
+      transition: color 0.12s;
+    }
+
+    .member-picker-item.active .member-item-checkbox {
       color: var(--primary);
-      font-size: 11px;
+    }
+
+    .member-picker-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-top: 1px solid var(--border-light);
+      padding-top: 7px;
+      margin-top: 2px;
+    }
+
+    .member-picker-footer .btn-done {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 4px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.15s;
+    }
+
+    .member-picker-footer .btn-done:hover {
+      background: var(--primary-hover);
     }
 
     .member-picker-clear {
       display: flex;
       align-items: center;
       gap: 6px;
-      padding: 6px 8px;
-      font-size: 12px;
+      padding: 4px 6px;
+      font-size: 11.5px;
       color: var(--text-muted);
       cursor: pointer;
       border-radius: var(--radius-sm);
-      border-top: 1px dashed var(--border);
-      margin-top: 2px;
-      padding-top: 6px;
+      transition: background 0.12s, color 0.12s;
     }
 
     .member-picker-clear:hover {
@@ -2360,6 +2446,27 @@
       };
     }
 
+    function getRowMembers(val) {
+      if (val === null || val === undefined) return [];
+      if (Array.isArray(val)) {
+        return val.map(v => (typeof v === "string" ? v.trim() : (v && v.name ? v.name.trim() : ""))).filter(Boolean);
+      }
+      if (typeof val === "string") {
+        const str = val.trim();
+        if (!str) return [];
+        if (str.startsWith("[") && str.endsWith("]")) {
+          try {
+            const parsed = JSON.parse(str);
+            if (Array.isArray(parsed)) {
+              return parsed.map(v => (typeof v === "string" ? v.trim() : (v && v.name ? v.name.trim() : ""))).filter(Boolean);
+            }
+          } catch (_) {}
+        }
+        return str.split(",").map(s => s.trim()).filter(Boolean);
+      }
+      return [];
+    }
+
     function getMemberInfo(name) {
       if (!name) return { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
       let hash = 0;
@@ -3233,6 +3340,14 @@
       const curMember = memberSel.value;
       memberSel.innerHTML = `<option value="">👤 Tất cả nhân viên</option>`;
       const members = getAvailableMembers();
+      sheet.rows.forEach(r => {
+        sheet.columns.filter(c => c.type === "member").forEach(c => {
+          const mList = getRowMembers(r[c.id]);
+          mList.forEach(m => {
+            if (m && !members.includes(m)) members.push(m);
+          });
+        });
+      });
       members.forEach(mName => {
         const opt = document.createElement("option");
         opt.value = mName;
@@ -3435,7 +3550,7 @@
     }
 
     function renderCellContent(col, val, rowId, isLocked = false) {
-      if (val === undefined || val === null || val === "") {
+      if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
         if (col.type === "checkbox") {
           return `<input type="checkbox" class="cell-check-toggle" data-col="${col.id}" data-row="${rowId}" ${isLocked ? 'disabled style="cursor: not-allowed; opacity: 0.5;"' : ''} />`;
         }
@@ -3481,13 +3596,23 @@
           `;
 
         case "member":
-          const mInfo = getMemberInfo(val);
-          const initial = val.charAt(0).toUpperCase();
+          const mems = getRowMembers(val);
+          if (mems.length === 0) {
+            return `<span style="color: var(--text-light); font-style: italic;">—</span>`;
+          }
           return `
-            <span class="member-badge" style="background:${mInfo.bg}; color:${mInfo.color}; border-color:${mInfo.border};">
-              <span class="member-avatar" style="background:${mInfo.color};">${initial}</span>
-              ${escapeHtml(val)}
-            </span>
+            <div class="member-badges-wrap">
+              ${mems.map(m => {
+                const mInfo = getMemberInfo(m);
+                const initial = m.charAt(0).toUpperCase();
+                return `
+                  <span class="member-badge" style="background:${mInfo.bg}; color:${mInfo.color}; border-color:${mInfo.border};">
+                    <span class="member-avatar" style="background:${mInfo.color};">${initial}</span>
+                    ${escapeHtml(m)}
+                  </span>
+                `;
+              }).join("")}
+            </div>
           `;
 
         case "status":
@@ -3670,7 +3795,7 @@
       });
     }
 
-    /* ── MEMBER PICKER POPUP ── */
+    /* ── MEMBER PICKER POPUP (MULTI-SELECT) ── */
     function openMemberPicker(td, rowId, colId, currentVal) {
       closeAllPickers();
 
@@ -3679,7 +3804,7 @@
       popup.className = "member-picker-popup";
       popup.id = "activeMemberPicker";
 
-      const popupWidth = 270;
+      const popupWidth = 285;
       let left = rect.left;
       if (left + popupWidth > window.innerWidth - 16) {
         left = window.innerWidth - popupWidth - 16;
@@ -3687,26 +3812,61 @@
       if (left < 16) left = 16;
 
       let top = rect.bottom + 4;
-      if (top + 330 > window.innerHeight) {
-        top = Math.max(10, rect.top - 335);
+      if (top + 380 > window.innerHeight) {
+        top = Math.max(10, rect.top - 385);
       }
 
       popup.style.top = `${top}px`;
       popup.style.left = `${left}px`;
 
+      // Set of currently selected members
+      const selectedMembers = new Set(getRowMembers(currentVal));
+
       popup.innerHTML = `
         <div class="member-picker-header">
-          <span><i class="fa-solid fa-user-tag" style="color:var(--primary); margin-right:4px;"></i> Nhân sự (Đồng bộ Task)</span>
-          <span style="font-size:10px; color:var(--text-light); font-weight:normal;">Từ Task Tab</span>
+          <span><i class="fa-solid fa-users" style="color:var(--primary); margin-right:4px;"></i> Nhân sự (Chọn nhiều)</span>
+          <span id="memberPickerCount" style="font-size:10.5px; color:var(--text-light); font-weight:600;"></span>
         </div>
         <input type="text" class="member-picker-search" id="memberSearchInp" placeholder="Tìm kiếm hoặc gõ tên mới..." />
+        <div class="member-picker-quick-bar">
+          <button type="button" class="btn-picker-quick" id="btnSelectAllMembers" title="Chọn tất cả nhân viên">
+            <i class="fa-solid fa-check-double"></i> Chọn tất cả
+          </button>
+          <button type="button" class="btn-picker-quick danger" id="btnClearAllMembers" title="Bỏ chọn tất cả">
+            <i class="fa-regular fa-trash-can"></i> Xoá chọn
+          </button>
+        </div>
         <div class="member-picker-list" id="memberPickerList"></div>
-        <div class="member-picker-clear" id="memberClearBtn">
-          <i class="fa-regular fa-circle-xmark"></i> Bỏ chọn nhân viên (để trống)
+        <div class="member-picker-footer">
+          <div class="member-picker-clear" id="memberClearBtn" title="Để trống ô">
+            <i class="fa-regular fa-circle-xmark"></i> Để trống ô
+          </div>
+          <button type="button" class="btn-done" id="memberDoneBtn">
+            <i class="fa-solid fa-check"></i> Xong
+          </button>
         </div>
       `;
 
       document.body.appendChild(popup);
+
+      const updateCountBadge = () => {
+        const countEl = document.getElementById("memberPickerCount");
+        if (!countEl) return;
+        if (selectedMembers.size > 0) {
+          countEl.textContent = `Đã chọn: ${selectedMembers.size}`;
+          countEl.style.color = "var(--primary)";
+          countEl.style.fontWeight = "700";
+        } else {
+          countEl.textContent = "Chưa chọn";
+          countEl.style.color = "var(--text-light)";
+          countEl.style.fontWeight = "normal";
+        }
+      };
+
+      const syncToCell = () => {
+        const arr = Array.from(selectedMembers);
+        updateCellValue(rowId, colId, arr.length > 0 ? arr : "");
+      };
 
       const renderList = (filter = "") => {
         const listEl = document.getElementById("memberPickerList");
@@ -3723,23 +3883,32 @@
 
         filtered.forEach(m => {
           const item = document.createElement("div");
-          const isSelected = m === currentVal;
+          const isSelected = selectedMembers.has(m);
           item.className = `member-picker-item ${isSelected ? 'active' : ''}`;
           const mInfo = getMemberInfo(m);
           const initial = m.charAt(0).toUpperCase();
           item.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px;">
+              <span class="member-item-checkbox">
+                <i class="fa-${isSelected ? 'solid fa-square-check' : 'regular fa-square'}"></i>
+              </span>
               <span class="member-badge" style="background:${mInfo.bg}; color:${mInfo.color}; border-color:${mInfo.border};">
                 <span class="member-avatar" style="background:${mInfo.color}; width:18px; height:18px; font-size:9px;">${initial}</span>
                 ${escapeHtml(m)}
               </span>
             </div>
-            ${isSelected ? '<i class="fa-solid fa-check check-icon"></i>' : ''}
+            ${isSelected ? '<span style="font-size:11px; font-weight:700; color:var(--primary);"><i class="fa-solid fa-check"></i></span>' : ''}
           `;
           item.onclick = (e) => {
             e.stopPropagation();
-            updateCellValue(rowId, colId, m);
-            popup.remove();
+            if (selectedMembers.has(m)) {
+              selectedMembers.delete(m);
+            } else {
+              selectedMembers.add(m);
+            }
+            syncToCell();
+            renderList(searchInp.value);
+            updateCountBadge();
           };
           listEl.appendChild(item);
         });
@@ -3760,8 +3929,11 @@
             e.stopPropagation();
             const newName = filter.trim();
             addCustomMember(newName);
-            updateCellValue(rowId, colId, newName);
-            popup.remove();
+            selectedMembers.add(newName);
+            syncToCell();
+            searchInp.value = "";
+            renderList("");
+            updateCountBadge();
           };
           listEl.appendChild(addNewItem);
         }
@@ -3770,13 +3942,42 @@
       const searchInp = document.getElementById("memberSearchInp");
       searchInp.focus();
       searchInp.addEventListener("input", (e) => renderList(e.target.value));
+      searchInp.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          popup.remove();
+        }
+      });
+
+      document.getElementById("btnSelectAllMembers").onclick = (e) => {
+        e.stopPropagation();
+        const allMems = getAvailableMembers();
+        allMems.forEach(m => selectedMembers.add(m));
+        syncToCell();
+        renderList(searchInp.value);
+        updateCountBadge();
+      };
+
+      document.getElementById("btnClearAllMembers").onclick = (e) => {
+        e.stopPropagation();
+        selectedMembers.clear();
+        syncToCell();
+        renderList(searchInp.value);
+        updateCountBadge();
+      };
 
       document.getElementById("memberClearBtn").onclick = (e) => {
         e.stopPropagation();
-        updateCellValue(rowId, colId, "");
+        selectedMembers.clear();
+        syncToCell();
         popup.remove();
       };
 
+      document.getElementById("memberDoneBtn").onclick = (e) => {
+        e.stopPropagation();
+        popup.remove();
+      };
+
+      updateCountBadge();
       renderList();
 
       setTimeout(() => {
@@ -4228,7 +4429,10 @@
         return;
       }
 
-      if (row[colId] === value) return;
+      const isSame = Array.isArray(row[colId]) && Array.isArray(value)
+        ? (row[colId].length === value.length && row[colId].every((v, i) => v === value[i]))
+        : (row[colId] === value);
+      if (isSame) return;
 
       row[colId] = value;
       saveState(true);
@@ -4989,7 +5193,10 @@
         // Member filter
         if (memberFilter) {
           const memberCols = sheet.columns.filter(c => c.type === "member");
-          const hasMember = memberCols.some(c => row[c.id] === memberFilter);
+          const hasMember = memberCols.some(c => {
+            const mems = getRowMembers(row[c.id]);
+            return mems.includes(memberFilter);
+          });
           if (!hasMember) return false;
         }
 
@@ -5002,7 +5209,7 @@
 
         // Search query
         if (query) {
-          const rowText = Object.values(row).join(" ").toLowerCase();
+          const rowText = Object.values(row).map(v => Array.isArray(v) ? v.join(" ") : String(v)).join(" ").toLowerCase();
           if (!rowText.includes(query)) return false;
         }
 
@@ -5719,9 +5926,14 @@
                 displayVal = (val === true || val === "true" || val === 1) ? "Có" : "Không";
               } else if (c.type === "date") {
                 displayVal = formatDisplayDate(val) || String(val);
+              } else if (c.type === "member") {
+                const mems = getRowMembers(val);
+                displayVal = mems.join(", ");
               } else if (c.type === "number") {
                 const num = Number(val);
                 displayVal = isNaN(num) ? val : num;
+              } else if (Array.isArray(val)) {
+                displayVal = val.join(", ");
               } else {
                 displayVal = String(val);
               }
@@ -5918,6 +6130,8 @@
           if (val === undefined || val === null) val = "";
           else if (c.type === "checkbox") val = val ? "Có" : "Không";
           else if (c.type === "date") val = formatDisplayDate(val) || val;
+          else if (c.type === "member") val = getRowMembers(val).join(", ");
+          else if (Array.isArray(val)) val = val.join(", ");
           rowArr.push(`"${String(val).replace(/"/g, '""')}"`);
         });
         lines.push(rowArr.join(","));

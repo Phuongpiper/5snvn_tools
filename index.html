@@ -512,6 +512,515 @@
         color: #9ca3af;
         font-size: 13.5px;
       }
+
+      /* ── Settings Button & Modals ── */
+      .settings-container {
+        position: relative;
+        display: inline-block;
+      }
+      .settings-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        color: #64748b;
+        cursor: pointer;
+        padding: 8px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .settings-btn:hover {
+        background-color: #f1f5f9;
+        color: #4f46e5;
+        transform: rotate(45deg) scale(1.08);
+      }
+
+      /* Modals Overlay */
+      .settings-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20000;
+        padding: 16px;
+        animation: fadeInOverlay 0.18s ease-out;
+      }
+      @keyframes fadeInOverlay {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      /* Auth Card */
+      .settings-auth-card {
+        background: #ffffff;
+        border-radius: 18px;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25), 0 1px 3px rgba(0, 0, 0, 0.05);
+        padding: 28px 24px;
+        text-align: center;
+        animation: scaleInCard 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes scaleInCard {
+        from { transform: scale(0.92) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+      }
+      .settings-auth-card.shake {
+        animation: authShake 0.4s ease-in-out;
+      }
+      @keyframes authShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-9px); }
+        40%, 80% { transform: translateX(9px); }
+      }
+
+      .auth-icon-circle {
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+        color: #4f46e5;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+      }
+      .auth-card-header h3 {
+        margin: 0 0 6px 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .auth-card-header p {
+        margin: 0 0 20px 0;
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.4;
+      }
+
+      .auth-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .auth-input-icon {
+        position: absolute;
+        left: 14px;
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+      }
+      .auth-input {
+        width: 100%;
+        height: 44px;
+        padding: 0 42px 0 40px;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 14.5px;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.18s ease;
+        background: #f8fafc;
+      }
+      .auth-input:focus {
+        border-color: #4f46e5;
+        background: #ffffff;
+        box-shadow: 0 0 0 3.5px rgba(79, 70, 229, 0.15);
+      }
+      .auth-eye-btn {
+        position: absolute;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: color 0.15s;
+      }
+      .auth-eye-btn:hover {
+        color: #475569;
+      }
+
+      .auth-error-msg {
+        color: #ef4444;
+        font-size: 12.5px;
+        font-weight: 600;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        animation: fadeInOverlay 0.15s ease;
+      }
+
+      .auth-card-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .btn-auth-cancel {
+        flex: 1;
+        height: 40px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #475569;
+        font-size: 13.5px;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-auth-cancel:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .btn-auth-submit {
+        flex: 1.3;
+        height: 40px;
+        border: none;
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 13.5px;
+        font-weight: 700;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+        transition: all 0.15s ease;
+      }
+      .btn-auth-submit:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      }
+
+      /* ── Config Modal Card ── */
+      .settings-config-card {
+        background: #ffffff;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 580px;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.3);
+        display: flex;
+        flex-direction: column;
+        max-height: 88vh;
+        overflow: hidden;
+        animation: scaleInCard 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .config-card-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+      }
+      .config-header-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .config-icon-badge {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        color: #4f46e5;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .config-card-header h3 {
+        margin: 0 0 3px 0;
+        font-size: 17px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .config-card-header p {
+        margin: 0;
+        font-size: 12.5px;
+        color: #64748b;
+      }
+      .config-close-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 8px;
+        transition: all 0.15s ease;
+      }
+      .config-close-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+
+      .config-toolbar {
+        padding: 12px 24px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .config-stat {
+        font-size: 12.5px;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .config-stat strong {
+        color: #4f46e5;
+      }
+      .config-quick-btns {
+        display: flex;
+        gap: 8px;
+      }
+      .btn-quick-action {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.15s ease;
+      }
+      .btn-quick-action:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+        border-color: #94a3b8;
+      }
+
+      .config-tabs-list {
+        padding: 14px 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: calc(88vh - 210px);
+      }
+      .config-tab-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+        transition: all 0.18s ease;
+      }
+      .config-tab-item:hover {
+        border-color: #cbd5e1;
+        background: #fbfcfe;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      }
+      .config-tab-item.is-hidden {
+        background: #f8fafc;
+        opacity: 0.72;
+        border-style: dashed;
+      }
+      .config-tab-item-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .config-tab-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        color: #4f46e5;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .config-tab-info {
+        display: flex;
+        flex-direction: column;
+      }
+      .config-tab-name {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #1e293b;
+      }
+      .config-tab-desc {
+        font-size: 11.5px;
+        color: #64748b;
+      }
+      .config-tab-item-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .tab-status-pill {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .tab-status-pill.visible {
+        background: #dcfce7;
+        color: #15803d;
+      }
+      .tab-status-pill.hidden {
+        background: #f1f5f9;
+        color: #64748b;
+      }
+
+      /* iOS-style Switch */
+      .ios-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+      }
+      .ios-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .ios-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background-color: #cbd5e1;
+        transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 24px;
+      }
+      .ios-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+      .ios-switch input:checked + .ios-slider {
+        background-color: #4f46e5;
+      }
+      .ios-switch input:checked + .ios-slider:before {
+        transform: translateX(20px);
+      }
+
+      /* Footer */
+      .config-card-footer {
+        padding: 14px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .config-footer-hint {
+        font-size: 12px;
+        color: #64748b;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .config-footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .btn-config-secondary {
+        height: 38px;
+        padding: 0 16px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 9px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-config-secondary:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .btn-config-primary {
+        height: 38px;
+        padding: 0 18px;
+        border: none;
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 700;
+        border-radius: 9px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+        transition: all 0.15s ease;
+      }
+      .btn-config-primary:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.38);
+      }
+
+      /* Settings Toast Notification */
+      .settings-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #0f172a;
+        color: #ffffff;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 25000;
+        animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .settings-toast.success i { color: #22c55e; }
+      .settings-toast.warning i { color: #f59e0b; }
+      @keyframes toastSlideIn {
+        from { transform: translateY(-16px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
     </style>
   </head>
   <body>
@@ -618,6 +1127,12 @@
                   <!-- Dynamic Items -->
                 </div>
               </div>
+            </div>
+            <!-- Settings Button -->
+            <div class="settings-container" id="settingsContainer">
+              <button class="settings-btn" id="btnOpenSettings" title="Cài đặt & Quản lý Tabs (Yêu cầu mật khẩu)">
+                <i class="fa-solid fa-gear"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -1562,6 +2077,383 @@
           updateUpcomingUI();
         }, 5000);
       });
+    })();
+    </script>
+
+    <!-- ── Settings Password Authentication Modal ── -->
+    <div class="settings-modal-overlay" id="settingsAuthModal" style="display: none;">
+      <div class="settings-auth-card" id="settingsAuthCard">
+        <div class="auth-card-header">
+          <div class="auth-icon-circle">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h3>Xác thực Quản trị</h3>
+          <p>Vui lòng nhập mật khẩu quản trị để truy cập Cài đặt hệ thống</p>
+        </div>
+        <form id="settingsAuthForm">
+          <div class="auth-input-group">
+            <span class="auth-input-icon"><i class="fa-solid fa-key"></i></span>
+            <input
+              type="password"
+              id="settingsPasswordInput"
+              class="auth-input"
+              placeholder="Nhập mật khẩu..."
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" class="auth-eye-btn" id="btnToggleAuthPwd" title="Hiện/ẩn mật khẩu">
+              <i class="fa-regular fa-eye" id="authEyeIcon"></i>
+            </button>
+          </div>
+          <div class="auth-error-msg" id="settingsAuthError" style="display: none;">
+            <i class="fa-solid fa-circle-exclamation"></i> Mật khẩu không chính xác, vui lòng thử lại!
+          </div>
+          <div class="auth-card-actions">
+            <button type="button" class="btn-auth-cancel" id="btnCancelSettingsAuth">Huỷ bỏ</button>
+            <button type="submit" class="btn-auth-submit" id="btnSubmitSettingsAuth">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> Xác nhận
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── Settings Tab Visibility Configuration Modal ── -->
+    <div class="settings-modal-overlay" id="settingsConfigModal" style="display: none;">
+      <div class="settings-config-card">
+        <div class="config-card-header">
+          <div class="config-header-left">
+            <div class="config-icon-badge">
+              <i class="fa-solid fa-sliders"></i>
+            </div>
+            <div>
+              <h3>Cài đặt hiển thị Tabs</h3>
+              <p>Tuỳ chỉnh ẩn hoặc hiện các Tabs trên thanh điều hướng</p>
+            </div>
+          </div>
+          <button type="button" class="config-close-btn" id="btnCloseSettingsConfig" title="Đóng">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="config-toolbar">
+          <div class="config-stat" id="configTabStats">
+            <i class="fa-solid fa-circle-info"></i> Đang hiển thị <strong id="visibleTabsCount">8/8</strong> Tabs
+          </div>
+          <div class="config-quick-btns">
+            <button type="button" class="btn-quick-action" id="btnQuickShowAll" title="Bật hiển thị tất cả các tabs">
+              <i class="fa-solid fa-eye"></i> Hiện tất cả
+            </button>
+            <button type="button" class="btn-quick-action" id="btnQuickResetDefault" title="Khôi phục trạng thái mặc định ban đầu">
+              <i class="fa-solid fa-rotate-left"></i> Mặc định
+            </button>
+          </div>
+        </div>
+
+        <div class="config-tabs-list" id="configTabsList">
+          <!-- Dynamic Tab Toggle Items -->
+        </div>
+
+        <div class="config-card-footer">
+          <div class="config-footer-hint">
+            <i class="fa-regular fa-floppy-disk"></i> Cấu hình được lưu tự động trên trình duyệt này
+          </div>
+          <div class="config-footer-actions">
+            <button type="button" class="btn-config-secondary" id="btnCancelConfig">Đóng</button>
+            <button type="button" class="btn-config-primary" id="btnSaveConfig">
+              <i class="fa-solid fa-check"></i> Lưu & Áp dụng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    /* ── Settings & Tab Visibility Controller ── */
+    (function initSettingsModule() {
+      const SETTINGS_AUTH_PASS = "DUNGSAI";
+      const LS_HIDDEN_TABS_KEY = "dms_hidden_tabs_config_v1";
+
+      const authModal = document.getElementById("settingsAuthModal");
+      const authCard = document.getElementById("settingsAuthCard");
+      const authForm = document.getElementById("settingsAuthForm");
+      const authInput = document.getElementById("settingsPasswordInput");
+      const authError = document.getElementById("settingsAuthError");
+      const eyeBtn = document.getElementById("btnToggleAuthPwd");
+      const eyeIcon = document.getElementById("authEyeIcon");
+      const cancelAuthBtn = document.getElementById("btnCancelSettingsAuth");
+
+      const configModal = document.getElementById("settingsConfigModal");
+      const configTabsList = document.getElementById("configTabsList");
+      const closeConfigBtn = document.getElementById("btnCloseSettingsConfig");
+      const cancelConfigBtn = document.getElementById("btnCancelConfig");
+      const saveConfigBtn = document.getElementById("btnSaveConfig");
+      const quickShowAllBtn = document.getElementById("btnQuickShowAll");
+      const quickResetDefaultBtn = document.getElementById("btnQuickResetDefault");
+      const visibleTabsCountEl = document.getElementById("visibleTabsCount");
+      const openSettingsBtn = document.getElementById("btnOpenSettings");
+
+      // Toast notification helper
+      function showSettingsToast(msg, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `settings-toast ${type}`;
+        const icon = type === "success" ? "fa-circle-check" : "fa-triangle-exclamation";
+        toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-10px)";
+          toast.style.transition = "all 0.2s ease";
+          setTimeout(() => toast.remove(), 250);
+        }, 3200);
+      }
+
+      // Read hidden tabs from localStorage
+      function getHiddenTabs() {
+        try {
+          const raw = localStorage.getItem(LS_HIDDEN_TABS_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed;
+          }
+        } catch (_) {}
+        return [];
+      }
+
+      function saveHiddenTabs(arr) {
+        try {
+          localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(arr));
+        } catch (_) {}
+      }
+
+      // Apply hidden tabs config to main navbar tab-buttons
+      function applyHiddenTabsConfig() {
+        const hiddenTabs = getHiddenTabs();
+        const tabBtns = Array.from(document.querySelectorAll(".tab-button"));
+        let activeIsHidden = false;
+
+        tabBtns.forEach(btn => {
+          const target = btn.dataset.frameTarget;
+          const isHidden = hiddenTabs.includes(target);
+          btn.style.display = isHidden ? "none" : "";
+          if (isHidden && btn.classList.contains("active")) {
+            activeIsHidden = true;
+          }
+        });
+
+        // If the active tab was hidden, automatically switch to the first visible tab
+        if (activeIsHidden) {
+          const firstVisible = tabBtns.find(btn => btn.style.display !== "none");
+          if (firstVisible) {
+            firstVisible.click();
+          }
+        }
+      }
+
+      // Open password auth modal
+      function openAuthModal() {
+        authInput.value = "";
+        authInput.type = "password";
+        eyeIcon.className = "fa-regular fa-eye";
+        authError.style.display = "none";
+        authCard.classList.remove("shake");
+        authModal.style.display = "flex";
+        setTimeout(() => authInput.focus(), 80);
+      }
+
+      function closeAuthModal() {
+        authModal.style.display = "none";
+      }
+
+      // Toggle password eye
+      if (eyeBtn) {
+        eyeBtn.addEventListener("click", () => {
+          if (authInput.type === "password") {
+            authInput.type = "text";
+            eyeIcon.className = "fa-regular fa-eye-slash";
+          } else {
+            authInput.type = "password";
+            eyeIcon.className = "fa-regular fa-eye";
+          }
+          authInput.focus();
+        });
+      }
+
+      // Handle password submit
+      if (authForm) {
+        authForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const entered = authInput.value.trim();
+          if (entered === SETTINGS_AUTH_PASS) {
+            closeAuthModal();
+            openConfigModal();
+          } else {
+            authError.style.display = "flex";
+            authCard.classList.remove("shake");
+            void authCard.offsetWidth; // trigger reflow
+            authCard.classList.add("shake");
+            authInput.select();
+          }
+        });
+      }
+
+      if (cancelAuthBtn) {
+        cancelAuthBtn.addEventListener("click", closeAuthModal);
+      }
+
+      authModal.addEventListener("click", (e) => {
+        if (e.target === authModal) closeAuthModal();
+      });
+
+      // Tab description metadata map for prettier display in Config modal
+      const TAB_META = {
+        nvnSolutionsFrame: { subtitle: "nvn_solutions.html · Quản lý giải pháp & checklist NVN" },
+        callLogFrame: { subtitle: "call_log.html · Nhật ký cuộc gọi hỗ trợ NPP & Sales" },
+        sumaryticketFrame: { subtitle: "sumary_ticket.html · Tổng hợp và phân tích ticket hỗ trợ" },
+        vanMauNVNFrame: { subtitle: "van_mau_nvn.html · Mẫu văn bản & quy trình trả lời nhanh" },
+        dms1ReportFrame: { subtitle: "dms1_report.html · Báo cáo chi tiết DMS1 hệ thống" },
+        taskPendingFrame: { subtitle: "task_pending_nvn.html · Quản lý danh sách task đang xử lý" },
+        tableFrame: { subtitle: "table.html · Bảng tính Stitch dữ liệu & nhân sự" },
+        dtListFrame: { subtitle: "danh_sach_dt.html · Danh mục mã NPP & đối tác DMS" }
+      };
+
+      // Open Config Modal
+      function openConfigModal() {
+        const hiddenTabs = new Set(getHiddenTabs());
+        const tabBtns = Array.from(document.querySelectorAll(".tab-button"));
+
+        configTabsList.innerHTML = "";
+
+        tabBtns.forEach((btn) => {
+          const target = btn.dataset.frameTarget;
+          const isVisible = !hiddenTabs.has(target);
+          const iconEl = btn.querySelector("i");
+          const iconClass = iconEl ? iconEl.className : "fa-solid fa-window-maximize";
+          const tabName = btn.innerText.trim();
+          const meta = TAB_META[target] || { subtitle: `${target}.html` };
+
+          const item = document.createElement("div");
+          item.className = `config-tab-item ${isVisible ? '' : 'is-hidden'}`;
+          item.dataset.target = target;
+
+          item.innerHTML = `
+            <div class="config-tab-item-left">
+              <div class="config-tab-icon">
+                <i class="${iconClass}"></i>
+              </div>
+              <div class="config-tab-info">
+                <span class="config-tab-name">${tabName}</span>
+                <span class="config-tab-desc">${meta.subtitle}</span>
+              </div>
+            </div>
+            <div class="config-tab-item-right">
+              <span class="tab-status-pill ${isVisible ? 'visible' : 'hidden'}">
+                ${isVisible ? 'Hiển thị' : 'Đang ẩn'}
+              </span>
+              <label class="ios-switch">
+                <input type="checkbox" class="tab-toggle-cb" data-target="${target}" ${isVisible ? 'checked' : ''} />
+                <span class="ios-slider"></span>
+              </label>
+            </div>
+          `;
+
+          const toggleCb = item.querySelector(".tab-toggle-cb");
+          const statusPill = item.querySelector(".tab-status-pill");
+
+          toggleCb.addEventListener("change", () => {
+            const checked = toggleCb.checked;
+            statusPill.className = `tab-status-pill ${checked ? 'visible' : 'hidden'}`;
+            statusPill.textContent = checked ? 'Hiển thị' : 'Đang ẩn';
+            item.classList.toggle("is-hidden", !checked);
+            updateStatsCounter();
+          });
+
+          configTabsList.appendChild(item);
+        });
+
+        updateStatsCounter();
+        configModal.style.display = "flex";
+      }
+
+      function updateStatsCounter() {
+        const allCbs = Array.from(configTabsList.querySelectorAll(".tab-toggle-cb"));
+        const visibleCount = allCbs.filter(cb => cb.checked).length;
+        if (visibleTabsCountEl) {
+          visibleTabsCountEl.textContent = `${visibleCount}/${allCbs.length}`;
+        }
+      }
+
+      function closeConfigModal() {
+        configModal.style.display = "none";
+      }
+
+      if (closeConfigBtn) closeConfigBtn.addEventListener("click", closeConfigModal);
+      if (cancelConfigBtn) cancelConfigBtn.addEventListener("click", closeConfigModal);
+
+      configModal.addEventListener("click", (e) => {
+        if (e.target === configModal) closeConfigModal();
+      });
+
+      // Quick actions
+      if (quickShowAllBtn) {
+        quickShowAllBtn.addEventListener("click", () => {
+          configTabsList.querySelectorAll(".tab-toggle-cb").forEach(cb => {
+            cb.checked = true;
+            cb.dispatchEvent(new Event("change"));
+          });
+        });
+      }
+
+      if (quickResetDefaultBtn) {
+        quickResetDefaultBtn.addEventListener("click", () => {
+          configTabsList.querySelectorAll(".tab-toggle-cb").forEach(cb => {
+            cb.checked = true;
+            cb.dispatchEvent(new Event("change"));
+          });
+          showSettingsToast("Đã đặt lại trạng thái hiển thị tất cả các Tabs", "warning");
+        });
+      }
+
+      // Save Config
+      if (saveConfigBtn) {
+        saveConfigBtn.addEventListener("click", () => {
+          const allCbs = Array.from(configTabsList.querySelectorAll(".tab-toggle-cb"));
+          const visibleCbs = allCbs.filter(cb => cb.checked);
+
+          if (visibleCbs.length === 0) {
+            showSettingsToast("Phải giữ lại ít nhất 1 Tab hiển thị trên thanh điều hướng!", "warning");
+            return;
+          }
+
+          const hiddenTargets = allCbs.filter(cb => !cb.checked).map(cb => cb.dataset.target);
+          saveHiddenTabs(hiddenTargets);
+          applyHiddenTabsConfig();
+          closeConfigModal();
+
+          const hiddenCount = hiddenTargets.length;
+          if (hiddenCount > 0) {
+            showSettingsToast(`Đã lưu cấu hình: Đang ẩn ${hiddenCount} tab`, "success");
+          } else {
+            showSettingsToast("Đã lưu: Hiển thị tất cả các Tabs", "success");
+          }
+        });
+      }
+
+      // Open button click
+      if (openSettingsBtn) {
+        openSettingsBtn.addEventListener("click", openAuthModal);
+      }
+
+      // Keyboard Esc handler
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (authModal.style.display === "flex") closeAuthModal();
+          if (configModal.style.display === "flex") closeConfigModal();
+        }
+      });
+
+      // Initialize on load
+      applyHiddenTabsConfig();
     })();
     </script>
   </body>
