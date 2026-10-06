@@ -3980,7 +3980,9 @@
       window.copyTempItem = function (id) {
         const found = tempNotes.find(n => n.id === id);
         if (found) {
-          navigator.clipboard.writeText(found.result);
+          const suffix = "     Tự gán solution và phân tích rồi close ticket";
+          const textToCopy = found.result + suffix;
+          navigator.clipboard.writeText(textToCopy);
           showToast("Đã sao chép: " + found.result.substring(0, 36) + "...");
         }
       };
