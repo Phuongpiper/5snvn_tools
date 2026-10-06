@@ -2974,10 +2974,10 @@
           </div>
           <div class="suggestions-actions">
             <div class="sug-filter-pills">
-              <button type="button" class="sug-pill-btn active" id="btnSugFilterAll" onclick="filterSuggestions('all')">
+              <button type="button" class="sug-pill-btn" id="btnSugFilterAll" onclick="filterSuggestions('all')">
                 <i class="fa-solid fa-list-ul"></i> Tất cả máy nhánh
               </button>
-              <button type="button" class="sug-pill-btn" id="btnSugFilterMy" onclick="filterSuggestions('mine')">
+              <button type="button" class="sug-pill-btn active" id="btnSugFilterMy" onclick="filterSuggestions('mine')">
                 <i class="fa-solid fa-user-check"></i> Máy nhánh của tôi (<span id="sugMyExtLabel">--</span>)
               </button>
             </div>
@@ -4594,13 +4594,31 @@
       };
 
       // Xoá khỏi R2 (từ Stats) — không ảnh hưởng Temp local
+      // Cơ chế xác nhận 2 lần: bấm lần 1 = cảnh báo, bấm lần 2 trong 3s = xoá thật
+      const _deletePending = {};
       window.deleteDetailIssue = function (id) {
-        if (!confirm("Xoá issue này khỏi R2? (Danh sách Temp local vẫn giữ nguyên)")) return;
-        r2Issues = r2Issues.filter(n => n.id !== id);
-        updateR2Badge();
-        renderStatsPage();
-        deleteIssueFromR2(id);
-        showToast("Đã xoá issue khỏi R2", "fa-trash-can");
+        if (_deletePending[id]) {
+          clearTimeout(_deletePending[id].timer);
+          delete _deletePending[id];
+          const btn = document.querySelector('[data-delete-id="' + id + '"]');
+          if (btn) { btn.style.background = ''; btn.style.color = ''; btn.title = 'Xoá issue này'; btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>'; }
+          r2Issues = r2Issues.filter(n => n.id !== id);
+          updateR2Badge();
+          renderStatsPage();
+          deleteIssueFromR2(id);
+          showToast('Đã xoá issue khỏi R2', 'fa-trash-can');
+        } else {
+          const btn = document.querySelector('[data-delete-id="' + id + '"]');
+          if (btn) { btn.style.background = '#dc2626'; btn.style.color = '#fff'; btn.title = 'Bấm lần nữa để xác nhận xoá'; btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; }
+          showToast('⚠️ Bấm nút xoá lần nữa để xác nhận!', 'fa-triangle-exclamation');
+          _deletePending[id] = {
+            timer: setTimeout(() => {
+              delete _deletePending[id];
+              const b = document.querySelector('[data-delete-id="' + id + '"]');
+              if (b) { b.style.background = ''; b.style.color = ''; b.title = 'Xoá issue này'; b.innerHTML = '<i class="fa-solid fa-trash-can"></i>'; }
+            }, 3000)
+          };
+        }
       };
 
       window.copyDetailIssue = function (id) {
@@ -4938,7 +4956,7 @@
                     <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="Sao chép cú pháp issue">
                       <i class="fa-regular fa-copy"></i>
                     </button>
-                    <button type="button" class="btn-row-circle danger" onclick="window.deleteDetailIssue('${n.id}')" title="Xoá issue này">
+                    <button type="button" class="btn-row-circle danger" data-delete-id="${n.id}" onclick="window.deleteDetailIssue('${n.id}')" title="Xoá issue này">
                       <i class="fa-solid fa-trash-can"></i>
                     </button>
                   </td>
@@ -5416,6 +5434,10 @@
         loadTempNotesFromLocal();
         fetchTempNotesFromR2(false);
 
+        // Reset bộ lọc gợi ý về "mine" theo nhân viên vừa chọn
+        sugFilterType = "mine";
+        if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
+
         if (isChanging) {
           showToast(`Đã đổi nhân viên sang: ${currentSelectedMember.name} [${currentSelectedMember.code}]!`, "fa-arrows-rotate");
         } else {
@@ -5524,7 +5546,7 @@
       let voipCurrentRange = "today";
       let voipLoading = false;
       let allR2TempIssues = [];
-      let sugFilterType = "all"; // "all" | "mine"
+      let sugFilterType = "mine"; // "all" | "mine" — mặc định lọc theo nhân viên đang chọn
       let isSugCollapsed = false;
 
       function getVoipApiBase() {
@@ -5538,6 +5560,23 @@
           clean = "0" + clean.slice(2);
         }
         return clean;
+      }
+
+      // Helper: cuộc gọi được coi là "Trả lời" khi disposition=ANSWERED VÀ đàm thoại > 0
+      function callIsAnswered(c) {
+        const byDisposition = (c.disposition || "").toUpperCase() === "ANSWERED"
+          || (c.statusText || "").toLowerCase().includes("trả lời");
+        if (!byDisposition) return false;
+        // Kiểm tra billsec: có thể là số giây (integer) hoặc chuỗi "HH:MM:SS"
+        const bs = c.billsec;
+        if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
+        if (typeof bs === "number") return bs > 0;
+        // Dạng "HH:MM:SS" → chuyển thành giây
+        const parts = String(bs).split(":").map(Number);
+        const totalSec = parts.length === 3
+          ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+          : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
+        return totalSec > 0;
       }
 
       function phoneMatches(phoneA, phoneB) {
@@ -5594,7 +5633,7 @@
           return { status: "unknown", hotline, ext, staff, isInbound, isAnswered: false };
         }
 
-        const isAnswered = (call.disposition || "").toUpperCase() === "ANSWERED" || (call.statusText || "").toLowerCase().includes("trả lời");
+        const isAnswered = callIsAnswered(call);
 
         // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
         const matchedR2Issue = r2Issues.find(iss => {
@@ -5751,7 +5790,7 @@
             let unnotedCount = 0;
             voipCalls.forEach(c => {
               const noteInfo = checkCallNoteStatus(c);
-              const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+              const isAnswered = callIsAnswered(c);
               if (noteInfo.status === "unnoted" && isAnswered) {
                 unnotedCount++;
               }
@@ -5823,7 +5862,7 @@
 
         const filtered = voipCalls.filter(c => {
           const noteInfo = checkCallNoteStatus(c);
-          const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+          const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
 
           // Status filter (answered / missed)
@@ -5872,7 +5911,7 @@
         }
 
         tbody.innerHTML = filtered.map((c, idx) => {
-          const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+          const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
 
@@ -5990,11 +6029,17 @@
           extLabel.textContent = myExt ? `${myExt} - ${currentSelectedMember.name}` : "Chưa cài nhánh";
         }
 
+        // Đồng bộ trạng thái nút lọc
+        const btnAll = document.getElementById("btnSugFilterAll");
+        const btnMy = document.getElementById("btnSugFilterMy");
+        if (btnAll) btnAll.classList.toggle("active", sugFilterType === "all");
+        if (btnMy) btnMy.classList.toggle("active", sugFilterType === "mine");
+
         // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2
         // Ưu tiên các cuộc gọi đã đàm thoại (isAnswered)
         const unnotedCalls = voipCalls.filter(c => {
           const noteInfo = checkCallNoteStatus(c);
-          const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+          const isAnswered = callIsAnswered(c);
           return noteInfo.status === "unnoted" && isAnswered;
         });
 
@@ -6100,11 +6145,7 @@
 
       window.filterSuggestions = function(type) {
         sugFilterType = type;
-        const btnAll = document.getElementById("btnSugFilterAll");
-        const btnMy = document.getElementById("btnSugFilterMy");
-        if (btnAll) btnAll.classList.toggle("active", type === "all");
-        if (btnMy) btnMy.classList.toggle("active", type === "mine");
-        renderUnnotedSuggestions();
+        renderUnnotedSuggestions(); // sẽ tự đồng bộ nút active bên trong
       };
 
       window.toggleSuggestionsCollapse = function() {
