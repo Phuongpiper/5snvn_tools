@@ -2210,7 +2210,18 @@
               <i class="fa-solid fa-list-check"></i>
             </div>
             <div>
-              <h2>Danh sách tạm<span class="temp-counter-pill" id="badgeTempCount">0 note</span></h2>
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <h2 style="margin:0;">Danh sách tạm</h2>
+                <span class="temp-counter-pill" id="badgeTempCount">0 note</span>
+                <span id="tempStaffBadge" style="font-size:12px; font-weight:700; color:var(--primary); background:#eef2ff; border:1px solid #c7d2fe; padding:2px 9px; border-radius:12px; display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono);" title="Danh sách tạm của nhân viên này">
+                  <i class="fa-solid fa-user-tag" style="font-size:10px;"></i>
+                  <span id="tempStaffText">--</span>
+                </span>
+                <span id="tempCloudStatus" style="font-size:11px; color:#10b981; display:inline-flex; align-items:center; gap:4px; font-weight:600;" title="Trạng thái Cloud R2">
+                  <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Cloud R2</span>
+                </span>
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin:3px 0 0 0;">Danh sách tạm riêng cho từng nhân viên, đồng bộ đa thiết bị. Nhấn <strong>Đồng bộ R2</strong> để chuyển vào Issue &amp; Call Log.</p>
             </div>
           </div>
 
@@ -2527,6 +2538,21 @@
         return "/api/r2-issues";
       }
 
+      function getTempIssuesApiEndpoint() {
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          return "/api/r2-temp-issues";
+        }
+        if (window.location.protocol === "file:") {
+          return "https://search-dms-tool.vercel.app/api/r2-temp-issues";
+        }
+        return "/api/r2-temp-issues";
+      }
+
+      function getMemberTempLsKey(code) {
+        const c = String(code || currentSelectedMember?.code || "DEFAULT").trim().toUpperCase();
+        return `DMS_NOTE_ISSUE_TEMP_V2_${c}`;
+      }
+
       function getIssueUniqueKey(item) {
         if (!item) return "";
         const textKey = String(item.result || "").trim().toLowerCase();
@@ -2575,6 +2601,9 @@
       const btnClearAllTemp = document.getElementById("btnClearAllTemp");
       const btnSyncR2Temp = document.getElementById("btnSyncR2Temp");
       const navTotalIssuesBadge = document.getElementById("navTotalIssuesBadge");
+      const tempStaffText = document.getElementById("tempStaffText");
+      const iconTempCloud = document.getElementById("iconTempCloud");
+      const textTempCloud = document.getElementById("textTempCloud");
 
       const pillSolutionStatus = document.getElementById("pillSolutionStatus");
       const txtSolutionStatus = document.getElementById("txtSolutionStatus");
@@ -2769,22 +2798,96 @@
         badge.title = `Hôm nay: ${todayCount} issue | Toàn bộ: ${(r2Issues || []).length} issue`;
       }
 
-      /* ── TEMP LIST STORAGE (DEDUPLICATION THEO NGÀY & NHÂN VIÊN) ── */
-      function loadTempNotes() {
+      /* ── TRẠNG THÁI ĐỒNG BỘ CLOUD R2 CHO DANH SÁCH TẠM ── */
+      function updateTempSyncIndicator(status) {
+        if (!iconTempCloud || !textTempCloud) return;
+        if (status === "syncing") {
+          iconTempCloud.className = "fa-solid fa-arrows-rotate fa-spin";
+          iconTempCloud.style.color = "#3b82f6";
+          textTempCloud.textContent = "Đang lưu...";
+          textTempCloud.style.color = "#3b82f6";
+        } else if (status === "synced") {
+          iconTempCloud.className = "fa-solid fa-cloud";
+          iconTempCloud.style.color = "#10b981";
+          textTempCloud.textContent = "Cloud R2";
+          textTempCloud.style.color = "#10b981";
+        } else if (status === "error") {
+          iconTempCloud.className = "fa-solid fa-triangle-exclamation";
+          iconTempCloud.style.color = "#ef4444";
+          textTempCloud.textContent = "Lỗi sync";
+          textTempCloud.style.color = "#ef4444";
+        } else if (status === "offline") {
+          iconTempCloud.className = "fa-solid fa-cloud";
+          iconTempCloud.style.color = "#f59e0b";
+          textTempCloud.textContent = "Offline (Local)";
+          textTempCloud.style.color = "#f59e0b";
+        }
+      }
+
+      function updateTempStaffDisplay() {
+        if (!tempStaffText) return;
+        if (currentSelectedMember && currentSelectedMember.name) {
+          tempStaffText.textContent = `${currentSelectedMember.name} (${currentSelectedMember.code || 'Chưa có mã'})`;
+        } else {
+          tempStaffText.textContent = "Chưa chọn nhân viên";
+        }
+      }
+
+      /* ── TỰ ĐỘNG CHUYỂN DỮ LIỆU CŨ SANG THEO MÃ NHÂN VIÊN (MIGRATION) ── */
+      function migrateOldTempNotes() {
         try {
-          const raw = localStorage.getItem(LS_TEMP_KEY);
+          const oldRaw = localStorage.getItem("DMS_NOTE_ISSUE_TEMP_V1");
+          if (oldRaw) {
+            const parsed = JSON.parse(oldRaw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const byCode = {};
+              parsed.forEach(n => {
+                if (!n || !n.result) return;
+                const code = String(n.memberCode || currentSelectedMember?.code || "DEFAULT").trim().toUpperCase();
+                if (!byCode[code]) byCode[code] = [];
+                byCode[code].push(n);
+              });
+              Object.entries(byCode).forEach(([code, notes]) => {
+                const k = getMemberTempLsKey(code);
+                if (!localStorage.getItem(k)) {
+                  localStorage.setItem(k, JSON.stringify(notes));
+                }
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      /* ── TẢI DANH SÁCH TẠM CỦA NHÂN VIÊN TỪ LOCAL STORAGE CACHE ── */
+      function loadTempNotesFromLocal() {
+        updateTempStaffDisplay();
+        const memberCode = currentSelectedMember?.code || "";
+        if (!memberCode) {
+          tempNotes = [];
+          renderTempTable();
+          updateIssuesBadge();
+          return;
+        }
+
+        try {
+          const key = getMemberTempLsKey(memberCode);
+          const raw = localStorage.getItem(key);
           if (raw) {
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) {
               const seen = new Set();
               tempNotes = parsed.filter(n => {
                 if (!n || !n.result) return false;
-                const key = getIssueUniqueKey(n);
-                if (!key || seen.has(key)) return false;
-                seen.add(key);
+                const k = getIssueUniqueKey(n);
+                if (!k || seen.has(k)) return false;
+                seen.add(k);
                 return true;
               });
+            } else {
+              tempNotes = [];
             }
+          } else {
+            tempNotes = [];
           }
         } catch (_) {
           tempNotes = [];
@@ -2793,12 +2896,99 @@
         updateIssuesBadge();
       }
 
-      function saveTempNotes() {
+      /* ── KÉO DANH SÁCH TẠM CỦA NHÂN VIÊN TỪ CLOUD R2 (CROSS-DEVICE) ── */
+      async function fetchTempNotesFromR2(silent = false) {
+        const memberCode = currentSelectedMember?.code || "";
+        if (!memberCode) return;
+
+        updateTempSyncIndicator("syncing");
         try {
-          localStorage.setItem(LS_TEMP_KEY, JSON.stringify(tempNotes));
-        } catch (_) { }
+          const endpoint = getTempIssuesApiEndpoint();
+          const res = await fetch(`${endpoint}?memberCode=${encodeURIComponent(memberCode)}&t=${Date.now()}`, { cache: "no-cache" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === "success" && Array.isArray(data.notes)) {
+              const r2Notes = data.notes;
+              // Nếu trên R2 có data, hoặc cả hai đều rỗng: đồng bộ về local
+              if (r2Notes.length > 0 || tempNotes.length === 0) {
+                // Merge bất kỳ note local nào chưa được sync lên R2
+                const map = new Map();
+                r2Notes.forEach(n => {
+                  if (n && n.result) map.set(getIssueUniqueKey(n), n);
+                });
+                tempNotes.forEach(n => {
+                  if (n && n.result && !map.has(getIssueUniqueKey(n))) {
+                    map.set(getIssueUniqueKey(n), n);
+                  }
+                });
+                tempNotes = Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                try {
+                  localStorage.setItem(getMemberTempLsKey(memberCode), JSON.stringify(tempNotes));
+                } catch (_) {}
+                renderTempTable();
+                updateIssuesBadge();
+                updateTempSyncIndicator("synced");
+                if (!silent && r2Notes.length > 0) {
+                  showToast(`Đã tải ${r2Notes.length} note tạm của ${currentSelectedMember.name} từ Cloud R2!`, "fa-cloud-arrow-down");
+                }
+              } else if (tempNotes.length > 0 && r2Notes.length === 0) {
+                // Local có note (vừa migrate hoặc offline), R2 chưa có -> tự động lưu lên R2
+                await saveMemberTempToR2(memberCode, tempNotes, true);
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("Lỗi fetch temp từ R2:", err);
+          updateTempSyncIndicator("offline");
+        }
+      }
+
+      /* ── LƯU DANH SÁCH TẠM CỦA NHÂN VIÊN LÊN CLOUD R2 ── */
+      async function saveMemberTempToR2(memberCode, notes, silent = false) {
+        if (!memberCode) return;
+        updateTempSyncIndicator("syncing");
+        try {
+          const endpoint = getTempIssuesApiEndpoint();
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "save_member_temp",
+              memberCode: memberCode,
+              notes: notes
+            })
+          });
+          if (res.ok) {
+            updateTempSyncIndicator("synced");
+          } else {
+            updateTempSyncIndicator("error");
+          }
+        } catch (err) {
+          console.warn("Lỗi lưu Temp lên R2:", err);
+          updateTempSyncIndicator("error");
+        }
+      }
+
+      /* ── LƯU TEMP NOTES CỦA NHÂN VIÊN (LOCAL CACHE + CLOUD R2) ── */
+      function saveTempNotes() {
+        const memberCode = currentSelectedMember?.code || "";
+        if (memberCode) {
+          try {
+            localStorage.setItem(getMemberTempLsKey(memberCode), JSON.stringify(tempNotes));
+          } catch (_) {}
+          // Đẩy lên R2 để máy khác cũng thấy được
+          saveMemberTempToR2(memberCode, tempNotes);
+        }
         renderTempTable();
         updateIssuesBadge();
+        updateTempStaffDisplay();
+      }
+
+      /* ── KHỞI TẠO TEMP NOTES KHI MỞ TRANG ── */
+      function loadTempNotes() {
+        migrateOldTempNotes();
+        loadTempNotesFromLocal();
+        fetchTempNotesFromR2(true);
       }
 
       /* ── CLOUDFLARE R2 ISSUES ── */
@@ -2841,7 +3031,7 @@
           showToast("Danh sách tạm đang trống, không có gì để đồng bộ!", "fa-triangle-exclamation");
           return;
         }
-        const btnSync = document.getElementById("btnSyncStatsR2") || document.getElementById("btnSyncR2Temp");
+        const btnSync = document.getElementById("btnSyncR2Temp");
         const iEl = btnSync?.querySelector("i");
         if (iEl) iEl.className = "fa-solid fa-spinner fa-spin";
 
@@ -2866,7 +3056,7 @@
             }
 
             if (currentStudioView === "stats") renderStatsPage();
-            showToast(`Đã đồng bộ ${tempNotes.length} issue lên R2 & ghi vào Call Log!`, "fa-circle-check");
+            showToast(`Đã đồng bộ ${tempNotes.length} issue vào Issue & Call Log!`, "fa-circle-check");
           } else {
             showToast("Đồng bộ thất bại, thử lại sau!", "fa-triangle-exclamation");
           }
@@ -4283,11 +4473,13 @@
         fetchIssuesFromR2(false);
       });
 
-      // Nút đồng bộ R2 ở tab Temp (Soạn Issue)
+      // Nút đồng bộ R2 ở tab Temp (Soạn Issue): Đẩy ghi chú tạm vào Issue & Call Log
       btnSyncR2Temp?.addEventListener("click", pushAllTempToR2);
 
-      // Nút Đồng bộ R2 ở Stats page
-      document.getElementById("btnSyncStatsR2")?.addEventListener("click", pushAllTempToR2);
+      // Nút Đồng bộ R2 ở Stats page: Nạp lại toàn bộ thống kê mới nhất từ R2
+      document.getElementById("btnSyncStatsR2")?.addEventListener("click", () => {
+        fetchIssuesFromR2(false);
+      });
 
       document.getElementById("btnExportStatsExcel")?.addEventListener("click", exportStatsExcel);
 
@@ -4364,15 +4556,14 @@
         showToast(`Đã sao chép tất cả ${tempNotes.length} dòng ghi chú!`);
       });
 
-      // Clear All Temp
+      // Clear All Temp (Chỉ xoá danh sách tạm của nhân viên hiện tại trên R2 & Local)
       btnClearAllTemp.addEventListener("click", () => {
         if (tempNotes.length === 0) return;
-        if (confirm(`Bạn có chắc chắn muốn xoá toàn bộ ${tempNotes.length} ghi chú trong danh sách tạm?`)) {
+        const staffName = currentSelectedMember?.name || "nhân viên này";
+        if (confirm(`Bạn có chắc chắn muốn xoá toàn bộ ${tempNotes.length} ghi chú trong danh sách tạm của ${staffName}?`)) {
           tempNotes = [];
           saveTempNotes();
-          clearAllIssuesOnR2();
-          showToast("Đã xoá danh sách tạm thành công!", "fa-trash-can");
-          if (currentStudioView === "stats") renderStatsPage();
+          showToast(`Đã xoá danh sách tạm của ${staffName}!`, "fa-trash-can");
         }
       });
 
@@ -4596,8 +4787,13 @@
         } catch(e) {}
 
         updateHeaderMemberDisplay();
+        updateTempStaffDisplay();
         const modal = document.getElementById("memberModalBackdrop");
         if (modal) modal.classList.remove("show");
+
+        // Tải danh sách tạm riêng của nhân viên mới được chọn từ Local & Cloud R2
+        loadTempNotesFromLocal();
+        fetchTempNotesFromR2(false);
 
         if (isChanging) {
           showToast(`Đã đổi nhân viên sang: ${currentSelectedMember.name} [${currentSelectedMember.code}]!`, "fa-arrows-rotate");
@@ -4693,6 +4889,7 @@
         currentSelectedMember = getSavedCurrentMember();
         if (currentSelectedMember && currentSelectedMember.code) {
           updateHeaderMemberDisplay();
+          updateTempStaffDisplay();
         } else {
           // Mandatory prompt!
           await openSelectMemberModal(false);
@@ -4733,7 +4930,7 @@
 
       async function init() {
         initDateInputs();
-        checkMemberRequirement();
+        await checkMemberRequirement();
         loadTempNotes();
         fetchIssuesFromR2(true);
         await loadSolutions();
@@ -4743,10 +4940,12 @@
 
       window.addEventListener("pageshow", () => {
         fetchIssuesFromR2(true);
+        fetchTempNotesFromR2(true);
       });
       window.addEventListener("message", (e) => {
         if (e.data === "tab-activated") {
           fetchIssuesFromR2(true);
+          fetchTempNotesFromR2(true);
         }
       });
 

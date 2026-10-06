@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
@@ -2297,7 +2297,7 @@
           preview: callDetails,
           onConfirm: async () => {
             try {
-              const res = await fetch(getR2Endpoint(), {
+              const res = await fetch(getCallLogApiEndpoint(), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -2317,7 +2317,7 @@
                   rows.splice(idx, 1);
                   searchIndex.splice(idx, 1);
                 }
-                updateR2CloudStatus(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                updateCloudStatusBadge(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
                 renderTable();
                 saveCachedData();
                 showToast("Đã xóa dòng Call Log khỏi Cloud R2 thành công!", "fa-check");
@@ -2347,7 +2347,7 @@
                 callDetails: String(r["Call Details"] || r["call details"] || "").trim(),
                 date: String(r["Date"] || r["date"] || "").trim()
               }));
-              const res = await fetch(getR2Endpoint(), {
+              const res = await fetch(getCallLogApiEndpoint(), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -2366,7 +2366,7 @@
                     searchIndex.splice(i, 1);
                   }
                 }
-                updateR2CloudStatus(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                updateCloudStatusBadge(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
                 renderTable();
                 saveCachedData();
                 showToast(`Đã xóa thành công ${count.toLocaleString()} dòng khỏi Cloud R2!`, "fa-check");
@@ -2395,7 +2395,7 @@
           preview: rowsForDate.slice(0, 3).map(r => `• ${r['Call Details'] || ''}`).join("\n"),
           onConfirm: async () => {
             try {
-              const res = await fetch(getR2Endpoint(), {
+              const res = await fetch(getCallLogApiEndpoint(), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -2412,7 +2412,7 @@
                     searchIndex.splice(i, 1);
                   }
                 }
-                updateR2CloudStatus(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                updateCloudStatusBadge(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
                 dateFilterPopover.classList.remove("open");
                 renderTable();
                 saveCachedData();

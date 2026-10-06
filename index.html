@@ -2226,7 +2226,14 @@
         }, 3200);
       }
 
-      // Read hidden tabs from localStorage
+      // R2 Settings API endpoint
+      function getSettingsApiEndpoint() {
+        if (window.location.protocol === "file:") return "https://search-dms-tool.vercel.app/api/r2-settings";
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return "http://localhost:3000/api/r2-settings";
+        return "/api/r2-settings";
+      }
+
+      // Read hidden tabs from localStorage (cache)
       function getHiddenTabs() {
         try {
           const raw = localStorage.getItem(LS_HIDDEN_TABS_KEY);
@@ -2238,10 +2245,29 @@
         return [];
       }
 
+      // Save to localStorage AND push to R2 for cross-browser sync
       function saveHiddenTabs(arr) {
+        try { localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(arr)); } catch (_) {}
+        // Push to R2 (fire-and-forget)
+        fetch(getSettingsApiEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hiddenTabs: arr })
+        }).catch(() => {});
+      }
+
+      // Load settings from R2, update localStorage, then apply
+      async function loadHiddenTabsFromR2() {
         try {
-          localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(arr));
+          const res = await fetch(getSettingsApiEndpoint() + "?t=" + Date.now());
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.hiddenTabs)) {
+              try { localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(data.hiddenTabs)); } catch (_) {}
+            }
+          }
         } catch (_) {}
+        applyHiddenTabsConfig();
       }
 
       // Apply hidden tabs config to main navbar tab-buttons
@@ -2511,8 +2537,16 @@
         }
       });
 
-      // Initialize on load
+      // Sync tab visibility across all open browser tabs/windows
+      window.addEventListener("storage", (e) => {
+        if (e.key === LS_HIDDEN_TABS_KEY) {
+          applyHiddenTabsConfig();
+        }
+      });
+
+      // Initialize: apply from localStorage immediately (instant), then sync from R2
       applyHiddenTabsConfig();
+      loadHiddenTabsFromR2();
     })();
     </script>
   </body>

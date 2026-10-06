@@ -108,7 +108,7 @@ function buildCallLogRow(issue, dtRows = []) {
   // 2. User code / User Code
   let userCode = "";
   if (resultText) {
-    const m = resultText.match(/_([^_]+)_Hotline/i);
+    const m = resultText.match(/_([^_]+)_\s*Hotline/i);
     if (m && !/^NPP\s/i.test(m[1]) && !/^Ticket/i.test(m[1])) {
       userCode = m[1].trim();
     } else {
