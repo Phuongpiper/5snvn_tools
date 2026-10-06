@@ -1,5 +1,8 @@
 {
   "regions": ["sin1"],
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "npm install",
   "outputDirectory": ".",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
