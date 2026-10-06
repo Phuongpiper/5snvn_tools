@@ -221,6 +221,173 @@ module.exports = async function handler(req, res) {
         }
       }
 
+      // Hỗ trợ action: delete_row để xóa 1 dòng cụ thể
+      if (bodyData.action === "delete_row") {
+        const targetCd = String(bodyData.callDetails || "").trim();
+        const targetDate = String(bodyData.date || "").trim();
+        if (!targetCd) {
+          return res.status(400).json({ error: "Missing callDetails to delete" });
+        }
+
+        let existingRows = [];
+        let sourceName = "Call Log";
+        const getR = await r2Fetch("GET", "");
+        if (getR.statusCode === 200) {
+          try {
+            const parsed = JSON.parse(getR.body);
+            if (parsed && Array.isArray(parsed.rows)) {
+              existingRows = parsed.rows;
+              sourceName = parsed.sourceName || sourceName;
+            }
+          } catch (_) {}
+        }
+
+        const initialCount = existingRows.length;
+        let removed = false;
+        existingRows = existingRows.filter(r => {
+          if (removed) return true;
+          const cd = String(r["Call Details"] || r["call details"] || "").trim();
+          const d = String(r["Date"] || r["date"] || "").trim();
+          if (cd === targetCd && (!targetDate || d === targetDate)) {
+            removed = true;
+            return false;
+          }
+          return true;
+        });
+
+        if (!removed) {
+          return res.status(404).json({ error: "Row not found in Call Log" });
+        }
+
+        const payload = {
+          status: "success",
+          sourceName: sourceName,
+          updatedAt: Date.now(),
+          rowCount: existingRows.length,
+          rows: existingRows
+        };
+
+        const putR = await r2Fetch("PUT", JSON.stringify(payload));
+        if (putR.statusCode >= 200 && putR.statusCode < 300) {
+          return res.status(200).json({
+            status: "success",
+            action: "delete_row",
+            deletedCount: 1,
+            rowCount: payload.rowCount,
+            updatedAt: payload.updatedAt
+          });
+        } else {
+          return res.status(502).json({ error: "R2 PUT failed", status: putR.statusCode });
+        }
+      }
+
+      // Hỗ trợ action: delete_by_date để xóa tất cả dòng theo 1 ngày
+      if (bodyData.action === "delete_by_date") {
+        const targetDate = String(bodyData.date || "").trim();
+        if (!targetDate) {
+          return res.status(400).json({ error: "Missing date to delete" });
+        }
+
+        let existingRows = [];
+        let sourceName = "Call Log";
+        const getR = await r2Fetch("GET", "");
+        if (getR.statusCode === 200) {
+          try {
+            const parsed = JSON.parse(getR.body);
+            if (parsed && Array.isArray(parsed.rows)) {
+              existingRows = parsed.rows;
+              sourceName = parsed.sourceName || sourceName;
+            }
+          } catch (_) {}
+        }
+
+        const initialCount = existingRows.length;
+        existingRows = existingRows.filter(r => {
+          const d = String(r["Date"] || r["date"] || "").trim();
+          return d !== targetDate && !d.startsWith(targetDate);
+        });
+
+        const deletedCount = initialCount - existingRows.length;
+        const payload = {
+          status: "success",
+          sourceName: sourceName,
+          updatedAt: Date.now(),
+          rowCount: existingRows.length,
+          rows: existingRows
+        };
+
+        const putR = await r2Fetch("PUT", JSON.stringify(payload));
+        if (putR.statusCode >= 200 && putR.statusCode < 300) {
+          return res.status(200).json({
+            status: "success",
+            action: "delete_by_date",
+            deletedCount: deletedCount,
+            rowCount: payload.rowCount,
+            updatedAt: payload.updatedAt
+          });
+        } else {
+          return res.status(502).json({ error: "R2 PUT failed", status: putR.statusCode });
+        }
+      }
+
+      // Hỗ trợ action: delete_rows / delete_multiple để xóa nhiều dòng cùng lúc
+      if (bodyData.action === "delete_rows" || bodyData.action === "delete_multiple") {
+        const items = Array.isArray(bodyData.items) ? bodyData.items : [];
+        if (!items.length) {
+          return res.status(400).json({ error: "Missing items to delete" });
+        }
+
+        let existingRows = [];
+        let sourceName = "Call Log";
+        const getR = await r2Fetch("GET", "");
+        if (getR.statusCode === 200) {
+          try {
+            const parsed = JSON.parse(getR.body);
+            if (parsed && Array.isArray(parsed.rows)) {
+              existingRows = parsed.rows;
+              sourceName = parsed.sourceName || sourceName;
+            }
+          } catch (_) {}
+        }
+
+        const targetKeys = new Set(items.map(it => {
+          const cd = String(it.callDetails || it["Call Details"] || "").trim();
+          const d = String(it.date || it.Date || "").trim();
+          return `${cd}___${d}`;
+        }));
+
+        const initialCount = existingRows.length;
+        existingRows = existingRows.filter(r => {
+          const cd = String(r["Call Details"] || r["call details"] || "").trim();
+          const d = String(r["Date"] || r["date"] || "").trim();
+          const key1 = `${cd}___${d}`;
+          const key2 = `${cd}___`;
+          return !targetKeys.has(key1) && !targetKeys.has(key2);
+        });
+
+        const deletedCount = initialCount - existingRows.length;
+        const payload = {
+          status: "success",
+          sourceName: sourceName,
+          updatedAt: Date.now(),
+          rowCount: existingRows.length,
+          rows: existingRows
+        };
+
+        const putR = await r2Fetch("PUT", JSON.stringify(payload));
+        if (putR.statusCode >= 200 && putR.statusCode < 300) {
+          return res.status(200).json({
+            status: "success",
+            action: "delete_rows",
+            deletedCount: deletedCount,
+            rowCount: payload.rowCount,
+            updatedAt: payload.updatedAt
+          });
+        } else {
+          return res.status(502).json({ error: "R2 PUT failed", status: putR.statusCode });
+        }
+      }
+
       // Format payload object cho các request upload toàn bộ
       let payload = {};
       if (Array.isArray(bodyData)) {

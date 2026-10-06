@@ -422,7 +422,7 @@
       }
       td.col-details.copyable-cell {
         position: relative;
-        padding-right: 42px !important;
+        padding-right: 78px !important;
         white-space: pre-wrap;
         word-break: break-word;
       }
@@ -439,6 +439,14 @@
         align-items: center;
         gap: 8px;
         vertical-align: middle;
+      }
+      .row-actions {
+        position: absolute;
+        right: 8px;
+        top: 7px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
       }
       .copy-btn {
         background: #f1f5f9;
@@ -458,15 +466,33 @@
         flex-shrink: 0;
       }
       td.col-details .copy-btn {
-        position: absolute;
-        right: 8px;
-        top: 7px;
+        position: static;
         width: 28px;
         height: 28px;
         font-size: 13px;
       }
-      .copyable-cell:hover .copy-btn {
+      .del-row-btn {
+        background: #fef2f2;
+        border: 1px solid #fee2e2;
+        color: #ef4444;
+        opacity: 0.7;
+        width: 28px;
+        height: 28px;
+        font-size: 12.5px;
+        padding: 0;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
+      }
+      .copyable-cell:hover .copy-btn,
+      .copyable-cell:hover .del-row-btn {
         opacity: 1;
+      }
+      .copyable-cell:hover .copy-btn {
         background: var(--accent-bg);
         border-color: var(--accent-border);
         color: var(--accent-dark);
@@ -481,6 +507,153 @@
         background: var(--green-bg) !important;
         color: var(--green) !important;
         border-color: var(--green-border) !important;
+      }
+      .del-row-btn:hover {
+        background: #ef4444 !important;
+        color: #ffffff !important;
+        border-color: #ef4444 !important;
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+      }
+      .delete-filtered-btn {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        padding: 6px 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        box-shadow: var(--shadow-sm);
+        white-space: nowrap;
+      }
+      .delete-filtered-btn:hover {
+        background: #dc2626;
+        color: #ffffff;
+        border-color: #dc2626;
+        box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+      }
+
+      /* ── Confirm Delete Modal ── */
+      .confirm-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 16px;
+        animation: modalFadeIn 0.2s ease-out;
+      }
+      .confirm-modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .confirm-modal-header {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #fecaca;
+        background: #fff5f5;
+      }
+      .confirm-modal-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #fee2e2;
+        color: #dc2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .confirm-modal-title {
+        font-size: 15.5px;
+        font-weight: 700;
+        color: #991b1b;
+      }
+      .confirm-modal-body {
+        padding: 20px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+      }
+      .confirm-modal-preview {
+        margin-top: 12px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 10px 12px;
+        font-size: 12px;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--text-primary);
+        max-height: 120px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .confirm-modal-footer {
+        padding: 14px 20px;
+        background: #f8fafc;
+        border-top: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+      .confirm-modal-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .confirm-modal-btn.cancel {
+        background: var(--surface);
+        border: 1px solid var(--border-strong);
+        color: var(--text-secondary);
+      }
+      .confirm-modal-btn.cancel:hover {
+        background: var(--bg);
+      }
+      .confirm-modal-btn.delete {
+        background: #dc2626;
+        border: 1px solid #dc2626;
+        color: #ffffff;
+      }
+      .confirm-modal-btn.delete:hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+      }
+      .confirm-modal-btn.delete:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes modalSlideUp {
+        from { opacity: 0; transform: translateY(12px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       /* ── Toast ── */
@@ -802,6 +975,9 @@
                 <i class="fa-solid fa-broom"></i> Xoá tất cả
               </button>
               <div class="result-badge" id="countBadge">0 kết quả</div>
+              <button type="button" class="delete-filtered-btn" id="deleteFilteredBtn" style="display:none;" title="Xóa toàn bộ các dòng đang hiển thị theo bộ lọc khỏi Cloud R2">
+                <i class="fa-solid fa-trash-can"></i> Xóa kết quả lọc (<span id="deleteFilteredCount">0</span>)
+              </button>
             </div>
           </div>
           <div>
@@ -849,12 +1025,41 @@
             <i class="fa-solid fa-filter"></i> Áp dụng
           </button>
         </div>
+        <button id="deleteDateBtn" type="button" style="
+          margin-top: 8px; width: 100%; display: none;
+          background: #fef2f2; border: 1px solid #fecaca; color: #dc2626;
+          padding: 7px 10px; font-size: 12px; font-weight: 600;
+          border-radius: var(--radius-sm); cursor: pointer;
+          align-items: center; justify-content: center; gap: 6px;
+        ">
+          <i class="fa-solid fa-trash-can"></i> Xóa tất cả cuộc gọi ngày này
+        </button>
       </div>
 
       <!-- Empty state -->
       <div class="empty-state" id="emptyBox">
         <span class="empty-state-icon">📋</span>
         <p>Chưa có dữ liệu. Hãy chọn file Excel Call Log để bắt đầu.</p>
+      </div>
+
+      <!-- Modal xác nhận xóa -->
+      <div id="deleteModal" class="confirm-modal-overlay" style="display:none;">
+        <div class="confirm-modal">
+          <div class="confirm-modal-header">
+            <div class="confirm-modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="confirm-modal-title" id="confirmModalTitle">Xác nhận xóa Call Log</div>
+          </div>
+          <div class="confirm-modal-body">
+            <div id="confirmModalBody">Bạn có chắc chắn muốn xóa dòng này khỏi Cloud R2 không?</div>
+            <div id="confirmModalPreview" class="confirm-modal-preview" style="display:none;"></div>
+          </div>
+          <div class="confirm-modal-footer">
+            <button type="button" class="confirm-modal-btn cancel" id="cancelDeleteBtn">Hủy bỏ</button>
+            <button type="button" class="confirm-modal-btn delete" id="doDeleteBtn">
+              <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <script>
@@ -1266,6 +1471,7 @@
           Math.min(rect.left, window.innerWidth - 250) + "px";
         dateFilterPopover.style.top = rect.bottom + 8 + "px";
         dateFilterPopover.classList.toggle("open");
+        if (typeof updateDeleteDateBtn === "function") updateDeleteDateBtn();
       }
 
       function setLoading(isLoading, message = "Đang xử lý...") {
@@ -1672,6 +1878,7 @@
         }
 
         countBadge.textContent = filtered.length + " kết quả";
+        updateDeleteFilteredBtn(filtered);
       }
 
       function getColumnClass(col, i) {
@@ -1718,7 +1925,9 @@
         if (n === "call details" || n.includes("call details")) {
           const content = highlightCallDetails(value, row);
           const rawEscaped = escapeHTML(value);
-          return `<span class="details-content">${content}</span><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button>`;
+          const dateCol = findColumn("date");
+          const rowDateEscaped = escapeHTML(row[dateCol] || row["Date"] || row["date"] || "");
+          return `<span class="details-content">${content}</span><div class="row-actions"><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button><button type="button" class="del-row-btn" title="Xóa dòng này khỏi Cloud R2" data-call-details="${rawEscaped}" data-date="${rowDateEscaped}" onclick="confirmDeleteCallLogRow(event, this)"><i class="fa-regular fa-trash-can"></i></button></div>`;
         }
         return escapeHTML(value);
       }
@@ -2002,13 +2211,261 @@
       document.addEventListener("click", (e) => {
         const cell = e.target.closest(".copyable-cell");
         if (!cell) return;
-        if (e.target.closest(".copy-btn")) return;
+        if (e.target.closest(".copy-btn") || e.target.closest(".del-row-btn") || e.target.closest(".row-actions")) return;
         if (window.getSelection && window.getSelection().toString()) return;
         const btn = cell.querySelector(".copy-btn");
         if (btn) {
           copyCallDetailText(e, btn);
         }
       });
+
+      /* ─── Delete Operations ─── */
+      let currentDeleteCallback = null;
+
+      function openConfirmModal({ title, message, preview, onConfirm }) {
+        const modal = document.getElementById("deleteModal");
+        const titleEl = document.getElementById("confirmModalTitle");
+        const bodyEl = document.getElementById("confirmModalBody");
+        const previewEl = document.getElementById("confirmModalPreview");
+        const doBtn = document.getElementById("doDeleteBtn");
+        
+        if (titleEl) titleEl.textContent = title || "Xác nhận xóa Call Log";
+        if (bodyEl) bodyEl.innerHTML = message;
+        if (previewEl) {
+          if (preview) {
+            previewEl.textContent = preview;
+            previewEl.style.display = "block";
+          } else {
+            previewEl.style.display = "none";
+          }
+        }
+        
+        currentDeleteCallback = onConfirm;
+        if (modal) modal.style.display = "flex";
+        if (doBtn) {
+          doBtn.disabled = false;
+          doBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn`;
+        }
+      }
+
+      function closeConfirmModal() {
+        const modal = document.getElementById("deleteModal");
+        if (modal) modal.style.display = "none";
+        currentDeleteCallback = null;
+      }
+
+      document.getElementById("cancelDeleteBtn")?.addEventListener("click", closeConfirmModal);
+      document.getElementById("deleteModal")?.addEventListener("click", (e) => {
+        if (e.target.id === "deleteModal") closeConfirmModal();
+      });
+      document.getElementById("doDeleteBtn")?.addEventListener("click", async () => {
+        if (typeof currentDeleteCallback === "function") {
+          const doBtn = document.getElementById("doDeleteBtn");
+          if (doBtn) {
+            doBtn.disabled = true;
+            doBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang xóa...`;
+          }
+          try {
+            await currentDeleteCallback();
+          } finally {
+            closeConfirmModal();
+          }
+        }
+      });
+
+      // 1. Xóa 1 dòng đơn lẻ
+      async function confirmDeleteCallLogRow(e, btn) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        const callDetails = btn.getAttribute("data-call-details") || "";
+        const dateStr = btn.getAttribute("data-date") || "";
+
+        openConfirmModal({
+          title: "Xác nhận xóa dòng Call Log",
+          message: `Bạn có chắc chắn muốn xóa dòng Call Log này khỏi <strong>Cloud R2</strong> không?<br><small style="color:var(--text-muted);">Ngày: ${escapeHTML(dateStr || "Không rõ")}</small>`,
+          preview: callDetails,
+          onConfirm: async () => {
+            try {
+              const res = await fetch(getR2Endpoint(), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "delete_row",
+                  callDetails: callDetails,
+                  date: dateStr
+                })
+              });
+              const data = await res.json();
+              if (res.ok && data.status === "success") {
+                const idx = rows.findIndex(r => {
+                  const cd = String(r["Call Details"] || r["call details"] || "").trim();
+                  const d = String(r["Date"] || r["date"] || "").trim();
+                  return cd === callDetails && (!dateStr || d === dateStr);
+                });
+                if (idx !== -1) {
+                  rows.splice(idx, 1);
+                  searchIndex.splice(idx, 1);
+                }
+                updateR2CloudStatus(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                renderTable();
+                saveCachedData();
+                showToast("Đã xóa dòng Call Log khỏi Cloud R2 thành công!", "fa-check");
+              } else {
+                throw new Error(data.error || "Xóa thất bại");
+              }
+            } catch (err) {
+              console.error("Lỗi xóa dòng Call Log:", err);
+              alert("Lỗi khi xóa dòng Call Log:\n" + err.message);
+            }
+          }
+        });
+      }
+
+      // 2. Xóa các dòng đang lọc
+      async function confirmDeleteFilteredRows(itemsToDelete) {
+        if (!itemsToDelete || !itemsToDelete.length) return;
+        const count = itemsToDelete.length;
+
+        openConfirmModal({
+          title: `Xác nhận xóa ${count.toLocaleString()} dòng Call Log đang lọc`,
+          message: `Bạn có chắc chắn muốn xóa toàn bộ <strong>${count.toLocaleString()} dòng</strong> đang hiển thị khỏi <strong>Cloud R2</strong> không?<br><small style="color:#ef4444; font-weight:600;">Hành động này sẽ cập nhật trực tiếp lên hệ thống và không thể hoàn tác.</small>`,
+          preview: `${itemsToDelete.slice(0, 3).map(r => `• [${r.Date || ''}] ${r['Call Details'] || ''}`).join("\n")}${count > 3 ? `\n... và ${count - 3} dòng khác` : ''}`,
+          onConfirm: async () => {
+            try {
+              const payloadItems = itemsToDelete.map(r => ({
+                callDetails: String(r["Call Details"] || r["call details"] || "").trim(),
+                date: String(r["Date"] || r["date"] || "").trim()
+              }));
+              const res = await fetch(getR2Endpoint(), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "delete_rows",
+                  items: payloadItems
+                })
+              });
+              const data = await res.json();
+              if (res.ok && data.status === "success") {
+                const targetSet = new Set(payloadItems.map(p => `${p.callDetails}___${p.date}`));
+                for (let i = rows.length - 1; i >= 0; i--) {
+                  const cd = String(rows[i]["Call Details"] || rows[i]["call details"] || "").trim();
+                  const d = String(rows[i]["Date"] || rows[i]["date"] || "").trim();
+                  if (targetSet.has(`${cd}___${d}`) || targetSet.has(`${cd}___`)) {
+                    rows.splice(i, 1);
+                    searchIndex.splice(i, 1);
+                  }
+                }
+                updateR2CloudStatus(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                renderTable();
+                saveCachedData();
+                showToast(`Đã xóa thành công ${count.toLocaleString()} dòng khỏi Cloud R2!`, "fa-check");
+              } else {
+                throw new Error(data.error || "Xóa thất bại");
+              }
+            } catch (err) {
+              console.error("Lỗi xóa danh sách lọc Call Log:", err);
+              alert("Lỗi khi xóa các dòng lọc Call Log:\n" + err.message);
+            }
+          }
+        });
+      }
+
+      // 3. Xóa theo ngày trong date filter popover
+      async function confirmDeleteByDate(dateStr) {
+        if (!dateStr) return;
+        const rowsForDate = rows.filter(r => {
+          const d = String(r["Date"] || r["date"] || "").trim();
+          return d === dateStr || d.startsWith(dateStr);
+        });
+
+        openConfirmModal({
+          title: `Xóa tất cả cuộc gọi ngày ${dateStr}`,
+          message: `Tìm thấy <strong>${rowsForDate.length.toLocaleString()} cuộc gọi</strong> trong ngày <strong>${escapeHTML(dateStr)}</strong>.<br>Bạn có chắc chắn muốn xóa toàn bộ cuộc gọi của ngày này khỏi <strong>Cloud R2</strong> không?`,
+          preview: rowsForDate.slice(0, 3).map(r => `• ${r['Call Details'] || ''}`).join("\n"),
+          onConfirm: async () => {
+            try {
+              const res = await fetch(getR2Endpoint(), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  action: "delete_by_date",
+                  date: dateStr
+                })
+              });
+              const data = await res.json();
+              if (res.ok && data.status === "success") {
+                for (let i = rows.length - 1; i >= 0; i--) {
+                  const d = String(rows[i]["Date"] || rows[i]["date"] || "").trim();
+                  if (d === dateStr || d.startsWith(dateStr)) {
+                    rows.splice(i, 1);
+                    searchIndex.splice(i, 1);
+                  }
+                }
+                updateR2CloudStatus(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                dateFilterPopover.classList.remove("open");
+                renderTable();
+                saveCachedData();
+                showToast(`Đã xóa ${data.deletedCount} cuộc gọi ngày ${dateStr} khỏi Cloud R2!`, "fa-check");
+              } else {
+                throw new Error(data.error || "Xóa thất bại");
+              }
+            } catch (err) {
+              console.error("Lỗi xóa theo ngày:", err);
+              alert("Lỗi khi xóa cuộc gọi theo ngày:\n" + err.message);
+            }
+          }
+        });
+      }
+
+      function updateDeleteFilteredBtn(filtered) {
+        const deleteFilteredBtn = document.getElementById("deleteFilteredBtn");
+        const deleteFilteredCount = document.getElementById("deleteFilteredCount");
+        if (!deleteFilteredBtn || !deleteFilteredCount) return;
+
+        const isFiltering = (
+          Boolean(nppInput.value.trim()) ||
+          Boolean(nvbhInput.value.trim()) ||
+          Boolean(solutionInput.value.trim()) ||
+          Boolean(hotlineInput.value.trim()) ||
+          Boolean(dateFilterValue) ||
+          dateRangeSelect.value !== "all"
+        );
+
+        if (isFiltering && filtered.length > 0 && filtered.length < rows.length) {
+          deleteFilteredCount.textContent = filtered.length.toLocaleString();
+          deleteFilteredBtn.style.display = "inline-flex";
+          deleteFilteredBtn.onclick = () => confirmDeleteFilteredRows(filtered.map(f => f.row));
+        } else {
+          deleteFilteredBtn.style.display = "none";
+        }
+      }
+
+      function updateDeleteDateBtn() {
+        const deleteDateBtn = document.getElementById("deleteDateBtn");
+        if (!deleteDateBtn) return;
+        const val = dateFilterInput.value;
+        if (!val) {
+          deleteDateBtn.style.display = "none";
+          return;
+        }
+        const parts = val.split("-");
+        const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : val;
+        const count = rows.filter(r => {
+          const d = String(r["Date"] || r["date"] || "").trim();
+          return d === formatted || d.startsWith(formatted);
+        }).length;
+        if (count > 0) {
+          deleteDateBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Xóa tất cả ${count.toLocaleString()} cuộc gọi ngày ${formatted}`;
+          deleteDateBtn.style.display = "inline-flex";
+          deleteDateBtn.onclick = () => confirmDeleteByDate(formatted);
+        } else {
+          deleteDateBtn.style.display = "none";
+        }
+      }
+      dateFilterInput.addEventListener("input", updateDeleteDateBtn);
+      dateFilterInput.addEventListener("change", updateDeleteDateBtn);
 
       /* ─── XLSX parsing (same core logic, bug fixes applied) ─── */
       async function loadXLSXWorkbook(file) {
