@@ -1511,11 +1511,15 @@
         rows.forEach((row) => {
           const details = row[detailsCol] || row["Call Details"] || "";
           const extracted = extractUserCodeFromCallDetails(details);
+          // Luôn ưu tiên extracted từ Call Details (tránh giá trị sai từ cột Excel)
           if (extracted) {
             row["User code"] = extracted;
             row["User Code"] = extracted;
-          } else if (row["User code"] === undefined || !String(row["User code"]).trim()) {
-            row["User code"] = row["User Code"] || "";
+          } else {
+            // Fallback: giữ nguyên nếu có, hoặc để trống
+            const existing = String(row["User code"] || row["User Code"] || "").trim();
+            row["User code"] = existing;
+            row["User Code"] = existing;
           }
         });
         if (!headers.some((h) => normalizeForSearch(h) === "user code")) {
@@ -1695,14 +1699,17 @@
       function extractUserCodeFromCallDetails(value) {
         const text = String(value || "").trim();
         if (!text) return "";
-        const match = text.match(/_([^_]+)_Hotline/i);
+        // Match _CODE_Hotline hoặc _CODE_Hotline<space> hoặc _CODE_Hotline<digits>
+        const match = text.match(/_([^_]+)_Hotline(?:\s|\d|$)/i)
+                   || text.match(/_([^_]+)_Hotline/i);
         if (match) {
           const candidate = match[1].trim();
           if (!/^NPP\s/i.test(candidate) && !/^\d{10,}$/.test(candidate) && !/^Ticket/i.test(candidate)) {
             return candidate;
           }
         }
-        const fallback = text.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
+        // Fallback: tìm trực tiếp mã dạng 286G0002, HQ ..., ADMIN, ASM, SUP
+        const fallback = text.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|\s|$)/i);
         return fallback ? fallback[1].trim() : "";
       }
 
@@ -1990,9 +1997,11 @@
           .map((item) => {
             const callDetails = item.columnN || item["Call Details"] || "";
             const extracted = extractUserCodeFromCallDetails(callDetails);
+            // Luôn ưu tiên extracted từ Call Details
+            const userCode = extracted || item["User code"] || item["User Code"] || item.columnUserCode || "";
             return {
               "Dist code": item.columnB || item["Dist code"] || "",
-              "User code": extracted || item["User code"] || item["User Code"] || item.columnUserCode || "",
+              "User code": userCode,
               Hotline: item.columnF || item.Hotline || "",
               Date: item.columnG || item.Date || "",
               "Call Details": callDetails,

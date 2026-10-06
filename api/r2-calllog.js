@@ -19,11 +19,14 @@ function sha256hex(msg) {
 function extractUserCodeFromDetails(cd) {
   const text = String(cd || "").trim();
   if (!text) return "";
-  const m = text.match(/_([^_]+)_Hotline/i);
+  // Match _CODE_Hotline hoặc _CODE_Hotline<space><digits> (số điện thoại sau Hotline)
+  const m = text.match(/_([^_]+)_Hotline(?:\s|\d|$)/i)
+          || text.match(/_([^_]+)_Hotline/i);
   if (m && !/^NPP\s/i.test(m[1]) && !/^Ticket/i.test(m[1])) {
     return m[1].trim();
   }
-  const fb = text.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
+  // Fallback: dạng mã hế
+  const fb = text.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|\s|$)/i);
   return fb ? fb[1].trim() : "";
 }
 
@@ -196,12 +199,13 @@ module.exports = async function handler(req, res) {
         const dateNew = String(newRow["Date"] || newRow["date"] || "").trim();
 
         if (cdNew) {
-          const m = cdNew.match(/_([^_]+)_Hotline/i);
+          const m = cdNew.match(/_([^_]+)_Hotline(?:\s|\d|$)/i)
+                  || cdNew.match(/_([^_]+)_Hotline/i);
           let extracted = "";
           if (m && !/^NPP\s/i.test(m[1]) && !/^Ticket/i.test(m[1])) {
             extracted = m[1].trim();
           } else {
-            const fb = cdNew.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
+            const fb = cdNew.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|\s|$)/i);
             if (fb) extracted = fb[1].trim();
           }
           if (extracted) {
