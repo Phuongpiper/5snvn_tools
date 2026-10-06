@@ -1,4 +1,10 @@
 {
+  "name": "5snvn-tools",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node local-server.js",
+    "dev": "node local-server.js"
+  },
   "dependencies": {
     "dotenv": "^17.4.2"
   }
