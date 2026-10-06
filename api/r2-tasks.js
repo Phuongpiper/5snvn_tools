@@ -95,8 +95,8 @@ async function getTasksData() {
     try {
       const data = JSON.parse(getR.body);
       const members = (data.members || []).map(m => {
-        if (typeof m === "string") return { name: m.trim(), code: "" };
-        return { name: (m.name || "").trim(), code: (m.code || "").trim() };
+        if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
+        return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
       });
       return {
         tasks: data.tasks || [],
