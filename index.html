@@ -52,6 +52,8 @@
         text-decoration: none;
         color: inherit;
         user-select: none;
+        flex-shrink: 0;
+        white-space: nowrap;
       }
       .brand-icon {
         width: 36px;
@@ -64,17 +66,22 @@
         color: #ffffff;
         font-size: 16px;
         box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+        flex-shrink: 0;
       }
       .brand-text {
         display: flex;
         align-items: center;
         gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
       .brand-title {
         font-size: 16px;
         font-weight: 800;
         color: #0f172a;
         letter-spacing: -0.02em;
+        white-space: nowrap;
+        display: inline-block;
       }
       .brand-badge {
         font-size: 10px;
@@ -85,6 +92,8 @@
         border-radius: 6px;
         border: 1px solid #c7d2fe;
         letter-spacing: 0.04em;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
       .tabs {
         display: flex;
@@ -94,6 +103,13 @@
         padding: 4px;
         border-radius: 10px;
         border: 1px solid #e2e8f0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        flex-shrink: 1;
+      }
+      .tabs::-webkit-scrollbar {
+        display: none;
       }
       .tab-button {
         background: transparent;
