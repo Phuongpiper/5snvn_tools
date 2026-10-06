@@ -16,6 +16,28 @@ function sha256hex(msg) {
   return crypto.createHash("sha256").update(buf).digest("hex");
 }
 
+function extractUserCodeFromDetails(cd) {
+  const text = String(cd || "").trim();
+  if (!text) return "";
+  const m = text.match(/_([^_]+)_Hotline/i);
+  if (m && !/^NPP\s/i.test(m[1]) && !/^Ticket/i.test(m[1])) {
+    return m[1].trim();
+  }
+  const fb = text.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
+  return fb ? fb[1].trim() : "";
+}
+
+function sanitizeRowUserCode(r) {
+  if (!r || typeof r !== "object") return r;
+  const cd = String(r["Call Details"] || r["call details"] || "").trim();
+  const extracted = extractUserCodeFromDetails(cd);
+  if (extracted) {
+    r["User code"] = extracted;
+    r["User Code"] = extracted;
+  }
+  return r;
+}
+
 function buildR2Request(method, body) {
   const bodyBuf = body ? (Buffer.isBuffer(body) ? body : Buffer.from(String(body), "utf8")) : Buffer.alloc(0);
   const host      = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
@@ -128,6 +150,9 @@ module.exports = async function handler(req, res) {
         res.setHeader("Content-Type", "application/json; charset=utf-8");
         try {
           const parsed = JSON.parse(r2Res.body);
+          if (parsed && Array.isArray(parsed.rows)) {
+            parsed.rows = parsed.rows.map(sanitizeRowUserCode);
+          }
           return res.status(200).json(parsed);
         } catch (_) {
           return res.status(200).send(r2Res.body);
@@ -389,25 +414,15 @@ module.exports = async function handler(req, res) {
       }
 
       // Format payload object cho các request upload toàn bộ
-      let payload = {};
-      if (Array.isArray(bodyData)) {
-        payload = {
-          status: "success",
-          sourceName: "Call Log Upload",
-          updatedAt: Date.now(),
-          rowCount: bodyData.length,
-          rows: bodyData
-        };
-      } else {
-        const rows = Array.isArray(bodyData.rows) ? bodyData.rows : [];
-        payload = {
-          status: "success",
-          sourceName: bodyData.sourceName || "Call Log Upload",
-          updatedAt: Date.now(),
-          rowCount: rows.length,
-          rows: rows
-        };
-      }
+      let rawRows = Array.isArray(bodyData) ? bodyData : (Array.isArray(bodyData.rows) ? bodyData.rows : []);
+      const sanitizedRows = rawRows.map(sanitizeRowUserCode);
+      const payload = {
+        status: "success",
+        sourceName: bodyData.sourceName || (Array.isArray(bodyData) ? "Call Log Upload" : "Call Log Upload"),
+        updatedAt: Date.now(),
+        rowCount: sanitizedRows.length,
+        rows: sanitizedRows
+      };
 
       const putBody = JSON.stringify(payload);
       const putR = await r2Fetch("PUT", putBody);
