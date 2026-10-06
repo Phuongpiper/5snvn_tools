@@ -2118,6 +2118,256 @@
       background: var(--primary-hover);
       box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
     }
+
+    /* ── Unnoted Call Highlighting & Note Status Badges ── */
+    .table-stitch-stats tr.call-row-unnoted td {
+      background: #fff1f2 !important;
+      color: #881337;
+    }
+    .table-stitch-stats tr.call-row-unnoted:hover td {
+      background: #ffe4e6 !important;
+    }
+    .table-stitch-stats tr.call-row-unnoted td:first-child {
+      border-left: 4px solid #ef4444 !important;
+      font-weight: 800;
+    }
+    .table-stitch-stats tr.call-row-in-temp td {
+      background: #fffbeb !important;
+    }
+    .table-stitch-stats tr.call-row-in-temp:hover td {
+      background: #fef3c7 !important;
+    }
+    .table-stitch-stats tr.call-row-in-temp td:first-child {
+      border-left: 4px solid #f59e0b !important;
+    }
+    .table-stitch-stats tr.call-row-noted td:first-child {
+      border-left: 4px solid #10b981 !important;
+    }
+
+    .voip-note-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .voip-note-badge.unnoted {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fca5a5;
+    }
+    .voip-note-badge.in-temp {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fcd34d;
+    }
+    .voip-note-badge.noted {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
+    /* Extension & Staff chip */
+    .voip-ext-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      background: #f1f5f9;
+      border: 1px solid var(--border);
+      padding: 2.5px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .voip-ext-chip.my-ext {
+      background: #e0e7ff;
+      border-color: #c7d2fe;
+      color: #3730a3;
+    }
+    .voip-ext-chip .ext-staff-name {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 11.5px;
+      font-family: var(--font-sans);
+    }
+    .voip-ext-chip.my-ext .ext-staff-name {
+      color: #4338ca;
+    }
+
+    /* ── Suggestions Panel for Unnoted Calls (Lines chưa có trong Temp) ── */
+    .suggestions-panel-card {
+      background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.08);
+      transition: all 0.2s ease;
+    }
+    .suggestions-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .suggestions-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .sug-badge-count {
+      font-size: 11px;
+      font-weight: 800;
+      padding: 2.5px 9px;
+      border-radius: 12px;
+      background: #ef4444;
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .suggestions-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .sug-filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sug-pill-btn {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 11px;
+      border-radius: 6px;
+      border: 1px solid #fde68a;
+      background: #ffffff;
+      color: #92400e;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .sug-pill-btn.active {
+      background: #f59e0b;
+      border-color: #d97706;
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);
+    }
+    .sug-pill-btn:hover:not(.active) {
+      background: #fef3c7;
+    }
+    .suggestions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+      max-height: 310px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .suggestions-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+    .suggestions-grid::-webkit-scrollbar-thumb {
+      background: #fcd34d;
+      border-radius: 3px;
+    }
+    .sug-item-card {
+      background: #ffffff;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      transition: all 0.15s ease;
+    }
+    .sug-item-card:hover {
+      border-color: #f59e0b;
+      box-shadow: 0 3px 8px rgba(245, 158, 11, 0.12);
+      transform: translateY(-1px);
+    }
+    .sug-item-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sug-item-phone {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      font-size: 13.5px;
+      color: #b91c1c;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sug-item-time {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sug-item-mid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .sug-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed #f1f5f9;
+    }
+    .btn-sug-action {
+      flex: 1;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 8px;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+    .btn-sug-action.editor {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+    .btn-sug-action.editor:hover {
+      background: #c7d2fe;
+    }
+    .btn-sug-action.add-temp {
+      background: #ecfdf5;
+      color: #065f46;
+    }
+    .btn-sug-action.add-temp:hover {
+      background: #a7f3d0;
+    }
   </style>
 </head>
 
@@ -2355,6 +2605,17 @@
               <i class="fa-solid fa-chart-pie" style="color:#8b5cf6;"></i> Số lượng theo NV
             </button>
           </div>
+        </div>
+
+        <!-- Banner gợi ý cuộc gọi chưa có trong Temp -->
+        <div id="tempVoipAlertBanner" style="display:none; margin:10px 14px 4px 14px; padding:8px 12px; background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:6px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <i class="fa-solid fa-phone-volume" style="color:#d97706; font-size:14px;"></i>
+            <span>Hôm nay có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">0</strong> line cuộc gọi chưa được note vào Temp.</span>
+          </div>
+          <button type="button" onclick="switchStudioView('voip')" style="font-size:11.5px; font-weight:700; color:#b45309; background:#ffffff; border:1px solid #fde68a; border-radius:4px; padding:3px 10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+            Xem &amp; Nạp nhanh <i class="fa-solid fa-arrow-right"></i>
+          </button>
         </div>
 
         <div class="temp-table-scroll">
@@ -2595,7 +2856,7 @@
             </select>
           </div>
 
-          <!-- Trạng thái & Loại -->
+          <!-- Trạng thái & Loại & Trạng thái Note Issue -->
           <div style="display:flex; align-items:center; gap:8px;">
             <select id="voipFilterStatus" style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="renderVoipTable()">
               <option value="all">Tất cả trạng thái</option>
@@ -2606,6 +2867,12 @@
               <option value="all">Tất cả loại</option>
               <option value="inbound">Gọi vào</option>
               <option value="outbound">Gọi ra</option>
+            </select>
+            <select id="voipFilterNoteStatus" style="padding:6px 10px; font-size:12.5px; font-weight:700; border:1px solid #fecaca; border-radius:6px; font-family:inherit; background:#fff1f2; color:#b91c1c;" onchange="renderVoipTable()" title="Lọc theo trạng thái đã ghi chú Issue hay chưa">
+              <option value="all" selected>Tất cả ghi chú</option>
+              <option value="unnoted">🔴 Chưa note (Cần xử lý)</option>
+              <option value="in_temp">🟡 Đang trong Temp</option>
+              <option value="noted">🟢 Đã note R2</option>
             </select>
           </div>
 
@@ -2625,8 +2892,8 @@
         </div>
       </div>
 
-      <!-- KPI Summary Cards (5 cards mirroring Voip24h style) -->
-      <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+      <!-- KPI Summary Cards (6 cards: Total, Answered, Missed, Inbound, Outbound, Unnoted) -->
+      <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
         <!-- 1. Total Calls -->
         <div class="stats-kpi-card" style="border-left: 4px solid #6366f1;">
           <div class="kpi-icon-wrap indigo"><i class="fa-solid fa-phone-volume"></i></div>
@@ -2676,6 +2943,53 @@
             <div class="kpi-subtext">Cuộc gọi đi từ máy nhánh</div>
           </div>
         </div>
+
+        <!-- 6. Unnoted Calls (Chưa note issue) -->
+        <div class="stats-kpi-card" style="border-left: 4px solid #e11d48; background: #fff1f2;">
+          <div class="kpi-icon-wrap" style="background:#ffe4e6; color:#e11d48;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="kpi-content">
+            <div class="kpi-label" style="color:#9f1239; font-weight:800;">Chưa note Issue</div>
+            <div class="kpi-value" id="kpiVoipUnnoted" style="color:#e11d48;">0</div>
+            <div class="kpi-subtext" style="color:#be123c;">Cuộc gọi cần bổ sung note</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PANEL: GỢI Ý CÁC LINE CUỘC GỌI CHƯA CÓ TRONG TEMP ── -->
+      <div class="suggestions-panel-card" id="unnotedSuggestionsPanel" style="margin-top:20px;">
+        <div class="suggestions-header">
+          <div class="suggestions-title-group">
+            <div style="width:34px; height:34px; border-radius:8px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:16px;">
+              <i class="fa-solid fa-lightbulb"></i>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="margin:0; font-size:14px; font-weight:800; color:#92400e;">Gợi ý các Line chưa có trong Temp</h3>
+                <span class="sug-badge-count" id="sugUnnotedCount">0 line</span>
+              </div>
+              <p style="margin:2px 0 0 0; font-size:12px; color:#b45309;">
+                Các cuộc gọi đàm thoại trong ngày chưa được đưa vào danh sách tạm để note Issue. Nhấn <strong>⚡ Soạn Issue</strong> hoặc <strong>➕ Temp</strong> để thêm ngay.
+              </p>
+            </div>
+          </div>
+          <div class="suggestions-actions">
+            <div class="sug-filter-pills">
+              <button type="button" class="sug-pill-btn active" id="btnSugFilterAll" onclick="filterSuggestions('all')">
+                <i class="fa-solid fa-list-ul"></i> Tất cả máy nhánh
+              </button>
+              <button type="button" class="sug-pill-btn" id="btnSugFilterMy" onclick="filterSuggestions('mine')">
+                <i class="fa-solid fa-user-check"></i> Máy nhánh của tôi (<span id="sugMyExtLabel">--</span>)
+              </button>
+            </div>
+            <button type="button" class="btn-toggle-suggestions" onclick="toggleSuggestionsCollapse()" id="btnToggleSug" title="Thu gọn / Mở rộng" style="background:#fff; border:1px solid #fde68a; border-radius:6px; padding:4px 8px; cursor:pointer; color:#92400e;">
+              <i class="fa-solid fa-chevron-up" id="iconToggleSug"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="suggestions-grid" id="suggestionsListGrid">
+          <!-- Render dynamic suggestions cards here -->
+        </div>
       </div>
 
       <!-- Call History Data Table Card -->
@@ -2698,15 +3012,15 @@
             <thead>
               <tr>
                 <th style="width: 50px;" class="text-center">STT</th>
-                <th style="width: 170px;">THỜI GIAN</th>
+                <th style="width: 160px;">THỜI GIAN</th>
                 <th style="width: 170px;">SỐ GỌI (HOTLINE)</th>
-                <th style="width: 120px;">SỐ NHẬN</th>
-                <th style="width: 110px;" class="text-center">ĐÀM THOẠI</th>
-                <th style="width: 110px;" class="text-center">THỜI LƯỢNG</th>
-                <th style="width: 120px;" class="text-center">LOẠI</th>
-                <th style="width: 130px;" class="text-center">TRẠNG THÁI</th>
-                <th style="width: 120px;" class="text-center">ĐẦU SỐ</th>
-                <th style="width: 170px;" class="text-center">THAO TÁC</th>
+                <th style="width: 150px;">SỐ NHẬN (NHÁNH)</th>
+                <th style="width: 105px;" class="text-center">ĐÀM THOẠI</th>
+                <th style="width: 105px;" class="text-center">THỜI LƯỢNG</th>
+                <th style="width: 110px;" class="text-center">LOẠI</th>
+                <th style="width: 170px;" class="text-center">TRẠNG THÁI &amp; NOTE</th>
+                <th style="width: 115px;" class="text-center">ĐẦU SỐ</th>
+                <th style="width: 180px;" class="text-center">THAO TÁC</th>
               </tr>
             </thead>
             <tbody id="tbodyVoipCalls">
@@ -4328,6 +4642,7 @@
             fetchVoipCalls(false);
           } else {
             renderVoipTable();
+            renderUnnotedSuggestions();
           }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -4903,7 +5218,7 @@
           if (raw) {
             const list = JSON.parse(raw);
             if (Array.isArray(list) && list.length > 0) {
-              allSystemMembers = list.map(m => typeof m === "string" ? { name: m, code: "" } : { name: m.name || "", code: m.code || "" });
+              allSystemMembers = list.map(m => typeof m === "string" ? { name: m, code: "", extension: "" } : { name: m.name || "", code: m.code || "", extension: m.extension || "" });
             }
           }
         } catch(e) {}
@@ -4915,7 +5230,7 @@
           if (res.ok) {
             const json = await res.json();
             if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
-              allSystemMembers = json.data.map(m => typeof m === "string" ? { name: m, code: "" } : { name: m.name || "", code: m.code || "" });
+              allSystemMembers = json.data.map(m => typeof m === "string" ? { name: m, code: "", extension: "" } : { name: m.name || "", code: m.code || "", extension: m.extension || "" });
               try { localStorage.setItem(LS_MEMBERS_CACHE_KEY, JSON.stringify(allSystemMembers)); } catch(e) {}
             }
           }
@@ -4926,12 +5241,20 @@
         // 3. Fallback if empty
         if (!allSystemMembers || allSystemMembers.length === 0) {
           allSystemMembers = [
-            { name: "Tánh", code: "TANH.H.BUI.3811" },
-            { name: "Phương", code: "PHUONG.H.NGUYEN.0750" },
-            { name: "Toàn", code: "TOAN.T.NGUYEN.0814" },
-            { name: "Khoa", code: "KHOA.A.LY.6069" },
-            { name: "Team NVN", code: "TEAMNVN" }
+            { name: "Tánh", code: "TANH.H.BUI.3811", extension: "118" },
+            { name: "Phương", code: "PHUONG.H.NGUYEN.0750", extension: "116" },
+            { name: "Toàn", code: "TOAN.T.NGUYEN.0814", extension: "119" },
+            { name: "Khoa", code: "KHOA.A.LY.6069", extension: "113" },
+            { name: "Team NVN", code: "TEAMNVN", extension: "" }
           ];
+        }
+
+        // Cập nhật extension cho currentSelectedMember nếu chưa có
+        if (currentSelectedMember && currentSelectedMember.code) {
+          const matched = allSystemMembers.find(m => m.code === currentSelectedMember.code);
+          if (matched && matched.extension) {
+            currentSelectedMember.extension = matched.extension;
+          }
         }
       }
 
@@ -4941,7 +5264,7 @@
 
         if (currentSelectedMember && currentSelectedMember.code) {
           if (codeEl) codeEl.textContent = currentSelectedMember.code;
-          if (nameEl) nameEl.textContent = currentSelectedMember.name;
+          if (nameEl) nameEl.textContent = currentSelectedMember.name + (currentSelectedMember.extension ? ` (${currentSelectedMember.extension})` : "");
         } else {
           if (codeEl) codeEl.textContent = "Chưa có mã";
           if (nameEl) nameEl.textContent = "Chọn nhân viên";
@@ -4955,7 +5278,7 @@
         const q = (searchQ || "").trim().toLowerCase();
         const filtered = allSystemMembers.filter(m => {
           if (!q) return true;
-          return (m.name || "").toLowerCase().includes(q) || (m.code || "").toLowerCase().includes(q);
+          return (m.name || "").toLowerCase().includes(q) || (m.code || "").toLowerCase().includes(q) || (m.extension || "").toLowerCase().includes(q);
         });
 
         if (filtered.length === 0) {
@@ -4976,17 +5299,24 @@
           const initial = (m.name || "NV").charAt(0).toUpperCase();
           const safeName = escapeHTML(m.name);
           const safeCode = escapeHTML(m.code || "Chưa có mã");
+          const safeExt = escapeHTML(m.extension || "");
+          const extBadge = safeExt ? `<span style="font-size:11px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-phone" style="font-size:9px;"></i> ${safeExt}</span>` : "";
+
           return `
             <div class="member-card-option ${isSelected ? "selected" : ""}" 
                  data-code="${safeCode}" 
                  data-name="${safeName}" 
-                 onclick="window.selectMemberCard('${safeName}', '${safeCode}')"
-                 ondblclick="window.selectAndConfirmMember('${safeName}', '${safeCode}')"
+                 data-ext="${safeExt}"
+                 onclick="window.selectMemberCard('${safeName}', '${safeCode}', '${safeExt}')"
+                 ondblclick="window.selectAndConfirmMember('${safeName}', '${safeCode}', '${safeExt}')"
                  title="Bấm để chọn, nhấp đúp để đổi ngay">
               <div class="member-card-left">
                 <div class="member-card-avatar">${initial}</div>
                 <div class="member-card-info">
-                  <span class="member-card-name">${safeName}</span>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span class="member-card-name">${safeName}</span>
+                    ${extBadge}
+                  </div>
                   <span class="member-card-code">${safeCode}</span>
                 </div>
               </div>
@@ -5003,14 +5333,14 @@
         }
       }
 
-      window.selectMemberCard = function(name, code) {
-        modalTempSelectedMember = { name, code };
+      window.selectMemberCard = function(name, code, extension = "") {
+        modalTempSelectedMember = { name, code, extension };
         const q = (document.getElementById("memberSearchInput")?.value || "");
         renderMemberCards(q);
       };
 
-      window.selectAndConfirmMember = function(name, code) {
-        modalTempSelectedMember = { name, code };
+      window.selectAndConfirmMember = function(name, code, extension = "") {
+        modalTempSelectedMember = { name, code, extension };
         confirmSelectMember();
       };
 
@@ -5188,15 +5518,139 @@
       }
 
       /* ──────────────────────────────────────────────────────────────────────────
-         VOIP24H CALL HISTORY LOGIC
+         VOIP24H CALL HISTORY LOGIC & NOTE ISSUE STATUS MATCHING
       ────────────────────────────────────────────────────────────────────────── */
       let voipCalls = [];
       let voipCurrentRange = "today";
       let voipLoading = false;
+      let allR2TempIssues = [];
+      let sugFilterType = "all"; // "all" | "mine"
+      let isSugCollapsed = false;
 
       function getVoipApiBase() {
-        // Production: Vercel serverless function; Dev: local server
         return "/api/voip24h-calls";
+      }
+
+      function normalizePhone(p) {
+        if (!p) return "";
+        let clean = String(p).replace(/\D/g, "");
+        if (clean.startsWith("84") && clean.length >= 11) {
+          clean = "0" + clean.slice(2);
+        }
+        return clean;
+      }
+
+      function phoneMatches(phoneA, phoneB) {
+        const p1 = normalizePhone(phoneA);
+        const p2 = normalizePhone(phoneB);
+        if (!p1 || !p2) return false;
+        if (p1 === p2) return true;
+        if (p1.length >= 9 && p2.length >= 9) {
+          return p1.slice(-9) === p2.slice(-9);
+        }
+        return false;
+      }
+
+      function extractHotlineFromIssue(iss) {
+        if (!iss) return "";
+        if (iss.fields && iss.fields.hotline) return String(iss.fields.hotline).trim();
+        const res = String(iss.result || "");
+        const m = res.match(/Hotline\s*([0-9]{9,11})/i) || res.match(/([0-9]{10,11})/);
+        return m ? m[1].trim() : "";
+      }
+
+      async function fetchAllTempNotesFromR2(silent = true) {
+        try {
+          const endpoint = getTempIssuesApiEndpoint();
+          const res = await fetch(`${endpoint}?t=${Date.now()}`, { cache: "no-cache" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === "success" && data.tempByMember) {
+              const combined = [];
+              Object.keys(data.tempByMember).forEach(mCode => {
+                const list = data.tempByMember[mCode];
+                if (Array.isArray(list)) {
+                  combined.push(...list);
+                }
+              });
+              allR2TempIssues = combined;
+            }
+          }
+        } catch (e) {
+          console.warn("Lỗi fetch all temp notes từ R2:", e);
+        }
+      }
+
+      function checkCallNoteStatus(call) {
+        const isInbound = (call.type_origin || "").toLowerCase() === "inbound" || (call.typeText || "").toLowerCase().includes("vào");
+        const hotline = isInbound ? (call.src || "") : (call.dst || "");
+        const ext = isInbound ? (call.dst || "") : (call.src || "");
+        const cleanCallPhone = normalizePhone(hotline);
+
+        // Tìm nhân viên theo máy nhánh
+        const staff = allSystemMembers.find(m => m.extension && String(m.extension).trim() === String(ext).trim()) || null;
+
+        if (!cleanCallPhone) {
+          return { status: "unknown", hotline, ext, staff, isInbound, isAnswered: false };
+        }
+
+        const isAnswered = (call.disposition || "").toUpperCase() === "ANSWERED" || (call.statusText || "").toLowerCase().includes("trả lời");
+
+        // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
+        const matchedR2Issue = r2Issues.find(iss => {
+          const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+          if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
+          const resText = (iss.result || "").replace(/\s+/g, "");
+          if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
+          return false;
+        });
+
+        if (matchedR2Issue) {
+          return {
+            status: "noted",
+            badgeText: "Đã note R2",
+            hotline,
+            ext,
+            staff,
+            isInbound,
+            isAnswered,
+            issue: matchedR2Issue
+          };
+        }
+
+        // 2. Kiểm tra trong Temp Notes (danh sách tạm của nhân viên hoặc toàn bộ temp R2)
+        const poolTemp = [...tempNotes, ...allR2TempIssues];
+        const matchedTemp = poolTemp.find(iss => {
+          const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+          if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
+          const resText = (iss.result || "").replace(/\s+/g, "");
+          if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
+          return false;
+        });
+
+        if (matchedTemp) {
+          return {
+            status: "in_temp",
+            badgeText: "Đang trong Temp",
+            hotline,
+            ext,
+            staff,
+            isInbound,
+            isAnswered,
+            issue: matchedTemp
+          };
+        }
+
+        // 3. Chưa note
+        return {
+          status: "unnoted",
+          badgeText: "Chưa note issue",
+          hotline,
+          ext,
+          staff,
+          isInbound,
+          isAnswered
+        };
       }
 
       function getVoipDateRange(range) {
@@ -5229,10 +5683,8 @@
               date_end: `${fmt(ed)} 23:59:59`
             };
           }
-          // fallback to today
           start = end = now;
         } else {
-          // today
           start = end = now;
         }
 
@@ -5273,6 +5725,13 @@
         }
 
         try {
+          // Song song fetch Issue R2, Temp Notes R2, và danh sách members để có data mới nhất
+          await Promise.allSettled([
+            fetchSystemMembers(),
+            fetchIssuesFromR2(true),
+            fetchAllTempNotesFromR2(true)
+          ]);
+
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
           const did = document.getElementById("voipSelectDid")?.value || "02873065650";
 
@@ -5288,6 +5747,16 @@
           if (data.status === "success") {
             voipCalls = data.calls || [];
 
+            // Đếm số cuộc gọi chưa note (đặc biệt là trả lời/nghe máy)
+            let unnotedCount = 0;
+            voipCalls.forEach(c => {
+              const noteInfo = checkCallNoteStatus(c);
+              const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+              if (noteInfo.status === "unnoted" && isAnswered) {
+                unnotedCount++;
+              }
+            });
+
             // Update KPI cards
             const s = data.stats || {};
             const el = id => document.getElementById(id);
@@ -5296,11 +5765,24 @@
             if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = s.missed ?? 0;
             if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = s.inbound ?? 0;
             if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = s.outbound ?? 0;
+            if (el("kpiVoipUnnoted")) el("kpiVoipUnnoted").textContent = unnotedCount;
             if (el("kpiVoipTotalSub")) el("kpiVoipTotalSub").textContent = `${date_start.slice(0, 10)} → ${date_end.slice(0, 10)}`;
 
-            // Update badge on nav
+            // Update badge on nav (hiển thị số cuộc gọi chưa note nếu có, hoặc tổng)
             const badge = document.getElementById("navVoipCallsBadge");
-            if (badge) badge.textContent = voipCalls.length;
+            if (badge) {
+              if (unnotedCount > 0) {
+                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> ${unnotedCount} chưa note`;
+                badge.style.background = "#fee2e2";
+                badge.style.color = "#dc2626";
+                badge.style.borderColor = "#fca5a5";
+              } else {
+                badge.textContent = `${voipCalls.length} cuộc`;
+                badge.style.background = "#eef2ff";
+                badge.style.color = "#4f46e5";
+                badge.style.borderColor = "#c7d2fe";
+              }
+            }
 
             if (statusChip) {
               const srcIcon = data.source === "r2_cloud" ? '<i class="fa-solid fa-cloud"></i>' : '<i class="fa-solid fa-circle-check"></i>';
@@ -5310,6 +5792,7 @@
             }
 
             renderVoipTable();
+            renderUnnotedSuggestions();
           } else {
             throw new Error(data.message || "Không thể tải dữ liệu");
           }
@@ -5336,25 +5819,38 @@
         const search = (document.getElementById("voipSearchInput")?.value || "").toLowerCase().trim();
         const filterStatus = document.getElementById("voipFilterStatus")?.value || "all";
         const filterType = document.getElementById("voipFilterType")?.value || "all";
+        const filterNote = document.getElementById("voipFilterNoteStatus")?.value || "all";
 
         const filtered = voipCalls.filter(c => {
-          // Status filter
+          const noteInfo = checkCallNoteStatus(c);
+          const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+          const isMissed = !isAnswered;
+
+          // Status filter (answered / missed)
           if (filterStatus !== "all") {
-            const disp = (c.disposition || "").toUpperCase();
-            const st = (c.statusText || "").toLowerCase();
-            if (filterStatus === "missed" && !(disp === "MISSED" || st.includes("nhỡ"))) return false;
-            if (filterStatus === "answered" && !(disp === "ANSWERED" || st.includes("trả lời"))) return false;
+            if (filterStatus === "missed" && !isMissed) return false;
+            if (filterStatus === "answered" && !isAnswered) return false;
           }
-          // Type filter
+
+          // Type filter (inbound / outbound)
           if (filterType !== "all") {
             const to = (c.type_origin || "").toLowerCase();
             const tt = (c.typeText || "").toLowerCase();
             if (filterType === "inbound" && !(to === "inbound" || tt.includes("vào"))) return false;
             if (filterType === "outbound" && !(to === "outbound" || tt.includes("ra"))) return false;
           }
-          // Search
+
+          // Note Status filter (unnoted / in_temp / noted)
+          if (filterNote !== "all") {
+            if (filterNote === "unnoted" && noteInfo.status !== "unnoted") return false;
+            if (filterNote === "in_temp" && noteInfo.status !== "in_temp") return false;
+            if (filterNote === "noted" && noteInfo.status !== "noted") return false;
+          }
+
+          // Search query
           if (search) {
-            const haystack = [c.src, c.dst, c.did, c.statusText, c.typeText, c.calldate].join(" ").toLowerCase();
+            const staffName = noteInfo.staff ? noteInfo.staff.name : "";
+            const haystack = [c.src, c.dst, c.did, c.statusText, c.typeText, c.calldate, staffName, noteInfo.hotline, noteInfo.ext].join(" ").toLowerCase();
             if (!haystack.includes(search)) return false;
           }
           return true;
@@ -5368,8 +5864,8 @@
             <tr>
               <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
                 <i class="fa-solid fa-phone-slash" style="font-size:28px; margin-bottom:10px; display:block; opacity:0.3;"></i>
-                Không tìm thấy cuộc gọi nào.<br>
-                <small>Thử thay đổi bộ lọc hoặc nhấn <strong>Đồng bộ cuộc gọi</strong>.</small>
+                Không tìm thấy cuộc gọi nào phù hợp với bộ lọc.<br>
+                <small>Thử chọn <strong>Tất cả ghi chú</strong> hoặc nhấn <strong>Đồng bộ cuộc gọi</strong>.</small>
               </td>
             </tr>`;
           return;
@@ -5380,7 +5876,25 @@
           const isMissed = !isAnswered;
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
 
-          const statusBadge = isAnswered
+          const noteInfo = checkCallNoteStatus(c);
+          const isUnnoted = noteInfo.status === "unnoted";
+          const isInTemp = noteInfo.status === "in_temp";
+          const isNoted = noteInfo.status === "noted";
+
+          // Row class highlight
+          let rowClass = "";
+          if (isUnnoted && isAnswered) {
+            rowClass = "call-row-unnoted"; // HIỆN ĐỎ!
+          } else if (isUnnoted && isMissed) {
+            rowClass = "call-row-missed-unnoted";
+          } else if (isInTemp) {
+            rowClass = "call-row-in-temp";
+          } else if (isNoted) {
+            rowClass = "call-row-noted";
+          }
+
+          // Badges
+          const callStatusBadge = isAnswered
             ? `<span class="voip-status-badge answered"><i class="fa-solid fa-phone"></i> Trả lời</span>`
             : `<span class="voip-status-badge missed"><i class="fa-solid fa-phone-slash"></i> Gọi nhỡ</span>`;
 
@@ -5388,23 +5902,43 @@
             ? `<span class="voip-type-badge inbound"><i class="fa-solid fa-phone-arrow-down-left"></i> Gọi vào</span>`
             : `<span class="voip-type-badge outbound"><i class="fa-solid fa-phone-arrow-up-right"></i> Gọi ra</span>`;
 
-          // Hotline number to show (src for inbound, dst for outbound)
+          let noteBadge = "";
+          if (isNoted) {
+            noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú trên Cloud R2 trong ngày"><i class="fa-solid fa-circle-check"></i> Đã note</span>`;
+          } else if (isInTemp) {
+            noteBadge = `<span class="voip-note-badge in-temp" title="Đang có trong Danh sách tạm (Temp)"><i class="fa-solid fa-clock-rotate-left"></i> Đang trong Temp</span>`;
+          } else {
+            noteBadge = `<span class="voip-note-badge unnoted" title="Chưa có ghi chú nào cho cuộc gọi này!"><i class="fa-solid fa-triangle-exclamation"></i> Chưa note</span>`;
+          }
+
+          // Hotline number (src for inbound, dst for outbound)
           const hotlineNum = isInbound ? c.src : c.dst;
           const destNum = isInbound ? c.dst : c.src;
 
-          return `<tr data-call-id="${escapeHTML(c.id)}">
-            <td class="text-center" style="color:var(--text-muted); font-size:12px;">${idx + 1}</td>
+          // Nhân viên theo máy nhánh
+          const staff = noteInfo.staff;
+          const isMyExt = currentSelectedMember?.extension && String(currentSelectedMember.extension).trim() === String(destNum).trim();
+          const extChipHtml = `
+            <span class="voip-ext-chip ${isMyExt ? 'my-ext' : ''}" title="${staff ? `Nhân viên: ${staff.name} [${staff.code}]` : 'Máy nhánh nội bộ'}">
+              <i class="fa-solid fa-phone" style="font-size:10px; opacity:0.7;"></i>
+              <strong>${escapeHTML(destNum || "—")}</strong>
+              ${staff ? `<span class="ext-staff-name">${escapeHTML(staff.name)}${isMyExt ? ' (Tôi)' : ''}</span>` : ''}
+            </span>
+          `;
+
+          return `<tr class="${rowClass}" data-call-id="${escapeHTML(c.id)}">
+            <td class="text-center" style="font-size:12px;">${idx + 1}</td>
             <td>
               <div style="font-weight:700; font-size:13px; font-family:var(--font-mono);">${escapeHTML(c.calldate?.slice(0, 10) || "")}</div>
-              <div style="font-size:12px; color:var(--text-muted);">${escapeHTML(c.calldate?.slice(11, 19) || "")}</div>
+              <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">${escapeHTML(c.calldate?.slice(11, 19) || "")}</div>
             </td>
             <td>
-              <span class="voip-phone-chip" onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')">
-                <i class="fa-solid fa-phone" style="font-size:10px; opacity:0.6;"></i>
-                ${escapeHTML(hotlineNum || "—")}
+              <span class="voip-phone-chip" onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')" title="Bấm để nạp số vào form Soạn Issue">
+                <i class="fa-solid fa-phone" style="font-size:10px; ${isUnnoted && isAnswered ? 'color:#dc2626;' : 'opacity:0.6;'}"></i>
+                <strong style="${isUnnoted && isAnswered ? 'color:#b91c1c;' : ''}">${escapeHTML(hotlineNum || "—")}</strong>
               </span>
             </td>
-            <td style="font-family:var(--font-mono); font-size:12.5px; font-weight:600;">${escapeHTML(destNum || "—")}</td>
+            <td>${extChipHtml}</td>
             <td class="text-center" style="font-family:var(--font-mono); font-weight:700; color:${isAnswered ? "#059669" : "#9ca3af"};">
               ${escapeHTML(c.billsec || "—")}
             </td>
@@ -5412,16 +5946,26 @@
               ${escapeHTML(c.duration || "—")}
             </td>
             <td class="text-center">${typeBadge}</td>
-            <td class="text-center">${statusBadge}</td>
+            <td class="text-center">
+              <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                ${callStatusBadge}
+                ${noteBadge}
+              </div>
+            </td>
             <td class="text-center" style="font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:#0284c7;">
               ${escapeHTML(c.did || "—")}
             </td>
             <td class="text-center">
               <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
-                <button type="button" class="btn-row-circle" title="Nạp số Hotline này vào form Soạn Issue"
+                <button type="button" class="btn-row-circle" title="Soạn Issue: Nạp Hotline này vào form Soạn Issue"
                   onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')">
-                  <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                  <i class="fa-solid fa-bolt" style="color:var(--primary);"></i>
                 </button>
+                ${isUnnoted ? `
+                <button type="button" class="btn-row-circle" style="color:#059669; border-color:#a7f3d0; background:#ecfdf5;" title="Thêm nhanh vào danh sách tạm (Temp)"
+                  onclick="quickAddCallToTemp('${escapeHTML(c.id)}')">
+                  <i class="fa-solid fa-plus"></i>
+                </button>` : ''}
                 <button type="button" class="btn-row-circle" title="Sao chép số Hotline"
                   onclick="navigator.clipboard.writeText('${escapeHTML(hotlineNum || "")}').then(() => showToast('Đã sao chép: ${escapeHTML(hotlineNum || "")}', 'fa-copy'))">
                   <i class="fa-regular fa-copy"></i>
@@ -5432,9 +5976,201 @@
         }).join("");
       };
 
+      /* ── RENDER PANEL GỢI Ý CÁC LINE CUỘC GỌI CHƯA CÓ TRONG TEMP ── */
+      window.renderUnnotedSuggestions = function() {
+        const panel = document.getElementById("unnotedSuggestionsPanel");
+        const grid = document.getElementById("suggestionsListGrid");
+        const countBadge = document.getElementById("sugUnnotedCount");
+        const extLabel = document.getElementById("sugMyExtLabel");
+        if (!panel || !grid) return;
+
+        // Cập nhật nhãn máy nhánh của tôi
+        const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
+        if (extLabel) {
+          extLabel.textContent = myExt ? `${myExt} - ${currentSelectedMember.name}` : "Chưa cài nhánh";
+        }
+
+        // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2
+        // Ưu tiên các cuộc gọi đã đàm thoại (isAnswered)
+        const unnotedCalls = voipCalls.filter(c => {
+          const noteInfo = checkCallNoteStatus(c);
+          const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+          return noteInfo.status === "unnoted" && isAnswered;
+        });
+
+        // Cập nhật banner cảnh báo trong tab Soạn Issue
+        const tempBanner = document.getElementById("tempVoipAlertBanner");
+        const tempBannerCount = document.getElementById("tempVoipUnnotedCount");
+        if (tempBanner && tempBannerCount) {
+          if (unnotedCalls.length > 0) {
+            tempBanner.style.display = "flex";
+            tempBannerCount.textContent = unnotedCalls.length;
+          } else {
+            tempBanner.style.display = "none";
+          }
+        }
+
+        // Gom nhóm theo số Hotline duy nhất (lấy cuộc gọi mới nhất)
+        const groups = new Map();
+        unnotedCalls.forEach(c => {
+          const noteInfo = checkCallNoteStatus(c);
+          const phone = normalizePhone(noteInfo.hotline);
+          if (!phone) return;
+          if (!groups.has(phone)) {
+            groups.set(phone, {
+              call: c,
+              hotline: noteInfo.hotline,
+              ext: noteInfo.ext,
+              staff: noteInfo.staff,
+              count: 1
+            });
+          } else {
+            groups.get(phone).count++;
+          }
+        });
+
+        let list = Array.from(groups.values());
+
+        // Lọc theo chế độ xem (Tất cả / Chỉ máy nhánh của tôi)
+        if (sugFilterType === "mine" && myExt) {
+          list = list.filter(item => String(item.ext || "").trim() === myExt);
+        }
+
+        if (countBadge) countBadge.textContent = `${list.length} line`;
+
+        if (list.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #059669; background: #ecfdf5; border: 1px dashed #a7f3d0; border-radius: 8px;">
+              <i class="fa-solid fa-circle-check" style="font-size: 26px; margin-bottom: 6px; display: block;"></i>
+              <strong>Tuyệt vời!</strong> Không có line cuộc gọi nào chưa được note trong Temp ${sugFilterType === 'mine' ? 'của bạn' : ''}.
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = list.map(item => {
+          const c = item.call;
+          const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
+          const staff = item.staff;
+          const staffText = staff ? `${staff.name} [${staff.code}]` : "Chưa gắn NV";
+          const timeStr = (c.calldate || "").slice(11, 19) || "";
+          const talkStr = c.billsec || "00:00:00";
+          const countBadgeHtml = item.count > 1 ? `<span style="font-size:10px; background:#fee2e2; color:#b91c1c; border-radius:8px; padding:1px 5px; font-weight:800;">${item.count} cuộc</span>` : "";
+
+          return `
+            <div class="sug-item-card">
+              <div class="sug-item-top">
+                <span class="sug-item-phone">
+                  <i class="fa-solid fa-phone" style="font-size:11px;"></i>
+                  ${escapeHTML(item.hotline)}
+                  ${countBadgeHtml}
+                </span>
+                <span class="sug-item-time">
+                  <i class="fa-regular fa-clock" style="font-size:10px;"></i> ${escapeHTML(timeStr)}
+                </span>
+              </div>
+              <div class="sug-item-mid">
+                <span>
+                  <i class="fa-solid fa-headset" style="color:var(--primary); font-size:11px;"></i>
+                  Nhánh <strong>${escapeHTML(item.ext || "—")}</strong> (${escapeHTML(staffText)})
+                </span>
+                <span style="font-family:var(--font-mono); font-size:11px; font-weight:700; color:#059669;">
+                  ⏱ ${escapeHTML(talkStr)}
+                </span>
+              </div>
+              <div style="font-size:11px; color:var(--text-muted);">
+                <i class="${isInbound ? 'fa-solid fa-phone-arrow-down-left' : 'fa-solid fa-phone-arrow-up-right'}" style="color:${isInbound ? '#2563eb' : '#d97706'};"></i>
+                ${isInbound ? 'Khách gọi đến tổng đài' : 'Nhân viên gọi ra cho khách'}
+              </div>
+              <div class="sug-item-actions">
+                <button type="button" class="btn-sug-action editor" onclick="useVoipHotline('${escapeHTML(item.hotline)}')" title="Mở Soạn Issue và nạp số này">
+                  <i class="fa-solid fa-bolt"></i> Soạn Issue
+                </button>
+                <button type="button" class="btn-sug-action add-temp" onclick="quickAddCallToTemp('${escapeHTML(c.id)}')" title="Tạo ngay ghi chú tạm với số này">
+                  <i class="fa-solid fa-plus"></i> + Temp
+                </button>
+                <button type="button" class="btn-row-circle" style="width:28px; height:28px;" title="Sao chép SĐT" onclick="navigator.clipboard.writeText('${escapeHTML(item.hotline)}').then(() => showToast('Đã sao chép: ${escapeHTML(item.hotline)}', 'fa-copy'))">
+                  <i class="fa-regular fa-copy" style="font-size:11px;"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+      };
+
+      window.filterSuggestions = function(type) {
+        sugFilterType = type;
+        const btnAll = document.getElementById("btnSugFilterAll");
+        const btnMy = document.getElementById("btnSugFilterMy");
+        if (btnAll) btnAll.classList.toggle("active", type === "all");
+        if (btnMy) btnMy.classList.toggle("active", type === "mine");
+        renderUnnotedSuggestions();
+      };
+
+      window.toggleSuggestionsCollapse = function() {
+        isSugCollapsed = !isSugCollapsed;
+        const grid = document.getElementById("suggestionsListGrid");
+        const icon = document.getElementById("iconToggleSug");
+        if (grid) grid.style.display = isSugCollapsed ? "none" : "grid";
+        if (icon) icon.className = isSugCollapsed ? "fa-solid fa-chevron-down" : "fa-solid fa-chevron-up";
+      };
+
+      window.quickAddCallToTemp = async function(callId) {
+        const call = voipCalls.find(c => String(c.id) === String(callId));
+        if (!call) return;
+
+        const noteInfo = checkCallNoteStatus(call);
+        const hotline = noteInfo.hotline;
+        const staff = noteInfo.staff || currentSelectedMember;
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        const tempItem = {
+          id: "note_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
+          result: `[NVN-DMS]-[HH]_Hỗ trợ cuộc gọi_NPP..._Hotline ${hotline}`,
+          date: dateStr,
+          time: timeStr,
+          createdAt: Date.now(),
+          memberCode: staff?.code || currentSelectedMember?.code || "",
+          memberName: staff?.name || currentSelectedMember?.name || "",
+          distCode: "",
+          fields: {
+            solution: "Hỗ trợ cuộc gọi",
+            solutionCode: "",
+            type: "HH",
+            npp: "",
+            distCode: "",
+            nppCode: "",
+            nvbh: "",
+            nvbhFormatted: "",
+            role: "",
+            hotline: hotline
+          }
+        };
+
+        // Thêm vào tempNotes local
+        tempNotes.unshift(tempItem);
+        saveTempNotes();
+
+        // Đẩy lên R2 temp note
+        if (tempItem.memberCode) {
+          await saveMemberTempToR2(tempItem.memberCode, tempNotes, true);
+        }
+
+        // Re-fetch và render lại
+        await fetchAllTempNotesFromR2(true);
+        renderVoipTable();
+        renderUnnotedSuggestions();
+        updateIssuesBadge();
+
+        showToast(`Đã thêm số Hotline ${hotline} vào Danh sách tạm (Temp)!`, "fa-circle-check");
+      };
+
       window.useVoipHotline = function(phone) {
         if (!phone) return;
-        // Switch to editor view and fill in Hotline field
         switchStudioView("editor");
         const inputHotline = document.getElementById("inputHotline");
         if (inputHotline) {
@@ -5443,7 +6179,6 @@
           inputHotline.dispatchEvent(new Event("blur", { bubbles: true }));
         }
         showToast(`Đã nạp số Hotline: ${phone} vào form Soạn Issue!`, "fa-phone");
-        // Scroll to Hotline field
         setTimeout(() => {
           inputHotline?.scrollIntoView({ behavior: "smooth", block: "center" });
           inputHotline?.focus();
@@ -5481,8 +6216,10 @@
       async function init() {
         initDateInputs();
         await checkMemberRequirement();
+        await fetchSystemMembers();
         loadTempNotes();
         fetchIssuesFromR2(true);
+        fetchAllTempNotesFromR2(true);
         await loadSolutions();
         await loadDtList();
       }
