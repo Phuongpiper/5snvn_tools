@@ -2033,6 +2033,91 @@
       border-color: var(--primary-border);
       color: var(--primary);
     }
+
+    /* ── Voip24h Call History Specific Styles ── */
+    .voip-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: var(--radius-sm);
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .voip-status-badge.answered {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+    .voip-status-badge.missed {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .voip-type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2.5px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .voip-type-badge.inbound {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+    .voip-type-badge.outbound {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .voip-phone-chip {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .voip-phone-chip:hover {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-voip-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.16s ease;
+      font-family: inherit;
+    }
+    .btn-voip-action.primary {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+    }
+    .btn-voip-action.primary:hover {
+      background: var(--primary-hover);
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+    }
   </style>
 </head>
 
@@ -2050,7 +2135,7 @@
       </div>
     </div>
 
-    <!-- ── NAVIGATION TABS (CHUYỂN ĐỔI GIỮA SOẠN ISSUE & THỐNG KÊ NV) ── -->
+    <!-- ── NAVIGATION TABS (CHUYỂN ĐỔI GIỮA SOẠN ISSUE & THỐNG KÊ NV & VOIP24H) ── -->
     <div class="studio-header-nav" id="studioHeaderNav">
       <button type="button" class="studio-nav-btn active" id="btnNavEditor" onclick="switchStudioView('editor')" title="Soạn thảo & Quản trị Issue">
         <i class="fa-solid fa-pen-to-square"></i> Soạn Issue
@@ -2058,6 +2143,10 @@
       <button type="button" class="studio-nav-btn" id="btnNavStats" onclick="switchStudioView('stats')" title="Xem thống kê số lượng Issue theo nhân viên">
         <i class="fa-solid fa-chart-pie"></i> Số lượng theo NV
         <span class="nav-count-badge" id="navTotalIssuesBadge">0</span>
+      </button>
+      <button type="button" class="studio-nav-btn" id="btnNavVoip" onclick="switchStudioView('voip')" title="Lịch sử cuộc gọi tổng đài Voip24h (Hotline)">
+        <i class="fa-solid fa-phone-volume"></i> Lịch sử cuộc gọi
+        <span class="nav-count-badge" id="navVoipCallsBadge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;">0</span>
       </button>
     </div>
 
@@ -2448,6 +2537,196 @@
             </thead>
             <tbody id="tbodyDetailIssues">
               <!-- Dynamic details rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+    <!-- ── VIEW 3: LỊCH SỬ CUỘC GỌI VOIP24H (HOTLINE) ── -->
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+    <div id="viewVoip" class="studio-view-panel" style="display:none;">
+      <!-- Stats Header Card -->
+      <div class="stats-header-card">
+        <div class="stats-filter-row">
+          <div class="stats-title-group">
+            <div class="stats-avatar-icon" style="background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color:#0284c7;">
+              <i class="fa-solid fa-headset"></i>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h2>Lịch sử cuộc gọi Voip24h</h2>
+                <span class="stats-card-badge" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;">
+                  <i class="fa-solid fa-phone"></i> 02873065650
+                </span>
+                <span id="voipSyncStatusChip" style="font-size:11px; font-weight:700; color:#059669; display:inline-flex; align-items:center; gap:4px; margin-left:4px;">
+                  <i class="fa-solid fa-circle-check"></i> Sẵn sàng
+                </span>
+              </div>
+              <p>Đồng bộ dữ liệu trực tiếp từ tổng đài Voip24h. Tra cứu cuộc gọi, tải file CSV/Excel &amp; nạp số Hotline vào form Soạn Issue.</p>
+            </div>
+          </div>
+          <div class="stats-quick-actions">
+            <button type="button" class="btn-stats-tool primary" id="btnVoipRefresh" onclick="fetchVoipCalls(true)" title="Làm mới dữ liệu từ tổng đài">
+              <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
+            </button>
+            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()" style="background:#10b981; color:#fff; border-color:#059669;" title="Tải file báo cáo gốc từ Voip24h (Bước 3)">
+              <i class="fa-solid fa-file-excel"></i> Tải file gốc
+            </button>
+            <button type="button" class="btn-stats-tool secondary" onclick="switchStudioView('editor')" title="Quay lại Soạn Issue">
+              <i class="fa-solid fa-arrow-left"></i> Soạn Issue
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Sub-row -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:14px;">
+          <!-- Date Presets -->
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fa-regular fa-calendar-days"></i> Thời gian:</span>
+            <div class="date-chips-wrap">
+              <button type="button" class="date-chip active" data-voip-range="today" onclick="setVoipDateRange('today', this)">Hôm nay</button>
+              <button type="button" class="date-chip" data-voip-range="yesterday" onclick="setVoipDateRange('yesterday', this)">Hôm qua</button>
+              <button type="button" class="date-chip" data-voip-range="7days" onclick="setVoipDateRange('7days', this)">7 ngày qua</button>
+              <button type="button" class="date-chip" data-voip-range="thisMonth" onclick="setVoipDateRange('thisMonth', this)">Tháng này</button>
+              <button type="button" class="date-chip" data-voip-range="custom" onclick="setVoipDateRange('custom', this)">Tùy chọn...</button>
+            </div>
+            <!-- Custom Date Inputs -->
+            <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:6px;">
+              <input type="date" id="voipDateStart" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" />
+              <span style="font-size:12px; color:var(--text-muted);">đến</span>
+              <input type="date" id="voipDateEnd" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" />
+            </div>
+          </div>
+
+          <!-- Selection 2: Đầu số (DID) -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fa-solid fa-sim-card"></i> Đầu số:</span>
+            <select id="voipSelectDid" style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="fetchVoipCalls(false)">
+              <option value="02873065650" selected>02873065650 (Đầu số chính)</option>
+              <option value="02873099980">02873099980</option>
+              <option value="02873095950">02873095950</option>
+              <option value="all">Tất cả đầu số</option>
+            </select>
+          </div>
+
+          <!-- Trạng thái & Loại -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <select id="voipFilterStatus" style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="renderVoipTable()">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="missed">Gọi nhỡ (Missed)</option>
+              <option value="answered">Trả lời (Answered)</option>
+            </select>
+            <select id="voipFilterType" style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="renderVoipTable()">
+              <option value="all">Tất cả loại</option>
+              <option value="inbound">Gọi vào</option>
+              <option value="outbound">Gọi ra</option>
+            </select>
+          </div>
+
+          <!-- Search & Action buttons (Bước 2 & Bước 3) -->
+          <div style="display:flex; align-items:center; gap:8px; flex-grow:1; justify-content:flex-end;">
+            <div class="stats-search-box" style="margin-left:0; width:200px;">
+              <i class="fa-solid fa-magnify"></i>
+              <input type="text" id="voipSearchInput" placeholder="Tìm SĐT, máy nhánh..." oninput="renderVoipTable()" style="width:100%;" />
+            </div>
+            <button type="button" class="btn-stats-tool primary" onclick="fetchVoipCalls(false)" title="Bước 2: Tìm kiếm cuộc gọi" style="padding:6px 14px; font-size:12.5px;">
+              <i class="fa-solid fa-magnify"></i> Tìm kiếm
+            </button>
+            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()" style="background:#10b981; color:#fff; border-color:#059669; padding:6px 14px; font-size:12.5px;" title="Bước 3: Tải file về máy">
+              <i class="fa-solid fa-download"></i> Tải về
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards (5 cards mirroring Voip24h style) -->
+      <div class="stats-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+        <!-- 1. Total Calls -->
+        <div class="stats-kpi-card" style="border-left: 4px solid #6366f1;">
+          <div class="kpi-icon-wrap indigo"><i class="fa-solid fa-phone-volume"></i></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Tổng cuộc gọi</div>
+            <div class="kpi-value" id="kpiVoipTotal">0</div>
+            <div class="kpi-subtext" id="kpiVoipTotalSub">Lượt gọi phát sinh</div>
+          </div>
+        </div>
+
+        <!-- 2. Answered Calls -->
+        <div class="stats-kpi-card" style="border-left: 4px solid #10b981;">
+          <div class="kpi-icon-wrap emerald"><i class="fa-solid fa-phone"></i></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Trả lời</div>
+            <div class="kpi-value" id="kpiVoipAnswered" style="color:#059669;">0</div>
+            <div class="kpi-subtext">Đàm thoại thành công</div>
+          </div>
+        </div>
+
+        <!-- 3. Missed Calls -->
+        <div class="stats-kpi-card" style="border-left: 4px solid #ef4444;">
+          <div class="kpi-icon-wrap" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-phone-slash"></i></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Gọi nhỡ</div>
+            <div class="kpi-value" id="kpiVoipMissed" style="color:#dc2626;">0</div>
+            <div class="kpi-subtext">Chưa kết nối / cần gọi lại</div>
+          </div>
+        </div>
+
+        <!-- 4. Inbound Calls -->
+        <div class="stats-kpi-card" style="border-left: 4px solid #0284c7;">
+          <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-phone-arrow-down-left"></i></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Gọi vào</div>
+            <div class="kpi-value" id="kpiVoipInbound" style="color:#0284c7;">0</div>
+            <div class="kpi-subtext">Cuộc gọi đến tổng đài</div>
+          </div>
+        </div>
+
+        <!-- 5. Outbound Calls -->
+        <div class="stats-kpi-card" style="border-left: 4px solid #f59e0b;">
+          <div class="kpi-icon-wrap amber"><i class="fa-solid fa-phone-arrow-up-right"></i></div>
+          <div class="kpi-content">
+            <div class="kpi-label">Gọi ra</div>
+            <div class="kpi-value" id="kpiVoipOutbound" style="color:#b45309;">0</div>
+            <div class="kpi-subtext">Cuộc gọi đi từ máy nhánh</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Call History Data Table Card -->
+      <div class="stats-card" style="margin-top:20px;">
+        <div class="stats-card-header">
+          <div class="stats-card-title">
+            <i class="fa-solid fa-list-check" style="color:#0284c7;"></i>
+            <h3>Danh sách chi tiết cuộc gọi</h3>
+            <span class="stats-card-badge" id="voipFilteredCount">0 cuộc gọi</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-stats-tool secondary" onclick="downloadVoipExport()" style="font-size:12px; padding:5px 12px;">
+              <i class="fa-solid fa-file-csv"></i> Xuất CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-table-wrapper">
+          <table class="table-stitch-stats" id="tableVoipCalls">
+            <thead>
+              <tr>
+                <th style="width: 50px;" class="text-center">STT</th>
+                <th style="width: 170px;">THỜI GIAN</th>
+                <th style="width: 170px;">SỐ GỌI (HOTLINE)</th>
+                <th style="width: 120px;">SỐ NHẬN</th>
+                <th style="width: 110px;" class="text-center">ĐÀM THOẠI</th>
+                <th style="width: 110px;" class="text-center">THỜI LƯỢNG</th>
+                <th style="width: 120px;" class="text-center">LOẠI</th>
+                <th style="width: 130px;" class="text-center">TRẠNG THÁI</th>
+                <th style="width: 120px;" class="text-center">ĐẦU SỐ</th>
+                <th style="width: 170px;" class="text-center">THAO TÁC</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyVoipCalls">
+              <!-- Dynamic calls loaded here -->
             </tbody>
           </table>
         </div>
@@ -4042,23 +4321,30 @@
       let statsSelectedStaff = null;
 
       window.switchStudioView = function(view) {
-        currentStudioView = view === "stats" ? "stats" : "editor";
+        currentStudioView = ["stats", "voip"].includes(view) ? view : "editor";
         const viewEditor = document.getElementById("viewEditor");
         const viewStats = document.getElementById("viewStats");
+        const viewVoip = document.getElementById("viewVoip");
         const btnNavEditor = document.getElementById("btnNavEditor");
         const btnNavStats = document.getElementById("btnNavStats");
+        const btnNavVoip = document.getElementById("btnNavVoip");
+
+        if (viewEditor) viewEditor.style.display = currentStudioView === "editor" ? "block" : "none";
+        if (viewStats) viewStats.style.display = currentStudioView === "stats" ? "block" : "none";
+        if (viewVoip) viewVoip.style.display = currentStudioView === "voip" ? "block" : "none";
+
+        if (btnNavEditor) btnNavEditor.classList.toggle("active", currentStudioView === "editor");
+        if (btnNavStats) btnNavStats.classList.toggle("active", currentStudioView === "stats");
+        if (btnNavVoip) btnNavVoip.classList.toggle("active", currentStudioView === "voip");
 
         if (currentStudioView === "stats") {
-          if (viewEditor) viewEditor.style.display = "none";
-          if (viewStats) viewStats.style.display = "block";
-          if (btnNavEditor) btnNavEditor.classList.remove("active");
-          if (btnNavStats) btnNavStats.classList.add("active");
           renderStatsPage();
-        } else {
-          if (viewEditor) viewEditor.style.display = "block";
-          if (viewStats) viewStats.style.display = "none";
-          if (btnNavEditor) btnNavEditor.classList.add("active");
-          if (btnNavStats) btnNavStats.classList.remove("active");
+        } else if (currentStudioView === "voip") {
+          if (!voipCalls || voipCalls.length === 0) {
+            fetchVoipCalls(false);
+          } else {
+            renderVoipTable();
+          }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
       };
@@ -4916,6 +5202,295 @@
           await openSelectMemberModal(false);
         }
       }
+
+      /* ──────────────────────────────────────────────────────────────────────────
+         VOIP24H CALL HISTORY LOGIC
+      ────────────────────────────────────────────────────────────────────────── */
+      let voipCalls = [];
+      let voipCurrentRange = "today";
+      let voipLoading = false;
+
+      function getVoipApiBase() {
+        // Production: Vercel serverless function; Dev: local server
+        return "/api/voip24h-calls";
+      }
+
+      function getVoipDateRange(range) {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+
+        function fmt(d) {
+          return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+        }
+
+        let start, end;
+        if (range === "yesterday") {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          start = end = yesterday;
+        } else if (range === "7days") {
+          const from = new Date(now);
+          from.setDate(from.getDate() - 6);
+          start = from; end = now;
+        } else if (range === "thisMonth") {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = now;
+        } else if (range === "custom") {
+          const s = document.getElementById("voipDateStart")?.value;
+          const e = document.getElementById("voipDateEnd")?.value;
+          if (s && e) {
+            const sd = new Date(s), ed = new Date(e);
+            return {
+              date_start: `${fmt(sd)} 00:00:00`,
+              date_end: `${fmt(ed)} 23:59:59`
+            };
+          }
+          // fallback to today
+          start = end = now;
+        } else {
+          // today
+          start = end = now;
+        }
+
+        return {
+          date_start: `${fmt(start)} 00:00:00`,
+          date_end: `${fmt(end)} 23:59:59`
+        };
+      }
+
+      window.setVoipDateRange = function(range, el) {
+        voipCurrentRange = range;
+        document.querySelectorAll("[data-voip-range]").forEach(b => b.classList.remove("active"));
+        if (el) el.classList.add("active");
+
+        const customWrap = document.getElementById("voipCustomDateWrap");
+        if (customWrap) {
+          customWrap.style.display = range === "custom" ? "flex" : "none";
+        }
+
+        if (range !== "custom") {
+          fetchVoipCalls(false);
+        }
+      };
+
+      window.fetchVoipCalls = async function(showLoading) {
+        if (voipLoading) return;
+        voipLoading = true;
+
+        const statusChip = document.getElementById("voipSyncStatusChip");
+        const refreshBtn = document.getElementById("btnVoipRefresh");
+        if (statusChip) {
+          statusChip.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang tải...`;
+          statusChip.style.color = "#f59e0b";
+        }
+        if (refreshBtn) {
+          refreshBtn.disabled = true;
+          refreshBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang đồng bộ...`;
+        }
+
+        try {
+          const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
+          const did = document.getElementById("voipSelectDid")?.value || "02873065650";
+
+          const url = new URL(getVoipApiBase(), window.location.origin);
+          url.searchParams.set("date_start", date_start);
+          url.searchParams.set("date_end", date_end);
+          if (did && did !== "all") url.searchParams.set("did", did);
+
+          const res = await fetch(url.toString());
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+
+          if (data.status === "success") {
+            voipCalls = data.calls || [];
+
+            // Update KPI cards
+            const s = data.stats || {};
+            const el = id => document.getElementById(id);
+            if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = s.total ?? voipCalls.length;
+            if (el("kpiVoipAnswered")) el("kpiVoipAnswered").textContent = s.answered ?? 0;
+            if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = s.missed ?? 0;
+            if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = s.inbound ?? 0;
+            if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = s.outbound ?? 0;
+            if (el("kpiVoipTotalSub")) el("kpiVoipTotalSub").textContent = `${date_start.slice(0, 10)} → ${date_end.slice(0, 10)}`;
+
+            // Update badge on nav
+            const badge = document.getElementById("navVoipCallsBadge");
+            if (badge) badge.textContent = voipCalls.length;
+
+            if (statusChip) {
+              statusChip.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${voipCalls.length} cuộc gọi`;
+              statusChip.style.color = "#059669";
+            }
+
+            renderVoipTable();
+          } else {
+            throw new Error(data.message || "Không thể tải dữ liệu");
+          }
+        } catch (err) {
+          console.error("fetchVoipCalls error:", err);
+          if (statusChip) {
+            statusChip.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${err.message}`;
+            statusChip.style.color = "#dc2626";
+          }
+          showToast("Lỗi tải lịch sử cuộc gọi: " + err.message, "fa-circle-exclamation");
+        } finally {
+          voipLoading = false;
+          if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi`;
+          }
+        }
+      };
+
+      window.renderVoipTable = function() {
+        const tbody = document.getElementById("tbodyVoipCalls");
+        if (!tbody) return;
+
+        const search = (document.getElementById("voipSearchInput")?.value || "").toLowerCase().trim();
+        const filterStatus = document.getElementById("voipFilterStatus")?.value || "all";
+        const filterType = document.getElementById("voipFilterType")?.value || "all";
+
+        const filtered = voipCalls.filter(c => {
+          // Status filter
+          if (filterStatus !== "all") {
+            const disp = (c.disposition || "").toUpperCase();
+            const st = (c.statusText || "").toLowerCase();
+            if (filterStatus === "missed" && !(disp === "MISSED" || st.includes("nhỡ"))) return false;
+            if (filterStatus === "answered" && !(disp === "ANSWERED" || st.includes("trả lời"))) return false;
+          }
+          // Type filter
+          if (filterType !== "all") {
+            const to = (c.type_origin || "").toLowerCase();
+            const tt = (c.typeText || "").toLowerCase();
+            if (filterType === "inbound" && !(to === "inbound" || tt.includes("vào"))) return false;
+            if (filterType === "outbound" && !(to === "outbound" || tt.includes("ra"))) return false;
+          }
+          // Search
+          if (search) {
+            const haystack = [c.src, c.dst, c.did, c.statusText, c.typeText, c.calldate].join(" ").toLowerCase();
+            if (!haystack.includes(search)) return false;
+          }
+          return true;
+        });
+
+        const countEl = document.getElementById("voipFilteredCount");
+        if (countEl) countEl.textContent = `${filtered.length} cuộc gọi`;
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="10" style="text-align:center; padding:40px; color:var(--text-muted);">
+                <i class="fa-solid fa-phone-slash" style="font-size:28px; margin-bottom:10px; display:block; opacity:0.3;"></i>
+                Không tìm thấy cuộc gọi nào.<br>
+                <small>Thử thay đổi bộ lọc hoặc nhấn <strong>Đồng bộ cuộc gọi</strong>.</small>
+              </td>
+            </tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map((c, idx) => {
+          const isAnswered = (c.disposition || "").toUpperCase() === "ANSWERED" || (c.statusText || "").toLowerCase().includes("trả lời");
+          const isMissed = !isAnswered;
+          const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
+
+          const statusBadge = isAnswered
+            ? `<span class="voip-status-badge answered"><i class="fa-solid fa-phone"></i> Trả lời</span>`
+            : `<span class="voip-status-badge missed"><i class="fa-solid fa-phone-slash"></i> Gọi nhỡ</span>`;
+
+          const typeBadge = isInbound
+            ? `<span class="voip-type-badge inbound"><i class="fa-solid fa-phone-arrow-down-left"></i> Gọi vào</span>`
+            : `<span class="voip-type-badge outbound"><i class="fa-solid fa-phone-arrow-up-right"></i> Gọi ra</span>`;
+
+          // Hotline number to show (src for inbound, dst for outbound)
+          const hotlineNum = isInbound ? c.src : c.dst;
+          const destNum = isInbound ? c.dst : c.src;
+
+          return `<tr data-call-id="${escapeHTML(c.id)}">
+            <td class="text-center" style="color:var(--text-muted); font-size:12px;">${idx + 1}</td>
+            <td>
+              <div style="font-weight:700; font-size:13px; font-family:var(--font-mono);">${escapeHTML(c.calldate?.slice(0, 10) || "")}</div>
+              <div style="font-size:12px; color:var(--text-muted);">${escapeHTML(c.calldate?.slice(11, 19) || "")}</div>
+            </td>
+            <td>
+              <span class="voip-phone-chip" onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')">
+                <i class="fa-solid fa-phone" style="font-size:10px; opacity:0.6;"></i>
+                ${escapeHTML(hotlineNum || "—")}
+              </span>
+            </td>
+            <td style="font-family:var(--font-mono); font-size:12.5px; font-weight:600;">${escapeHTML(destNum || "—")}</td>
+            <td class="text-center" style="font-family:var(--font-mono); font-weight:700; color:${isAnswered ? "#059669" : "#9ca3af"};">
+              ${escapeHTML(c.billsec || "—")}
+            </td>
+            <td class="text-center" style="font-family:var(--font-mono); font-size:12.5px; color:var(--text-muted);">
+              ${escapeHTML(c.duration || "—")}
+            </td>
+            <td class="text-center">${typeBadge}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-center" style="font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:#0284c7;">
+              ${escapeHTML(c.did || "—")}
+            </td>
+            <td class="text-center">
+              <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
+                <button type="button" class="btn-row-circle" title="Nạp số Hotline này vào form Soạn Issue"
+                  onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')">
+                  <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                </button>
+                <button type="button" class="btn-row-circle" title="Sao chép số Hotline"
+                  onclick="navigator.clipboard.writeText('${escapeHTML(hotlineNum || "")}').then(() => showToast('Đã sao chép: ${escapeHTML(hotlineNum || "")}', 'fa-copy'))">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+              </div>
+            </td>
+          </tr>`;
+        }).join("");
+      };
+
+      window.useVoipHotline = function(phone) {
+        if (!phone) return;
+        // Switch to editor view and fill in Hotline field
+        switchStudioView("editor");
+        const inputHotline = document.getElementById("inputHotline");
+        if (inputHotline) {
+          inputHotline.value = phone;
+          inputHotline.dispatchEvent(new Event("input", { bubbles: true }));
+          inputHotline.dispatchEvent(new Event("blur", { bubbles: true }));
+        }
+        showToast(`Đã nạp số Hotline: ${phone} vào form Soạn Issue!`, "fa-phone");
+        // Scroll to Hotline field
+        setTimeout(() => {
+          inputHotline?.scrollIntoView({ behavior: "smooth", block: "center" });
+          inputHotline?.focus();
+        }, 300);
+      };
+
+      window.downloadVoipExport = async function() {
+        try {
+          showToast("Đang chuẩn bị file export...", "fa-clock");
+          const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
+          const did = document.getElementById("voipSelectDid")?.value || "02873065650";
+
+          const url = new URL(getVoipApiBase(), window.location.origin);
+          url.searchParams.set("action", "download");
+          url.searchParams.set("date_start", date_start);
+          url.searchParams.set("date_end", date_end);
+          if (did && did !== "all") url.searchParams.set("did", did);
+
+          const res = await fetch(url.toString());
+          const data = await res.json();
+
+          if (data.url || data.data?.url) {
+            const fileUrl = data.url || data.data.url;
+            showToast("Đang tải file... Vui lòng chờ", "fa-file-excel");
+            // Open the URL in new tab to trigger browser download
+            window.open(fileUrl, "_blank");
+          } else {
+            showToast("Không có dữ liệu để tải", "fa-circle-exclamation");
+          }
+        } catch (err) {
+          showToast("Lỗi tải file: " + err.message, "fa-circle-exclamation");
+        }
+      };
 
       async function init() {
         initDateInputs();
