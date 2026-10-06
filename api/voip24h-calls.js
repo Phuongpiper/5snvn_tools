@@ -266,7 +266,9 @@ module.exports = async function handler(req, res) {
     console.error("voip24h-calls error:", err);
     return res.status(500).json({
       status: "error",
-      message: err.message || "Loi khi goi Voip24h API"
+      message: err.message || "Loi khi goi Voip24h API",
+      cause: err.cause ? (err.cause.message || err.cause.code || String(err.cause)) : null,
+      code: err.code || (err.cause && err.cause.code)
     });
   }
 };
