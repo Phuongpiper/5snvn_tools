@@ -151,7 +151,8 @@ function aggregateIssueStats(issues, filters) {
     if (!issue || !issue.result) continue;
 
     const date       = normalizeDate(issue.date);
-    const memberCode = String(issue.memberCode || issue.member || "").trim();
+    const rawMemberCode = String(issue.memberCode || issue.member || "").trim();
+    const memberCode = rawMemberCode.toLowerCase();
 
     if (!date || !memberCode) continue;
 
@@ -165,14 +166,14 @@ function aggregateIssueStats(issues, filters) {
       if (filterTo   && dateVal > filterTo)   continue;
     }
 
-    if (filterMember && memberCode.toUpperCase() !== filterMember) continue;
+    if (filterMember && rawMemberCode.toUpperCase() !== filterMember) continue;
     // ----------------------
 
     const key = date + "__" + memberCode.toUpperCase();
     if (countMap.has(key)) {
       countMap.get(key).count++;
     } else {
-      countMap.set(key, { date, memberCode, count: 1 });
+      countMap.set(key, { date, memberCode: memberCode.toLowerCase(), count: 1 });
     }
   }
 
