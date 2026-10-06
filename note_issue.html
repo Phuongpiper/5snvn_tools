@@ -4917,38 +4917,6 @@
         }
       }
 
-      // Initial Example Run (matching User Screenshot 1 with single target)
-      function setupInitialExample() {
-        if (!inputSolution.value) {
-          inputSolution.value = "kht";
-          inputNpp.value = "tuan viet";
-          inputRole.value = "ADMIN";
-          inputNvbh.value = ""; // Chắc chắn ô NVBH trống
-          inputHotline.value = "0909280969";
-
-          // Bind matched KHT solution
-          const khtItem = solutionsList.find(s => s.code === "NVN-040" || (s.name && s.name.includes("Kiểm tra thông tin KHT")));
-          if (khtItem) {
-            currentSolutionObj = khtItem;
-            setType(khtItem.type);
-            hintSolution.className = "field-hint-chip success";
-            hintSolution.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${escapeHTML(khtItem.code)} · ${escapeHTML(khtItem.name)}`;
-          } else {
-            currentSolutionObj = { name: "Kiểm tra thông tin KHT", type: "HH", code: "NVN-040" };
-            setType("HH");
-          }
-          dropdownSolution.style.display = "none";
-
-          handleNppInput();
-          dropdownNpp.style.display = "none";
-
-          validateNvbh();
-          validateRole();
-          validateHotline();
-          updateResultDisplay();
-        }
-      }
-
       async function init() {
         initDateInputs();
         await checkMemberRequirement();
@@ -4956,7 +4924,6 @@
         fetchIssuesFromR2(true);
         await loadSolutions();
         await loadDtList();
-        setupInitialExample();
       }
 
       window.addEventListener("pageshow", () => {
