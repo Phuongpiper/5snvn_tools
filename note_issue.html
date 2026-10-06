@@ -5319,7 +5319,9 @@
             if (badge) badge.textContent = voipCalls.length;
 
             if (statusChip) {
-              statusChip.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${voipCalls.length} cuộc gọi`;
+              const srcIcon = data.source === "r2_cloud" ? '<i class="fa-solid fa-cloud"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+              const srcNote = data.source === "r2_cloud" ? ' (Cloud R2)' : ' (Live Voip24h)';
+              statusChip.innerHTML = `${srcIcon} ${voipCalls.length} cuộc gọi${srcNote}`;
               statusChip.style.color = "#059669";
             }
 

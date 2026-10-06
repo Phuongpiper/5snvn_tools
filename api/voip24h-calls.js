@@ -1,5 +1,103 @@
 // api/voip24h-calls.js
 // Vercel Serverless Function & Local Endpoint for fetching Voip24h call history
+try { require("dotenv").config(); } catch (_) {}
+const https = require("https");
+const crypto = require("crypto");
+
+const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.env.R2_ACCOUNT_ID        || "";
+const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "";
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.env.R2_SECRET_ACCESS_KEY || "";
+const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "";
+const R2_CACHE_KEY         = "voip24h_calls_cache.json";
+
+function hmacSha256(key, msg, enc) {
+  return crypto.createHmac("sha256", key).update(msg, "utf8").digest(enc);
+}
+function sha256hex(msg) {
+  const buf = Buffer.isBuffer(msg) ? msg : Buffer.from(String(msg || ""), "utf8");
+  return crypto.createHash("sha256").update(buf).digest("hex");
+}
+
+function r2Fetch(method, body, objectKey = R2_CACHE_KEY) {
+  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    return Promise.resolve({ statusCode: 500, body: "" });
+  }
+  const bodyBuf = body ? (Buffer.isBuffer(body) ? body : Buffer.from(String(body), "utf8")) : Buffer.alloc(0);
+  const host      = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
+  const uriPath   = "/" + R2_BUCKET_NAME + "/" + objectKey;
+  const now       = new Date();
+  const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const amzDate   = now.toISOString().replace(/[:-]/g, "").replace(/\.\d+/, "");
+  const region    = "auto";
+  const service   = "s3";
+
+  const payloadHash  = sha256hex(bodyBuf);
+  const contentType  = method === "PUT" ? "application/json; charset=utf-8" : "";
+
+  let canonicalHeaders = "host:" + host + "\nx-amz-content-sha256:" + payloadHash + "\nx-amz-date:" + amzDate + "\n";
+  let signedHeaders    = "host;x-amz-content-sha256;x-amz-date";
+  if (contentType) {
+    canonicalHeaders = "content-length:" + bodyBuf.length + "\ncontent-type:" + contentType + "\n" + canonicalHeaders;
+    signedHeaders    = "content-length;content-type;" + signedHeaders;
+  }
+
+  const canonicalRequest = [method, uriPath, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
+  const credentialScope  = dateStamp + "/" + region + "/" + service + "/aws4_request";
+  const stringToSign     = ["AWS4-HMAC-SHA256", amzDate, credentialScope, sha256hex(canonicalRequest)].join("\n");
+
+  const kDate    = hmacSha256("AWS4" + R2_SECRET_ACCESS_KEY, dateStamp);
+  const kRegion  = hmacSha256(kDate, region);
+  const kService = hmacSha256(kRegion, service);
+  const kSigning = hmacSha256(kService, "aws4_request");
+  const signature = hmacSha256(kSigning, stringToSign, "hex");
+
+  const auth = "AWS4-HMAC-SHA256 Credential=" + R2_ACCESS_KEY_ID + "/" + credentialScope + ",SignedHeaders=" + signedHeaders + ",Signature=" + signature;
+
+  const headers = {
+    "Authorization":        auth,
+    "x-amz-date":           amzDate,
+    "x-amz-content-sha256": payloadHash
+  };
+  if (contentType) {
+    headers["Content-Type"] = contentType;
+    headers["Content-Length"] = bodyBuf.length;
+  }
+
+  return new Promise(function(resolve, reject) {
+    const options = { hostname: host, path: uriPath, method: method, headers: headers };
+    const req = https.request(options, function(res) {
+      const chunks = [];
+      res.on("data", function(c) { chunks.push(c); });
+      res.on("end", function() {
+        resolve({ statusCode: res.statusCode, body: Buffer.concat(chunks).toString("utf8") });
+      });
+    });
+    req.on("error", reject);
+    if (bodyBuf.length > 0) req.write(bodyBuf);
+    req.end();
+  });
+}
+
+async function saveCacheToR2(data) {
+  try {
+    data.syncedAt = new Date().toISOString();
+    await r2Fetch("PUT", JSON.stringify(data));
+  } catch (err) {
+    console.error("saveCacheToR2 error:", err.message);
+  }
+}
+
+async function getCacheFromR2() {
+  try {
+    const res = await r2Fetch("GET");
+    if (res.statusCode === 200 && res.body) {
+      return JSON.parse(res.body);
+    }
+  } catch (err) {
+    console.error("getCacheFromR2 error:", err.message);
+  }
+  return null;
+}
 
 let cachedSession = {
   jar: null,
@@ -28,7 +126,6 @@ function jarToString(jar) {
 
 async function getVoipSession(forceRefresh = false) {
   const now = Date.now();
-  // Session valid for 15 minutes
   if (!forceRefresh && cachedSession.jar && (now - cachedSession.loginTime < 15 * 60 * 1000)) {
     return cachedSession.jar;
   }
@@ -37,7 +134,7 @@ async function getVoipSession(forceRefresh = false) {
   const password = process.env.MISSCALL_PASS;
 
   if (!username || !password) {
-    throw new Error("MISSCALL_USERID hoac MISSCALL_PASS chua duoc cau hinh.");
+    throw new Error("MISSCALL_USERID hoặc MISSCALL_PASS chưa được cấu hình.");
   }
 
   const jar = {};
@@ -45,36 +142,44 @@ async function getVoipSession(forceRefresh = false) {
   fd.append("username", username);
   fd.append("password", password);
 
-  const res = await fetch("https://khachhang.voip24h.vn/apps/api/sign", {
-    method: "POST",
-    body: fd.toString(),
-    headers: {
-      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "x-requested-with": "XMLHttpRequest"
+  // Set 6s timeout to fail fast on foreign blocking
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const res = await fetch("https://khachhang.voip24h.vn/apps/api/sign", {
+      method: "POST",
+      body: fd.toString(),
+      headers: {
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "x-requested-with": "XMLHttpRequest"
+      },
+      signal: controller.signal
+    });
+
+    let setCookieHeaders = [];
+    if (res.headers.getSetCookie) {
+      setCookieHeaders = res.headers.getSetCookie();
+    } else {
+      const single = res.headers.get("set-cookie");
+      if (single) setCookieHeaders = [single];
     }
-  });
+    parseCookies(setCookieHeaders, jar);
 
-  // Collect cookies
-  let setCookieHeaders = [];
-  if (res.headers.getSetCookie) {
-    setCookieHeaders = res.headers.getSetCookie();
-  } else {
-    const single = res.headers.get("set-cookie");
-    if (single) setCookieHeaders = [single];
+    const text = await res.text();
+    let json = {};
+    try { json = JSON.parse(text); } catch (_) {}
+
+    if (json.status !== 1000) {
+      throw new Error("Đăng nhập Voip24h thất bại: " + (json.message || text.slice(0, 200)));
+    }
+
+    cachedSession = { jar, loginTime: now };
+    return jar;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  parseCookies(setCookieHeaders, jar);
-
-  const text = await res.text();
-  let json = {};
-  try { json = JSON.parse(text); } catch (_) {}
-
-  if (json.status !== 1000) {
-    throw new Error("Dang nhap Voip24h that bai: " + (json.message || text.slice(0, 200)));
-  }
-
-  cachedSession = { jar, loginTime: now };
-  return jar;
 }
 
 function getTodayFormatted() {
@@ -103,19 +208,27 @@ async function fetchCallList(jar, params) {
   searchParams.append("type", params.type || "");
   searchParams.append("status", params.status || "");
 
-  const res = await fetch("https://khachhang.voip24h.vn/call_history/api/historyTotalCallIndex", {
-    method: "POST",
-    headers: {
-      "cookie": jarToString(jar),
-      "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-      "x-requested-with": "XMLHttpRequest",
-      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    },
-    body: searchParams.toString()
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 7000);
 
-  const text = await res.text();
-  try { return JSON.parse(text); } catch (_) { return null; }
+  try {
+    const res = await fetch("https://khachhang.voip24h.vn/call_history/api/historyTotalCallIndex", {
+      method: "POST",
+      headers: {
+        "cookie": jarToString(jar),
+        "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "x-requested-with": "XMLHttpRequest",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+      },
+      body: searchParams.toString(),
+      signal: controller.signal
+    });
+
+    const text = await res.text();
+    try { return JSON.parse(text); } catch (_) { return null; }
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 module.exports = async function handler(req, res) {
@@ -127,26 +240,26 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  try {
-    const defaultDates = getTodayFormatted();
+  const defaultDates = getTodayFormatted();
 
-    // Parse query params
-    let queryParams = {};
-    if (req.url && req.url.includes("?")) {
-      try {
-        const parsedUrl = new URL(req.url, "http://localhost");
-        parsedUrl.searchParams.forEach((v, k) => { queryParams[k] = v; });
-      } catch (_) {}
-    }
+  // Parse query params
+  let queryParams = {};
+  if (req.url && req.url.includes("?")) {
+    try {
+      const parsedUrl = new URL(req.url, "http://localhost");
+      parsedUrl.searchParams.forEach((v, k) => { queryParams[k] = v; });
+    } catch (_) {}
+  }
 
-    const payload = Object.assign({}, queryParams, req.body || {});
-    const action = payload.action || "fetch";
-    const date_start = payload.date_start || defaultDates.date_start;
-    const date_end = payload.date_end || defaultDates.date_end;
-    const did = payload.did !== undefined ? payload.did : "02873065650";
+  const payload = Object.assign({}, queryParams, req.body || {});
+  const action = payload.action || "fetch";
+  const date_start = payload.date_start || defaultDates.date_start;
+  const date_end = payload.date_end || defaultDates.date_end;
+  const did = payload.did !== undefined ? payload.did : "02873065650";
 
-    // ── DOWNLOAD action ──────────────────────────────────────────────────────
-    if (action === "download") {
+  // ── DOWNLOAD action ────────────────────────────────────────────────────────
+  if (action === "download") {
+    try {
       let jar = await getVoipSession();
 
       const dlParams = new URLSearchParams();
@@ -170,11 +283,7 @@ module.exports = async function handler(req, res) {
         body: dlParams.toString()
       });
 
-      let dlText = await resDl.text();
-      let dlJson = null;
-      try { dlJson = JSON.parse(dlText); } catch (_) {}
-
-      // Retry once if session expired
+      let dlJson = await resDl.json().catch(() => null);
       if (!dlJson || dlJson.status !== 1000) {
         jar = await getVoipSession(true);
         resDl = await fetch("https://khachhang.voip24h.vn/call_history/api/downloadrecording", {
@@ -187,8 +296,7 @@ module.exports = async function handler(req, res) {
           },
           body: dlParams.toString()
         });
-        dlText = await resDl.text();
-        try { dlJson = JSON.parse(dlText); } catch (_) {}
+        dlJson = await resDl.json().catch(() => null);
       }
 
       const downloadUrl = dlJson?.data?.url || dlJson?.url || "";
@@ -199,76 +307,96 @@ module.exports = async function handler(req, res) {
         data: dlJson?.data || {},
         message: dlJson?.message || "Export completed"
       });
+    } catch (err) {
+      console.error("voip24h download error:", err.message);
+      return res.status(500).json({
+        status: "error",
+        message: "Không thể kết nối tổng đài để tải file: " + err.message
+      });
     }
+  }
 
-    // ── FETCH action (default) ───────────────────────────────────────────────
+  // ── FETCH action (default) ─────────────────────────────────────────────────
+  try {
     let jar = await getVoipSession();
     let data = await fetchCallList(jar, { date_start, date_end, did, ...payload });
 
-    // Retry with fresh session if needed
     if (!data || !data.data) {
       jar = await getVoipSession(true);
       data = await fetchCallList(jar, { date_start, date_end, did, ...payload });
     }
 
-    if (!data) {
-      return res.status(502).json({ status: "error", message: "Voip24h khong tra ve du lieu hop le." });
-    }
+    if (data && data.data) {
+      const rawList = data.data || [];
+      const calls = rawList.map((item, idx) => {
+        const cleanStatus = (item.status || "").replace(/<[^>]+>/g, "").trim();
+        const cleanType = (item.type || "").replace(/<[^>]+>/g, "").trim();
+        return {
+          id: item.uniqueid || item.linkedid || String(idx),
+          stt: idx + 1,
+          calldate: item.calldate,
+          calldate_end: item.calldate_end,
+          src: item.src,
+          dst: item.dst,
+          duration: item.duration,
+          billsec: item.billsec,
+          disposition: item.disposition || item.asterisk_disposition,
+          statusText: cleanStatus || item.disposition,
+          typeText: cleanType || item.type_origin,
+          type_origin: item.type_origin,
+          did: item.did,
+          recordingfile: item.recordingfile,
+          media_token: item.media_token
+        };
+      });
 
-    const rawList = data.data || [];
-    const calls = rawList.map((item, idx) => {
-      const cleanStatus = (item.status || "").replace(/<[^>]+>/g, "").trim();
-      const cleanType = (item.type || "").replace(/<[^>]+>/g, "").trim();
-      return {
-        id: item.uniqueid || item.linkedid || String(idx),
-        stt: idx + 1,
-        calldate: item.calldate,
-        calldate_end: item.calldate_end,
-        src: item.src,
-        dst: item.dst,
-        duration: item.duration,
-        billsec: item.billsec,
-        disposition: item.disposition || item.asterisk_disposition,
-        statusText: cleanStatus || item.disposition,
-        typeText: cleanType || item.type_origin,
-        type_origin: item.type_origin,
-        did: item.did,
-        recordingfile: item.recordingfile,
-        media_token: item.media_token
+      let answered = 0, missed = 0, inbound = 0, outbound = 0;
+      for (const c of calls) {
+        const disp = (c.disposition || "").toUpperCase();
+        const st = (c.statusText || "").toLowerCase();
+        if (disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời")) answered++;
+        else if (disp === "MISSED" || st.includes("nho") || st.includes("nhỡ") || st.includes("khong")) missed++;
+
+        const t = (c.type_origin || "").toLowerCase();
+        const tt = (c.typeText || "").toLowerCase();
+        if (t === "inbound" || tt.includes("vao") || tt.includes("vào")) inbound++;
+        else if (t === "outbound" || tt.includes("ra")) outbound++;
+      }
+
+      const responsePayload = {
+        status: "success",
+        source: "live_voip24h",
+        total: calls.length,
+        recordsTotal: data.recordsTotal || calls.length,
+        recordsFiltered: data.recordsFiltered || calls.length,
+        stats: { total: calls.length, answered, missed, inbound, outbound },
+        filter: { date_start, date_end, did },
+        calls
       };
-    });
 
-    // Compute stats
-    let answered = 0, missed = 0, inbound = 0, outbound = 0;
-    for (const c of calls) {
-      const disp = (c.disposition || "").toUpperCase();
-      const st = (c.statusText || "").toLowerCase();
-      if (disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời")) answered++;
-      else if (disp === "MISSED" || st.includes("nho") || st.includes("nhỡ") || st.includes("khong")) missed++;
+      // Save to Cloudflare R2 cache asynchronously so Vercel can always read it
+      saveCacheToR2(responsePayload);
 
-      const t = (c.type_origin || "").toLowerCase();
-      const tt = (c.typeText || "").toLowerCase();
-      if (t === "inbound" || tt.includes("vao") || tt.includes("vào")) inbound++;
-      else if (t === "outbound" || tt.includes(" ra")) outbound++;
+      return res.status(200).json(responsePayload);
     }
+  } catch (liveErr) {
+    console.warn("Voip24h live fetch failed (likely blocked IP outside VN):", liveErr.message);
+  }
 
+  // ── FALLBACK TO R2 CACHE ───────────────────────────────────────────────────
+  // When running on foreign cloud (Vercel) where Voip24h blocks incoming connections,
+  // load the latest synced data from Cloudflare R2!
+  const cachedData = await getCacheFromR2();
+  if (cachedData && cachedData.calls) {
     return res.status(200).json({
-      status: "success",
-      total: calls.length,
-      recordsTotal: data.recordsTotal || calls.length,
-      recordsFiltered: data.recordsFiltered || calls.length,
-      stats: { total: calls.length, answered, missed, inbound, outbound },
-      filter: { date_start, date_end, did },
-      calls
-    });
-
-  } catch (err) {
-    console.error("voip24h-calls error:", err);
-    return res.status(500).json({
-      status: "error",
-      message: err.message || "Loi khi goi Voip24h API",
-      cause: err.cause ? (err.cause.message || err.cause.code || String(err.cause)) : null,
-      code: err.code || (err.cause && err.cause.code)
+      ...cachedData,
+      source: "r2_cloud",
+      note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Do tổng đài Voip24h chặn IP nước ngoài của Vercel)"
     });
   }
+
+  return res.status(500).json({
+    status: "error",
+    message: "Tổng đài Voip24h chặn IP máy chủ Vercel ở nước ngoài và chưa có bản lưu trên R2. Hãy nhấn đồng bộ trên máy có chạy server nội bộ để cập nhật lên R2."
+  });
 };
