@@ -2582,23 +2582,7 @@
 
         <!-- Filter Sub-row -->
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:14px;">
-          <!-- Date Presets -->
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fa-regular fa-calendar-days"></i> Thời gian:</span>
-            <div class="date-chips-wrap">
-              <button type="button" class="date-chip active" data-voip-range="today" onclick="setVoipDateRange('today', this)">Hôm nay</button>
-              <button type="button" class="date-chip" data-voip-range="yesterday" onclick="setVoipDateRange('yesterday', this)">Hôm qua</button>
-              <button type="button" class="date-chip" data-voip-range="7days" onclick="setVoipDateRange('7days', this)">7 ngày qua</button>
-              <button type="button" class="date-chip" data-voip-range="thisMonth" onclick="setVoipDateRange('thisMonth', this)">Tháng này</button>
-              <button type="button" class="date-chip" data-voip-range="custom" onclick="setVoipDateRange('custom', this)">Tùy chọn...</button>
-            </div>
-            <!-- Custom Date Inputs -->
-            <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:6px;">
-              <input type="date" id="voipDateStart" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" />
-              <span style="font-size:12px; color:var(--text-muted);">đến</span>
-              <input type="date" id="voipDateEnd" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" />
-            </div>
-          </div>
+
 
           <!-- Selection 2: Đầu số (DID) -->
           <div style="display:flex; align-items:center; gap:8px;">
