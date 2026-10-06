@@ -41,9 +41,10 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
         max-width: 1560px;
         margin: 0 auto;
-        gap: 16px;
+        gap: 8px 16px;
       }
       .brand {
         display: flex;
@@ -98,18 +99,16 @@
       .tabs {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 4px;
         background: #f1f5f9;
         padding: 4px;
         border-radius: 10px;
         border: 1px solid #e2e8f0;
         overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        scrollbar-width: thin;
         flex-shrink: 1;
-      }
-      .tabs::-webkit-scrollbar {
-        display: none;
+        min-width: 0;
       }
       .tab-button {
         background: transparent;
@@ -117,12 +116,12 @@
         border-radius: 7px;
         color: #64748b;
         cursor: pointer;
-        font-size: 13px;
+        font-size: clamp(11px, 1vw, 13px);
         font-weight: 600;
-        padding: 7px 13px;
+        padding: 6px 10px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         transition: all 0.16s ease;
         white-space: nowrap;
       }
