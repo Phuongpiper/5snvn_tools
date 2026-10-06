@@ -313,7 +313,8 @@ module.exports = async function handler(req, res) {
           if (existsCode) return res.status(400).json({ status: "error", message: "Mã nhân viên đã tồn tại" });
         }
 
-        currentData.members.push({ name, code: code || "" });
+        const extension = (payload.extension || "").trim();
+        currentData.members.push({ name, code: code || "", extension });
         await saveTasksData(currentData);
         return res.status(200).json({ status: "success", members: currentData.members });
       }
@@ -335,7 +336,8 @@ module.exports = async function handler(req, res) {
         const dupCode = currentData.members.some((m, i) => i !== idx && (m.code || "").toUpperCase() === newCode);
         if (dupCode) return res.status(400).json({ status: "error", message: "Mã nhân viên đã được sử dụng bởi nhân viên khác" });
 
-        currentData.members[idx] = { name: newName, code: newCode };
+        const newExt = (payload.extension !== undefined) ? (payload.extension || "").trim() : (currentData.members[idx].extension || "");
+        currentData.members[idx] = { name: newName, code: newCode, extension: newExt };
 
         // Cập nhật tên trong assignees của các task nếu tên thay đổi
         if (oldName.toLowerCase() !== newName.toLowerCase() && Array.isArray(currentData.tasks)) {
