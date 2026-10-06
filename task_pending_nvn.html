@@ -1673,14 +1673,19 @@
             <i class="fa-solid fa-user-plus" style="color:var(--accent);"></i> Thêm thành viên mới
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <div style="flex:0 0 130px; min-width:110px;">
+            <div style="flex:0 0 120px; min-width:100px;">
               <input type="text" class="fc" id="newMemberCode" placeholder="Mã NV *" style="width:100%; text-transform:uppercase; font-weight:600; font-family:monospace;"
                 title="Mã nhân viên (bắt buộc)"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('newMemberName').focus();}" />
             </div>
-            <div style="flex:1; min-width:150px;">
+            <div style="flex:1; min-width:130px;">
               <input type="text" class="fc" id="newMemberName" placeholder="Tên nhân viên *" style="width:100%;"
                 title="Tên nhân viên (bắt buộc)"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('newMemberExt').focus();}" />
+            </div>
+            <div style="flex:0 0 100px; min-width:80px;">
+              <input type="text" class="fc" id="newMemberExt" placeholder="Máy nhánh" style="width:100%; font-family:monospace;"
+                title="Số máy nhánh nội bộ (tuỳ chọn)"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();addMember();}" />
             </div>
             <button class="btn-primary" onclick="addMember()" style="padding:8px 14px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px;">
@@ -1688,7 +1693,7 @@
             </button>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
-            <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...)
+            <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...) · Máy nhánh tuỳ chọn
           </div>
         </div>
 
@@ -2840,8 +2845,8 @@
         const res = await apiGet("action=read_members");
         if (res.status === "success") {
           allMembers = (res.data || []).map(m => {
-            if (typeof m === "string") return { name: m.trim(), code: "" };
-            return { name: (m.name || "").trim(), code: (m.code || "").trim() };
+            if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
+            return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
           });
           try { localStorage.setItem("app_members_data", JSON.stringify(allMembers)); } catch (e) { }
           populateMemberFilter();
@@ -2871,8 +2876,9 @@
           li.style.borderColor = "var(--accent, #6366f1)";
           li.innerHTML = `
             <div style="display:flex; gap:6px; flex:1; align-items:center; flex-wrap:wrap; margin-right:8px;">
-              <input type="text" class="fc" id="editMemberCode_${idx}" value="${esc(m.code || '')}" placeholder="Mã NV *" style="width:105px; text-transform:uppercase; font-weight:600; font-family:monospace; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveEditMember('${esc(m.name)}', ${idx});}" />
-              <input type="text" class="fc" id="editMemberName_${idx}" value="${esc(m.name)}" placeholder="Tên NV *" style="flex:1; min-width:120px; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveEditMember('${esc(m.name)}', ${idx});}" />
+              <input type="text" class="fc" id="editMemberCode_${idx}" value="${esc(m.code || '')}" placeholder="Mã NV *" style="width:100px; text-transform:uppercase; font-weight:600; font-family:monospace; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('editMemberName_${idx}').focus();}" />
+              <input type="text" class="fc" id="editMemberName_${idx}" value="${esc(m.name)}" placeholder="Tên NV *" style="flex:1; min-width:110px; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('editMemberExt_${idx}').focus();}" />
+              <input type="text" class="fc" id="editMemberExt_${idx}" value="${esc(m.extension || '')}" placeholder="Máy nhánh" style="width:90px; font-family:monospace; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveEditMember('${esc(m.name)}', ${idx});}" />
             </div>
             <div class="member-actions">
               <button class="btn-primary btn-sm" onclick="saveEditMember('${esc(m.name)}', ${idx})" title="Lưu thay đổi" style="padding:5px 9px;"><i class="fa-solid fa-check"></i></button>
@@ -2883,14 +2889,18 @@
           const codeHtml = m.code
             ? `<span class="member-code-tag" title="Mã nhân viên: ${esc(m.code)}">${esc(m.code)}</span>`
             : `<span class="member-code-tag empty" title="Chưa có mã nhân viên — Bấm sửa để nhập mã">Chưa có mã</span>`;
+          const extHtml = m.extension
+            ? `<span style="font-size:11px; font-weight:600; font-family:monospace; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; border-radius:4px; padding:1px 6px; white-space:nowrap;" title="Máy nhánh: ${esc(m.extension)}"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${esc(m.extension)}</span>`
+            : '';
 
           li.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px; overflow:hidden; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px; overflow:hidden; min-width:0; flex-wrap:wrap;">
               ${codeHtml}
               <span class="member-name" title="${esc(m.name)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(m.name)}</span>
+              ${extHtml}
             </div>
             <div class="member-actions">
-              <button class="btn-outline btn-sm" onclick="startEditMember('${esc(m.name)}')" title="Sửa mã / tên nhân viên" style="padding:4px 8px; border-radius:4px; font-size:12px;"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-outline btn-sm" onclick="startEditMember('${esc(m.name)}')" title="Sửa mã / tên / máy nhánh" style="padding:4px 8px; border-radius:4px; font-size:12px;"><i class="fa-solid fa-pen-to-square"></i></button>
               <button class="btn-danger btn-sm" data-name="${esc(m.name)}" onclick="deleteMember(this.dataset.name)" title="Xóa" style="padding:4px 8px; border-radius:4px; font-size:12px;"><i class="fa-solid fa-trash-can"></i></button>
             </div>
           `;
@@ -2919,8 +2929,10 @@
     async function saveEditMember(oldName, idx) {
       const codeEl = document.getElementById(`editMemberCode_${idx}`);
       const nameEl = document.getElementById(`editMemberName_${idx}`);
+      const extEl  = document.getElementById(`editMemberExt_${idx}`);
       const newCode = (codeEl ? codeEl.value : "").trim().toUpperCase();
       const newName = (nameEl ? nameEl.value : "").trim();
+      const newExt  = (extEl  ? extEl.value  : "").trim();
 
       if (!newCode) {
         toast("Vui lòng nhập mã nhân viên (bắt buộc)!", "w");
@@ -2952,7 +2964,8 @@
           action: "edit_member",
           oldName,
           newName,
-          code: newCode
+          code: newCode,
+          extension: newExt
         });
         if (res.status === "success") {
           toast(`Đã cập nhật [${newCode}] ${newName}!`, "s");
@@ -2970,8 +2983,10 @@
     async function addMember() {
       const codeInput = document.getElementById("newMemberCode");
       const nameInput = document.getElementById("newMemberName");
+      const extInput  = document.getElementById("newMemberExt");
       const code = (codeInput ? codeInput.value : "").trim().toUpperCase();
       const name = (nameInput ? nameInput.value : "").trim();
+      const extension = (extInput ? extInput.value : "").trim();
 
       if (!code) {
         toast("Vui lòng nhập mã nhân viên (bắt buộc)!", "w");
@@ -2999,11 +3014,12 @@
       }
 
       try {
-        const res = await apiPost({ action: "add_member", name, code, requireCode: true });
+        const res = await apiPost({ action: "add_member", name, code, extension, requireCode: true });
         if (res.status === "success") {
-          toast(`Đã thêm [${code}] ${name}!`, "s");
+          toast(`Đã thêm [${code}] ${name}${extension ? ' · Nhánh ' + extension : ''}!`, "s");
           if (codeInput) codeInput.value = "";
           if (nameInput) nameInput.value = "";
+          if (extInput)  extInput.value  = "";
           codeInput?.focus();
           loadMembers();
         } else {
