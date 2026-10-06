@@ -170,6 +170,21 @@ module.exports = async function handler(req, res) {
         const cdNew = String(newRow["Call Details"] || newRow["call details"] || "").trim();
         const dateNew = String(newRow["Date"] || newRow["date"] || "").trim();
 
+        if (cdNew) {
+          const m = cdNew.match(/_([^_]+)_Hotline/i);
+          let extracted = "";
+          if (m && !/^NPP\s/i.test(m[1]) && !/^Ticket/i.test(m[1])) {
+            extracted = m[1].trim();
+          } else {
+            const fb = cdNew.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
+            if (fb) extracted = fb[1].trim();
+          }
+          if (extracted) {
+            newRow["User code"] = extracted;
+            newRow["User Code"] = extracted;
+          }
+        }
+
         const isDup = existingRows.some(r => {
           const cd = String(r["Call Details"] || r["call details"] || "").trim();
           const d = String(r["Date"] || r["date"] || "").trim();

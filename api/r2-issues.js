@@ -106,15 +106,18 @@ function buildCallLogRow(issue, dtRows = []) {
   }
 
   // 2. User code / User Code
-  let userCode = (issue.fields?.nvbh || issue.fields?.role || "").trim();
-  if (!userCode && resultText) {
+  let userCode = "";
+  if (resultText) {
     const m = resultText.match(/_([^_]+)_Hotline/i);
     if (m && !/^NPP\s/i.test(m[1]) && !/^Ticket/i.test(m[1])) {
       userCode = m[1].trim();
     } else {
-      const fb = resultText.match(/_(HQ\s+[^_]+|\d+G\d+|ADMIN)(?:_|$)/i);
+      const fb = resultText.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
       if (fb) userCode = fb[1].trim();
     }
+  }
+  if (!userCode) {
+    userCode = (issue.fields?.nvbhFormatted || issue.fields?.nvbh || issue.fields?.role || "").trim();
   }
 
   // 3. Hotline

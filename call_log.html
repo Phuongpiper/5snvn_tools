@@ -1303,8 +1303,13 @@
           return n === "call details" || n.includes("call details");
         }) || "Call Details";
         rows.forEach((row) => {
-          if (row["User code"] === undefined || !String(row["User code"]).trim()) {
-            row["User code"] = extractUserCodeFromCallDetails(row[detailsCol] || row["Call Details"] || "");
+          const details = row[detailsCol] || row["Call Details"] || "";
+          const extracted = extractUserCodeFromCallDetails(details);
+          if (extracted) {
+            row["User code"] = extracted;
+            row["User Code"] = extracted;
+          } else if (row["User code"] === undefined || !String(row["User code"]).trim()) {
+            row["User code"] = row["User Code"] || "";
           }
         });
         if (!headers.some((h) => normalizeForSearch(h) === "user code")) {
@@ -1461,14 +1466,16 @@
         const userCodeCol = findColumn("user code");
         const hotlineCol = findColumn("hotline");
         const detailsCol = findColumn("call details");
-        const userCodeVal = (userCodeCol && row[userCodeCol]) ? row[userCodeCol] : extractUserCodeFromCallDetails(row[detailsCol]);
-        const solutionFromDetails = extractSolutionFromCallDetails(row[detailsCol]);
+        const detailsVal = row[detailsCol] || row["Call Details"] || "";
+        const extracted = extractUserCodeFromCallDetails(detailsVal);
+        const userCodeVal = extracted || (userCodeCol && row[userCodeCol]) || "";
+        const solutionFromDetails = extractSolutionFromCallDetails(detailsVal);
         return {
-          npp: buildSearchText([row[distNameCol], row[detailsCol]].join(" ")),
+          npp: buildSearchText([row[distNameCol], detailsVal].join(" ")),
           nppCode: buildSearchText(String(row[distCodeCol] || "")),
-          nvbh: buildSearchText([userCodeVal, extractUserCodeFromCallDetails(row[detailsCol])].join(" ")),
+          nvbh: buildSearchText([userCodeVal, row[userCodeCol], extracted].join(" ")),
           hotline: buildSearchText(
-            [row[hotlineCol], row[detailsCol]].join(" "),
+            [row[hotlineCol], detailsVal].join(" "),
           ),
           solution: buildSearchText(solutionFromDetails),
         };
@@ -1489,7 +1496,7 @@
             return candidate;
           }
         }
-        const fallback = text.match(/_(HQ\s+[^_]+|\d+G\d+|ADMIN)(?:_|$)/i);
+        const fallback = text.match(/_(HQ\s+[^_]+|\d+[A-Z]\d+|ADMIN|ASM|SUP)(?:_|$)/i);
         return fallback ? fallback[1].trim() : "";
       }
 
@@ -1773,9 +1780,10 @@
         return data
           .map((item) => {
             const callDetails = item.columnN || item["Call Details"] || "";
+            const extracted = extractUserCodeFromCallDetails(callDetails);
             return {
               "Dist code": item.columnB || item["Dist code"] || "",
-              "User code": item["User code"] || item.columnUserCode || extractUserCodeFromCallDetails(callDetails),
+              "User code": extracted || item["User code"] || item["User Code"] || item.columnUserCode || "",
               Hotline: item.columnF || item.Hotline || "",
               Date: item.columnG || item.Date || "",
               "Call Details": callDetails,
