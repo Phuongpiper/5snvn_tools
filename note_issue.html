@@ -2411,14 +2411,6 @@
         <span class="user-chip-switch-badge"><i class="fa-solid fa-arrows-rotate"></i> Đổi</span>
       </div>
 
-      <div class="status-chip active" id="pillSolutionStatus" title="Dữ liệu giải pháp từ Google Apps Script">
-        <span class="status-dot"></span>
-        <span id="txtSolutionStatus">Solution: Đang nạp...</span>
-      </div>
-      <div class="status-chip active" id="pillDtStatus" title="Dữ liệu danh sách đối tác và NPP">
-        <span class="status-dot"></span>
-        <span id="txtDtStatus">NPP: Đang nạp...</span>
-      </div>
       <button type="button" class="btn-header-action" id="btnRefreshData" title="Tải lại dữ liệu mới nhất từ Cloud R2 & Hệ thống">
         <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ
       </button>
@@ -3267,8 +3259,8 @@
          DATA SYNCHRONIZATION
       ────────────────────────────────────────────────────────────────────────── */
       async function loadSolutions(force = false) {
-        txtSolutionStatus.textContent = "Solution: Đang nạp...";
-        pillSolutionStatus.classList.remove("active");
+        if (txtSolutionStatus) txtSolutionStatus.textContent = "Solution: Đang nạp...";
+        if (pillSolutionStatus) pillSolutionStatus.classList.remove("active");
 
         if (!force) {
           try {
@@ -3277,8 +3269,8 @@
               const parsed = JSON.parse(cached);
               if (Array.isArray(parsed) && parsed.length > 0) {
                 solutionsList = parsed;
-                txtSolutionStatus.textContent = `Solution: ${solutionsList.length} mục`;
-                pillSolutionStatus.classList.add("active");
+                if (txtSolutionStatus) txtSolutionStatus.textContent = `Solution: ${solutionsList.length} mục`;
+                if (pillSolutionStatus) pillSolutionStatus.classList.add("active");
               }
             }
           } catch (_) { }
@@ -3301,24 +3293,24 @@
               if (valid.length > 0) {
                 solutionsList = valid;
                 localStorage.setItem(LS_SOLUTIONS_KEY, JSON.stringify(valid));
-                txtSolutionStatus.textContent = `Solution: ${solutionsList.length} mục`;
-                pillSolutionStatus.classList.add("active");
+                if (txtSolutionStatus) txtSolutionStatus.textContent = `Solution: ${solutionsList.length} mục`;
+                if (pillSolutionStatus) pillSolutionStatus.classList.add("active");
               }
             }
           }
         } catch (err) {
           if (solutionsList.length > 0) {
-            txtSolutionStatus.textContent = `Solution: ${solutionsList.length} mục (Offline)`;
-            pillSolutionStatus.classList.add("active");
+            if (txtSolutionStatus) txtSolutionStatus.textContent = `Solution: ${solutionsList.length} mục (Offline)`;
+            if (pillSolutionStatus) pillSolutionStatus.classList.add("active");
           } else {
-            txtSolutionStatus.textContent = "Solution: Lỗi kết nối";
+            if (txtSolutionStatus) txtSolutionStatus.textContent = "Solution: Lỗi kết nối";
           }
         }
       }
 
       async function loadDtList(force = false) {
-        txtDtStatus.textContent = "NPP: Đang nạp...";
-        pillDtStatus.classList.remove("active");
+        if (txtDtStatus) txtDtStatus.textContent = "NPP: Đang nạp...";
+        if (pillDtStatus) pillDtStatus.classList.remove("active");
 
         // Read from local DT list
         try {
@@ -3332,8 +3324,8 @@
                 issueName: String(r.col_issue_name || "").trim(),
                 prefix: String(r.col_prefix || "").trim().toUpperCase()
               }));
-              txtDtStatus.textContent = `NPP: ${dtList.length} mục`;
-              pillDtStatus.classList.add("active");
+              if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục`;
+              if (pillDtStatus) pillDtStatus.classList.add("active");
             }
           }
         } catch (_) { }
@@ -3351,8 +3343,8 @@
                   issueName: String(r.col_issue_name || "").trim(),
                   prefix: String(r.col_prefix || "").trim().toUpperCase()
                 }));
-                txtDtStatus.textContent = `NPP: ${dtList.length} mục (R2)`;
-                pillDtStatus.classList.add("active");
+                if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục (R2)`;
+                if (pillDtStatus) pillDtStatus.classList.add("active");
               }
             }
           } catch (_) { }
@@ -3366,8 +3358,8 @@
             { code: "6243208", name: "Cong ty TNHH DT va TM Dich Vu Phuc Hung", issueName: "NPP Phuc Hung", prefix: "243G" },
             { code: "6243223", name: "Cong ty TNHH Gia Phat", issueName: "NPP Gia Phat 244", prefix: "244G" }
           ];
-          txtDtStatus.textContent = `NPP: ${dtList.length} mục (Mẫu)`;
-          pillDtStatus.classList.add("active");
+          if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục (Mẫu)`;
+          if (pillDtStatus) pillDtStatus.classList.add("active");
         }
       }
 
@@ -5786,24 +5778,33 @@
           if (data.status === "success") {
             voipCalls = data.calls || [];
 
-            // Đếm số cuộc gọi chưa note (đặc biệt là trả lời/nghe máy)
+            // Đếm số cuộc gọi chưa note & thống kê KPI chuẩn theo callIsAnswered
             let unnotedCount = 0;
+            let answeredCount = 0;
+            let missedCount = 0;
+            let inboundCount = 0;
+            let outboundCount = 0;
             voipCalls.forEach(c => {
               const noteInfo = checkCallNoteStatus(c);
               const isAnswered = callIsAnswered(c);
               if (noteInfo.status === "unnoted" && isAnswered) {
                 unnotedCount++;
               }
+              if (isAnswered) answeredCount++;
+              else missedCount++;
+              const to = (c.type_origin || "").toLowerCase();
+              const tt = (c.typeText || "").toLowerCase();
+              if (to === "inbound" || tt.includes("vao") || tt.includes("vào")) inboundCount++;
+              else if (to === "outbound" || tt.includes("ra")) outboundCount++;
             });
 
             // Update KPI cards
-            const s = data.stats || {};
             const el = id => document.getElementById(id);
-            if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = s.total ?? voipCalls.length;
-            if (el("kpiVoipAnswered")) el("kpiVoipAnswered").textContent = s.answered ?? 0;
-            if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = s.missed ?? 0;
-            if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = s.inbound ?? 0;
-            if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = s.outbound ?? 0;
+            if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = voipCalls.length;
+            if (el("kpiVoipAnswered")) el("kpiVoipAnswered").textContent = answeredCount;
+            if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = missedCount;
+            if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = inboundCount;
+            if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = outboundCount;
             if (el("kpiVoipUnnoted")) el("kpiVoipUnnoted").textContent = unnotedCount;
             if (el("kpiVoipTotalSub")) el("kpiVoipTotalSub").textContent = `${date_start.slice(0, 10)} → ${date_end.slice(0, 10)}`;
 

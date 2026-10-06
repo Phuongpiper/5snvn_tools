@@ -350,12 +350,25 @@ module.exports = async function handler(req, res) {
         };
       });
 
-      let answered = 0, missed = 0, inbound = 0, outbound = 0;
-      for (const c of calls) {
+      function isCallAnswered(c) {
         const disp = (c.disposition || "").toUpperCase();
         const st = (c.statusText || "").toLowerCase();
-        if (disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời")) answered++;
-        else if (disp === "MISSED" || st.includes("nho") || st.includes("nhỡ") || st.includes("khong")) missed++;
+        const byDisp = disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời");
+        if (!byDisp) return false;
+        const bs = c.billsec;
+        if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
+        if (typeof bs === "number") return bs > 0;
+        const parts = String(bs).split(":").map(Number);
+        const totalSec = parts.length === 3
+          ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+          : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
+        return totalSec > 0;
+      }
+
+      let answered = 0, missed = 0, inbound = 0, outbound = 0;
+      for (const c of calls) {
+        if (isCallAnswered(c)) answered++;
+        else missed++;
 
         const t = (c.type_origin || "").toLowerCase();
         const tt = (c.typeText || "").toLowerCase();
@@ -388,8 +401,33 @@ module.exports = async function handler(req, res) {
   // load the latest synced data from Cloudflare R2!
   const cachedData = await getCacheFromR2();
   if (cachedData && cachedData.calls) {
+    // Recalculate stats with strict billsec > 0 rule
+    let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
+    for (const c of cachedData.calls) {
+      const disp = (c.disposition || "").toUpperCase();
+      const st = (c.statusText || "").toLowerCase();
+      const byDisp = disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời");
+      const bs = c.billsec;
+      let ans = false;
+      if (byDisp && bs !== undefined && bs !== null && bs !== "" && bs !== "—") {
+        if (typeof bs === "number") ans = bs > 0;
+        else {
+          const parts = String(bs).split(":").map(Number);
+          const totalSec = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
+          ans = totalSec > 0;
+        }
+      }
+      if (ans) cAnswered++;
+      else cMissed++;
+      const t = (c.type_origin || "").toLowerCase();
+      const tt = (c.typeText || "").toLowerCase();
+      if (t === "inbound" || tt.includes("vao") || tt.includes("vào")) cInbound++;
+      else if (t === "outbound" || tt.includes("ra")) cOutbound++;
+    }
+
     return res.status(200).json({
       ...cachedData,
+      stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
       source: "r2_cloud",
       note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Do tổng đài Voip24h chặn IP nước ngoài của Vercel)"
     });
