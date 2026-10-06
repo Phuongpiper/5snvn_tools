@@ -632,6 +632,7 @@
         outline: none;
         transition: all 0.18s ease;
         background: #f8fafc;
+        ime-mode: disabled;
       }
       .auth-input:focus {
         border-color: #4f46e5;
@@ -1093,6 +1094,13 @@
             >
               <i class="fa-solid fa-address-book"></i> Danh sách DT
             </button>
+            <button
+              class="tab-button"
+              type="button"
+              data-frame-target="noteIssueFrame"
+            >
+              <i class="fa-solid fa-note-sticky"></i> Note Issue
+            </button>
           </div>
           <div class="top-actions">
             <!-- Upcoming Tasks Button -->
@@ -1185,6 +1193,12 @@
         id="dtListFrame"
         src="danh_sach_dt.html"
         title="Danh sách DT"
+      ></iframe>
+      <iframe
+        class="tab-frame"
+        id="noteIssueFrame"
+        src="note_issue.html"
+        title="Note Issue"
       ></iframe>
     </div>
 
@@ -2100,6 +2114,10 @@
               placeholder="Nhập mật khẩu..."
               autocomplete="off"
               spellcheck="false"
+              lang="en"
+              inputmode="latin"
+              autocapitalize="none"
+              autocorrect="off"
             />
             <button type="button" class="auth-eye-btn" id="btnToggleAuthPwd" title="Hiện/ẩn mật khẩu">
               <i class="fa-regular fa-eye" id="authEyeIcon"></i>
@@ -2279,12 +2297,52 @@
         });
       }
 
+      // Sanitize input to reject Vietnamese accents in real-time
+      function sanitizePasswordInput(val) {
+        if (!val) return "";
+        return val
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/đ/g, "d")
+          .replace(/Đ/g, "D")
+          .replace(/[^\x20-\x7E]/g, "");
+      }
+
+      function applySanitizeToAuthInput() {
+        if (!authInput) return;
+        const oldVal = authInput.value;
+        const newVal = sanitizePasswordInput(oldVal);
+        if (oldVal !== newVal) {
+          const start = authInput.selectionStart;
+          authInput.value = newVal;
+          if (typeof start === "number") {
+            const newPos = Math.min(start, newVal.length);
+            authInput.setSelectionRange(newPos, newPos);
+          }
+        }
+      }
+
+      if (authInput) {
+        authInput.addEventListener("input", applySanitizeToAuthInput);
+        authInput.addEventListener("compositionend", applySanitizeToAuthInput);
+        authInput.addEventListener("paste", () => setTimeout(applySanitizeToAuthInput, 0));
+      }
+
       // Handle password submit
       if (authForm) {
         authForm.addEventListener("submit", (e) => {
           e.preventDefault();
-          const entered = authInput.value.trim();
-          if (entered === SETTINGS_AUTH_PASS) {
+          applySanitizeToAuthInput();
+          const raw = authInput.value.trim();
+          const clean = sanitizePasswordInput(raw);
+          const cleanUpper = clean.toUpperCase().replace(/\s+/g, "");
+          const rawUpper = raw.toUpperCase().replace(/\s+/g, "");
+
+          // Accepts standard DUNGSAI or DUNGAI (when typed with Telex key 's' as accent)
+          const validKeys = ["DUNGSAI", "DUNGAI"];
+          const isMatch = validKeys.includes(cleanUpper) || validKeys.includes(rawUpper);
+
+          if (isMatch) {
             closeAuthModal();
             openConfigModal();
           } else {
@@ -2314,7 +2372,8 @@
         dms1ReportFrame: { subtitle: "dms1_report.html · Báo cáo chi tiết DMS1 hệ thống" },
         taskPendingFrame: { subtitle: "task_pending_nvn.html · Quản lý danh sách task đang xử lý" },
         tableFrame: { subtitle: "table.html · Bảng tính Stitch dữ liệu & nhân sự" },
-        dtListFrame: { subtitle: "danh_sach_dt.html · Danh mục mã NPP & đối tác DMS" }
+        dtListFrame: { subtitle: "danh_sach_dt.html · Danh mục mã NPP & đối tác DMS" },
+        noteIssueFrame: { subtitle: "note_issue.html · Tạo nhanh note cú pháp chuẩn và lưu danh sách tạm" }
       };
 
       // Open Config Modal

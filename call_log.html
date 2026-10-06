@@ -152,13 +152,9 @@
         cursor: pointer;
         width: auto;
       }
-      .url-loader {
-        border-top: 1px solid var(--border);
-        display: grid;
-        gap: 8px;
-        grid-template-columns: minmax(240px, 1fr) auto;
-        margin-top: 16px;
-        padding-top: 16px;
+      .upload-zone.dragover {
+        border-color: var(--accent);
+        background: var(--accent-bg);
       }
       button {
         background: var(--accent);
@@ -674,57 +670,56 @@
     <div class="page">
       <!-- Hero -->
       <div class="hero">
-        <div class="hero-icon">📋</div>
+        <div class="hero-icon">📞</div>
         <div style="flex:1">
           <h1>Call Log</h1>
           <p>
-            Import file Excel, lọc theo NPP, NVBH hoặc hotline để tra cứu lịch
-            sử cuộc gọi.
+            Tra cứu lịch sử cuộc gọi từ Cloud R2. Lọc theo NPP, NVBH, Solution hoặc Hotline.
           </p>
         </div>
-        <button id="toggleUploadBtn" type="button" style="
-          font-size:12px; font-weight:600; color:var(--text-secondary);
-          background:var(--surface); border:1px solid var(--border);
-          border-radius:var(--radius-sm); padding:6px 12px;
-          cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px;
-          box-shadow:var(--shadow-sm); white-space:nowrap;
-        ">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
-          Tải dữ liệu <span id="toggleUploadArrow"><i class="fa-solid fa-chevron-down" style="font-size:10px;"></i></span>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <div id="cloudStatusBadge" style="
+            font-size:12px; font-weight:500; color:var(--text-secondary);
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:var(--radius-sm); padding:6px 12px;
+            display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm);
+          ">
+            <i class="fa-solid fa-cloud" style="color:var(--accent);"></i>
+            <span id="cloudStatusText">Đang kiểm tra R2...</span>
+          </div>
+          <button id="syncR2Btn" type="button" style="
+            font-size:12px; font-weight:600; color:var(--text-secondary);
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:var(--radius-sm); padding:6px 12px;
+            cursor:pointer; display:flex; align-items:center; gap:6px;
+            box-shadow:var(--shadow-sm); white-space:nowrap;
+          " title="Tải lại dữ liệu mới nhất từ Cloud R2">
+            <i class="fa-solid fa-arrows-rotate" id="syncR2Icon"></i> Đồng bộ R2
+          </button>
+          <button id="toggleUploadBtn" type="button" style="
+            font-size:12px; font-weight:600; color:#ffffff;
+            background:var(--accent); border:1px solid var(--accent);
+            border-radius:var(--radius-sm); padding:6px 12px;
+            cursor:pointer; display:flex; align-items:center; gap:6px;
+            box-shadow:var(--shadow-sm); white-space:nowrap;
+          ">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            Tải file lên R2 <span id="toggleUploadArrow">▾</span>
+          </button>
+        </div>
       </div>
 
       <!-- Upload (hidden by default) -->
       <div class="card" id="uploadCard" style="display:none">
         <div class="section-label">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-          Tải dữ liệu
+          <i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent);"></i>
+          Tải file Call Log lên Cloud R2
         </div>
         <div class="upload-zone" id="uploadBox">
-          <span class="upload-zone-icon">📊</span>
-          <strong>Chọn file Call Log Excel</strong>
-          <small>Hỗ trợ file .xlsx — Chrome / Edge</small>
-          <input id="fileInput" type="file" accept=".xlsx" />
-          <div class="url-loader" style="display:flex; flex-direction:column; gap:8px; width:100%;">
-            <div style="display:flex; gap:8px; width:100%;">
-              <input id="jsonUrlInput" type="text" placeholder="Dán URL JSON Call Log..." style="flex:1" />
-              <button id="loadJsonButton" type="button"><i class="fa-solid fa-link"></i> Tải từ URL</button>
-            </div>
-            <div style="display:flex; gap:8px; width:100%; align-items:center;">
-              <label style="font-size:11px; font-weight:600; color:var(--text-secondary); white-space:nowrap;">Worker API URL:</label>
-              <input id="workerUrlInput" type="text" placeholder="Dán Cloudflare Worker URL tại đây để đồng bộ..." style="flex:1; padding:6px 10px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); font-size:13px; outline:none;" />
-              <button id="saveR2Button" type="button" style="padding: 6px 12px; font-size:13px;"><i class="fa-solid fa-floppy-disk"></i> Lưu vào R2</button>
-            </div>
-          </div>
+          <span class="upload-zone-icon"><i class="fa-solid fa-file-excel" style="color:#10b981; font-size:36px;"></i></span>
+          <strong>Chọn hoặc kéo thả file Call Log Excel (.xlsx / .xls)</strong>
+          <small>Dữ liệu sau khi đọc sẽ tự động được lưu và đồng bộ lên Cloud R2 cho toàn bộ hệ thống.</small>
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.json" />
           <div class="upload-overlay" id="uploadLoading">
             <div class="spinner"></div>
             <div id="uploadLoadingText">Đang đọc file...</div>
@@ -881,8 +876,9 @@
       const fileInput = document.getElementById("fileInput");
       const uploadBox = document.getElementById("uploadBox");
       const uploadLoadingText = document.getElementById("uploadLoadingText");
-      const jsonUrlInput = document.getElementById("jsonUrlInput");
-      const loadJsonButton = document.getElementById("loadJsonButton");
+      const cloudStatusBadge = document.getElementById("cloudStatusBadge");
+      const cloudStatusText = document.getElementById("cloudStatusText");
+      const syncR2Btn = document.getElementById("syncR2Btn");
       const controlPanel = document.getElementById("controlPanel");
       const sheetSelect = document.getElementById("sheetSelect");
       const dateRangeSelect = document.getElementById("dateRangeSelect");
@@ -896,10 +892,6 @@
       const filterInputs = [nppInput, nvbhInput, hotlineInput, solutionInput];
       const countBadge = document.getElementById("countBadge");
 
-      // Thiết lập giá trị ban đầu cho các input từ localStorage
-      const defaultJsonUrl = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQriClrMCaJ9F8HHot9e9Ga_-KJ6CrQ7Q6Wrzup3qPLY3ww8uHqom8bNpiQK7ZRc9jIkd6wc-3kOJYrVYutIqQR99LlysYPyfl1cvDD2QleXX1BFUu74q9wClKTKVunKZyqJ6Gjn-_6bSO-7wBd_nfBRcFBu__1jkBsgSd433Zzm-EJMGrIUOSZm76cRwJ6mD7dTK3FEc8gdJMS4kNskDdlZhZMQbGxE7zZW18NvIaiNqYiDnRoS1szvu49MZI3oB6Y4DJ2gndNTrbN9BU&lib=MbAocym1j8DklnQRpycQv5_D8R0iiSsw_";
-      jsonUrlInput.value = localStorage.getItem("NVN_CALLLOG_API_URL") || defaultJsonUrl;
-      document.getElementById("workerUrlInput").value = localStorage.getItem("NVN_CALLLOG_WORKER_URL") || "";
       const tableWrap = document.getElementById("tableWrap");
       const tableHead = document.getElementById("tableHead");
       const tableBody = document.getElementById("tableBody");
@@ -917,6 +909,177 @@
       const toggleUploadBtn = document.getElementById("toggleUploadBtn");
       const toggleUploadArrow = document.getElementById("toggleUploadArrow");
 
+      /* ─── R2 Cloud Endpoint & State ─── */
+      let callLogApiBaseOverride = null;
+      function getCallLogApiEndpoint(queryParam = "") {
+        let base = callLogApiBaseOverride;
+        if (base === null) {
+          if (window.location.protocol === "file:") {
+            base = "https://search-dms-tool.vercel.app";
+          } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+            if (window.location.port !== "3000") {
+              base = "http://localhost:3000";
+            } else {
+              base = "";
+            }
+          } else {
+            base = "";
+          }
+        }
+        const sep = queryParam ? (queryParam.startsWith("?") ? "" : "?") : "";
+        return base + "/api/r2-calllog" + (queryParam ? sep + queryParam : "");
+      }
+
+      function updateCloudStatusBadge(sourceName, rowCount, updatedAt) {
+        if (!cloudStatusBadge || !cloudStatusText) return;
+        if (!rowCount) {
+          cloudStatusText.innerHTML = `R2: Chưa có dữ liệu`;
+          return;
+        }
+        let timeStr = "";
+        if (updatedAt) {
+          const d = new Date(updatedAt);
+          timeStr = ` · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
+        const displayName = escapeHTML(sourceName || "Call Log");
+        cloudStatusText.innerHTML = `<strong>R2:</strong> ${displayName} (${rowCount.toLocaleString()} dòng${timeStr})`;
+      }
+
+      /* ─── Save to R2 ─── */
+      async function saveCallLogToCloud(rowsToSave, sourceName = "Call Log Upload") {
+        if (!rowsToSave || !rowsToSave.length) return false;
+        try {
+          let endpoint = getCallLogApiEndpoint();
+          const payload = {
+            sourceName: sourceName,
+            rows: rowsToSave,
+            rowCount: rowsToSave.length,
+            updatedAt: Date.now()
+          };
+          let res;
+          try {
+            res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+          } catch (err) {
+            if (!endpoint.includes("search-dms-tool.vercel.app")) {
+              callLogApiBaseOverride = "https://search-dms-tool.vercel.app";
+              endpoint = getCallLogApiEndpoint();
+              res = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+            } else {
+              throw err;
+            }
+          }
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errText}`);
+          }
+          updateCloudStatusBadge(sourceName, rowsToSave.length, payload.updatedAt);
+          showToast(`Đã lưu ${rowsToSave.length.toLocaleString()} dòng lên Cloud R2!`);
+          return true;
+        } catch (err) {
+          console.error("Lỗi lưu Call Log lên Cloud R2:", err);
+          alert("Lưu dữ liệu lên Cloud R2 thất bại:\n" + err.message);
+          return false;
+        }
+      }
+
+      /* ─── Fetch from R2 ─── */
+      async function fetchCallLogFromCloud(isBackground = false) {
+        if (!isBackground) {
+          setLoading(true, "Đang tải dữ liệu từ Cloud R2...");
+        }
+        const syncIcon = document.getElementById("syncR2Icon");
+        if (syncIcon) syncIcon.classList.add("fa-spin");
+        try {
+          let endpoint = getCallLogApiEndpoint("?t=" + Date.now());
+          let res;
+          try {
+            res = await fetch(endpoint, { cache: "no-cache" });
+          } catch (err) {
+            if (!endpoint.includes("search-dms-tool.vercel.app")) {
+              callLogApiBaseOverride = "https://search-dms-tool.vercel.app";
+              endpoint = getCallLogApiEndpoint("?t=" + Date.now());
+              res = await fetch(endpoint, { cache: "no-cache" });
+            } else {
+              throw err;
+            }
+          }
+          if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.rows) && data.rows.length > 0) {
+              workbookData = null;
+              rows = data.rows;
+              const sourceName = data.sourceName || "Cloud R2";
+              await applyLoadedRows(sourceName, { keepFilters: true });
+              updateCloudStatusBadge(sourceName, rows.length, data.updatedAt);
+              if (!isBackground) {
+                showToast(`Đã đồng bộ ${rows.length.toLocaleString()} dòng từ Cloud R2!`);
+              }
+              return true;
+            } else {
+              updateCloudStatusBadge(null, 0);
+            }
+          }
+        } catch (err) {
+          console.warn("Lỗi tải Call Log từ Cloud R2:", err);
+          if (!isBackground) {
+            alert("Không tải được dữ liệu từ Cloud R2:\n" + err.message);
+          }
+        } finally {
+          if (syncIcon) syncIcon.classList.remove("fa-spin");
+          if (!isBackground) setLoading(false);
+        }
+        return false;
+      }
+
+      /* ─── Handle Incoming File (Excel / JSON) ─── */
+      async function handleIncomingFile(file) {
+        if (!file) return;
+        const fileName = file.name || "Call_log.xlsx";
+        setLoading(true, `Đang đọc file "${fileName}"...`);
+        try {
+          if (fileName.toLowerCase().endsWith(".json")) {
+            const text = await file.text();
+            const json = JSON.parse(text);
+            workbookData = null;
+            rows = Array.isArray(json) ? json : buildRowsFromJson(json);
+            await applyLoadedRows(fileName);
+          } else {
+            workbookData = await loadXLSXWorkbook(file);
+            workbookData.fileName = fileName;
+            setupSheetSelector();
+            rows = await parseXLSXSheet(workbookData, workbookData.sheets[0]);
+            await applyLoadedRows(workbookData.sheets[0].name || fileName);
+          }
+
+          if (!rows || !rows.length) {
+            alert("File không có dữ liệu đọc được.");
+            return;
+          }
+
+          // Tự động lưu lên Cloud R2
+          setLoading(true, `Đang lưu ${rows.length.toLocaleString()} dòng lên Cloud R2...`);
+          await saveCallLogToCloud(rows, fileName);
+
+          // Thu gọn upload card
+          uploadCard.style.display = "none";
+          toggleUploadArrow.textContent = "▾";
+        } catch (err) {
+          console.error("Lỗi xử lý file Call Log:", err);
+          alert("Không đọc hoặc lưu được file Call Log lên R2:\n" + err.message);
+        } finally {
+          setLoading(false);
+          fileInput.value = "";
+        }
+      }
+
       /* ─── Events ─── */
       toggleUploadBtn.addEventListener("click", () => {
         const isVisible = uploadCard.style.display !== "none";
@@ -924,114 +1087,29 @@
         toggleUploadArrow.textContent = isVisible ? "▾" : "▴";
       });
 
-      fileInput.addEventListener("change", async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-        setLoading(true, "Đang đọc workbook...");
-        try {
-          workbookData = await loadXLSXWorkbook(file);
-          setupSheetSelector();
-          await loadSheet(workbookData.sheets[0]);
-        } catch (err) {
-          alert("Không đọc được file Call Log.\n" + err.message);
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
+      syncR2Btn.addEventListener("click", () => {
+        fetchCallLogFromCloud(false);
       });
 
-      loadJsonButton.addEventListener("click", async () => {
-        const url = jsonUrlInput.value.trim();
-        if (!url) {
-          alert("Vui lòng dán URL JSON Call Log.");
-          return;
-        }
-
-        // Lưu local
-        localStorage.setItem("NVN_CALLLOG_API_URL", url);
-        const workerUrlVal = document.getElementById("workerUrlInput").value.trim();
-        // Lưu local
-        localStorage.setItem("NVN_CALLLOG_API_URL", url);
-
-        setLoading(true, "Đang tải JSON từ URL...");
-        try {
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          const data = await response.json();
-          workbookData = null;
-          rows = buildRowsFromJson(data);
-          await applyLoadedRows("JSON URL");
-        } catch (err) {
-          alert("Không tải được JSON từ URL.\n" + err.message);
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handleIncomingFile(file);
       });
 
-      // R2 endpoint luôn là /api/r2-urls trên Vercel production
-      function getR2Endpoint() {
-        return "/api/r2-urls";
-      }
-
-      // Hàm tải dữ liệu chung từ URL bất kỳ (Apps Script hoặc JSON URL)
-      async function loadDataFromUrl(url, sourceName = "JSON URL API") {
-        if (!url) return;
-        setLoading(true, "Đang gọi dữ liệu API từ URL...");
-        try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          workbookData = null;
-          rows = buildRowsFromJson(data);
-          await applyLoadedRows(sourceName);
-        } catch (err) {
-          alert("Tải dữ liệu từ URL thất bại.\n" + err.message);
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      }
-
-      const saveR2Button = document.getElementById("saveR2Button");
-      saveR2Button.addEventListener("click", async () => {
-        const workerUrlVal = document.getElementById("workerUrlInput").value.trim();
-        if (!workerUrlVal) {
-          alert("Vui lòng dán URL Apps Script vào ô Worker API URL trước khi lưu.");
-          return;
-        }
-
-        // Lưu local
-        localStorage.setItem("NVN_CALLLOG_WORKER_URL", workerUrlVal);
-
-        try {
-          const payload = JSON.stringify({ action: "save_url", name: "Call log", url: workerUrlVal });
-          const endpoint = getR2Endpoint();
-          const separator = endpoint.includes("?") ? "&" : "?";
-          const requestUrl = `${endpoint}${separator}data=${encodeURIComponent(payload)}&t=${Date.now()}`;
-
-          const res = await fetch(requestUrl);
-          const rawText = await res.text();
-          console.log("[R2 Save] endpoint:", requestUrl);
-          console.log("[R2 Save] HTTP status:", res.status);
-          console.log("[R2 Save] response body:", rawText);
-          if (!res.ok) throw new Error(`HTTP ${res.status}: ${rawText}`);
-          let result;
-          try { result = JSON.parse(rawText); } catch(e) { throw new Error("Response không phải JSON: " + rawText); }
-          if (result.status === "success" || result.success) {
-            alert("✅ Đã đồng bộ URL Call Log từ ô Worker API URL lên R2 thành công!");
-            // Tải dữ liệu từ URL mới
-            loadDataFromUrl(workerUrlVal, "Call Log R2 API");
-          } else {
-            const detail = [result.message, result.r2Body].filter(Boolean).join(" | R2: ");
-            alert("⚠️ Lưu R2 thất bại: " + (detail || "lỗi không rõ"));
-          }
-        } catch (err) {
-          console.error("[R2 Save] Error:", err);
-          alert(`Lưu R2 thất bại:\n${err.message}`);
-        }
+      // Drag and Drop
+      uploadBox.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadBox.classList.add("dragover");
+      });
+      uploadBox.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        uploadBox.classList.remove("dragover");
+      });
+      uploadBox.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadBox.classList.remove("dragover");
+        const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (file) handleIncomingFile(file);
       });
 
       sheetSelect.addEventListener("change", async () => {
@@ -1043,6 +1121,8 @@
         setLoading(true, `Đang đọc sheet "${sheet.name}"...`);
         try {
           await loadSheet(sheet);
+          // Lưu sheet được chọn lên Cloud R2
+          await saveCallLogToCloud(rows, `${workbookData.fileName || "Call Log"} - ${sheet.name}`);
         } catch (err) {
           alert("Không đọc được sheet đã chọn.\n" + err.message);
           console.error(err);
@@ -1145,39 +1225,30 @@
         }
       });
 
-      // Tự động tải URL Call Log từ R2 khi mở trang
-      async function autoDetectCallLogUrl() {
-        const endpoint = getR2Endpoint();
-        try {
-          const res = await fetch(endpoint + (endpoint.includes("?") ? "&" : "?") + "t=" + Date.now());
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          const sheetUrl = data["Call log"] || data["Calllog"] || data["Call Log"] || data["calllog"];
-          if (sheetUrl) {
-            const cleanUrl = sheetUrl.trim();
-            const localUrl = localStorage.getItem("NVN_CALLLOG_WORKER_URL") || "";
-            if (cleanUrl && cleanUrl !== localUrl) {
-              document.getElementById("workerUrlInput").value = cleanUrl;
-              localStorage.setItem("NVN_CALLLOG_WORKER_URL", cleanUrl);
-              console.log("[R2 Sync] Tự động tải URL Call Log từ R2 và điền vào Worker API URL:", cleanUrl);
-            }
-          }
-        } catch (err) {
-          console.warn("Lỗi auto-detect URL từ R2:", err);
-        }
-      }
-
       restoreCachedData().then(async () => {
-        // 1. Tải URL mới nhất từ R2 trước và điền vào ô Worker API URL
-        await autoDetectCallLogUrl();
-        // 2. Tự động load dữ liệu từ Worker API URL (Apps Script) nếu có, nếu không thì dùng JSON URL (tải từ URL)
-        const workerUrl = document.getElementById("workerUrlInput").value.trim();
-        if (workerUrl) {
-          loadDataFromUrl(workerUrl, "Call Log R2 API");
-        } else {
-          loadJsonButton.click();
+        // Tải dữ liệu mới nhất từ Cloud R2 (nếu đã có cache thì tải ngầm)
+        const hasCachedRows = Array.isArray(rows) && rows.length > 0;
+        await fetchCallLogFromCloud(hasCachedRows);
+      });
+
+      window.addEventListener("pageshow", () => fetchCallLogFromCloud(true));
+      window.addEventListener("message", (e) => {
+        if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
+          fetchCallLogFromCloud(true);
         }
       });
+
+      // Lắng nghe tín hiệu đồng bộ Call Log theo thời gian thực từ Note Issue Studio
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const callLogSyncCh = new BroadcastChannel("DMS_CALLLOG_SYNC");
+          callLogSyncCh.onmessage = (e) => {
+            if (e.data?.type === "NEW_CALL_LOG" || e.data?.type === "REFRESH") {
+              fetchCallLogFromCloud(true);
+            }
+          };
+        } catch (_) {}
+      }
 
       /* ─── Helpers ─── */
       function scheduleRender() {
@@ -1201,8 +1272,7 @@
         uploadBox.classList.toggle("is-loading", isLoading);
         uploadLoadingText.textContent = message;
         fileInput.disabled = isLoading;
-        loadJsonButton.disabled = isLoading;
-        document.getElementById("saveR2Button").disabled = isLoading;
+        if (syncR2Btn) syncR2Btn.disabled = isLoading;
         sheetSelect.disabled = isLoading;
       }
 
@@ -1357,8 +1427,8 @@
         if (workbookData) return;
         sheetSelect.innerHTML = "";
         const option = document.createElement("option");
-        option.value = "json";
-        option.textContent = name || "JSON URL";
+        option.value = "cloud";
+        option.textContent = name || "Cloud R2";
         sheetSelect.appendChild(option);
       }
 

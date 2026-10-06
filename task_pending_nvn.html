@@ -1065,6 +1065,32 @@
       gap: 6px;
     }
 
+    .member-code-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--accent-bg, rgba(99, 102, 241, 0.12));
+      color: var(--accent, #6366f1);
+      border: 1px solid var(--accent-bdr, rgba(99, 102, 241, 0.25));
+      min-width: 54px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .member-code-tag.empty {
+      background: var(--bg);
+      color: var(--text-muted);
+      border: 1px dashed var(--border);
+      font-weight: normal;
+      font-size: 11px;
+    }
+
     .member-edit-input {
       border: 1px solid var(--accent);
       border-radius: 5px;
@@ -1636,19 +1662,42 @@
   <!-- ── MODAL: Quản lý Thành viên ── -->
   <!-- ════════════════════════════════════════════════════════════════════════ -->
   <div class="modal-bg" id="memberModal">
-    <div class="modal" style="max-width:460px;">
+    <div class="modal" style="max-width:520px; width:95%;">
       <div class="modal-hdr">
         <h3><i class="fa-solid fa-users-gear"></i> Quản lý Thành viên</h3>
         <button onclick="closeMemberModal()" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
-          <input type="text" class="fc" id="newMemberName" placeholder="Nhập tên thành viên mới..." style="flex:1;"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();addMember();}" />
-          <button class="btn-primary" onclick="addMember()" style="padding:8px 14px; white-space:nowrap;"><i
-              class="fa-solid fa-user-plus"></i> Thêm</button>
+        <div style="background:var(--card-bg, #fff); border:1px solid var(--border); border-radius:var(--r-sm, 8px); padding:12px; margin-bottom:14px;">
+          <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-user-plus" style="color:var(--accent);"></i> Thêm thành viên mới
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="flex:0 0 130px; min-width:110px;">
+              <input type="text" class="fc" id="newMemberCode" placeholder="Mã NV *" style="width:100%; text-transform:uppercase; font-weight:600; font-family:monospace;"
+                title="Mã nhân viên (bắt buộc)"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('newMemberName').focus();}" />
+            </div>
+            <div style="flex:1; min-width:150px;">
+              <input type="text" class="fc" id="newMemberName" placeholder="Tên nhân viên *" style="width:100%;"
+                title="Tên nhân viên (bắt buộc)"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addMember();}" />
+            </div>
+            <button class="btn-primary" onclick="addMember()" style="padding:8px 14px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px;">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+            <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...)
+          </div>
         </div>
-        <ul class="member-list" id="memberList">
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Danh sách nhân viên</span>
+          <span id="memberCountBadge" style="font-size:11px; background:var(--bg); border:1px solid var(--border); padding:2px 8px; border-radius:12px; color:var(--text-muted);">0 thành viên</span>
+        </div>
+
+        <ul class="member-list" id="memberList" style="margin-top:0; max-height:320px; overflow-y:auto; padding-right:2px;">
           <li style="text-align:center; color:var(--text-muted); padding:12px;">Đang tải danh sách...</li>
         </ul>
       </div>
@@ -2407,11 +2456,13 @@
 
     function populateMemberFilter() {
       const sel = document.getElementById("filterMember");
+      if (!sel) return;
       const cur = sel.value;
       sel.innerHTML = `<option value="">👤 Tất cả thành viên</option>`;
       allMembers.forEach(m => {
         const opt = document.createElement("option");
-        opt.value = m.name; opt.textContent = m.name;
+        opt.value = m.name; 
+        opt.textContent = m.code ? `[${m.code}] ${m.name}` : m.name;
         if (m.name === cur) opt.selected = true;
         sel.appendChild(opt);
       });
@@ -2637,10 +2688,13 @@
     }
 
     function filterDropdown() {
-      const q = document.getElementById("msInput").value.toLowerCase();
+      const q = document.getElementById("msInput").value.toLowerCase().trim();
       const dd = document.getElementById("msDropdown");
       dd.innerHTML = "";
-      const items = allMembers.filter(m => m.name.toLowerCase().includes(q));
+      const items = allMembers.filter(m => 
+        m.name.toLowerCase().includes(q) || 
+        (m.code && m.code.toLowerCase().includes(q))
+      );
       if (!items.length) {
         dd.innerHTML = `<div class="member-dropdown-item" style="color:var(--text-muted);">Không tìm thấy</div>`;
         dd.style.display = "block";
@@ -2649,7 +2703,8 @@
       items.forEach(m => {
         const div = document.createElement("div");
         div.className = "member-dropdown-item" + (selectedAssignees.includes(m.name) ? " selected" : "");
-        div.textContent = (selectedAssignees.includes(m.name) ? "✔ " : "") + m.name;
+        const label = m.code ? `[${m.code}] ${m.name}` : m.name;
+        div.textContent = (selectedAssignees.includes(m.name) ? "✔ " : "") + label;
         div.onclick = () => toggleAssignee(m.name);
         dd.appendChild(div);
       });
@@ -2778,11 +2833,16 @@
       }
     }
 
+    let editingMemberName = null;
+
     async function loadMembers() {
       try {
         const res = await apiGet("action=read_members");
         if (res.status === "success") {
-          allMembers = res.data || []; // m.name
+          allMembers = (res.data || []).map(m => {
+            if (typeof m === "string") return { name: m.trim(), code: "" };
+            return { name: (m.name || "").trim(), code: (m.code || "").trim() };
+          });
           try { localStorage.setItem("app_members_data", JSON.stringify(allMembers)); } catch (e) { }
           populateMemberFilter();
           renderMemberList();
@@ -2792,44 +2852,177 @@
 
     function renderMemberList() {
       const ul = document.getElementById("memberList");
+      if (!ul) return;
       ul.innerHTML = "";
+      const countBadge = document.getElementById("memberCountBadge");
+      if (countBadge) countBadge.textContent = `${allMembers.length} thành viên`;
+
       if (!allMembers.length) {
-        ul.innerHTML = `<li style="text-align:center;color:var(--text-muted);padding:12px;">Chưa có thành viên nào.</li>`;
+        ul.innerHTML = `<li style="text-align:center;color:var(--text-muted);padding:14px;">Chưa có thành viên nào.</li>`;
         return;
       }
-      allMembers.forEach(m => {
+
+      allMembers.forEach((m, idx) => {
         const li = document.createElement("li");
         li.className = "member-list-item";
-        li.innerHTML = `
-      <span class="member-name">${esc(m.name)}</span>
-      <div class="member-actions">
-        <button class="btn-danger btn-sm" data-name="${esc(m.name)}" onclick="deleteMember(this.dataset.name)" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
-      </div>
-    `;
+
+        if (editingMemberName === m.name) {
+          li.style.background = "var(--accent-bg, rgba(99,102,241,0.06))";
+          li.style.borderColor = "var(--accent, #6366f1)";
+          li.innerHTML = `
+            <div style="display:flex; gap:6px; flex:1; align-items:center; flex-wrap:wrap; margin-right:8px;">
+              <input type="text" class="fc" id="editMemberCode_${idx}" value="${esc(m.code || '')}" placeholder="Mã NV *" style="width:105px; text-transform:uppercase; font-weight:600; font-family:monospace; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveEditMember('${esc(m.name)}', ${idx});}" />
+              <input type="text" class="fc" id="editMemberName_${idx}" value="${esc(m.name)}" placeholder="Tên NV *" style="flex:1; min-width:120px; padding:5px 8px; font-size:12.5px;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveEditMember('${esc(m.name)}', ${idx});}" />
+            </div>
+            <div class="member-actions">
+              <button class="btn-primary btn-sm" onclick="saveEditMember('${esc(m.name)}', ${idx})" title="Lưu thay đổi" style="padding:5px 9px;"><i class="fa-solid fa-check"></i></button>
+              <button class="btn-outline btn-sm" onclick="cancelEditMember()" title="Hủy" style="padding:5px 9px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          `;
+        } else {
+          const codeHtml = m.code
+            ? `<span class="member-code-tag" title="Mã nhân viên: ${esc(m.code)}">${esc(m.code)}</span>`
+            : `<span class="member-code-tag empty" title="Chưa có mã nhân viên — Bấm sửa để nhập mã">Chưa có mã</span>`;
+
+          li.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; overflow:hidden; min-width:0;">
+              ${codeHtml}
+              <span class="member-name" title="${esc(m.name)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(m.name)}</span>
+            </div>
+            <div class="member-actions">
+              <button class="btn-outline btn-sm" onclick="startEditMember('${esc(m.name)}')" title="Sửa mã / tên nhân viên" style="padding:4px 8px; border-radius:4px; font-size:12px;"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button class="btn-danger btn-sm" data-name="${esc(m.name)}" onclick="deleteMember(this.dataset.name)" title="Xóa" style="padding:4px 8px; border-radius:4px; font-size:12px;"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+          `;
+        }
         ul.appendChild(li);
       });
     }
 
-    async function addMember() {
-      const input = document.getElementById("newMemberName");
-      const name = input.value.trim();
-      if (!name) { toast("Nhập tên thành viên!", "w"); return; }
+    function startEditMember(name) {
+      editingMemberName = name;
+      renderMemberList();
+      const idx = allMembers.findIndex(m => m.name === name);
+      if (idx !== -1) {
+        setTimeout(() => {
+          const input = document.getElementById(`editMemberCode_${idx}`);
+          if (input) { input.focus(); input.select(); }
+        }, 50);
+      }
+    }
+
+    function cancelEditMember() {
+      editingMemberName = null;
+      renderMemberList();
+    }
+
+    async function saveEditMember(oldName, idx) {
+      const codeEl = document.getElementById(`editMemberCode_${idx}`);
+      const nameEl = document.getElementById(`editMemberName_${idx}`);
+      const newCode = (codeEl ? codeEl.value : "").trim().toUpperCase();
+      const newName = (nameEl ? nameEl.value : "").trim();
+
+      if (!newCode) {
+        toast("Vui lòng nhập mã nhân viên (bắt buộc)!", "w");
+        codeEl?.focus();
+        return;
+      }
+      if (!newName) {
+        toast("Vui lòng nhập tên nhân viên (bắt buộc)!", "w");
+        nameEl?.focus();
+        return;
+      }
+
+      // Check duplicates
+      const dupCode = allMembers.some(m => m.name.toLowerCase() !== oldName.toLowerCase() && (m.code || "").toUpperCase() === newCode);
+      if (dupCode) {
+        toast(`Mã nhân viên "${newCode}" đã được sử dụng!`, "w");
+        codeEl?.focus();
+        return;
+      }
+      const dupName = allMembers.some(m => m.name.toLowerCase() !== oldName.toLowerCase() && m.name.toLowerCase() === newName.toLowerCase());
+      if (dupName) {
+        toast(`Tên thành viên "${newName}" đã tồn tại!`, "w");
+        nameEl?.focus();
+        return;
+      }
+
       try {
-        const res = await apiPost({ action: "add_member", name });
+        const res = await apiPost({
+          action: "edit_member",
+          oldName,
+          newName,
+          code: newCode
+        });
         if (res.status === "success") {
-          toast(`Đã thêm "${name}"!`, "s");
-          input.value = "";
+          toast(`Đã cập nhật [${newCode}] ${newName}!`, "s");
+          editingMemberName = null;
           loadMembers();
-        } else { toast("Lỗi: " + (res.message || "không rõ"), "e"); }
-      } catch { toast("Lỗi kết nối!", "e"); }
+          loadTasks();
+        } else {
+          toast("Lỗi: " + (res.message || "không rõ"), "e");
+        }
+      } catch {
+        toast("Lỗi kết nối!", "e");
+      }
+    }
+
+    async function addMember() {
+      const codeInput = document.getElementById("newMemberCode");
+      const nameInput = document.getElementById("newMemberName");
+      const code = (codeInput ? codeInput.value : "").trim().toUpperCase();
+      const name = (nameInput ? nameInput.value : "").trim();
+
+      if (!code) {
+        toast("Vui lòng nhập mã nhân viên (bắt buộc)!", "w");
+        codeInput?.focus();
+        return;
+      }
+      if (!name) {
+        toast("Vui lòng nhập tên thành viên (bắt buộc)!", "w");
+        nameInput?.focus();
+        return;
+      }
+
+      const dupCode = allMembers.some(m => (m.code || "").toUpperCase() === code);
+      if (dupCode) {
+        toast(`Mã nhân viên "${code}" đã tồn tại!`, "w");
+        codeInput?.focus();
+        return;
+      }
+
+      const dupName = allMembers.some(m => (m.name || "").toLowerCase() === name.toLowerCase());
+      if (dupName) {
+        toast(`Tên thành viên "${name}" đã tồn tại!`, "w");
+        nameInput?.focus();
+        return;
+      }
+
+      try {
+        const res = await apiPost({ action: "add_member", name, code, requireCode: true });
+        if (res.status === "success") {
+          toast(`Đã thêm [${code}] ${name}!`, "s");
+          if (codeInput) codeInput.value = "";
+          if (nameInput) nameInput.value = "";
+          codeInput?.focus();
+          loadMembers();
+        } else {
+          toast("Lỗi: " + (res.message || "không rõ"), "e");
+        }
+      } catch {
+        toast("Lỗi kết nối!", "e");
+      }
     }
 
     async function deleteMember(name) {
-      if (!confirm(`Xóa thành viên "${name}"?\nThành viên sẽ bị xóa khỏi danh sách chọn nhưng task cũ vẫn giữ nguyên.`)) return;
+      const m = allMembers.find(x => x.name === name);
+      const label = m && m.code ? `[${m.code}] ${m.name}` : name;
+      if (!confirm(`Xóa thành viên "${label}"?\nThành viên sẽ bị xóa khỏi danh sách chọn nhưng task cũ vẫn giữ nguyên.`)) return;
       try {
         const res = await apiPost({ action: "delete_member", name });
         if (res.status === "success") {
-          toast(`Đã xóa "${name}"!`, "s");
+          toast(`Đã xóa "${label}"!`, "s");
+          if (editingMemberName === name) editingMemberName = null;
           loadMembers();
         } else { toast("Lỗi: " + (res.message || "không rõ"), "e"); }
       } catch { toast("Lỗi kết nối!", "e"); }
@@ -2837,10 +3030,15 @@
 
     function openMemberModal() {
       document.getElementById("memberModal").classList.add("show");
+      editingMemberName = null;
       loadMembers();
+      setTimeout(() => {
+        document.getElementById("newMemberCode")?.focus();
+      }, 150);
     }
     function closeMemberModal() {
       document.getElementById("memberModal").classList.remove("show");
+      editingMemberName = null;
       loadMembers(); // Refresh dữ liệu bộ lọc sau khi đóng
     }
 

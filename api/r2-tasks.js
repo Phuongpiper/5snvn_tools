@@ -94,9 +94,13 @@ async function getTasksData() {
   if (getR.statusCode === 200) {
     try {
       const data = JSON.parse(getR.body);
+      const members = (data.members || []).map(m => {
+        if (typeof m === "string") return { name: m.trim(), code: "" };
+        return { name: (m.name || "").trim(), code: (m.code || "").trim() };
+      });
       return {
         tasks: data.tasks || [],
-        members: data.members || [],
+        members: members,
         projects: data.projects || []
       };
     } catch (e) {
@@ -295,29 +299,75 @@ module.exports = async function handler(req, res) {
 
       if (action === "add_member") {
         const name = (payload.name || "").trim();
+        const code = (payload.code || "").trim().toUpperCase();
         if (!name) return res.status(400).json({ status: "error", message: "Tên không được để trống" });
+        if (!code && payload.requireCode !== false) {
+          return res.status(400).json({ status: "error", message: "Mã nhân viên không được để trống" });
+        }
         
-        const exists = currentData.members.some(m => m.name.toLowerCase() === name.toLowerCase());
-        if (exists) return res.status(400).json({ status: "error", message: "Thành viên đã tồn tại" });
+        const existsName = currentData.members.some(m => m.name.toLowerCase() === name.toLowerCase());
+        if (existsName) return res.status(400).json({ status: "error", message: "Tên nhân viên đã tồn tại" });
         
-        currentData.members.push({ name });
+        if (code) {
+          const existsCode = currentData.members.some(m => (m.code || "").toUpperCase() === code);
+          if (existsCode) return res.status(400).json({ status: "error", message: "Mã nhân viên đã tồn tại" });
+        }
+
+        currentData.members.push({ name, code: code || "" });
         await saveTasksData(currentData);
-        return res.status(200).json({ status: "success" });
+        return res.status(200).json({ status: "success", members: currentData.members });
+      }
+
+      if (action === "edit_member" || action === "update_member") {
+        const oldName = (payload.oldName || "").trim();
+        const newName = (payload.newName || payload.name || "").trim();
+        const newCode = (payload.code || "").trim().toUpperCase();
+        if (!oldName) return res.status(400).json({ status: "error", message: "Tên nhân viên cần sửa không hợp lệ" });
+        if (!newName) return res.status(400).json({ status: "error", message: "Tên nhân viên không được để trống" });
+        if (!newCode) return res.status(400).json({ status: "error", message: "Mã nhân viên là bắt buộc" });
+
+        const idx = currentData.members.findIndex(m => m.name.toLowerCase() === oldName.toLowerCase());
+        if (idx === -1) return res.status(404).json({ status: "error", message: "Không tìm thấy nhân viên: " + oldName });
+
+        const dupName = currentData.members.some((m, i) => i !== idx && m.name.toLowerCase() === newName.toLowerCase());
+        if (dupName) return res.status(400).json({ status: "error", message: "Tên nhân viên đã tồn tại" });
+
+        const dupCode = currentData.members.some((m, i) => i !== idx && (m.code || "").toUpperCase() === newCode);
+        if (dupCode) return res.status(400).json({ status: "error", message: "Mã nhân viên đã được sử dụng bởi nhân viên khác" });
+
+        currentData.members[idx] = { name: newName, code: newCode };
+
+        // Cập nhật tên trong assignees của các task nếu tên thay đổi
+        if (oldName.toLowerCase() !== newName.toLowerCase() && Array.isArray(currentData.tasks)) {
+          currentData.tasks.forEach(t => {
+            if (Array.isArray(t.assignees)) {
+              t.assignees = t.assignees.map(a => a.toLowerCase() === oldName.toLowerCase() ? newName : a);
+            }
+          });
+        }
+
+        await saveTasksData(currentData);
+        return res.status(200).json({ status: "success", members: currentData.members });
       }
 
       if (action === "delete_member") {
         const name = (payload.name || "").trim();
-        if (!name) return res.status(400).json({ status: "error", message: "Tên không được để trống" });
+        const code = (payload.code || "").trim();
+        if (!name && !code) return res.status(400).json({ status: "error", message: "Tên hoặc mã nhân viên không được để trống" });
         
         const initialLen = currentData.members.length;
-        currentData.members = currentData.members.filter(m => m.name.toLowerCase() !== name.toLowerCase());
+        currentData.members = currentData.members.filter(m => {
+          if (name && m.name.toLowerCase() === name.toLowerCase()) return false;
+          if (code && m.code && m.code.toLowerCase() === code.toLowerCase()) return false;
+          return true;
+        });
         
         if (currentData.members.length === initialLen) {
-          return res.status(404).json({ status: "error", message: "Không tìm thấy thành viên: " + name });
+          return res.status(404).json({ status: "error", message: "Không tìm thấy nhân viên: " + (name || code) });
         }
         
         await saveTasksData(currentData);
-        return res.status(200).json({ status: "success" });
+        return res.status(200).json({ status: "success", members: currentData.members });
       }
 
       if (action === "add_project") {

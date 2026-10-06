@@ -218,6 +218,7 @@ const server = http.createServer(function(req, res) {
           res.end(typeof data === "string" ? data : JSON.stringify(data));
           return this;
         };
+        delete require.cache[require.resolve("./api/r2-table.js")];
         const handler = require("./api/r2-table.js");
         await handler(req, res);
       } catch (err) {
@@ -242,6 +243,7 @@ const server = http.createServer(function(req, res) {
           res.end(JSON.stringify(data));
           return this;
         };
+        delete require.cache[require.resolve("./api/r2-tasks.js")];
         const handler = require("./api/r2-tasks.js");
         await handler(req, res);
       } catch (err) {
@@ -270,7 +272,95 @@ const server = http.createServer(function(req, res) {
           res.end(typeof data === "string" ? data : JSON.stringify(data));
           return this;
         };
+        delete require.cache[require.resolve("./api/r2-dt.js")];
         const handler = require("./api/r2-dt.js");
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "error", message: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === "/api/r2-calllog") {
+    let body = "";
+    req.on("data", function(chunk) { body += chunk; });
+    req.on("end", async function() {
+      try {
+        if (body) {
+          try { req.body = JSON.parse(body); } catch(_) { req.body = body; }
+        }
+        res.status = function(code) { res.statusCode = code; return this; };
+        res.json = function(data) {
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(data));
+          return this;
+        };
+        res.send = function(data) {
+          res.end(typeof data === "string" ? data : JSON.stringify(data));
+          return this;
+        };
+        delete require.cache[require.resolve("./api/r2-calllog.js")];
+        const handler = require("./api/r2-calllog.js");
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "error", message: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === "/api/r2-issues") {
+    let body = "";
+    req.on("data", function(chunk) { body += chunk; });
+    req.on("end", async function() {
+      try {
+        if (body) {
+          try { req.body = JSON.parse(body); } catch(_) { req.body = body; }
+        }
+        res.status = function(code) { res.statusCode = code; return this; };
+        res.json = function(data) {
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(data));
+          return this;
+        };
+        res.send = function(data) {
+          res.end(typeof data === "string" ? data : JSON.stringify(data));
+          return this;
+        };
+        delete require.cache[require.resolve("./api/r2-issues.js")];
+        const handler = require("./api/r2-issues.js");
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "error", message: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === "/api/r2-issue-stats") {
+    let body = "";
+    req.on("data", function(chunk) { body += chunk; });
+    req.on("end", async function() {
+      try {
+        if (body) {
+          try { req.body = JSON.parse(body); } catch(_) { req.body = body; }
+        }
+        res.status = function(code) { res.statusCode = code; return this; };
+        res.json = function(data) {
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(data));
+          return this;
+        };
+        res.send = function(data) {
+          res.end(typeof data === "string" ? data : JSON.stringify(data));
+          return this;
+        };
+        delete require.cache[require.resolve("./api/r2-issue-stats.js")];
+        const handler = require("./api/r2-issue-stats.js");
         await handler(req, res);
       } catch (err) {
         res.writeHead(500, { "Content-Type": "application/json" });
