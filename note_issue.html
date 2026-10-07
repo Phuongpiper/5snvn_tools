@@ -4618,16 +4618,27 @@
           return;
         }
 
+        const todayStr = typeof getTodayString === "function" ? getTodayString() : "";
+
         tempTbody.innerHTML = filtered
           .map(
-            (n, idx) => `
+            (n, idx) => {
+              const isPastDate = n.date && todayStr && n.date !== todayStr;
+              return `
           <tr data-id="${n.id}">
             <td class="td-stt">${idx + 1}</td>
             <td class="td-result-code">
               <div>${escapeHTML(n.result)}</div>
               ${n.memberCode ? `<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:var(--primary); font-family:var(--font-mono); background:#eef2ff; border:1px solid #c7d2fe; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-user-tag" style="font-size:10px;"></i> ${escapeHTML(n.memberCode)} ${n.memberName ? `· ${escapeHTML(n.memberName)}` : ''}</span></div>` : ''}
             </td>
-            <td class="td-date"><i class="fa-regular fa-calendar-days" style="color:#6366f1;"></i> ${escapeHTML(n.date)}</td>
+            <td class="td-date">
+              <div style="display:inline-flex; align-items:center; gap:5px; font-weight:700;">
+                <i class="fa-regular fa-calendar-days" style="color:var(--primary);"></i>
+                <span>${escapeHTML(n.date || "—")}</span>
+                ${isPastDate ? `<span style="font-size:9.5px; background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:1px 5px; border-radius:4px; font-weight:700;" title="Ghi chú cho ngày cũ">Ngày cũ</span>` : ''}
+              </div>
+              ${n.time ? `<div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-top:2px;"><i class="fa-regular fa-clock" style="font-size:9.5px;"></i> ${escapeHTML(n.time)}</div>` : ''}
+            </td>
             <td class="td-actions">
               <button type="button" class="btn-row-circle" onclick="copyTempItem('${n.id}')" title="Sao chép kết quả này">
                 <i class="fa-regular fa-copy"></i>
@@ -4640,7 +4651,8 @@
               </button>
             </td>
           </tr>
-        `
+        `;
+            }
           )
           .join("");
       }
@@ -5727,14 +5739,33 @@
 
         const isAnswered = callIsAnswered(call);
 
+        // Lấy ngày gọi dạng DD/MM/YYYY để ưu tiên so khớp issue đúng ngày
+        let callDateFormatted = "";
+        if (call.calldate && call.calldate.length >= 10) {
+          const cp = call.calldate.slice(0, 10).split("-");
+          if (cp.length === 3) callDateFormatted = `${cp[2]}/${cp[1]}/${cp[0]}`;
+        }
+
         // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
-        const matchedR2Issue = r2Issues.find(iss => {
+        // Ưu tiên trùng số điện thoại VÀ đúng ngày gọi
+        let matchedR2Issue = r2Issues.find(iss => {
           const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-          if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
-          const resText = (iss.result || "").replace(/\s+/g, "");
-          if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
-          return false;
+          const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
+            (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
+          if (!phoneOk) return false;
+          return !callDateFormatted || !iss.date || iss.date === callDateFormatted;
         });
+
+        // Nếu không có issue đúng ngày, fallback tìm bất kỳ issue nào cùng số điện thoại
+        if (!matchedR2Issue) {
+          matchedR2Issue = r2Issues.find(iss => {
+            const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+            if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
+            const resText = (iss.result || "").replace(/\s+/g, "");
+            if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
+            return false;
+          });
+        }
 
         if (matchedR2Issue) {
           return {
@@ -5751,13 +5782,23 @@
 
         // 2. Kiểm tra trong Temp Notes (danh sách tạm của nhân viên hoặc toàn bộ temp R2)
         const poolTemp = [...tempNotes, ...allR2TempIssues];
-        const matchedTemp = poolTemp.find(iss => {
+        let matchedTemp = poolTemp.find(iss => {
           const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-          if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
-          const resText = (iss.result || "").replace(/\s+/g, "");
-          if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
-          return false;
+          const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
+            (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
+          if (!phoneOk) return false;
+          return !callDateFormatted || !iss.date || iss.date === callDateFormatted;
         });
+
+        if (!matchedTemp) {
+          matchedTemp = poolTemp.find(iss => {
+            const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+            if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
+            const resText = (iss.result || "").replace(/\s+/g, "");
+            if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
+            return false;
+          });
+        }
 
         if (matchedTemp) {
           return {
@@ -6061,9 +6102,11 @@
 
           let noteBadge = "";
           if (isNoted) {
-            noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú trên Cloud R2 trong ngày"><i class="fa-solid fa-circle-check"></i> Đã note</span>`;
+            const noteDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
+            noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú trên Cloud R2 ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-circle-check"></i> Đã note${noteDateSuffix}</span>`;
           } else if (isInTemp) {
-            noteBadge = `<span class="voip-note-badge in-temp" title="Đang có trong Danh sách tạm (Temp)"><i class="fa-solid fa-clock-rotate-left"></i> Đang trong Temp</span>`;
+            const tempDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
+            noteBadge = `<span class="voip-note-badge in-temp" title="Đang có trong Danh sách tạm (Temp) ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-clock-rotate-left"></i> Temp${tempDateSuffix}</span>`;
           } else {
             noteBadge = `<span class="voip-note-badge unnoted" title="Chưa có ghi chú nào cho cuộc gọi này!"><i class="fa-solid fa-triangle-exclamation"></i> Chưa note</span>`;
           }
@@ -6083,14 +6126,19 @@
             </span>
           `;
 
+          const cDateRaw = (c.calldate || "").slice(0, 10);
+          const cParts = cDateRaw.split("-");
+          const cDateFormatted = cParts.length === 3 ? `${cParts[2]}/${cParts[1]}/${cParts[0]}` : cDateRaw;
+          const cTimeFormatted = (c.calldate || "").slice(11, 19);
+
           return `<tr class="${rowClass}" data-call-id="${escapeHTML(c.id)}">
             <td class="text-center" style="font-size:12px;">${idx + 1}</td>
             <td>
-              <div style="font-weight:700; font-size:13px; font-family:var(--font-mono);">${escapeHTML(c.calldate?.slice(0, 10) || "")}</div>
-              <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">${escapeHTML(c.calldate?.slice(11, 19) || "")}</div>
+              <div style="font-weight:700; font-size:13px; font-family:var(--font-mono);">${escapeHTML(cDateFormatted || "—")}</div>
+              <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">${escapeHTML(cTimeFormatted || "")}</div>
             </td>
             <td>
-              <span class="voip-phone-chip" onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')" title="Bấm để nạp số vào form Soạn Issue">
+              <span class="voip-phone-chip" onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}', '${escapeHTML(cDateRaw)}')" title="Bấm để nạp số vào form Soạn Issue">
                 <i class="fa-solid fa-phone" style="font-size:10px; ${isUnnoted && isAnswered ? 'color:#dc2626;' : 'opacity:0.6;'}"></i>
                 <strong style="${isUnnoted && isAnswered ? 'color:#b91c1c;' : ''}">${escapeHTML(hotlineNum || "—")}</strong>
               </span>
@@ -6115,7 +6163,7 @@
             <td class="text-center">
               <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
                 <button type="button" class="btn-row-circle" title="Soạn Issue: Nạp Hotline này vào form Soạn Issue"
-                  onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}')">
+                  onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}', '${escapeHTML(cDateRaw)}')">
                   <i class="fa-solid fa-bolt" style="color:var(--primary);"></i>
                 </button>
                 ${isUnnoted ? `
@@ -6216,9 +6264,25 @@
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
           const staff = item.staff;
           const staffText = staff ? `${staff.name} [${staff.code}]` : "Chưa gắn NV";
-          const timeStr = (c.calldate || "").slice(11, 19) || "";
           const talkStr = c.billsec || "00:00:00";
           const countBadgeHtml = item.count > 1 ? `<span style="font-size:10px; background:#fee2e2; color:#b91c1c; border-radius:8px; padding:1px 5px; font-weight:800;">${item.count} cuộc</span>` : "";
+
+          // Ngày & giờ của cuộc gọi
+          const cDateRaw = (c.calldate || "").slice(0, 10);
+          const cParts = cDateRaw.split("-");
+          const cDateFormatted = cParts.length === 3 ? `${cParts[2]}/${cParts[1]}/${cParts[0]}` : cDateRaw;
+          const timeShort = (c.calldate || "").slice(11, 16) || (c.calldate || "").slice(11, 19);
+
+          const now = new Date();
+          const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+          let dateBadgeHtml = "";
+          if (cDateRaw) {
+            if (cDateRaw === todayISO) {
+              dateBadgeHtml = `<span style="font-size:10px; color:#059669; font-weight:700; background:#ecfdf5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:3px;"><i class="fa-regular fa-calendar-check" style="font-size:9.5px;"></i> Hôm nay</span>`;
+            } else {
+              dateBadgeHtml = `<span style="font-size:10px; color:#b45309; font-weight:700; background:#fef3c7; border:1px solid #fde68a; padding:1px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:3px;" title="Cuộc gọi ngày ${escapeHTML(cDateFormatted)}">📅 ${escapeHTML(cDateFormatted)}</span>`;
+            }
+          }
 
           return `
             <div class="sug-item-card">
@@ -6228,8 +6292,9 @@
                   ${escapeHTML(item.hotline)}
                   ${countBadgeHtml}
                 </span>
-                <span class="sug-item-time">
-                  <i class="fa-regular fa-clock" style="font-size:10px;"></i> ${escapeHTML(timeStr)}
+                <span class="sug-item-time" style="display:inline-flex; align-items:center; gap:5px;">
+                  ${dateBadgeHtml}
+                  <span style="display:inline-flex; align-items:center; gap:3px;"><i class="fa-regular fa-clock" style="font-size:10px;"></i> ${escapeHTML(timeShort)}</span>
                 </span>
               </div>
               <div class="sug-item-mid">
@@ -6246,7 +6311,7 @@
                 ${isInbound ? 'Khách gọi đến tổng đài' : 'Nhân viên gọi ra cho khách'}
               </div>
               <div class="sug-item-actions">
-                <button type="button" class="btn-sug-action editor" onclick="useVoipHotline('${escapeHTML(item.hotline)}')" title="Mở Soạn Issue và nạp số này">
+                <button type="button" class="btn-sug-action editor" onclick="useVoipHotline('${escapeHTML(item.hotline)}', '${escapeHTML(cDateRaw)}')" title="Mở Soạn Issue và nạp số này kèm ngày gọi">
                   <i class="fa-solid fa-bolt"></i> Soạn Issue
                 </button>
                 <button type="button" class="btn-sug-action add-temp" onclick="quickAddCallToTemp('${escapeHTML(c.id)}')" title="Tạo ngay ghi chú tạm với số này">
@@ -6284,8 +6349,16 @@
 
         const now = new Date();
         const pad = n => String(n).padStart(2, "0");
-        const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-        const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        let dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+        let timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+        // Nếu cuộc gọi có calldate, lấy chính xác ngày và giờ của cuộc gọi đó
+        if (call.calldate) {
+          const rawDate = call.calldate.slice(0, 10);
+          const p = rawDate.split("-");
+          if (p.length === 3) dateStr = `${p[2]}/${p[1]}/${p[0]}`;
+          if (call.calldate.length >= 16) timeStr = call.calldate.slice(11, 16);
+        }
 
         const tempItem = {
           id: "note_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
@@ -6325,10 +6398,10 @@
         renderUnnotedSuggestions();
         updateIssuesBadge();
 
-        showToast(`Đã thêm số Hotline ${hotline} vào Danh sách tạm (Temp)!`, "fa-circle-check");
+        showToast(`Đã thêm số Hotline ${hotline} (ngày ${dateStr}) vào Danh sách tạm (Temp)!`, "fa-circle-check");
       };
 
-      window.useVoipHotline = function(phone) {
+      window.useVoipHotline = function(phone, date) {
         if (!phone) return;
         switchStudioView("editor");
         const inputHotline = document.getElementById("inputHotline");
@@ -6337,7 +6410,17 @@
           inputHotline.dispatchEvent(new Event("input", { bubbles: true }));
           inputHotline.dispatchEvent(new Event("blur", { bubbles: true }));
         }
-        showToast(`Đã nạp số Hotline: ${phone} vào form Soạn Issue!`, "fa-phone");
+
+        // Tự động chọn ngày tương ứng trên Date Picker nếu có truyền ngày
+        if (date) {
+          const dp = document.getElementById("inputIssueDate");
+          if (dp) {
+            dp.value = date;
+            dp.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+
+        showToast(`Đã nạp số Hotline: ${phone}${date ? ' (ngày ' + date + ')' : ''} vào form Soạn Issue!`, "fa-phone");
         setTimeout(() => {
           inputHotline?.scrollIntoView({ behavior: "smooth", block: "center" });
           inputHotline?.focus();
