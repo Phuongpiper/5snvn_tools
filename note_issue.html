@@ -4757,6 +4757,180 @@
         }
       }
 
+      // ── TỰ ĐỘNG ĐỒNG BỘ OTRS TICKET LÊN GOOGLE SHEET BÁO CÁO ──
+      const OTRS_REPORT_GAS_URL = "https://script.google.com/macros/s/AKfycbxQSi9Xhn6IF5NE3bIkyQ-KbNJ8z6UG7aoqG72C-2-t9tqXY1ASHQo4Yf8RMwCTlBkX/exec";
+      const OTRS_SYNCED_STORAGE_KEY = "dms_otrs_sheet_synced_ids_v1";
+
+      function getOtrsCvName(item) {
+        if (!item) return null;
+        const resultText = String(item.result || item.issue || "");
+        const solName = String((item.fields && item.fields.solution) || "");
+        const solCode = String((item.fields && item.fields.solutionCode) || "").toUpperCase();
+
+        if (solCode === "NVN-663" || /close\s+otrs\s+ticket/i.test(solName) || /_close\s+otrs\s+ticket_/i.test(resultText) || /\bclose\s+otrs\s+ticket\b/i.test(resultText)) {
+          return "Close OTRS Ticket";
+        }
+        if (solCode === "NVN-665" || /raise\s+otrs\s+ticket/i.test(solName) || /_raise\s+otrs\s+ticket_/i.test(resultText) || /\braise\s+otrs\s+ticket\b/i.test(resultText)) {
+          return "Raise OTRS Ticket";
+        }
+        if (solCode === "NVN-399" || /raise\s+ticket\s+theo\s+yêu\s+cầu/i.test(solName) || /_raise\s+ticket\s+theo\s+yêu\s+cầu/i.test(resultText) || /\braise\s+ticket\s+theo\s+yêu\s+cầu/i.test(resultText)) {
+          return "Raise ticket theo yêu cầu của HQ user";
+        }
+        return null;
+      }
+
+      function extractOtrsRowData(item) {
+        const tenCV = getOtrsCvName(item);
+        if (!tenCV) return null;
+
+        const resultText = String(item.result || item.issue || "").trim();
+        const nppVal = String((item.fields && item.fields.npp) || "").trim();
+
+        let raw = nppVal.replace(/^NPP\s+/i, "").trim();
+        if (!raw && resultText) {
+          const parts = resultText.split("_");
+          if (parts.length >= 3) {
+            raw = parts[2].replace(/^NPP\s+/i, "").trim();
+          }
+        }
+
+        let ticketNum = "";
+        let title = "";
+
+        // Tìm dãy số ticket 14 - 18 chữ số
+        const matchNum = (raw.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i) || resultText.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i));
+        if (matchNum) {
+          ticketNum = matchNum[1];
+          const sourceForTitle = raw.includes(ticketNum) ? raw : (resultText.split("_")[2] || resultText);
+          const after = sourceForTitle.slice(sourceForTitle.indexOf(ticketNum) + ticketNum.length).trim();
+          title = after.replace(/^[-_ ]+/, "").trim();
+        } else {
+          title = raw;
+        }
+
+        let chiTiet = "";
+        if (ticketNum && title) {
+          chiTiet = `${tenCV}_${ticketNum}_${title}`;
+        } else if (ticketNum) {
+          chiTiet = `${tenCV}_${ticketNum}`;
+        } else if (title) {
+          chiTiet = `${tenCV}_${title}`;
+        } else {
+          chiTiet = tenCV;
+        }
+
+        let dateStr = String(item.date || "").trim();
+        if (!dateStr || !dateStr.includes("/")) {
+          if (typeof getTodayString === "function") dateStr = getTodayString();
+          else {
+            const now = new Date();
+            dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
+          }
+        }
+
+        const memberCode = String(item.memberCode || (typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) || "").trim().toLowerCase();
+
+        return {
+          colA: dateStr,
+          colB: dateStr,
+          colC: "NVN",
+          colD: "Cố định",
+          colE: "OTRS",
+          colF: tenCV,
+          colG: chiTiet,
+          colH: dateStr,
+          colI: "Done",
+          colJ: memberCode,
+          colK: chiTiet,
+          colL: "Đã hoàn tất " + chiTiet
+        };
+      }
+
+      function getOtrsItemUniqueId(item) {
+        if (!item) return "";
+        return String(item.id || (item.date + "_" + (item.result || item.issue) + "_" + (item.memberCode || ""))).trim();
+      }
+
+      async function syncOtrsTicketsToGoogleSheet(notesList) {
+        if (!Array.isArray(notesList) || notesList.length === 0) return 0;
+
+        // 1. Lấy danh sách ID đã sync trước đó từ localStorage để tránh ghi trùng lặp
+        let syncedIds = [];
+        try {
+          const raw = localStorage.getItem(OTRS_SYNCED_STORAGE_KEY);
+          if (raw) syncedIds = JSON.parse(raw);
+          if (!Array.isArray(syncedIds)) syncedIds = [];
+        } catch (_) {
+          syncedIds = [];
+        }
+        const syncedSet = new Set(syncedIds);
+
+        // 2. Lọc ra các ticket OTRS hợp lệ và chưa từng được sync
+        const pendingItems = [];
+        for (const item of notesList) {
+          if (!item) continue;
+          const uId = getOtrsItemUniqueId(item);
+          if (syncedSet.has(uId)) continue;
+
+          const rowData = extractOtrsRowData(item);
+          if (rowData) {
+            pendingItems.push({ item, uId, rowData });
+          }
+        }
+
+        if (pendingItems.length === 0) return 0;
+
+        let successCount = 0;
+        const newlySyncedIds = [];
+
+        // 3. Gửi từng ticket lên Google Apps Script
+        for (const p of pendingItems) {
+          try {
+            const payload = {
+              action: "input_row",
+              data: p.rowData,
+              rows: [p.rowData],
+              ...p.rowData
+            };
+
+            const res = await fetch(OTRS_REPORT_GAS_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+              const resData = await res.json().catch(() => ({ success: true }));
+              if (resData && resData.success !== false) {
+                successCount++;
+                newlySyncedIds.push(p.uId);
+                syncedSet.add(p.uId);
+              } else {
+                console.warn("GAS trả về trạng thái không thành công cho ticket:", p.rowData, resData);
+              }
+            } else {
+              console.warn("HTTP error khi gửi ticket lên GAS:", res.status);
+            }
+          } catch (itemErr) {
+            console.warn("Lỗi khi gửi OTRS ticket lên GAS:", itemErr);
+          }
+        }
+
+        // 4. Lưu lại cache các ID đã sync (giữ tối đa 500 ID gần nhất)
+        if (newlySyncedIds.length > 0) {
+          try {
+            const updatedList = Array.from(syncedSet).slice(-500);
+            localStorage.setItem(OTRS_SYNCED_STORAGE_KEY, JSON.stringify(updatedList));
+          } catch (_) { }
+
+          setTimeout(() => {
+            showToast(`Đã tự động đẩy ${newlySyncedIds.length} ticket OTRS vào Google Sheet báo cáo!`, "fa-file-excel");
+          }, 1200);
+        }
+
+        return successCount;
+      }
+
       // Đẩy tất cả tempNotes local lên R2 (Đồng bộ R2)
       async function pushAllTempToR2() {
         if (tempNotes.length === 0) {
@@ -4789,6 +4963,13 @@
 
             if (currentStudioView === "stats") renderStatsPage();
             showToast(`Đã đồng bộ ${tempNotes.length} issue vào Issue & Call Log!`, "fa-circle-check");
+
+            // Tự động đồng bộ các OTRS Ticket vào Google Sheet báo cáo nếu có
+            try {
+              await syncOtrsTicketsToGoogleSheet(tempNotes);
+            } catch (sheetErr) {
+              console.warn("Lỗi tự động ghi Google Sheet báo cáo OTRS:", sheetErr);
+            }
           } else {
             showToast("Đồng bộ thất bại, thử lại sau!", "fa-triangle-exclamation");
           }
