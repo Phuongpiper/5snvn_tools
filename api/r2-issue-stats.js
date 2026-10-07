@@ -7,6 +7,8 @@ const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.e
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.env.R2_SECRET_ACCESS_KEY || "";
 const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "";
 const R2_ISSUES_KEY        = "dms_note_issues.json";
+const R2_CALLS_KEY         = "voip24h_calls_cache.json";
+const R2_TASK_KEY          = "task_pending_data.json";
 
 function hmacSha256(key, msg, enc) {
   return crypto.createHmac("sha256", key).update(msg, "utf8").digest(enc);
@@ -200,6 +202,109 @@ function aggregateIssueStats(issues, filters) {
   return { rows, total, groupedByDate };
 }
 
+/**
+ * Kiểm tra cuộc gọi đã được trả lời (đàm thoại > 0)
+ */
+function isCallAnswered(c) {
+  if (!c) return false;
+  const bs = c.billsec;
+  if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
+  if (typeof bs === "number") return bs > 0;
+  const parts = String(bs).split(":").map(Number);
+  const totalSec = parts.length === 3
+    ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+    : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
+  return totalSec > 0;
+}
+
+/**
+ * Lấy ngày và tháng hôm nay theo giờ Việt Nam (UTC+7)
+ */
+function getVietnamToday() {
+  const d = new Date(Date.now() + 7 * 3600000);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return {
+    isoDate: `${yyyy}-${mm}-${dd}`,
+    isoMonth: `${yyyy}-${mm}`,
+    displayDate: `${dd}/${mm}/${yyyy}`
+  };
+}
+
+/**
+ * Tổng hợp số lượng cuộc gọi theo tháng và ngày cho từng nhân viên
+ */
+function aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth) {
+  // Danh sách nhân viên mặc định nếu không có trên R2
+  const canonicalMembers = [
+    { code: "khoa.a.ly.6069", extension: "113" },
+    { code: "phuong.h.nguyen.0750", extension: "116" },
+    { code: "tanh.h.bui.3811", extension: "118" },
+    { code: "toan.t.nguyen.0814", extension: "119" }
+  ];
+
+  const memberMap = new Map();
+  canonicalMembers.forEach(m => memberMap.set(m.code.toLowerCase(), { ...m }));
+
+  if (Array.isArray(members)) {
+    members.forEach(m => {
+      const code = String(m.code || "").toLowerCase().trim();
+      const ext = String(m.extension || "").trim();
+      if (code && ext && !memberMap.has(code)) {
+        memberMap.set(code, { code, extension: ext });
+      } else if (code && ext && memberMap.has(code) && !memberMap.get(code).extension) {
+        memberMap.get(code).extension = ext;
+      }
+    });
+  }
+
+  const sortedMembers = Array.from(memberMap.values()).sort((a, b) => a.code.localeCompare(b.code));
+
+  let totalMonth = 0;
+  let totalDay = 0;
+  const rows = [];
+
+  for (const m of sortedMembers) {
+    const ext = String(m.extension || "").trim();
+    let monthCount = 0;
+    let dayCount = 0;
+
+    if (ext && Array.isArray(calls)) {
+      for (const c of calls) {
+        if (!c) continue;
+        const isExt = String(c.src) === ext || String(c.dst) === ext;
+        if (!isExt) continue;
+        if (!isCallAnswered(c)) continue;
+
+        const time = String(c.calldate || c.call_date || c.time || "");
+        if (targetIsoMonth && time.startsWith(targetIsoMonth)) {
+          monthCount++;
+        }
+        if (targetIsoDate && time.startsWith(targetIsoDate)) {
+          dayCount++;
+        }
+      }
+    }
+
+    totalMonth += monthCount;
+    totalDay += dayCount;
+    rows.push([m.code, String(monthCount), String(dayCount)]);
+  }
+
+  return {
+    title: "Số lượng cuộc gọi",
+    headers: ["Mã NV", "Theo tháng", "Theo ngày"],
+    rows: rows,
+    total: {
+      label: "Tổng cộng",
+      month: String(totalMonth),
+      today: String(totalDay)
+    },
+    rowCount: rows.length
+  };
+}
+
 // ============================================================
 // Handler chính
 // ============================================================
@@ -219,12 +324,17 @@ module.exports = async function handler(req, res) {
 
   try {
     // ---- Query params ----
-    // ?date=05/10/2026                       -> lọc đúng một ngày
-    // ?dateFrom=01/10/2026&dateTo=05/10/2026 -> lọc khoảng ngày
+    // ?date=07/10/2026                       -> lọc đúng một ngày
+    // ?dateFrom=01/10/2026&dateTo=07/10/2026 -> lọc khoảng ngày
     // ?memberCode=khoa.a.ly.6069             -> lọc một nhân viên
-    // Có thể kết hợp nhiều params
-    const urlParts = require("url").parse(req.url, true);
-    const q = urlParts.query || {};
+    let q = {};
+    try {
+      const parsedUrl = new URL(req.url, "http://localhost");
+      parsedUrl.searchParams.forEach((v, k) => { q[k] = v; });
+    } catch (_) {
+      const urlParts = require("url").parse(req.url, true);
+      q = urlParts.query || {};
+    }
 
     const filters = {
       date:       q.date       || "",
@@ -233,69 +343,98 @@ module.exports = async function handler(req, res) {
       memberCode: q.memberCode || q.member || ""
     };
 
-    // ---- Lấy dữ liệu từ R2 ----
-    const r2Res = await r2Fetch("GET", "", R2_ISSUES_KEY);
+    // Xác định ngày và tháng mục tiêu cho cuộc gọi
+    const vnToday = getVietnamToday();
+    let targetIsoDate = vnToday.isoDate;
+    let targetIsoMonth = vnToday.isoMonth;
+    let targetDisplayDate = vnToday.displayDate;
 
-    if (r2Res.statusCode === 404) {
-      return res.status(200).json({
-        status: "success",
-        filters: filters,
-        rows: [],
-        total: 0,
-        groupedByDate: {},
-        issueCount: 0
-      });
+    if (filters.date) {
+      const nDate = normalizeDate(filters.date);
+      if (nDate && nDate.includes("/")) {
+        const [d, m, y] = nDate.split("/");
+        targetIsoDate = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+        targetIsoMonth = `${y}-${m.padStart(2, "0")}`;
+        targetDisplayDate = `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+      }
+    } else {
+      // Mặc định bộ lọc lọc theo ngày hôm nay
+      filters.date = targetDisplayDate;
     }
 
-    if (r2Res.statusCode !== 200) {
-      return res.status(502).json({
-        error: "Không thể đọc dữ liệu từ R2",
-        r2Status: r2Res.statusCode
-      });
-    }
+    // ---- Lấy song song dữ liệu từ R2 ----
+    const [r2IssuesRes, r2CallsRes, r2TaskRes] = await Promise.all([
+      r2Fetch("GET", "", R2_ISSUES_KEY).catch(() => ({ statusCode: 500, body: "" })),
+      r2Fetch("GET", "", R2_CALLS_KEY).catch(() => ({ statusCode: 500, body: "" })),
+      r2Fetch("GET", "", R2_TASK_KEY).catch(() => ({ statusCode: 500, body: "" }))
+    ]);
 
     let issues = [];
-    try {
-      const parsed = JSON.parse(r2Res.body);
-      issues = Array.isArray(parsed.issues) ? parsed.issues
-             : Array.isArray(parsed)        ? parsed
-             : [];
-    } catch (_) {
-      // body không parse được -> trả về rỗng
+    if (r2IssuesRes.statusCode === 200) {
+      try {
+        const parsed = JSON.parse(r2IssuesRes.body);
+        issues = Array.isArray(parsed.issues) ? parsed.issues
+               : Array.isArray(parsed)        ? parsed
+               : [];
+      } catch (_) {}
     }
 
+    let calls = [];
+    if (r2CallsRes.statusCode === 200) {
+      try {
+        const parsed = JSON.parse(r2CallsRes.body);
+        calls = Array.isArray(parsed.calls) ? parsed.calls
+              : Array.isArray(parsed)       ? parsed
+              : [];
+      } catch (_) {}
+    }
+
+    let members = [];
+    if (r2TaskRes.statusCode === 200) {
+      try {
+        const parsed = JSON.parse(r2TaskRes.body);
+        members = Array.isArray(parsed.members) ? parsed.members : [];
+      } catch (_) {}
+    }
+
+    // 1. Thống kê Issue
     const stats = aggregateIssueStats(issues, filters);
+
+    const leftRows = (stats.rows || []).map(r => [
+      r.date || targetDisplayDate,
+      (r.memberCode || "").toLowerCase().trim(),
+      String(r.count !== undefined && r.count !== null ? r.count : 0)
+    ]);
+
+    const leftTable = {
+      title: "Số lượng Issue",
+      headers: ["Date", "Mã NV", "Số lượng"],
+      rows: leftRows,
+      total: {
+        label: "Tổng cộng",
+        value: String(stats.total || 0)
+      },
+      rowCount: leftRows.length
+    };
+
+    // 2. Thống kê Cuộc gọi
+    const rightTable = aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth);
 
     return res.status(200).json({
       status:        "success",
       filters:       filters,
-      /**
-       * rows: mảng phẳng, mỗi phần tử = 1 dòng trong bảng
-       * [
-       *   { date: "05/10/2026", memberCode: "khoa.a.ly.6069",         count: 9  },
-       *   { date: "05/10/2026", memberCode: "phuong.h.nguyen.0750",    count: 15 },
-       *   ...
-       * ]
-       */
+      date:          targetDisplayDate,
+      leftTable:     leftTable,
+      rightTable:    rightTable,
       rows:          stats.rows,
-      /**
-       * total: Tổng cộng (dòng "Tổng cộng" cuối bảng)
-       */
       total:         stats.total,
-      /**
-       * groupedByDate: group theo ngày để render bảng theo nhóm
-       * {
-       *   "05/10/2026": [
-       *     { memberCode: "khoa.a.ly.6069",      count: 9  },
-       *     { memberCode: "phuong.h.nguyen.0750", count: 15 },
-       *   ]
-       * }
-       */
       groupedByDate: stats.groupedByDate,
-      issueCount:    issues.length
+      issueCount:    issues.length,
+      callCount:     calls.length
     });
 
   } catch (err) {
     return res.status(500).json({ error: err.message, stack: err.stack });
   }
 };
+
