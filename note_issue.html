@@ -4776,10 +4776,6 @@
           if (typeof updateVoipSyncStatusDisplay === "function") {
             updateVoipSyncStatusDisplay();
           }
-          // Tự động tải dữ liệu mới nhất từ Cloud R2 ngầm
-          if (typeof fetchVoipCalls === "function") {
-            fetchVoipCalls(false, true);
-          }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
       };
@@ -6083,6 +6079,7 @@
           url.searchParams.set("date_start", date_start);
           url.searchParams.set("date_end", date_end);
           if (did && did !== "all") url.searchParams.set("did", did);
+          if (showLoading) url.searchParams.set("sync", "1"); // Chỉ gọi live Voip24h khi người dùng bấm nút Đồng bộ
           url.searchParams.set("_t", Date.now());
 
           let fetchUrl = url.toString();
@@ -6635,32 +6632,13 @@
       window.addEventListener("pageshow", () => {
         fetchIssuesFromR2(true);
         fetchTempNotesFromR2(true);
-        if (typeof fetchVoipCalls === "function") fetchVoipCalls(false, true);
-      });
-      window.addEventListener("focus", () => {
-        if (currentStudioView === "voip" && typeof fetchVoipCalls === "function") {
-          fetchVoipCalls(false, true);
-        }
-      });
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible" && currentStudioView === "voip" && typeof fetchVoipCalls === "function") {
-          fetchVoipCalls(false, true);
-        }
       });
       window.addEventListener("message", (e) => {
         if (e.data === "tab-activated") {
           fetchIssuesFromR2(true);
           fetchTempNotesFromR2(true);
-          if (typeof fetchVoipCalls === "function") fetchVoipCalls(false, true);
         }
       });
-
-      // Kiểm tra định kỳ mỗi 25s: nếu vừa có sync từ máy Local thì Production tự cập nhật ngay
-      setInterval(() => {
-        if (document.visibilityState === "visible" && currentStudioView === "voip" && typeof fetchVoipCalls === "function" && !voipLoading) {
-          fetchVoipCalls(false, true);
-        }
-      }, 25000);
 
       init();
     })();

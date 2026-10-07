@@ -337,7 +337,11 @@ module.exports = async function handler(req, res) {
 
   // ── FETCH action (default) ─────────────────────────────────────────────────
   const isVercel = Boolean(process.env.VERCEL || process.env.NOW_REGION);
-  if (isVercel && !payload.force_live) {
+  const shouldSyncLive = Boolean(payload.sync === "1" || payload.sync === true || payload.force_live || action === "sync");
+
+  // Nếu không có yêu cầu đồng bộ mới (hoặc đang chạy trên Vercel không có IP VN):
+  // Ưu tiên đọc trực tiếp từ cache Cloudflare R2
+  if (!shouldSyncLive || isVercel) {
     const cachedData = await getCacheFromR2();
     if (cachedData && cachedData.calls) {
       let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
@@ -367,7 +371,9 @@ module.exports = async function handler(req, res) {
         ...cachedData,
         stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
         source: "r2_cloud",
-        note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Được đồng bộ từ máy nội bộ)"
+        note: isVercel
+          ? "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Được đồng bộ từ máy nội bộ)"
+          : "Dữ liệu từ bộ nhớ đệm đám mây R2 (Nhấn nút 'Đồng bộ cuộc gọi' để cập nhật mới nhất từ tổng đài)"
       });
     }
   }
