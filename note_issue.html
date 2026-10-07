@@ -3340,10 +3340,15 @@
             </div>
           </div>
 
-          <!-- Tổng số lượng email -->
+          <!-- Tổng số lượng email & Ngày cập nhật -->
           <div style="margin-bottom:14px;">
-            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
-              Tổng số lượng Email
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+                Tổng số lượng Email
+              </div>
+              <span class="report-metric-pill" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:11px; padding:2px 8px;" id="repEmailDateBadge" title="Ngày dữ liệu cập nhật từ Google Apps Script">
+                <i class="fa-regular fa-calendar-check"></i> <span id="repEmailDateText">--/--/----</span>
+              </span>
             </div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
               <span class="kpi-value" id="repEmailTotal" style="color:#059669; font-size:28px;">0</span>
@@ -3355,7 +3360,7 @@
           <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span style="font-size:12px; font-weight:800; color:var(--text-main);">Chi tiết luồng Email:</span>
-              <span class="report-metric-pill" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:10.5px;">API GAS</span>
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;" id="repEmailSubDateNote">Cập nhật: --</span>
             </div>
             <div class="report-split-row">
               <div style="display:flex; align-items:center; gap:6px;">
@@ -5159,7 +5164,7 @@
       let reportLastUpdated = null;
       let otrsSearchKeyword = "";
       let otrsCategoryFilter = "all";
-      const REPORT_EMAIL_API_URL = "https://script.google.com/macros/s/AKfycbz1pvoCUvAAA24XziiJZhTOc0zdxaaoLGkkWTYXyAlecU2pNyT0taW1ARDerqw8MBao/exec";
+      const REPORT_EMAIL_API_URL = "https://script.google.com/macros/s/AKfycbzkHD6_i6PT1-d5nsxQnR7cPXZL571Iigvt5afEkZdLi9tXdIyti5Q3lCDhv8ehFFPi/exec";
       const REPORT_OTRS_API_URL = "https://script.google.com/macros/s/AKfycbwJJxwDVjqx-AQtaLg3TKXtUS2RWOi2JiqNb0BNTpWK-GKOyTrd9zL9uk5Rfdj68n0oRg/exec";
       const REPORT_CACHE_KEY = "dms_report_cached_data_v1";
 
@@ -5397,13 +5402,24 @@
         const emailTotal = reportEmailData?.total ?? 0;
         const emailReceived = reportEmailData?.received ?? 0;
         const emailSent = reportEmailData?.sent ?? 0;
+        const rawEmailDate = reportEmailData?.date || "";
+        let emailDateFormatted = rawEmailDate;
+        if (rawEmailDate && rawEmailDate.includes("-")) {
+          const ep = rawEmailDate.split("-");
+          if (ep.length === 3) emailDateFormatted = `${ep[2]}/${ep[1]}/${ep[0]}`;
+        }
 
         const elRepEmailTotal = document.getElementById("repEmailTotal");
         const elRepEmailRecv = document.getElementById("repEmailReceived");
         const elRepEmailSent = document.getElementById("repEmailSent");
+        const elRepEmailDateText = document.getElementById("repEmailDateText");
+        const elRepEmailSubDateNote = document.getElementById("repEmailSubDateNote");
+
         if (elRepEmailTotal) elRepEmailTotal.textContent = emailTotal.toLocaleString();
         if (elRepEmailRecv) elRepEmailRecv.textContent = emailReceived.toLocaleString();
         if (elRepEmailSent) elRepEmailSent.textContent = emailSent.toLocaleString();
+        if (elRepEmailDateText) elRepEmailDateText.textContent = emailDateFormatted || "Hôm nay";
+        if (elRepEmailSubDateNote) elRepEmailSubDateNote.textContent = emailDateFormatted ? `Ngày: ${emailDateFormatted}` : "API GAS";
 
         // 5. TÍNH TOÁN TICKET OTRS
         const otrsList = Array.isArray(reportOtrsData) ? reportOtrsData : [];
@@ -5491,8 +5507,16 @@
                 <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Gmail Support API</div>
               </td>
               <td class="text-center" colspan="2">
-                <strong style="color:#059669; font-size:14px; font-family:var(--font-mono);">${emailTotal}</strong>
-                <span style="font-size:11.5px; color:var(--text-muted);"> email tổng cộng</span>
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                  <div>
+                    <strong style="color:#059669; font-size:14px; font-family:var(--font-mono);">${emailTotal}</strong>
+                    <span style="font-size:11.5px; color:var(--text-muted);"> email</span>
+                  </div>
+                  ${emailDateFormatted ? `
+                    <div style="font-size:10.5px; font-weight:700; color:#047857; background:#d1fae5; border:1px solid #a7f3d0; padding:1px 6px; border-radius:4px; margin-top:3px; display:inline-flex; align-items:center; gap:4px;">
+                      <i class="fa-regular fa-calendar-check" style="font-size:9.5px;"></i> ${emailDateFormatted}
+                    </div>` : ''}
+                </div>
               </td>
               <td>
                 <div style="display:flex; align-items:center; gap:8px; font-size:12px;">
