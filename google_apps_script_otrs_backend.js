@@ -1,115 +1,142 @@
 /**
- * GOOGLE APPS SCRIPT CHO BÁO CÁO OTRS TICKET TỰ ĐỘNG
+ * GOOGLE APPS SCRIPT KẾT HỢP CẢ 2 TÍNH NĂNG:
+ * 1. doGet: Lấy số liệu Email nhận/gửi từ Sheet GID 1060225183 (Giữ nguyên 100% logic cũ của bạn)
+ * 2. doPost: Thêm dòng Issue OTRS vào cuối Sheet GID 114516057 (Đầy đủ 12 cột từ A -> L theo Template.xlsx)
  * 
- * Hướng dẫn cài đặt trên Google Apps Script:
- * 1. Mở dự án Google Apps Script của bạn (nơi chứa Web App URL hiện tại):
- *    https://script.google.com/macros/s/AKfycbxQSi9Xhn6IF5NE3bIkyQ-KbNJ8z6UG7aoqG72C-2-t9tqXY1ASHQo4Yf8RMwCTlBkX/exec
- * 2. Cập nhật / dán đoạn mã bên dưới vào file Code.gs (giữ nguyên các hàm doGet lấy số liệu email nếu có).
- * 3. Nhấn "Triển khai" (Deploy) -> "Quản lý bản triển khai" (Manage deployments).
- * 4. Bấm biểu tượng cây bút chỉnh sửa -> Phiên bản: Chọn "Phiên bản mới" (New version).
- * 5. Ai có quyền truy cập: Chọn "Bất kỳ ai" (Anyone) -> Bấm "Triển khai" (Deploy).
+ * ID File Spreadsheet: 1Lzwt5z9xiw1C3PI7ZHQbjG23TV1zFf6kb8jYBvQvdGQ
  */
 
-const INPUTROW_SPREADSHEET_ID = "1Lzwt5z9xiw1C3PI7ZHQbjG23TV1zFf6kb8jYBvQvdGQ";
-const INPUTROW_SHEET_GID = 114516057;
+const SPREADSHEET_ID = "1Lzwt5z9xiw1C3PI7ZHQbjG23TV1zFf6kb8jYBvQvdGQ";
+const EMAIL_SHEET_GID = 1060225183; // GID Sheet báo cáo Email
+const OTRS_SHEET_GID = 114516057;   // GID Sheet ghi nhận Issue OTRS
 
-function inputRow_getSheet() {
-  const spreadsheet = SpreadsheetApp.openById(INPUTROW_SPREADSHEET_ID);
-  const sheets = spreadsheet.getSheets();
-  for (let i = 0; i < sheets.length; i++) {
-    if (sheets[i].getSheetId() === INPUTROW_SHEET_GID) {
-      return sheets[i];
+// ==============================
+// 1. GET REQUEST: LẤY SỐ LIỆU EMAIL (GIỮ NGUYÊN)
+// ==============================
+function doGet(e) {
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = ss.getSheets().find(s => s.getSheetId() === EMAIL_SHEET_GID);
+
+    if (!sheet) {
+      return jsonResponse({
+        success: false,
+        error: "Không tìm thấy sheet GID: " + EMAIL_SHEET_GID
+      });
     }
+
+    // LẤY NGÀY TỪ Ô C2
+    const c2Value = sheet.getRange("C2").getValue();
+    let date = "";
+
+    if (c2Value instanceof Date && !isNaN(c2Value)) {
+      date = Utilities.formatDate(
+        c2Value,
+        ss.getSpreadsheetTimeZone(),
+        "yyyy-MM-dd"
+      );
+    } else if (c2Value) {
+      const text = String(c2Value).trim();
+      date = text.split(" ")[0];
+    }
+
+    // LẤY SỐ MAIL NHẬN / GỬI
+    const lastRow = sheet.getLastRow();
+    let received = 0;
+    let sent = 0;
+    let total = 0;
+
+    if (lastRow > 0) {
+      const data = sheet.getRange(1, 9, lastRow, 2).getDisplayValues();
+
+      data.forEach(row => {
+        const type = String(row[0]).trim().toLowerCase();
+        const count = Number(String(row[1]).replace(/,/g, "")) || 0;
+
+        if (type === "nhận" || type === "nhan") received = count;
+        if (type === "gửi" || type === "gui") sent = count;
+        if (type === "tổng" || type === "tong") total = count;
+      });
+    }
+
+    return jsonResponse({
+      success: true,
+      date: date,
+      total: total,
+      received: received,
+      sent: sent
+    });
+
+  } catch (error) {
+    return jsonResponse({
+      success: false,
+      error: error.message
+    });
   }
-  return spreadsheet.getActiveSheet();
 }
 
-/**
- * Thêm 1 dòng vào cuối Sheet (Đủ 12 cột từ A đến L theo chuẩn Template.xlsx)
- */
-function inputRow_addRow(data) {
-  const sheet = inputRow_getSheet();
-  const rowValues = [
-    data.colA || "", // A: Date (DD/MM/YYYY)
-    data.colB || "", // B: Ngày hoàn thành (DD/MM/YYYY)
-    data.colC || "", // C: Dự án (NVN)
-    data.colD || "", // D: Tần suất (Cố định)
-    data.colE || "", // E: Kênh hỗ trợ (OTRS)
-    data.colF || "", // F: Tên CV (Raise OTRS Ticket / Close OTRS Ticket / Raise ticket theo yêu cầu của HQ user)
-    data.colG || "", // G: Chi tiết (Tên CV_TicketNumber_Tiêu đề)
-    data.colH || "", // H: Due date (DD/MM/YYYY)
-    data.colI || "", // I: Trạng thái (Done)
-    data.colJ || "", // J: Mã nhân viên (tanh.h.bui.3811)
-    data.colK || "", // K: Công việc cần làm (Giống Chi tiết)
-    data.colL || ""  // L: Kết quả CV (Đã hoàn tất + Chi tiết)
-  ];
-  sheet.appendRow(rowValues);
-  return { success: true, message: "Đã thêm dòng mới thành công!" };
-}
-
-/**
- * Thêm danh sách nhiều dòng vào cuối Sheet
- */
-function inputRow_addRows(rows) {
-  if (!Array.isArray(rows) || rows.length === 0) {
-    return { success: false, message: "Danh sách dòng rỗng" };
-  }
-  const sheet = inputRow_getSheet();
-  rows.forEach(function(data) {
-    const rowValues = [
-      data.colA || "",
-      data.colB || "",
-      data.colC || "",
-      data.colD || "",
-      data.colE || "",
-      data.colF || "",
-      data.colG || "",
-      data.colH || "",
-      data.colI || "",
-      data.colJ || "",
-      data.colK || "",
-      data.colL || ""
-    ];
-    sheet.appendRow(rowValues);
-  });
-  return { success: true, count: rows.length, message: "Đã thêm " + rows.length + " dòng thành công!" };
-}
-
-/**
- * Nhận yêu cầu POST từ Note Issue Studio khi nhấn "Đồng bộ R2"
- */
+// ==============================
+// 2. POST REQUEST: THÊM DÒNG OTRS VÀO CUỐI SHEET
+// ==============================
 function doPost(e) {
   try {
     let postData = {};
     if (e && e.postData && e.postData.contents) {
       postData = JSON.parse(e.postData.contents);
     }
-    const action = String(postData.action || "").toLowerCase();
 
-    // Hỗ trợ action: input_row, add_row, addrow, otrs
-    if (action === "input_row" || action === "add_row" || action === "addrow" || action === "inputrow" || action === "otrs") {
-      let result;
-      if (Array.isArray(postData.rows) && postData.rows.length > 0) {
-        result = inputRow_addRows(postData.rows);
-      } else if (postData.data) {
-        result = inputRow_addRow(postData.data);
-      } else {
-        result = inputRow_addRow(postData);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const otrsSheet = ss.getSheets().find(s => s.getSheetId() === OTRS_SHEET_GID) || ss.getActiveSheet();
+
+    // Hỗ trợ cả mảng rows hoặc 1 dòng đơn lẻ (data / postData)
+    const rowsToAdd = Array.isArray(postData.rows) && postData.rows.length > 0 
+      ? postData.rows 
+      : (postData.data ? [postData.data] : [postData]);
+
+    let count = 0;
+    rowsToAdd.forEach(function(row) {
+      // 12 cột từ A đến L theo chuẩn Template.xlsx
+      const rowValues = [
+        row.colA || "", // A: Date (DD/MM/YYYY)
+        row.colB || "", // B: Ngày hoàn thành (DD/MM/YYYY)
+        row.colC || "", // C: Dự án (NVN)
+        row.colD || "", // D: Tần suất (Cố định)
+        row.colE || "", // E: Kênh hỗ trợ (OTRS)
+        row.colF || "", // F: Tên CV
+        row.colG || "", // G: Chi tiết (Tên CV_TicketNumber_Tiêu đề)
+        row.colH || "", // H: Due date (DD/MM/YYYY)
+        row.colI || "", // I: Trạng thái (Done)
+        row.colJ || "", // J: Mã nhân viên (tanh.h.bui.3811)
+        row.colK || "", // K: Công việc cần làm (Giống Chi tiết)
+        row.colL || ""  // L: Kết quả CV (Đã hoàn tất + Chi tiết)
+      ];
+
+      // Chỉ thêm dòng nếu có dữ liệu
+      if (rowValues.some(val => val !== "")) {
+        otrsSheet.appendRow(rowValues);
+        count++;
       }
-      return ContentService.createTextOutput(JSON.stringify(result))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+    });
 
-    return ContentService.createTextOutput(JSON.stringify({
-      success: false,
-      message: "Invalid action",
-      receivedAction: postData.action || null
-    })).setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse({
+      success: true,
+      message: "Đã thêm " + count + " dòng mới thành công vào sheet!",
+      insertedCount: count
+    });
 
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({
+  } catch (error) {
+    return jsonResponse({
       success: false,
-      message: err.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+      error: error.message
+    });
   }
+}
+
+// ==============================
+// 3. JSON RESPONSE
+// ==============================
+function jsonResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data, null, 2))
+    .setMimeType(ContentService.MimeType.JSON);
 }
