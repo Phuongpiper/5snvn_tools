@@ -224,12 +224,14 @@
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: var(--shadow-sm);
     }
+
     .user-employee-chip:hover {
       background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
       border-color: #818cf8;
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.18);
     }
+
     .user-chip-icon {
       width: 26px;
       height: 26px;
@@ -243,12 +245,14 @@
       flex-shrink: 0;
       box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
     }
+
     .user-chip-text {
       display: flex;
       flex-direction: column;
       line-height: 1.25;
       text-align: left;
     }
+
     .user-chip-code {
       font-family: var(--font-mono);
       font-size: 11px;
@@ -256,11 +260,13 @@
       color: var(--primary);
       letter-spacing: 0.3px;
     }
+
     .user-chip-name {
       font-size: 12.5px;
       font-weight: 700;
       color: var(--text-main);
     }
+
     .user-chip-switch-badge {
       display: inline-flex;
       align-items: center;
@@ -275,6 +281,7 @@
       margin-left: 6px;
       transition: all 0.15s ease;
     }
+
     .user-employee-chip:hover .user-chip-switch-badge {
       background: var(--primary);
       color: #ffffff;
@@ -296,10 +303,12 @@
       opacity: 0;
       transition: opacity 0.22s ease;
     }
+
     .member-modal-backdrop.show {
       display: flex;
       opacity: 1;
     }
+
     .member-modal-box {
       background: #ffffff;
       border-radius: var(--radius-lg);
@@ -314,9 +323,11 @@
       transform: translateY(14px) scale(0.97);
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
     .member-modal-backdrop.show .member-modal-box {
       transform: translateY(0) scale(1);
     }
+
     .member-modal-header {
       padding: 18px 22px;
       border-bottom: 1px solid var(--border);
@@ -325,6 +336,7 @@
       justify-content: space-between;
       background: #fafbfc;
     }
+
     .member-modal-header-icon {
       width: 40px;
       height: 40px;
@@ -338,6 +350,7 @@
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
       flex-shrink: 0;
     }
+
     .member-modal-header h3 {
       font-size: 15.5px;
       font-weight: 800;
@@ -345,10 +358,12 @@
       margin-bottom: 2px;
       letter-spacing: -0.01em;
     }
+
     .member-modal-header p {
       font-size: 12px;
       color: var(--text-muted);
     }
+
     .member-modal-close-btn {
       background: transparent;
       border: none;
@@ -363,19 +378,23 @@
       transition: all 0.15s ease;
       font-size: 15px;
     }
+
     .member-modal-close-btn:hover {
       background: #f1f5f9;
       color: var(--text-main);
     }
+
     .member-modal-body {
       padding: 18px 22px;
       overflow-y: auto;
       flex: 1;
     }
+
     .member-search-box {
       position: relative;
       margin-bottom: 14px;
     }
+
     .member-search-box i {
       position: absolute;
       left: 12px;
@@ -384,6 +403,7 @@
       color: var(--text-light);
       font-size: 13px;
     }
+
     .member-search-box input {
       width: 100%;
       padding: 9px 12px 9px 34px;
@@ -395,11 +415,13 @@
       background: var(--bg);
       transition: all 0.15s ease;
     }
+
     .member-search-box input:focus {
       border-color: var(--primary);
       background: #ffffff;
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
     }
+
     .member-cards-container {
       display: flex;
       flex-direction: column;
@@ -408,6 +430,7 @@
       overflow-y: auto;
       padding-right: 2px;
     }
+
     .member-card-option {
       display: flex;
       align-items: center;
@@ -419,16 +442,19 @@
       cursor: pointer;
       transition: all 0.15s ease;
     }
+
     .member-card-option:hover {
       border-color: #a5b4fc;
       background: #f8fafc;
       transform: translateY(-1px);
     }
+
     .member-card-option.selected {
       border-color: var(--primary);
       background: #f5f3ff;
       box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.18);
     }
+
     .member-card-left {
       display: flex;
       align-items: center;
@@ -436,6 +462,7 @@
       overflow: hidden;
       min-width: 0;
     }
+
     .member-card-avatar {
       width: 36px;
       height: 36px;
@@ -450,16 +477,19 @@
       flex-shrink: 0;
       border: 1px solid #c7d2fe;
     }
+
     .member-card-option.selected .member-card-avatar {
       background: var(--primary);
       color: #ffffff;
       border-color: var(--primary);
     }
+
     .member-card-info {
       display: flex;
       flex-direction: column;
       min-width: 0;
     }
+
     .member-card-name {
       font-size: 13.5px;
       font-weight: 700;
@@ -468,6 +498,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .member-card-code {
       font-family: var(--font-mono);
       font-size: 11px;
@@ -475,10 +506,12 @@
       color: var(--text-muted);
       letter-spacing: 0.3px;
     }
+
     .member-card-option.selected .member-card-code {
       color: var(--primary);
       font-weight: 700;
     }
+
     .member-card-check {
       width: 22px;
       height: 22px;
@@ -492,11 +525,13 @@
       transition: all 0.15s ease;
       flex-shrink: 0;
     }
+
     .member-card-option.selected .member-card-check {
       border-color: var(--primary);
       background: var(--primary);
       color: #ffffff;
     }
+
     .member-modal-footer {
       padding: 14px 22px;
       border-top: 1px solid var(--border);
@@ -507,6 +542,7 @@
       flex-wrap: wrap;
       gap: 10px;
     }
+
     .btn-modal-confirm {
       background: var(--primary);
       color: #ffffff;
@@ -523,16 +559,19 @@
       font-family: inherit;
       box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
     }
+
     .btn-modal-confirm:hover:not(:disabled) {
       background: var(--primary-hover);
       transform: translateY(-1px);
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
     }
+
     .btn-modal-confirm:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       box-shadow: none;
     }
+
     .btn-modal-cancel {
       background: #ffffff;
       color: var(--text-muted);
@@ -545,6 +584,7 @@
       transition: all 0.16s ease;
       font-family: inherit;
     }
+
     .btn-modal-cancel:hover {
       background: #f1f5f9;
       color: var(--text-main);
@@ -840,6 +880,7 @@
       align-items: center;
       line-height: 1.3;
     }
+
     .hint-code-badge:hover {
       background: #bfdbfe;
       border-color: #93c5fd;
@@ -863,12 +904,14 @@
       font-family: inherit;
       vertical-align: middle;
     }
+
     .btn-copy-chip:hover {
       background: var(--primary);
       color: #ffffff;
       border-color: var(--primary);
       transform: translateY(-1px);
     }
+
     .btn-copy-chip:active {
       transform: translateY(0);
     }
@@ -901,10 +944,27 @@
     }
 
     @keyframes shakeInput {
-      10%, 90% { transform: translate3d(-1px, 0, 0); }
-      20%, 80% { transform: translate3d(2px, 0, 0); }
-      30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
-      40%, 60% { transform: translate3d(3px, 0, 0); }
+
+      10%,
+      90% {
+        transform: translate3d(-1px, 0, 0);
+      }
+
+      20%,
+      80% {
+        transform: translate3d(2px, 0, 0);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translate3d(-3px, 0, 0);
+      }
+
+      40%,
+      60% {
+        transform: translate3d(3px, 0, 0);
+      }
     }
 
     /* ── RESULT COMMAND BAR ── */
@@ -1040,10 +1100,12 @@
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
     }
+
     .result-date-picker-wrap:hover {
       background: rgba(79, 70, 229, 0.15);
       border-color: rgba(79, 70, 229, 0.5);
     }
+
     .input-issue-date {
       background: transparent;
       border: none;
@@ -1055,15 +1117,18 @@
       cursor: pointer;
       width: 120px;
     }
+
     .input-issue-date::-webkit-calendar-picker-indicator {
       filter: invert(0.7) sepia(1) saturate(3) hue-rotate(200deg);
       cursor: pointer;
       opacity: 0.8;
     }
+
     /* Highlight khi chọn ngày khác hôm nay */
     .input-issue-date.is-backdate {
       color: #fbbf24;
     }
+
     .result-date-picker-wrap.is-backdate {
       background: rgba(251, 191, 36, 0.1);
       border-color: rgba(251, 191, 36, 0.4);
@@ -1608,7 +1673,8 @@
       border-bottom: none;
     }
 
-    .ac-hq-item:hover, .ac-hq-item.active {
+    .ac-hq-item:hover,
+    .ac-hq-item.active {
       background: #f8fafc;
     }
 
@@ -1777,6 +1843,7 @@
       border: 1px solid var(--border);
       flex-shrink: 0;
     }
+
     .studio-nav-btn {
       padding: 7px 16px;
       border-radius: var(--radius-sm);
@@ -1794,15 +1861,18 @@
       font-family: inherit;
       flex-shrink: 0;
     }
+
     .studio-nav-btn:hover {
       color: var(--text-main);
       background: rgba(255, 255, 255, 0.7);
     }
+
     .studio-nav-btn.active {
       background: #ffffff;
       color: var(--primary);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
+
     .nav-count-badge {
       font-size: 11px;
       padding: 2px 7px;
@@ -1812,6 +1882,7 @@
       font-weight: 800;
       font-family: var(--font-mono);
     }
+
     .studio-nav-btn.active .nav-count-badge {
       background: var(--primary);
       color: #ffffff;
@@ -1826,6 +1897,7 @@
       box-shadow: var(--shadow-sm);
       margin-bottom: 20px;
     }
+
     .stats-filter-row {
       display: flex;
       align-items: center;
@@ -1836,11 +1908,13 @@
       padding-bottom: 16px;
       border-bottom: 1px solid var(--border-light);
     }
+
     .stats-title-group {
       display: flex;
       align-items: center;
       gap: 14px;
     }
+
     .stats-avatar-icon {
       width: 44px;
       height: 44px;
@@ -1852,22 +1926,26 @@
       justify-content: center;
       font-size: 20px;
     }
+
     .stats-title-group h2 {
       font-size: 18px;
       font-weight: 800;
       color: var(--text-main);
       margin-bottom: 2px;
     }
+
     .stats-title-group p {
       font-size: 12.5px;
       color: var(--text-muted);
     }
+
     .stats-quick-actions {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
+
     .btn-stats-tool {
       background: #ffffff;
       border: 1px solid var(--border);
@@ -1883,19 +1961,39 @@
       transition: all 0.16s ease;
       font-family: inherit;
     }
+
     .btn-stats-tool:hover {
       background: var(--primary-light);
       border-color: var(--primary-border);
       color: var(--primary);
     }
+
     .btn-stats-tool.primary {
       background: var(--primary);
       border-color: var(--primary);
       color: #ffffff;
     }
+
     .btn-stats-tool.primary:hover {
       background: var(--primary-dark);
       border-color: var(--primary-dark);
+    }
+
+    .btn-stats-tool.success {
+      background: #059669;
+      border-color: #059669;
+      color: #ffffff;
+    }
+
+    .btn-stats-tool.success:hover {
+      background: #047857;
+      border-color: #047857;
+      color: #ffffff;
+    }
+
+    .btn-stats-tool.success.copied {
+      background: #0d9488;
+      border-color: #0d9488;
     }
 
     .stats-filter-controls {
@@ -1904,12 +2002,14 @@
       gap: 14px;
       flex-wrap: wrap;
     }
+
     .date-preset-pills {
       display: flex;
       align-items: center;
       gap: 6px;
       flex-wrap: wrap;
     }
+
     .filter-group-label {
       font-size: 12px;
       font-weight: 700;
@@ -1919,6 +2019,7 @@
       align-items: center;
       gap: 4px;
     }
+
     .preset-pill {
       background: #f8fafc;
       border: 1px solid var(--border);
@@ -1931,16 +2032,19 @@
       transition: all 0.15s ease;
       font-family: inherit;
     }
+
     .preset-pill:hover {
       background: #e2e8f0;
       color: var(--text-main);
     }
+
     .preset-pill.active {
       background: var(--primary);
       color: #ffffff;
       border-color: var(--primary);
       box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
     }
+
     .stats-custom-dates {
       display: flex;
       align-items: center;
@@ -1950,6 +2054,7 @@
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
     }
+
     .stats-date-input {
       padding: 4px 8px;
       font-size: 12px;
@@ -1960,18 +2065,21 @@
       color: var(--text-main);
       background: #ffffff;
     }
+
     .stats-search-box {
       margin-left: auto;
       position: relative;
       display: flex;
       align-items: center;
     }
+
     .stats-search-box i {
       position: absolute;
       left: 10px;
       font-size: 12px;
       color: var(--text-muted);
     }
+
     .stats-search-box input {
       padding: 6px 12px 6px 30px;
       font-size: 12.5px;
@@ -1983,11 +2091,13 @@
       background: #ffffff;
       transition: all 0.16s ease;
     }
+
     .stats-search-box input:focus {
       border-color: var(--primary);
       box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
       width: 280px;
     }
+
     .stats-search-box button {
       position: absolute;
       right: 8px;
@@ -2005,6 +2115,7 @@
       gap: 16px;
       margin-bottom: 20px;
     }
+
     .stats-kpi-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -2016,10 +2127,12 @@
       gap: 16px;
       transition: transform 0.16s ease, box-shadow 0.16s ease;
     }
+
     .stats-kpi-card:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-md);
     }
+
     .kpi-icon-wrap {
       width: 50px;
       height: 50px;
@@ -2030,12 +2143,32 @@
       font-size: 22px;
       flex-shrink: 0;
     }
-    .kpi-icon-wrap.indigo { background: #e0e7ff; color: #4338ca; }
-    .kpi-icon-wrap.emerald { background: #d1fae5; color: #047857; }
-    .kpi-icon-wrap.violet { background: #ede9fe; color: #6d28d9; }
-    .kpi-icon-wrap.amber { background: #fef3c7; color: #b45309; }
 
-    .kpi-content { flex: 1; min-width: 0; }
+    .kpi-icon-wrap.indigo {
+      background: #e0e7ff;
+      color: #4338ca;
+    }
+
+    .kpi-icon-wrap.emerald {
+      background: #d1fae5;
+      color: #047857;
+    }
+
+    .kpi-icon-wrap.violet {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    .kpi-icon-wrap.amber {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .kpi-content {
+      flex: 1;
+      min-width: 0;
+    }
+
     .kpi-label {
       font-size: 12px;
       font-weight: 700;
@@ -2044,6 +2177,7 @@
       letter-spacing: 0.04em;
       margin-bottom: 4px;
     }
+
     .kpi-value {
       font-size: 24px;
       font-weight: 800;
@@ -2054,6 +2188,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .kpi-subtext {
       font-size: 11.5px;
       color: var(--text-muted);
@@ -2071,6 +2206,7 @@
       padding: 20px 24px;
       box-shadow: var(--shadow-sm);
     }
+
     .stats-card-header {
       display: flex;
       align-items: center;
@@ -2078,16 +2214,19 @@
       margin-bottom: 16px;
       gap: 12px;
     }
+
     .stats-card-title {
       display: flex;
       align-items: center;
       gap: 10px;
     }
+
     .stats-card-title h3 {
       font-size: 15.5px;
       font-weight: 800;
       color: var(--text-main);
     }
+
     .stats-card-badge {
       font-size: 11.5px;
       font-weight: 700;
@@ -2096,6 +2235,7 @@
       background: var(--primary-light);
       color: var(--primary);
     }
+
     .btn-stat-filter-clear {
       font-size: 11.5px;
       font-weight: 600;
@@ -2114,12 +2254,14 @@
       width: 100%;
       overflow-x: auto;
     }
+
     .table-stitch-stats {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
       font-size: 13px;
     }
+
     .table-stitch-stats th {
       background: #f8fafc;
       color: var(--text-muted);
@@ -2132,15 +2274,18 @@
       border-bottom: 1px solid var(--border);
       text-align: left;
     }
+
     .table-stitch-stats td {
       padding: 12px 14px;
       border-bottom: 1px solid var(--border-light);
       vertical-align: middle;
       color: var(--text-main);
     }
+
     .table-stitch-stats tr:hover td {
       background: #f8fafc;
     }
+
     .table-stitch-stats tr.selected-row td {
       background: #eef2ff !important;
     }
@@ -2158,15 +2303,32 @@
       background: #f1f5f9;
       color: var(--text-muted);
     }
-    .rank-badge.top-1 { background: #fef08a; color: #854d0e; box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3); font-size: 15px; }
-    .rank-badge.top-2 { background: #e2e8f0; color: #334155; font-size: 15px; }
-    .rank-badge.top-3 { background: #ffedd5; color: #9a3412; font-size: 15px; }
+
+    .rank-badge.top-1 {
+      background: #fef08a;
+      color: #854d0e;
+      box-shadow: 0 2px 6px rgba(234, 179, 8, 0.3);
+      font-size: 15px;
+    }
+
+    .rank-badge.top-2 {
+      background: #e2e8f0;
+      color: #334155;
+      font-size: 15px;
+    }
+
+    .rank-badge.top-3 {
+      background: #ffedd5;
+      color: #9a3412;
+      font-size: 15px;
+    }
 
     .staff-pill-stats {
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
+
     .staff-avatar-mini {
       width: 30px;
       height: 30px;
@@ -2180,11 +2342,13 @@
       justify-content: center;
       flex-shrink: 0;
     }
+
     .staff-name-text {
       font-weight: 700;
       color: var(--text-main);
       font-size: 13.5px;
     }
+
     .staff-code-text {
       font-size: 11px;
       color: var(--text-muted);
@@ -2196,6 +2360,7 @@
       align-items: center;
       gap: 12px;
     }
+
     .stats-count-num {
       font-size: 16px;
       font-weight: 800;
@@ -2203,6 +2368,7 @@
       color: var(--text-main);
       min-width: 32px;
     }
+
     .stats-progress-bar {
       flex: 1;
       height: 8px;
@@ -2211,6 +2377,7 @@
       overflow: hidden;
       position: relative;
     }
+
     .stats-progress-fill {
       height: 100%;
       background: linear-gradient(90deg, #6366f1 0%, #4f46e5 100%);
@@ -2232,6 +2399,7 @@
       margin: 2px;
       white-space: nowrap;
     }
+
     .tag-solution-chip b {
       color: var(--primary);
     }
@@ -2250,6 +2418,7 @@
       gap: 5px;
       transition: all 0.15s ease;
     }
+
     .btn-stat-action:hover {
       background: var(--primary-light);
       border-color: var(--primary-border);
@@ -2267,16 +2436,19 @@
       font-weight: 700;
       white-space: nowrap;
     }
+
     .voip-status-badge.answered {
       background: #ecfdf5;
       color: #047857;
       border: 1px solid #a7f3d0;
     }
+
     .voip-status-badge.missed {
       background: #fef2f2;
       color: #b91c1c;
       border: 1px solid #fecaca;
     }
+
     .voip-type-badge {
       display: inline-flex;
       align-items: center;
@@ -2287,16 +2459,19 @@
       font-weight: 700;
       white-space: nowrap;
     }
+
     .voip-type-badge.inbound {
       background: #eff6ff;
       color: #1d4ed8;
       border: 1px solid #bfdbfe;
     }
+
     .voip-type-badge.outbound {
       background: #fffbeb;
       color: #b45309;
       border: 1px solid #fde68a;
     }
+
     .voip-phone-chip {
       font-family: var(--font-mono);
       font-weight: 700;
@@ -2312,12 +2487,14 @@
       transition: all 0.15s ease;
       text-decoration: none;
     }
+
     .voip-phone-chip:hover {
       background: #eef2ff;
       border-color: #c7d2fe;
       color: var(--primary);
       box-shadow: var(--shadow-sm);
     }
+
     .btn-voip-action {
       display: inline-flex;
       align-items: center;
@@ -2331,11 +2508,13 @@
       transition: all 0.16s ease;
       font-family: inherit;
     }
+
     .btn-voip-action.primary {
       background: var(--primary);
       color: #ffffff;
       border-color: var(--primary);
     }
+
     .btn-voip-action.primary:hover {
       background: var(--primary-hover);
       box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
@@ -2346,22 +2525,28 @@
       background: #fff1f2 !important;
       color: #881337;
     }
+
     .table-stitch-stats tr.call-row-unnoted:hover td {
       background: #ffe4e6 !important;
     }
+
     .table-stitch-stats tr.call-row-unnoted td:first-child {
       border-left: 4px solid #ef4444 !important;
       font-weight: 800;
     }
+
     .table-stitch-stats tr.call-row-in-temp td {
       background: #fffbeb !important;
     }
+
     .table-stitch-stats tr.call-row-in-temp:hover td {
       background: #fef3c7 !important;
     }
+
     .table-stitch-stats tr.call-row-in-temp td:first-child {
       border-left: 4px solid #f59e0b !important;
     }
+
     .table-stitch-stats tr.call-row-noted td:first-child {
       border-left: 4px solid #10b981 !important;
     }
@@ -2376,16 +2561,19 @@
       font-weight: 800;
       white-space: nowrap;
     }
+
     .voip-note-badge.unnoted {
       background: #fee2e2;
       color: #b91c1c;
       border: 1px solid #fca5a5;
     }
+
     .voip-note-badge.in-temp {
       background: #fef3c7;
       color: #b45309;
       border: 1px solid #fcd34d;
     }
+
     .voip-note-badge.noted {
       background: #ecfdf5;
       color: #047857;
@@ -2407,17 +2595,20 @@
       border-radius: 6px;
       white-space: nowrap;
     }
+
     .voip-ext-chip.my-ext {
       background: #e0e7ff;
       border-color: #c7d2fe;
       color: #3730a3;
     }
+
     .voip-ext-chip .ext-staff-name {
       font-weight: 700;
       color: var(--primary);
       font-size: 11.5px;
       font-family: var(--font-sans);
     }
+
     .voip-ext-chip.my-ext .ext-staff-name {
       color: #4338ca;
     }
@@ -2433,6 +2624,7 @@
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.08);
       transition: all 0.2s ease;
     }
+
     .suggestions-header {
       display: flex;
       align-items: center;
@@ -2440,11 +2632,13 @@
       flex-wrap: wrap;
       gap: 12px;
     }
+
     .suggestions-title-group {
       display: flex;
       align-items: center;
       gap: 12px;
     }
+
     .sug-badge-count {
       font-size: 11px;
       font-weight: 800;
@@ -2456,16 +2650,19 @@
       align-items: center;
       gap: 4px;
     }
+
     .suggestions-actions {
       display: flex;
       align-items: center;
       gap: 10px;
     }
+
     .sug-filter-pills {
       display: flex;
       align-items: center;
       gap: 6px;
     }
+
     .sug-pill-btn {
       font-size: 11.5px;
       font-weight: 700;
@@ -2481,15 +2678,18 @@
       transition: all 0.15s ease;
       font-family: inherit;
     }
+
     .sug-pill-btn.active {
       background: #f59e0b;
       border-color: #d97706;
       color: #ffffff;
       box-shadow: 0 1px 3px rgba(217, 119, 6, 0.25);
     }
+
     .sug-pill-btn:hover:not(.active) {
       background: #fef3c7;
     }
+
     .suggestions-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
@@ -2499,13 +2699,16 @@
       overflow-y: auto;
       padding-right: 4px;
     }
+
     .suggestions-grid::-webkit-scrollbar {
       width: 6px;
     }
+
     .suggestions-grid::-webkit-scrollbar-thumb {
       background: #fcd34d;
       border-radius: 3px;
     }
+
     .sug-item-card {
       background: #ffffff;
       border: 1px solid #fde68a;
@@ -2514,19 +2717,22 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
       transition: all 0.15s ease;
     }
+
     .sug-item-card:hover {
       border-color: #f59e0b;
       box-shadow: 0 3px 8px rgba(245, 158, 11, 0.12);
       transform: translateY(-1px);
     }
+
     .sug-item-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
+
     .sug-item-phone {
       font-family: var(--font-mono);
       font-weight: 800;
@@ -2536,6 +2742,7 @@
       align-items: center;
       gap: 6px;
     }
+
     .sug-item-time {
       font-size: 11.5px;
       color: var(--text-muted);
@@ -2544,6 +2751,7 @@
       align-items: center;
       gap: 4px;
     }
+
     .sug-item-mid {
       display: flex;
       align-items: center;
@@ -2553,6 +2761,7 @@
       flex-wrap: wrap;
       gap: 4px;
     }
+
     .sug-item-actions {
       display: flex;
       align-items: center;
@@ -2561,6 +2770,7 @@
       padding-top: 6px;
       border-top: 1px dashed #f1f5f9;
     }
+
     .btn-sug-action {
       flex: 1;
       font-size: 11px;
@@ -2576,17 +2786,21 @@
       transition: all 0.12s ease;
       font-family: inherit;
     }
+
     .btn-sug-action.editor {
       background: #e0e7ff;
       color: #3730a3;
     }
+
     .btn-sug-action.editor:hover {
       background: #c7d2fe;
     }
+
     .btn-sug-action.add-temp {
       background: #ecfdf5;
       color: #065f46;
     }
+
     /* ── Report Page Styling ── */
     .report-header-card {
       background: var(--surface);
@@ -2596,6 +2810,7 @@
       box-shadow: var(--shadow-sm);
       margin-bottom: 20px;
     }
+
     .report-header-top {
       display: flex;
       align-items: center;
@@ -2603,11 +2818,13 @@
       flex-wrap: wrap;
       gap: 16px;
     }
+
     .report-title-group {
       display: flex;
       align-items: center;
       gap: 14px;
     }
+
     .report-title-icon {
       width: 46px;
       height: 46px;
@@ -2621,28 +2838,33 @@
       flex-shrink: 0;
       border: 1px solid #c7d2fe;
     }
+
     .report-header-actions {
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
+
     .report-kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 16px;
       margin-bottom: 20px;
     }
+
     @media (max-width: 1200px) {
       .report-kpi-grid {
         grid-template-columns: repeat(2, 1fr);
       }
     }
+
     @media (max-width: 640px) {
       .report-kpi-grid {
         grid-template-columns: 1fr;
       }
     }
+
     .report-card-box {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -2656,10 +2878,12 @@
       overflow: hidden;
       transition: all 0.2s ease;
     }
+
     .report-card-box:hover {
       box-shadow: var(--shadow-md);
       transform: translateY(-2px);
     }
+
     .report-card-box::before {
       content: "";
       position: absolute;
@@ -2668,10 +2892,22 @@
       right: 0;
       height: 4px;
     }
-    .report-card-box.blue::before { background: linear-gradient(90deg, #0284c7, #38bdf8); }
-    .report-card-box.purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
-    .report-card-box.emerald::before { background: linear-gradient(90deg, #059669, #34d399); }
-    .report-card-box.amber::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+
+    .report-card-box.blue::before {
+      background: linear-gradient(90deg, #0284c7, #38bdf8);
+    }
+
+    .report-card-box.purple::before {
+      background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    }
+
+    .report-card-box.emerald::before {
+      background: linear-gradient(90deg, #059669, #34d399);
+    }
+
+    .report-card-box.amber::before {
+      background: linear-gradient(90deg, #d97706, #fbbf24);
+    }
 
     .report-metric-pill {
       display: inline-flex;
@@ -2682,6 +2918,7 @@
       font-size: 12px;
       font-weight: 700;
     }
+
     .report-split-row {
       display: flex;
       align-items: center;
@@ -2705,31 +2942,37 @@
       </div>
       <div class="brand-info">
         <h1>Note Issue Studio <span class="brand-badge">PROD 2.0</span></h1>
-        <p>Soạn thảo cú pháp ghi chú Issue chuẩn hoá &amp; Quản trị danh sách tạm</p>
       </div>
     </div>
 
     <!-- ── NAVIGATION TABS (CHUYỂN ĐỔI GIỮA SOẠN ISSUE & THỐNG KÊ NV & VOIP24H) ── -->
     <div class="studio-header-nav" id="studioHeaderNav">
-      <button type="button" class="studio-nav-btn active" id="btnNavEditor" onclick="switchStudioView('editor')" title="Soạn thảo & Quản trị Issue">
+      <button type="button" class="studio-nav-btn active" id="btnNavEditor" onclick="switchStudioView('editor')"
+        title="Soạn thảo & Quản trị Issue">
         <i class="fa-solid fa-pen-to-square"></i> Soạn Issue
       </button>
-      <button type="button" class="studio-nav-btn" id="btnNavStats" onclick="switchStudioView('stats')" title="Xem thống kê số lượng Issue theo nhân viên">
+      <button type="button" class="studio-nav-btn" id="btnNavStats" onclick="switchStudioView('stats')"
+        title="Xem thống kê số lượng Issue theo nhân viên">
         <i class="fa-solid fa-chart-pie"></i> Số lượng theo NV
         <span class="nav-count-badge" id="navTotalIssuesBadge">0</span>
       </button>
-      <button type="button" class="studio-nav-btn" id="btnNavVoip" onclick="switchStudioView('voip')" title="Lịch sử cuộc gọi tổng đài Voip24h (Hotline)">
+      <button type="button" class="studio-nav-btn" id="btnNavVoip" onclick="switchStudioView('voip')"
+        title="Lịch sử cuộc gọi tổng đài Voip24h (Hotline)">
         <i class="fa-solid fa-phone-volume"></i> Lịch sử cuộc gọi
-        <span class="nav-count-badge" id="navVoipCallsBadge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;">0</span>
+        <span class="nav-count-badge" id="navVoipCallsBadge"
+          style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;">0</span>
       </button>
-      <button type="button" class="studio-nav-btn" id="btnNavReport" onclick="switchStudioView('report')" title="Báo cáo tổng hợp số liệu (Cuộc gọi, Issue, Email, OTRS)">
+      <button type="button" class="studio-nav-btn" id="btnNavReport" onclick="switchStudioView('report')"
+        title="Báo cáo tổng hợp số liệu (Cuộc gọi, Issue, Email, OTRS)">
         <i class="fa-solid fa-chart-column"></i> Báo cáo
       </button>
     </div>
 
     <div class="header-actions">
       <!-- Current Employee Chip (Single Interactive Action Button) -->
-      <div class="user-employee-chip" id="userEmployeeChip" onclick="window.openSelectMemberModal && window.openSelectMemberModal(true)" role="button" tabindex="0" title="Nhân viên đang làm việc trên máy này (Bấm để đổi nhân viên)">
+      <div class="user-employee-chip" id="userEmployeeChip"
+        onclick="window.openSelectMemberModal && window.openSelectMemberModal(true)" role="button" tabindex="0"
+        title="Nhân viên đang làm việc trên máy này (Bấm để đổi nhân viên)">
         <span class="user-chip-icon"><i class="fa-solid fa-id-badge"></i></span>
         <div class="user-chip-text">
           <span class="user-chip-code" id="headerUserCode">Đang tải...</span>
@@ -2738,7 +2981,8 @@
         <span class="user-chip-switch-badge"><i class="fa-solid fa-arrows-rotate"></i> Đổi</span>
       </div>
 
-      <button type="button" class="btn-header-action" id="btnRefreshData" title="Tải lại dữ liệu mới nhất từ Cloud R2 & Hệ thống">
+      <button type="button" class="btn-header-action" id="btnRefreshData"
+        title="Tải lại dữ liệu mới nhất từ Cloud R2 & Hệ thống">
         <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ
       </button>
     </div>
@@ -2773,9 +3017,11 @@
             <thead>
               <!-- Field Titles -->
               <tr>
-                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-circle-question"></i> Tên solution</th>
+                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-circle-question"></i> Tên solution
+                </th>
                 <th class="th-field-title" style="width: 9%;"><i class="fa-solid fa-layer-group"></i> HH / DC</th>
-                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-store"></i> Nhà phân phối (NPP)</th>
+                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-store"></i> Nhà phân phối (NPP)
+                </th>
                 <th class="th-field-title" style="width: 13%;"><i class="fa-solid fa-user-tag"></i> NVBH</th>
                 <th class="th-field-title" style="width: 18%;"><i class="fa-solid fa-user-shield"></i> SUP/HQ/Admin</th>
                 <th class="th-field-title" style="width: 14%;"><i class="fa-solid fa-phone"></i> Hotline</th>
@@ -2839,8 +3085,8 @@
                 <!-- H: Hotline -->
                 <td class="td-field-cell">
                   <div class="field-input-box">
-                    <input type="text" id="inputHotline" class="form-control-studio" placeholder="VD: 0909280969, Zalo, OTRS..."
-                      autocomplete="off" spellcheck="false" />
+                    <input type="text" id="inputHotline" class="form-control-studio"
+                      placeholder="VD: 0909280969, Zalo, OTRS..." autocomplete="off" spellcheck="false" />
                   </div>
                   <div class="field-hint-chip" id="hintHotline"></div>
                 </td>
@@ -2861,7 +3107,8 @@
                 title="Sao chép cú pháp vào bộ nhớ tạm (Ctrl+C)">
                 <i class="fa-regular fa-copy"></i> Sao chép cú pháp
               </button>
-              <div class="result-date-picker-wrap" title="Ngày ghi nhận Issue. Mặc định là hôm nay, có thể đổi để note lại issue cũ bị miss.">
+              <div class="result-date-picker-wrap"
+                title="Ngày ghi nhận Issue. Mặc định là hôm nay, có thể đổi để note lại issue cũ bị miss.">
                 <i class="fa-regular fa-calendar" style="color:var(--primary); font-size:13px;"></i>
                 <input type="date" id="inputIssueDate" class="input-issue-date"
                   title="Chọn ngày ghi nhận (mặc định hôm nay)" />
@@ -2896,15 +3143,21 @@
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <h2 style="margin:0; font-size:15px; font-weight:800; white-space:nowrap;">Danh sách tạm</h2>
                 <span class="temp-counter-pill" id="badgeTempCount">0 note</span>
-                <span id="tempStaffBadge" style="font-size:11.5px; font-weight:700; color:var(--primary); background:#eef2ff; border:1px solid #c7d2fe; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); white-space:nowrap;" title="Danh sách tạm của nhân viên này">
+                <span id="tempStaffBadge"
+                  style="font-size:11.5px; font-weight:700; color:var(--primary); background:#eef2ff; border:1px solid #c7d2fe; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); white-space:nowrap;"
+                  title="Danh sách tạm của nhân viên này">
                   <i class="fa-solid fa-user-tag" style="font-size:10px;"></i>
                   <span id="tempStaffText">--</span>
                 </span>
-                <span id="tempCloudStatus" style="font-size:11px; color:#10b981; display:inline-flex; align-items:center; gap:4px; font-weight:600; white-space:nowrap;" title="Trạng thái Cloud R2">
+                <span id="tempCloudStatus"
+                  style="font-size:11px; color:#10b981; display:inline-flex; align-items:center; gap:4px; font-weight:600; white-space:nowrap;"
+                  title="Trạng thái Cloud R2">
                   <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Cloud R2</span>
                 </span>
               </div>
-              <p style="font-size:11.5px; color:var(--text-muted); margin:2px 0 0 0; white-space:nowrap;" title="Danh sách tạm riêng cho từng nhân viên, đồng bộ đa thiết bị. Nhấn Đồng bộ R2 để chuyển vào Issue & Call Log.">Đồng bộ Cloud R2 · Nhấn <strong>Đồng bộ R2</strong> để chuyển vào Call Log &amp; Issue</p>
+              <p style="font-size:11.5px; color:var(--text-muted); margin:2px 0 0 0; white-space:nowrap;"
+                title="Danh sách tạm riêng cho từng nhân viên, đồng bộ đa thiết bị. Nhấn Đồng bộ R2 để chuyển vào Issue & Call Log.">
+                Đồng bộ Cloud R2 · Nhấn <strong>Đồng bộ R2</strong> để chuyển vào Call Log &amp; Issue</p>
             </div>
           </div>
 
@@ -2913,7 +3166,8 @@
               <i class="fa-solid fa-magnifying-glass temp-search-icon"></i>
               <input type="text" id="searchTempInput" class="temp-search-input" placeholder="Lọc danh sách tạm..." />
             </div>
-            <button type="button" class="btn-temp-action" id="btnExportExcel" title="Xuất toàn bộ ghi chú ra file Excel">
+            <button type="button" class="btn-temp-action" id="btnExportExcel"
+              title="Xuất toàn bộ ghi chú ra file Excel">
               <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Xuất Excel
             </button>
             <button type="button" class="btn-temp-action" id="btnCopyAllTemp"
@@ -2923,22 +3177,27 @@
             <button type="button" class="btn-temp-action danger" id="btnClearAllTemp" title="Xoá toàn bộ danh sách tạm">
               <i class="fa-solid fa-trash-can"></i> Xoá hết
             </button>
-            <button type="button" class="btn-temp-action" id="btnSyncR2Temp" title="Đồng bộ danh sách Issue với Cloud R2">
+            <button type="button" class="btn-temp-action" id="btnSyncR2Temp"
+              title="Đồng bộ danh sách Issue với Cloud R2">
               <i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary);"></i> Đồng bộ R2
             </button>
-            <button type="button" class="btn-temp-action" id="btnOpenStatsFromTemp" onclick="switchStudioView('stats')" title="Xem thống kê số lượng Issue theo nhân viên">
+            <button type="button" class="btn-temp-action" id="btnOpenStatsFromTemp" onclick="switchStudioView('stats')"
+              title="Xem thống kê số lượng Issue theo nhân viên">
               <i class="fa-solid fa-chart-pie" style="color:#8b5cf6;"></i> Số lượng theo NV
             </button>
           </div>
         </div>
 
         <!-- Banner gợi ý cuộc gọi chưa có trong Temp -->
-        <div id="tempVoipAlertBanner" style="display:none; margin:10px 14px 4px 14px; padding:8px 12px; background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:6px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <div id="tempVoipAlertBanner"
+          style="display:none; margin:10px 14px 4px 14px; padding:8px 12px; background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:6px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <i class="fa-solid fa-phone-volume" style="color:#d97706; font-size:14px;"></i>
-            <span>Hôm nay có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">0</strong> line cuộc gọi chưa được note vào Temp.</span>
+            <span>Hôm nay có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">0</strong> line cuộc gọi chưa được
+              note vào Temp.</span>
           </div>
-          <button type="button" onclick="switchStudioView('voip')" style="font-size:11.5px; font-weight:700; color:#b45309; background:#ffffff; border:1px solid #fde68a; border-radius:4px; padding:3px 10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+          <button type="button" onclick="switchStudioView('voip')"
+            style="font-size:11.5px; font-weight:700; color:#b45309; background:#ffffff; border:1px solid #fde68a; border-radius:4px; padding:3px 10px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
             Xem &amp; Nạp nhanh <i class="fa-solid fa-arrow-right"></i>
           </button>
         </div>
@@ -2981,10 +3240,12 @@
             <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Lấy dữ liệu mới nhất từ R2">
               <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Đồng bộ R2
             </button>
-            <button type="button" class="btn-stats-tool" id="btnExportStatsExcel" title="Xuất báo cáo thống kê ra Excel">
+            <button type="button" class="btn-stats-tool" id="btnExportStatsExcel"
+              title="Xuất báo cáo thống kê ra Excel">
               <i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Xuất báo cáo Excel
             </button>
-            <button type="button" class="btn-stats-tool secondary" onclick="switchStudioView('editor')" title="Quay lại giao diện soạn Issue">
+            <button type="button" class="btn-stats-tool secondary" onclick="switchStudioView('editor')"
+              title="Quay lại giao diện soạn Issue">
               <i class="fa-solid fa-arrow-left"></i> Soạn Issue
             </button>
           </div>
@@ -3012,7 +3273,8 @@
           <div class="stats-search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="statsFilterSearch" placeholder="Lọc theo nhân viên, solution..." />
-            <button type="button" id="btnClearStatsSearch" style="display:none;" title="Xóa tìm kiếm"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" id="btnClearStatsSearch" style="display:none;" title="Xóa tìm kiếm"><i
+                class="fa-solid fa-xmark"></i></button>
           </div>
         </div>
       </div>
@@ -3103,7 +3365,8 @@
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="stats-card-badge" id="statsDetailCountBadge">0 issue</span>
-            <button type="button" class="btn-stat-filter-clear" id="btnResetStaffFilter" style="display:none;" onclick="filterStatsByStaff(null)">
+            <button type="button" class="btn-stat-filter-clear" id="btnResetStaffFilter" style="display:none;"
+              onclick="filterStatsByStaff(null)">
               <i class="fa-solid fa-xmark"></i> Bỏ lọc nhân viên
             </button>
           </div>
@@ -3137,7 +3400,8 @@
       <div class="stats-header-card">
         <div class="stats-filter-row">
           <div class="stats-title-group">
-            <div class="stats-avatar-icon" style="background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color:#0284c7;">
+            <div class="stats-avatar-icon"
+              style="background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color:#0284c7;">
               <i class="fa-solid fa-headset"></i>
             </div>
             <div>
@@ -3146,36 +3410,49 @@
                 <span class="stats-card-badge" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;">
                   <i class="fa-solid fa-phone"></i> 02873065650
                 </span>
-                <span id="voipSyncStatusChip" style="font-size:11px; font-weight:700; color:#059669; display:inline-flex; align-items:center; gap:4px; margin-left:4px;">
+                <span id="voipSyncStatusChip"
+                  style="font-size:11px; font-weight:700; color:#059669; display:inline-flex; align-items:center; gap:4px; margin-left:4px;">
                   <i class="fa-solid fa-circle-check"></i> Sẵn sàng
                 </span>
-                <span id="voipLastSyncTimeBadge" style="font-size:11.5px; font-weight:600; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;" title="Thời điểm đồng bộ dữ liệu gần nhất">
-                  <i class="fa-regular fa-clock" style="color:#6366f1;"></i> Đồng bộ gần nhất: <span id="voipLastSyncTimeText" style="color:var(--text-main); font-weight:700;">Chưa có</span>
+                <span id="voipLastSyncTimeBadge"
+                  style="font-size:11.5px; font-weight:600; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"
+                  title="Thời điểm đồng bộ dữ liệu gần nhất">
+                  <i class="fa-regular fa-clock" style="color:#6366f1;"></i> Đồng bộ gần nhất: <span
+                    id="voipLastSyncTimeText" style="color:var(--text-main); font-weight:700;">Chưa có</span>
                 </span>
               </div>
-              <p>Đồng bộ dữ liệu trực tiếp từ tổng đài Voip24h. Tra cứu cuộc gọi, tải file CSV/Excel &amp; nạp số Hotline vào form Soạn Issue.</p>
+              <p>Đồng bộ dữ liệu trực tiếp từ tổng đài Voip24h. Tra cứu cuộc gọi, tải file CSV/Excel &amp; nạp số
+                Hotline vào form Soạn Issue.</p>
             </div>
           </div>
           <div class="stats-quick-actions">
-            <button type="button" class="btn-stats-tool primary" id="btnVoipRefresh" onclick="fetchVoipCalls(true)" title="Làm mới dữ liệu từ tổng đài">
+            <button type="button" class="btn-stats-tool primary" id="btnVoipRefresh" onclick="fetchVoipCalls(true)"
+              title="Làm mới dữ liệu từ tổng đài">
               <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
             </button>
-            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()" style="background:#10b981; color:#fff; border-color:#059669;" title="Tải file báo cáo gốc từ Voip24h (Bước 3)">
+            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()"
+              style="background:#10b981; color:#fff; border-color:#059669;"
+              title="Tải file báo cáo gốc từ Voip24h (Bước 3)">
               <i class="fa-solid fa-file-excel"></i> Tải file gốc
             </button>
-            <button type="button" class="btn-stats-tool secondary" onclick="switchStudioView('editor')" title="Quay lại Soạn Issue">
+            <button type="button" class="btn-stats-tool secondary" onclick="switchStudioView('editor')"
+              title="Quay lại Soạn Issue">
               <i class="fa-solid fa-arrow-left"></i> Soạn Issue
             </button>
           </div>
         </div>
 
         <!-- Filter Sub-row -->
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:14px;">
+        <div
+          style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:14px;">
 
           <!-- Selection 1: Khoảng thời gian (Mặc định Tháng hiện tại) -->
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fa-regular fa-calendar-days"></i> Thời gian:</span>
-            <select id="voipSelectRange" style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="onVoipRangeChange(this.value)">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i
+                class="fa-regular fa-calendar-days"></i> Thời gian:</span>
+            <select id="voipSelectRange"
+              style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+              onchange="onVoipRangeChange(this.value)">
               <option value="thisMonth" selected>Tháng này (01/MM → Nay)</option>
               <option value="today">Hôm nay</option>
               <option value="yesterday">Hôm qua</option>
@@ -3183,16 +3460,23 @@
               <option value="custom">Tùy chọn ngày...</option>
             </select>
             <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:6px;">
-              <input type="date" id="voipDateStart" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" onchange="fetchVoipCalls(false)" />
+              <input type="date" id="voipDateStart"
+                style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
+                onchange="fetchVoipCalls(false)" />
               <span style="font-size:12px; color:var(--text-muted);">đến</span>
-              <input type="date" id="voipDateEnd" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" onchange="fetchVoipCalls(false)" />
+              <input type="date" id="voipDateEnd"
+                style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
+                onchange="fetchVoipCalls(false)" />
             </div>
           </div>
 
           <!-- Selection 2: Đầu số (DID) -->
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fa-solid fa-sim-card"></i> Đầu số:</span>
-            <select id="voipSelectDid" style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="fetchVoipCalls(false)">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i
+                class="fa-solid fa-sim-card"></i> Đầu số:</span>
+            <select id="voipSelectDid"
+              style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+              onchange="fetchVoipCalls(false)">
               <option value="02873065650" selected>02873065650 (Đầu số chính)</option>
               <option value="02873099980">02873099980</option>
               <option value="02873095950">02873095950</option>
@@ -3202,17 +3486,23 @@
 
           <!-- Trạng thái & Loại & Trạng thái Note Issue -->
           <div style="display:flex; align-items:center; gap:8px;">
-            <select id="voipFilterStatus" style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="renderVoipTable()">
+            <select id="voipFilterStatus"
+              style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+              onchange="renderVoipTable()">
               <option value="all">Tất cả trạng thái</option>
               <option value="missed">Gọi nhỡ (Missed)</option>
               <option value="answered">Trả lời (Answered)</option>
             </select>
-            <select id="voipFilterType" style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="renderVoipTable()">
+            <select id="voipFilterType"
+              style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+              onchange="renderVoipTable()">
               <option value="all">Tất cả loại</option>
               <option value="inbound">Gọi vào</option>
               <option value="outbound">Gọi ra</option>
             </select>
-            <select id="voipFilterNoteStatus" style="padding:6px 10px; font-size:12.5px; font-weight:700; border:1px solid #fecaca; border-radius:6px; font-family:inherit; background:#fff1f2; color:#b91c1c;" onchange="renderVoipTable()" title="Lọc theo trạng thái đã ghi chú Issue hay chưa">
+            <select id="voipFilterNoteStatus"
+              style="padding:6px 10px; font-size:12.5px; font-weight:700; border:1px solid #fecaca; border-radius:6px; font-family:inherit; background:#fff1f2; color:#b91c1c;"
+              onchange="renderVoipTable()" title="Lọc theo trạng thái đã ghi chú Issue hay chưa">
               <option value="all" selected>Tất cả ghi chú</option>
               <option value="unnoted">🔴 Chưa note (Cần xử lý)</option>
               <option value="in_temp">🟡 Đang trong Temp</option>
@@ -3224,12 +3514,16 @@
           <div style="display:flex; align-items:center; gap:8px; flex-grow:1; justify-content:flex-end;">
             <div class="stats-search-box" style="margin-left:0; width:200px;">
               <i class="fa-solid fa-magnify"></i>
-              <input type="text" id="voipSearchInput" placeholder="Tìm SĐT, máy nhánh..." oninput="renderVoipTable()" style="width:100%;" />
+              <input type="text" id="voipSearchInput" placeholder="Tìm SĐT, máy nhánh..." oninput="renderVoipTable()"
+                style="width:100%;" />
             </div>
-            <button type="button" class="btn-stats-tool primary" onclick="fetchVoipCalls(false)" title="Bước 2: Tìm kiếm cuộc gọi" style="padding:6px 14px; font-size:12.5px;">
+            <button type="button" class="btn-stats-tool primary" onclick="fetchVoipCalls(false)"
+              title="Bước 2: Tìm kiếm cuộc gọi" style="padding:6px 14px; font-size:12.5px;">
               <i class="fa-solid fa-magnify"></i> Tìm kiếm
             </button>
-            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()" style="background:#10b981; color:#fff; border-color:#059669; padding:6px 14px; font-size:12.5px;" title="Bước 3: Tải file về máy">
+            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()"
+              style="background:#10b981; color:#fff; border-color:#059669; padding:6px 14px; font-size:12.5px;"
+              title="Bước 3: Tải file về máy">
               <i class="fa-solid fa-download"></i> Tải về
             </button>
           </div>
@@ -3260,7 +3554,8 @@
 
         <!-- 3. Missed Calls -->
         <div class="stats-kpi-card" style="border-left: 4px solid #ef4444;">
-          <div class="kpi-icon-wrap" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-phone-slash"></i></div>
+          <div class="kpi-icon-wrap" style="background:#fee2e2; color:#dc2626;"><i class="fa-solid fa-phone-slash"></i>
+          </div>
           <div class="kpi-content">
             <div class="kpi-label">Gọi nhỡ</div>
             <div class="kpi-value" id="kpiVoipMissed" style="color:#dc2626;">0</div>
@@ -3270,7 +3565,8 @@
 
         <!-- 4. Inbound Calls -->
         <div class="stats-kpi-card" style="border-left: 4px solid #0284c7;">
-          <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;"><i class="fa-solid fa-phone-arrow-down-left"></i></div>
+          <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;"><i
+              class="fa-solid fa-phone-arrow-down-left"></i></div>
           <div class="kpi-content">
             <div class="kpi-label">Gọi vào</div>
             <div class="kpi-value" id="kpiVoipInbound" style="color:#0284c7;">0</div>
@@ -3290,7 +3586,8 @@
 
         <!-- 6. Unnoted Calls (Chưa note issue) -->
         <div class="stats-kpi-card" style="border-left: 4px solid #e11d48; background: #fff1f2;">
-          <div class="kpi-icon-wrap" style="background:#ffe4e6; color:#e11d48;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="kpi-icon-wrap" style="background:#ffe4e6; color:#e11d48;"><i
+              class="fa-solid fa-triangle-exclamation"></i></div>
           <div class="kpi-content">
             <div class="kpi-label" style="color:#9f1239; font-weight:800;">Chưa note Issue</div>
             <div class="kpi-value" id="kpiVoipUnnoted" style="color:#e11d48;">0</div>
@@ -3303,16 +3600,19 @@
       <div class="suggestions-panel-card" id="unnotedSuggestionsPanel" style="margin-top:20px;">
         <div class="suggestions-header">
           <div class="suggestions-title-group">
-            <div style="width:34px; height:34px; border-radius:8px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:16px;">
+            <div
+              style="width:34px; height:34px; border-radius:8px; background:#fef3c7; color:#d97706; display:flex; align-items:center; justify-content:center; font-size:16px;">
               <i class="fa-solid fa-lightbulb"></i>
             </div>
             <div>
               <div style="display:flex; align-items:center; gap:8px;">
-                <h3 style="margin:0; font-size:14px; font-weight:800; color:#92400e;">Gợi ý các Line chưa có trong Temp</h3>
+                <h3 style="margin:0; font-size:14px; font-weight:800; color:#92400e;">Gợi ý các Line chưa có trong Temp
+                </h3>
                 <span class="sug-badge-count" id="sugUnnotedCount">0 line</span>
               </div>
               <p style="margin:2px 0 0 0; font-size:12px; color:#b45309;">
-                Các cuộc gọi đàm thoại trong ngày chưa được đưa vào danh sách tạm để note Issue. Nhấn <strong>⚡ Soạn Issue</strong> hoặc <strong>➕ Temp</strong> để thêm ngay.
+                Các cuộc gọi đàm thoại trong ngày chưa được đưa vào danh sách tạm để note Issue. Nhấn <strong>⚡ Soạn
+                  Issue</strong> hoặc <strong>➕ Temp</strong> để thêm ngay.
               </p>
             </div>
           </div>
@@ -3325,7 +3625,9 @@
                 <i class="fa-solid fa-user-check"></i> Máy nhánh của tôi (<span id="sugMyExtLabel">--</span>)
               </button>
             </div>
-            <button type="button" class="btn-toggle-suggestions" onclick="toggleSuggestionsCollapse()" id="btnToggleSug" title="Thu gọn / Mở rộng" style="background:#fff; border:1px solid #fde68a; border-radius:6px; padding:4px 8px; cursor:pointer; color:#92400e;">
+            <button type="button" class="btn-toggle-suggestions" onclick="toggleSuggestionsCollapse()" id="btnToggleSug"
+              title="Thu gọn / Mở rộng"
+              style="background:#fff; border:1px solid #fde68a; border-radius:6px; padding:4px 8px; cursor:pointer; color:#92400e;">
               <i class="fa-solid fa-chevron-up" id="iconToggleSug"></i>
             </button>
           </div>
@@ -3345,7 +3647,8 @@
             <span class="stats-card-badge" id="voipFilteredCount">0 cuộc gọi</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="btn-stats-tool secondary" onclick="downloadVoipExport()" style="font-size:12px; padding:5px 12px;">
+            <button type="button" class="btn-stats-tool secondary" onclick="downloadVoipExport()"
+              style="font-size:12px; padding:5px 12px;">
               <i class="fa-solid fa-file-csv"></i> Xuất CSV
             </button>
           </div>
@@ -3379,7 +3682,7 @@
     <!-- ── VIEW 4: BÁO CÁO TỔNG HỢP (CUỘC GỌI, ISSUE, EMAIL, TICKET OTRS) ── -->
     <!-- ════════════════════════════════════════════════════════════════════════ -->
     <div class="studio-view" id="viewReport" style="display: none;">
-      
+
       <!-- Report Header -->
       <div class="report-header-card">
         <div class="report-header-top">
@@ -3401,22 +3704,31 @@
           </div>
 
           <div class="report-header-actions">
+            <button type="button" class="btn-stats-tool success" id="btnCopyReportSummary" onclick="copyReportSummary()"
+              title="Sao chép số liệu báo cáo tổng hợp vào bộ nhớ tạm">
+              <i class="fa-solid fa-clipboard-check"></i> Lấy báo cáo
+            </button>
             <!-- Badges ngày tháng -->
-            <span class="report-metric-pill" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;" id="reportTodayBadge">
+            <span class="report-metric-pill" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;"
+              id="reportTodayBadge">
               <i class="fa-regular fa-calendar-check"></i> Hôm nay: --/--/----
             </span>
-            <span class="report-metric-pill" style="background:#f3e8ff; color:#7e22ce; border:1px solid #e9d5ff;" id="reportMonthBadge">
+            <span class="report-metric-pill" style="background:#f3e8ff; color:#7e22ce; border:1px solid #e9d5ff;"
+              id="reportMonthBadge">
               <i class="fa-regular fa-calendar"></i> Tháng --/----
             </span>
-            <button type="button" class="btn-stats-tool primary" id="btnRefreshReport" onclick="fetchReportData(true)" title="Cập nhật số liệu mới nhất từ tất cả hệ thống">
+            <button type="button" class="btn-stats-tool primary" id="btnRefreshReport" onclick="fetchReportData(true)"
+              title="Cập nhật số liệu mới nhất từ tất cả hệ thống">
               <i class="fa-solid fa-arrows-rotate" id="iconRefreshReport"></i> Làm mới báo cáo
             </button>
           </div>
         </div>
 
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+        <div
+          style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
           <div>
-            <i class="fa-regular fa-clock"></i> Cập nhật gần nhất: <span id="reportLastUpdatedText" style="font-weight:700; color:var(--text-main);">Chưa cập nhật</span>
+            <i class="fa-regular fa-clock"></i> Cập nhật gần nhất: <span id="reportLastUpdatedText"
+              style="font-weight:700; color:var(--text-main);">Chưa cập nhật</span>
           </div>
           <div id="reportLoadingIndicator" style="display:none; color:var(--primary); font-weight:700;">
             <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ các hệ thống...
@@ -3426,12 +3738,13 @@
 
       <!-- 4 Pillars KPI Cards -->
       <div class="report-kpi-grid">
-        
+
         <!-- CARD 1: CUỘC GỌI TỔNG ĐÀI VOIP24H -->
         <div class="report-card-box blue">
           <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
             <div>
-              <div class="kpi-label" style="color:#0284c7;"><i class="fa-solid fa-phone-volume"></i> CUỘC GỌI TỔNG ĐÀI</div>
+              <div class="kpi-label" style="color:#0284c7;"><i class="fa-solid fa-phone-volume"></i> CUỘC GỌI TỔNG ĐÀI
+              </div>
               <div style="font-size:11.5px; color:var(--text-muted);">Voip24h Hotline</div>
             </div>
             <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;">
@@ -3441,7 +3754,8 @@
 
           <!-- Số lượng trong tháng -->
           <div style="margin-bottom:14px;">
-            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+            <div
+              style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
               Số lượng cuộc gọi trong tháng
             </div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
@@ -3454,19 +3768,22 @@
           <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span style="font-size:12px; font-weight:800; color:var(--text-main);">Số lượng trong ngày:</span>
-              <span style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--text-main);" id="repVoipTodayTotal">0</span>
+              <span style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--text-main);"
+                id="repVoipTodayTotal">0</span>
             </div>
             <div class="report-split-row">
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-arrow-down-left" style="color:#0284c7;"></i>
                 <span style="font-size:12px; color:var(--text-muted);">Nhận:</span>
-                <strong style="font-size:13px; font-family:var(--font-mono); color:#0284c7;" id="repVoipTodayInbound">0</strong>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#0284c7;"
+                  id="repVoipTodayInbound">0</strong>
               </div>
               <div style="width:1px; height:16px; background:#cbd5e1;"></div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-arrow-up-right" style="color:#d97706;"></i>
                 <span style="font-size:12px; color:var(--text-muted);">Gọi ra:</span>
-                <strong style="font-size:13px; font-family:var(--font-mono); color:#b45309;" id="repVoipTodayOutbound">0</strong>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#b45309;"
+                  id="repVoipTodayOutbound">0</strong>
               </div>
             </div>
           </div>
@@ -3486,7 +3803,8 @@
 
           <!-- Số lượng trong tháng -->
           <div style="margin-bottom:14px;">
-            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+            <div
+              style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
               Số lượng Issue trong tháng
             </div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
@@ -3500,13 +3818,28 @@
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span style="font-size:12px; font-weight:800; color:var(--text-main);">Số lượng Issue trong ngày:</span>
               <div style="display:flex; align-items:baseline; gap:4px;">
-                <span style="font-size:18px; font-weight:800; font-family:var(--font-mono); color:#7c3aed;" id="repIssuesTodayTotal">0</span>
+                <span style="font-size:18px; font-weight:800; font-family:var(--font-mono); color:#7c3aed;"
+                  id="repIssuesTodayTotal">0</span>
                 <span style="font-size:11.5px; font-weight:700; color:var(--text-muted);">Issue</span>
               </div>
             </div>
             <div class="report-split-row">
-              <span style="font-size:11.5px; color:var(--text-muted);"><i class="fa-solid fa-users"></i> Nhân viên hôm nay:</span>
+              <span style="font-size:11.5px; color:var(--text-muted);"><i class="fa-solid fa-users"></i> Nhân viên hôm
+                nay:</span>
               <strong style="font-size:12px; color:var(--text-main);" id="repTopStaffIssue">--</strong>
+            </div>
+            <div class="report-split-row" style="margin-top:6px; padding-top:6px; border-top:1px dashed #e2e8f0;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-phone" style="color:#7c3aed; font-size:11px;"></i>
+                <span style="font-size:11.5px; color:var(--text-muted);">Hotline:</span>
+                <strong style="font-size:12.5px; font-family:var(--font-mono); color:#7c3aed;" id="repIssuesTodayHotline">0</strong>
+              </div>
+              <div style="width:1px; height:14px; background:#cbd5e1;"></div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-envelope" style="color:#059669; font-size:11px;"></i>
+                <span style="font-size:11.5px; color:var(--text-muted);">Mail:</span>
+                <strong style="font-size:12.5px; font-family:var(--font-mono); color:#059669;" id="repIssuesTodayMail">0</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -3526,10 +3859,13 @@
           <!-- Tổng số lượng email & Ngày cập nhật -->
           <div style="margin-bottom:14px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
-              <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+              <div
+                style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
                 Tổng số lượng Email
               </div>
-              <span class="report-metric-pill" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:11px; padding:2px 8px;" id="repEmailDateBadge" title="Ngày dữ liệu cập nhật từ Google Apps Script">
+              <span class="report-metric-pill"
+                style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:11px; padding:2px 8px;"
+                id="repEmailDateBadge" title="Ngày dữ liệu cập nhật từ Google Apps Script">
                 <i class="fa-regular fa-calendar-check"></i> <span id="repEmailDateText">--/--/----</span>
               </span>
             </div>
@@ -3543,19 +3879,22 @@
           <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span style="font-size:12px; font-weight:800; color:var(--text-main);">Chi tiết luồng Email:</span>
-              <span style="font-size:11px; color:var(--text-muted); font-weight:600;" id="repEmailSubDateNote">Cập nhật: --</span>
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;" id="repEmailSubDateNote">Cập nhật:
+                --</span>
             </div>
             <div class="report-split-row">
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-inbox" style="color:#059669;"></i>
                 <span style="font-size:12px; color:var(--text-muted);">Nhận:</span>
-                <strong style="font-size:13px; font-family:var(--font-mono); color:#059669;" id="repEmailReceived">0</strong>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#059669;"
+                  id="repEmailReceived">0</strong>
               </div>
               <div style="width:1px; height:16px; background:#cbd5e1;"></div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-paper-plane" style="color:#0284c7;"></i>
                 <span style="font-size:12px; color:var(--text-muted);">Gửi:</span>
-                <strong style="font-size:13px; font-family:var(--font-mono); color:#0284c7;" id="repEmailSent">0</strong>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#0284c7;"
+                  id="repEmailSent">0</strong>
               </div>
             </div>
           </div>
@@ -3575,7 +3914,8 @@
 
           <!-- Tổng số lượng ticket -->
           <div style="margin-bottom:14px;">
-            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+            <div
+              style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
               Tổng số lượng ticket OTRS
             </div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
@@ -3588,19 +3928,22 @@
           <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <span style="font-size:12px; font-weight:800; color:var(--text-main);">Phân loại ticket:</span>
-              <span class="report-metric-pill" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:10.5px;">API GAS</span>
+              <span class="report-metric-pill"
+                style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:10.5px;">API GAS</span>
             </div>
             <div class="report-split-row">
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-circle-exclamation" style="color:#dc2626;"></i>
                 <span style="font-size:12px; color:var(--text-muted);">Issue:</span>
-                <strong style="font-size:13px; font-family:var(--font-mono); color:#dc2626;" id="repOtrsIssues">0</strong>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#dc2626;"
+                  id="repOtrsIssues">0</strong>
               </div>
               <div style="width:1px; height:16px; background:#cbd5e1;"></div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-lightbulb" style="color:#2563eb;"></i>
                 <span style="font-size:12px; color:var(--text-muted);">Request:</span>
-                <strong style="font-size:13px; font-family:var(--font-mono); color:#2563eb;" id="repOtrsRequests">0</strong>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#2563eb;"
+                  id="repOtrsRequests">0</strong>
               </div>
             </div>
           </div>
@@ -3610,7 +3953,7 @@
 
       <!-- BẢNG TỔNG HỢP & BẢNG CHI TIẾT OTRS -->
       <div style="display:grid; grid-template-columns: 1fr; gap: 20px;">
-        
+
         <!-- BẢNG TỔNG HỢP ĐỐI CHIẾU CHỈ SỐ -->
         <div class="stats-card">
           <div class="stats-card-header">
@@ -3653,12 +3996,16 @@
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
               <div class="stats-search-box" style="margin:0;">
                 <i class="fa-solid fa-magnifying-glass stats-search-icon"></i>
-                <input type="text" class="stats-search-input" id="otrsSearchInput" placeholder="Tìm theo mã ticket, tiêu đề..." oninput="filterOtrsList()">
+                <input type="text" class="stats-search-input" id="otrsSearchInput"
+                  placeholder="Tìm theo mã ticket, tiêu đề..." oninput="filterOtrsList()">
               </div>
               <div class="date-preset-pills">
-                <button type="button" class="preset-pill active" id="btnOtrsFilterAll" onclick="setOtrsCategoryFilter('all')">Tất cả</button>
-                <button type="button" class="preset-pill" id="btnOtrsFilterIssue" onclick="setOtrsCategoryFilter('Issue')">Chỉ Issue</button>
-                <button type="button" class="preset-pill" id="btnOtrsFilterRequest" onclick="setOtrsCategoryFilter('Request')">Chỉ Request</button>
+                <button type="button" class="preset-pill active" id="btnOtrsFilterAll"
+                  onclick="setOtrsCategoryFilter('all')">Tất cả</button>
+                <button type="button" class="preset-pill" id="btnOtrsFilterIssue"
+                  onclick="setOtrsCategoryFilter('Issue')">Chỉ Issue</button>
+                <button type="button" class="preset-pill" id="btnOtrsFilterRequest"
+                  onclick="setOtrsCategoryFilter('Request')">Chỉ Request</button>
               </div>
             </div>
           </div>
@@ -3702,7 +4049,8 @@
             <p id="memberModalSubtitle">Chọn nhân viên từ danh sách dưới đây để làm việc trên thiết bị này</p>
           </div>
         </div>
-        <button type="button" class="member-modal-close-btn" id="btnCloseMemberModal" title="Đóng" style="display:none;" onclick="closeSelectMemberModal()">
+        <button type="button" class="member-modal-close-btn" id="btnCloseMemberModal" title="Đóng" style="display:none;"
+          onclick="closeSelectMemberModal()">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -3711,32 +4059,39 @@
         <!-- Search box -->
         <div class="member-search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="memberSearchInput" placeholder="Tìm theo tên hoặc mã nhân viên..." autocomplete="off" />
+          <input type="text" id="memberSearchInput" placeholder="Tìm theo tên hoặc mã nhân viên..."
+            autocomplete="off" />
         </div>
 
         <!-- Members Grid / List -->
         <div class="member-cards-container" id="memberCardsList">
           <div style="text-align:center; padding:30px 10px; color:var(--text-muted);">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size:22px; color:var(--primary); margin-bottom:10px;"></i>
+            <i class="fa-solid fa-spinner fa-spin"
+              style="font-size:22px; color:var(--primary); margin-bottom:10px;"></i>
             <div>Đang tải danh sách nhân viên...</div>
           </div>
         </div>
 
         <!-- Add Custom / New Member Accordion -->
         <div style="margin-top:14px; border-top:1px dashed var(--border); padding-top:12px;">
-          <button type="button" id="btnToggleAddNewMember" onclick="toggleAddNewMemberSection()" style="background:transparent; border:none; color:var(--primary); font-weight:700; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:inherit;">
+          <button type="button" id="btnToggleAddNewMember" onclick="toggleAddNewMemberSection()"
+            style="background:transparent; border:none; color:var(--primary); font-weight:700; font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-family:inherit;">
             <i class="fa-solid fa-plus-circle"></i> Nhập nhân viên mới khác nếu chưa có trong danh sách
           </button>
-          
-          <div id="addNewMemberSection" style="display:none; margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:12px;">
+
+          <div id="addNewMemberSection"
+            style="display:none; margin-top:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:12px;">
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
               <div style="flex:0 0 130px; min-width:110px;">
-                <input type="text" class="form-control-studio" id="inputCustomCode" placeholder="Mã NV *" style="width:100%; text-transform:uppercase; font-weight:700; font-family:var(--font-mono); font-size:12px; padding:7px 10px;" />
+                <input type="text" class="form-control-studio" id="inputCustomCode" placeholder="Mã NV *"
+                  style="width:100%; text-transform:uppercase; font-weight:700; font-family:var(--font-mono); font-size:12px; padding:7px 10px;" />
               </div>
               <div style="flex:1; min-width:140px;">
-                <input type="text" class="form-control-studio" id="inputCustomName" placeholder="Tên nhân viên *" style="width:100%; font-size:12px; padding:7px 10px;" />
+                <input type="text" class="form-control-studio" id="inputCustomName" placeholder="Tên nhân viên *"
+                  style="width:100%; font-size:12px; padding:7px 10px;" />
               </div>
-              <button type="button" class="btn-studio-action" onclick="submitCustomMember()" style="padding:7px 12px; font-size:12px; white-space:nowrap; background:var(--primary); color:#fff; border:none; cursor:pointer; font-weight:700;">
+              <button type="button" class="btn-studio-action" onclick="submitCustomMember()"
+                style="padding:7px 12px; font-size:12px; white-space:nowrap; background:var(--primary); color:#fff; border:none; cursor:pointer; font-weight:700;">
                 <i class="fa-solid fa-check"></i> Lưu &amp; Đổi sang NV này
               </button>
             </div>
@@ -3748,14 +4103,18 @@
       </div>
 
       <div class="member-modal-footer">
-        <button type="button" id="btnClearSavedMember" onclick="clearSavedMemberOnDevice()" style="background:transparent; border:none; color:#ef4444; font-size:12px; font-weight:600; cursor:pointer; display:none; align-items:center; gap:5px; font-family:inherit;" title="Xóa thông tin nhân viên đã lưu trên máy tính này">
+        <button type="button" id="btnClearSavedMember" onclick="clearSavedMemberOnDevice()"
+          style="background:transparent; border:none; color:#ef4444; font-size:12px; font-weight:600; cursor:pointer; display:none; align-items:center; gap:5px; font-family:inherit;"
+          title="Xóa thông tin nhân viên đã lưu trên máy tính này">
           <i class="fa-solid fa-trash-can"></i> Xóa lưu trên máy này
         </button>
         <div style="display:flex; gap:8px; margin-left:auto;">
-          <button type="button" class="btn-modal-cancel" id="btnCancelMemberModal" style="display:none;" onclick="closeSelectMemberModal()">
+          <button type="button" class="btn-modal-cancel" id="btnCancelMemberModal" style="display:none;"
+            onclick="closeSelectMemberModal()">
             Hủy
           </button>
-          <button type="button" class="btn-modal-confirm" id="btnConfirmMember" disabled onclick="confirmSelectMember()">
+          <button type="button" class="btn-modal-confirm" id="btnConfirmMember" disabled
+            onclick="confirmSelectMember()">
             <i class="fa-solid fa-check"></i> Xác nhận đổi nhân viên
           </button>
         </div>
@@ -4134,7 +4493,7 @@
               });
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       /* ── TẢI DANH SÁCH TẠM CỦA NHÂN VIÊN TỪ LOCAL STORAGE CACHE ── */
@@ -4203,7 +4562,7 @@
                 tempNotes = Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 try {
                   localStorage.setItem(getMemberTempLsKey(memberCode), JSON.stringify(tempNotes));
-                } catch (_) {}
+                } catch (_) { }
                 renderTempTable();
                 updateIssuesBadge();
                 updateTempSyncIndicator("synced");
@@ -4254,7 +4613,7 @@
         if (memberCode) {
           try {
             localStorage.setItem(getMemberTempLsKey(memberCode), JSON.stringify(tempNotes));
-          } catch (_) {}
+          } catch (_) { }
           // Đẩy lên R2 để máy khác cũng thấy được
           saveMemberTempToR2(memberCode, tempNotes);
         }
@@ -4331,7 +4690,7 @@
               try {
                 const ch = new BroadcastChannel("DMS_CALLLOG_SYNC");
                 ch.postMessage({ type: "SYNC_DONE" });
-              } catch (_) {}
+              } catch (_) { }
             }
 
             if (currentStudioView === "stats") renderStatsPage();
@@ -4368,7 +4727,7 @@
                 }
               });
               tempNotes = Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-              try { localStorage.setItem(LS_TEMP_KEY, JSON.stringify(tempNotes)); } catch (_) {}
+              try { localStorage.setItem(LS_TEMP_KEY, JSON.stringify(tempNotes)); } catch (_) { }
               renderTempTable();
               updateIssuesBadge();
               if (currentStudioView === "stats") renderStatsPage();
@@ -4378,7 +4737,7 @@
                 try {
                   const clCh = new BroadcastChannel("DMS_CALLLOG_SYNC");
                   clCh.postMessage({ type: "NEW_CALL_LOG", issue: item });
-                } catch (_) {}
+                } catch (_) { }
               }
 
               if (json.callLogRecorded) {
@@ -4635,7 +4994,7 @@
         updateResultDisplay();
       }
 
-      window.copyNppText = function(text, label = "Mã NPP", event) {
+      window.copyNppText = function (text, label = "Mã NPP", event) {
         if (event) {
           event.stopPropagation();
           event.preventDefault();
@@ -5609,7 +5968,7 @@
       const REPORT_OTRS_API_URL = "https://script.google.com/macros/s/AKfycbwJJxwDVjqx-AQtaLg3TKXtUS2RWOi2JiqNb0BNTpWK-GKOyTrd9zL9uk5Rfdj68n0oRg/exec";
       const REPORT_CACHE_KEY = "dms_report_cached_data_v1";
 
-      window.switchStudioView = function(view) {
+      window.switchStudioView = function (view) {
         currentStudioView = ["stats", "voip", "report"].includes(view) ? view : "editor";
         const viewEditor = document.getElementById("viewEditor");
         const viewStats = document.getElementById("viewStats");
@@ -5710,7 +6069,7 @@
         }
       }
 
-      window.fetchReportData = async function(force = false) {
+      window.fetchReportData = async function (force = false) {
         if (reportLoading) return;
         reportLoading = true;
 
@@ -5832,11 +6191,29 @@
           }
         });
 
+        // Phân loại Issue hôm nay theo Hotline và Mail
+        let issuesTodayHotline = 0;
+        let issuesTodayMail = 0;
+        issuesToday.forEach(n => {
+          const hl = String(n.fields?.hotline || "").trim().toLowerCase();
+          const res = String(n.result || "").toLowerCase();
+          const isMail = hl === "mail" || hl === "email" || hl.startsWith("mail") || res.includes("_mail") || res.includes("hotline mail");
+          if (isMail) {
+            issuesTodayMail++;
+          } else {
+            issuesTodayHotline++;
+          }
+        });
+
         const elRepIssuesMonth = document.getElementById("repIssuesMonthTotal");
         const elRepIssuesToday = document.getElementById("repIssuesTodayTotal");
+        const elRepIssuesTodayHotline = document.getElementById("repIssuesTodayHotline");
+        const elRepIssuesTodayMail = document.getElementById("repIssuesTodayMail");
         const elRepTopStaff = document.getElementById("repTopStaffIssue");
         if (elRepIssuesMonth) elRepIssuesMonth.textContent = issuesMonthTotal.toLocaleString();
         if (elRepIssuesToday) elRepIssuesToday.textContent = issuesTodayTotal.toLocaleString();
+        if (elRepIssuesTodayHotline) elRepIssuesTodayHotline.textContent = issuesTodayHotline.toLocaleString();
+        if (elRepIssuesTodayMail) elRepIssuesTodayMail.textContent = issuesTodayMail.toLocaleString();
         if (elRepTopStaff) elRepTopStaff.textContent = topStaffName;
 
         // 4. TÍNH TOÁN EMAIL HỖ TRỢ
@@ -5928,9 +6305,17 @@
                 <span style="font-size:11.5px; color:var(--text-muted);"> Issue</span>
               </td>
               <td>
-                <span style="font-size:12px; color:var(--text-muted);">
-                  Top nhân viên hôm nay: <strong style="color:var(--text-main);">${escapeHTML(topStaffName)}</strong>
-                </span>
+                <div style="font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:3px;">
+                  <div>Top NV: <strong style="color:var(--text-main);">${escapeHTML(topStaffName)}</strong></div>
+                  <div style="display:flex; align-items:center; gap:6px; font-size:11px;">
+                    <span style="background:#ede9fe; color:#6d28d9; padding:1px 6px; border-radius:4px; font-weight:700;">
+                      Hotline: ${issuesTodayHotline}
+                    </span>
+                    <span style="background:#d1fae5; color:#047857; padding:1px 6px; border-radius:4px; font-weight:700;">
+                      Mail: ${issuesTodayMail}
+                    </span>
+                  </div>
+                </div>
               </td>
               <td class="text-center font-bold" style="color:var(--text-muted); font-size:12px;">Cloudflare R2</td>
               <td class="text-center">
@@ -6012,12 +6397,121 @@
         renderOtrsTicketList();
       }
 
-      window.filterOtrsList = function() {
+      /* ──────────────────────────────────────────────────────────────────────────
+         COPY REPORT SUMMARY (LẤY BÁO CÁO TỔNG HỢP)
+      ────────────────────────────────────────────────────────────────────────── */
+      window.copyReportSummary = function () {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+        // 1. Cuộc gọi tổng đài VoIP24h
+        const calls = Array.isArray(voipCalls) ? voipCalls : [];
+        const voipMonthTotal = calls.length;
+        const voipTodayCalls = calls.filter(c => (c.calldate || "").startsWith(todayYMD));
+        const voipTodayTotal = voipTodayCalls.length;
+        let voipTodayInbound = 0;
+        let voipTodayOutbound = 0;
+        voipTodayCalls.forEach(c => {
+          const to = (c.type_origin || "").toLowerCase();
+          const tt = (c.typeText || "").toLowerCase();
+          if (to === "inbound" || tt.includes("vao") || tt.includes("vào")) voipTodayInbound++;
+          else if (to === "outbound" || tt.includes("ra")) voipTodayOutbound++;
+        });
+
+        // 2. Issue DMS
+        const allIssues = Array.isArray(r2Issues) ? r2Issues : [];
+        const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
+        const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
+        const issuesMonthTotal = issuesInMonth.length;
+        const issuesTodayTotal = issuesToday.length;
+        let issuesTodayHotline = 0;
+        let issuesTodayMail = 0;
+        issuesToday.forEach(n => {
+          const hl = String(n.fields?.hotline || "").trim().toLowerCase();
+          const res = String(n.result || "").toLowerCase();
+          const isMail = hl === "mail" || hl === "email" || hl.startsWith("mail") || res.includes("_mail") || res.includes("hotline mail");
+          if (isMail) {
+            issuesTodayMail++;
+          } else {
+            issuesTodayHotline++;
+          }
+        });
+
+        // 3. Email hỗ trợ
+        const emailTotal = reportEmailData?.total ?? 0;
+        const emailReceived = reportEmailData?.received ?? 0;
+        const emailSent = reportEmailData?.sent ?? 0;
+
+        // 4. Ticket OTRS
+        const otrsList = Array.isArray(reportOtrsData) ? reportOtrsData : [];
+        const otrsTotal = otrsList.length;
+        const otrsIssues = otrsList.filter(t => (t.ticketCategory || "").toLowerCase() === "issue").length;
+        const otrsRequests = otrsList.filter(t => (t.ticketCategory || "").toLowerCase() === "request").length;
+
+        // Nội dung theo chuẩn định dạng yêu cầu của người dùng
+        const reportLines = [
+          `- Số lượng cuộc gọi trong tháng: ${voipMonthTotal} Cuộc gọi`,
+          `- Số lượng cuộc gọi trong ngày: ${voipTodayTotal} Cuộc gọi ( Nhận: ${voipTodayInbound} Gọi ra: ${voipTodayOutbound})`,
+          `- Số lượng Issue trong tháng: ${issuesMonthTotal} Issue`,
+          `- Số lượng Issue trong ngày: ${issuesTodayTotal} Issue (Hotline: ${issuesTodayHotline}, Mail: ${issuesTodayMail})`,
+          `- Số lượng Email: ${emailTotal} ( Nhận: ${emailReceived}, Gửi: ${emailSent})`,
+          `- Tổng số lượng ticket OTRS: ${otrsTotal} ticket ( ${otrsIssues} Issue, ${otrsRequests} Request)`
+        ];
+        const content = reportLines.join("\n");
+
+        function onCopyDone() {
+          showToast("Đã sao chép báo cáo vào bộ nhớ tạm!", "fa-clipboard-check");
+          const btn = document.getElementById("btnCopyReportSummary");
+          if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-check"></i> Đã sao chép!`;
+            btn.classList.add("copied");
+            setTimeout(() => {
+              btn.innerHTML = originalHtml;
+              btn.classList.remove("copied");
+            }, 2000);
+          }
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(content).then(onCopyDone).catch(err => {
+            console.warn("Clipboard API failed, fallback to textarea:", err);
+            copyViaTextarea(content, onCopyDone);
+          });
+        } else {
+          copyViaTextarea(content, onCopyDone);
+        }
+      };
+
+      function copyViaTextarea(text, onSuccess) {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        ta.style.top = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          const success = document.execCommand("copy");
+          if (success && typeof onSuccess === "function") {
+            onSuccess();
+          } else {
+            showToast("Sao chép không thành công, vui lòng thử lại!", "fa-triangle-exclamation");
+          }
+        } catch (e) {
+          showToast("Không thể sao chép tự động!", "fa-triangle-exclamation");
+        }
+        document.body.removeChild(ta);
+      }
+
+      window.filterOtrsList = function () {
         otrsSearchKeyword = (document.getElementById("otrsSearchInput")?.value || "").trim().toLowerCase();
         renderOtrsTicketList();
       };
 
-      window.setOtrsCategoryFilter = function(category) {
+      window.setOtrsCategoryFilter = function (category) {
         otrsCategoryFilter = category;
         const btnAll = document.getElementById("btnOtrsFilterAll");
         const btnIssue = document.getElementById("btnOtrsFilterIssue");
@@ -6092,7 +6586,7 @@
         }).join("");
       }
 
-      window.filterStatsByStaff = function(memberCode) {
+      window.filterStatsByStaff = function (memberCode) {
         statsSelectedStaff = memberCode ? String(memberCode).trim().toUpperCase() : null;
         renderStatsPage();
         const detailEl = document.getElementById("tableDetailIssues");
@@ -6230,9 +6724,9 @@
         if (elTotalSub) {
           elTotalSub.textContent = statsRange === 'today' ? 'Trong ngày hôm nay'
             : statsRange === 'yesterday' ? 'Hôm qua'
-            : statsRange === 'week' ? '7 ngày qua'
-            : statsRange === 'month' ? 'Tháng này'
-            : statsRange === 'all' ? `Toàn bộ ${r2Issues.length} issue` : 'Khoảng ngày tùy chọn';
+              : statsRange === 'week' ? '7 ngày qua'
+                : statsRange === 'month' ? 'Tháng này'
+                  : statsRange === 'all' ? `Toàn bộ ${r2Issues.length} issue` : 'Khoảng ngày tùy chọn';
         }
 
         const elActiveStaff = document.getElementById("kpiActiveStaff");
@@ -6766,7 +7260,7 @@
           if (code) {
             return { code: code.trim(), name: (name || "").trim() };
           }
-        } catch (e) {}
+        } catch (e) { }
         return null;
       }
 
@@ -6780,7 +7274,7 @@
               allSystemMembers = list.map(m => typeof m === "string" ? { name: m, code: "", extension: "" } : { name: m.name || "", code: m.code || "", extension: m.extension || "" });
             }
           }
-        } catch(e) {}
+        } catch (e) { }
 
         // 2. Fetch fresh list from API
         try {
@@ -6790,7 +7284,7 @@
             const json = await res.json();
             if (json.status === "success" && Array.isArray(json.data) && json.data.length > 0) {
               allSystemMembers = json.data.map(m => typeof m === "string" ? { name: m, code: "", extension: "" } : { name: m.name || "", code: m.code || "", extension: m.extension || "" });
-              try { localStorage.setItem(LS_MEMBERS_CACHE_KEY, JSON.stringify(allSystemMembers)); } catch(e) {}
+              try { localStorage.setItem(LS_MEMBERS_CACHE_KEY, JSON.stringify(allSystemMembers)); } catch (e) { }
             }
           }
         } catch (err) {
@@ -6892,18 +7386,18 @@
         }
       }
 
-      window.selectMemberCard = function(name, code, extension = "") {
+      window.selectMemberCard = function (name, code, extension = "") {
         modalTempSelectedMember = { name, code, extension };
         const q = (document.getElementById("memberSearchInput")?.value || "");
         renderMemberCards(q);
       };
 
-      window.selectAndConfirmMember = function(name, code, extension = "") {
+      window.selectAndConfirmMember = function (name, code, extension = "") {
         modalTempSelectedMember = { name, code, extension };
         confirmSelectMember();
       };
 
-      window.openSelectMemberModal = async function(isSwitch = false) {
+      window.openSelectMemberModal = async function (isSwitch = false) {
         isModalSwitchMode = isSwitch;
         const modal = document.getElementById("memberModalBackdrop");
         const btnClose = document.getElementById("btnCloseMemberModal");
@@ -6943,7 +7437,7 @@
         setTimeout(() => searchInput?.focus(), 150);
       };
 
-      window.closeSelectMemberModal = function() {
+      window.closeSelectMemberModal = function () {
         if (!isModalSwitchMode && (!currentSelectedMember || !currentSelectedMember.code)) {
           showToast("Vui lòng chọn nhân viên để tiếp tục!", "fa-triangle-exclamation");
           return;
@@ -6952,7 +7446,7 @@
         if (modal) modal.classList.remove("show");
       };
 
-      window.confirmSelectMember = function() {
+      window.confirmSelectMember = function () {
         if (!modalTempSelectedMember || !modalTempSelectedMember.code) {
           showToast("Vui lòng chọn nhân viên có mã hợp lệ!", "fa-triangle-exclamation");
           return;
@@ -6964,7 +7458,7 @@
           localStorage.setItem(LS_CURRENT_MEMBER_KEY, JSON.stringify(currentSelectedMember));
           localStorage.setItem("app_user_code", currentSelectedMember.code);
           localStorage.setItem("app_user_name", currentSelectedMember.name);
-        } catch(e) {}
+        } catch (e) { }
 
         updateHeaderMemberDisplay();
         updateTempStaffDisplay();
@@ -6986,7 +7480,7 @@
         }
       };
 
-      window.toggleAddNewMemberSection = function() {
+      window.toggleAddNewMemberSection = function () {
         const sec = document.getElementById("addNewMemberSection");
         if (!sec) return;
         const isHidden = sec.style.display === "none";
@@ -6996,7 +7490,7 @@
         }
       };
 
-      window.submitCustomMember = async function() {
+      window.submitCustomMember = async function () {
         const codeInput = document.getElementById("inputCustomCode");
         const nameInput = document.getElementById("inputCustomName");
         const code = (codeInput?.value || "").trim().toUpperCase();
@@ -7031,7 +7525,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, code })
           });
-        } catch(e) {
+        } catch (e) {
           console.warn("Could not persist to R2 backend:", e);
         }
 
@@ -7039,7 +7533,7 @@
         allSystemMembers.push(newMember);
         try {
           localStorage.setItem(LS_MEMBERS_CACHE_KEY, JSON.stringify(allSystemMembers));
-        } catch(e) {}
+        } catch (e) { }
 
         modalTempSelectedMember = newMember;
         renderMemberCards();
@@ -7050,7 +7544,7 @@
         if (sec) sec.style.display = "none";
       };
 
-      window.clearSavedMemberOnDevice = function() {
+      window.clearSavedMemberOnDevice = function () {
         if (!confirm("Bạn có chắc muốn xoá thông tin nhân viên đã lưu trên máy tính này? Hệ thống sẽ yêu cầu chọn nhân viên lại.")) {
           return;
         }
@@ -7199,7 +7693,7 @@
               if (parsed.source) source = parsed.source;
               if (parsed.calls && count === 0) count = parsed.calls.length;
             }
-          } catch (_) {}
+          } catch (_) { }
         }
 
         if (statusChip) {
@@ -7442,7 +7936,7 @@
         };
       }
 
-      window.onVoipRangeChange = function(range) {
+      window.onVoipRangeChange = function (range) {
         voipCurrentRange = range;
         const customWrap = document.getElementById("voipCustomDateWrap");
         if (customWrap) {
@@ -7463,7 +7957,7 @@
         }
       };
 
-      window.setVoipDateRange = function(range, el) {
+      window.setVoipDateRange = function (range, el) {
         voipCurrentRange = range;
         const selectRange = document.getElementById("voipSelectRange");
         if (selectRange) selectRange.value = range;
@@ -7472,7 +7966,7 @@
         window.onVoipRangeChange(range);
       };
 
-      window.fetchVoipCalls = async function(showLoading = false, isSilent = false) {
+      window.fetchVoipCalls = async function (showLoading = false, isSilent = false) {
         if (voipLoading) return;
         voipLoading = true;
 
@@ -7602,7 +8096,7 @@
         }
       };
 
-      window.renderVoipTable = function() {
+      window.renderVoipTable = function () {
         const tbody = document.getElementById("tbodyVoipCalls");
         if (!tbody) return;
 
@@ -7777,7 +8271,7 @@
       };
 
       /* ── RENDER PANEL GỢI Ý CÁC LINE CUỘC GỌI CHƯA CÓ TRONG TEMP ── */
-      window.renderUnnotedSuggestions = function() {
+      window.renderUnnotedSuggestions = function () {
         const panel = document.getElementById("unnotedSuggestionsPanel");
         const grid = document.getElementById("suggestionsListGrid");
         const countBadge = document.getElementById("sugUnnotedCount");
@@ -7921,12 +8415,12 @@
         }).join("");
       };
 
-      window.filterSuggestions = function(type) {
+      window.filterSuggestions = function (type) {
         sugFilterType = type;
         renderUnnotedSuggestions(); // sẽ tự đồng bộ nút active bên trong
       };
 
-      window.toggleSuggestionsCollapse = function() {
+      window.toggleSuggestionsCollapse = function () {
         isSugCollapsed = !isSugCollapsed;
         const grid = document.getElementById("suggestionsListGrid");
         const icon = document.getElementById("iconToggleSug");
@@ -7934,7 +8428,7 @@
         if (icon) icon.className = isSugCollapsed ? "fa-solid fa-chevron-down" : "fa-solid fa-chevron-up";
       };
 
-      window.quickAddCallToTemp = async function(callId) {
+      window.quickAddCallToTemp = async function (callId) {
         const call = voipCalls.find(c => String(c.id) === String(callId));
         if (!call) return;
 
@@ -7996,7 +8490,7 @@
         showToast(`Đã thêm số Hotline ${hotline} (ngày ${dateStr}) vào Danh sách tạm (Temp)!`, "fa-circle-check");
       };
 
-      window.useVoipHotline = function(phone, date) {
+      window.useVoipHotline = function (phone, date) {
         if (!phone) return;
         switchStudioView("editor");
         const inputHotline = document.getElementById("inputHotline");
@@ -8022,7 +8516,7 @@
         }, 300);
       };
 
-      window.downloadVoipExport = async function() {
+      window.downloadVoipExport = async function () {
         try {
           showToast("Đang chuẩn bị file export...", "fa-clock");
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
