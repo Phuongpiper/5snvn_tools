@@ -1557,8 +1557,8 @@
     }
 
     #dropdownHotline {
-      min-width: 290px;
-      max-width: 350px;
+      min-width: 320px;
+      max-width: 370px;
       left: auto;
       right: 0;
     }
@@ -1570,6 +1570,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
       font-size: 11.5px;
       font-weight: 700;
       color: var(--text-muted);
@@ -1583,19 +1584,23 @@
       align-items: center;
       gap: 6px;
       color: #334155;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .ac-hq-header-actions {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .btn-hq-tool {
       background: #ffffff;
       border: 1px solid #cbd5e1;
       border-radius: 4px;
-      padding: 2px 7px;
+      padding: 3px 8px;
       font-size: 11px;
       font-weight: 700;
       color: var(--primary);
@@ -1603,6 +1608,8 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.15s ease;
       font-family: inherit;
     }
