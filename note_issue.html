@@ -4759,11 +4759,24 @@
         if (currentStudioView === "stats") {
           renderStatsPage();
         } else if (currentStudioView === "voip") {
+          // 1. Hiển thị data đang có trước ngay lập tức (từ RAM hoặc Cache LocalStorage)
           if (!voipCalls || voipCalls.length === 0) {
-            fetchVoipCalls(false);
-          } else {
-            renderVoipTable();
-            renderUnnotedSuggestions();
+            if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
+          }
+          if (voipCalls && voipCalls.length > 0) {
+            const { date_start, date_end } = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : { date_start: "", date_end: "" };
+            if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges(date_start, date_end);
+            if (typeof renderVoipTable === "function") renderVoipTable();
+            if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
+            const statusChip = document.getElementById("voipSyncStatusChip");
+            if (statusChip && !voipLoading) {
+              statusChip.innerHTML = `<i class="fa-solid fa-cloud"></i> ${voipCalls.length} cuộc gọi (Sẵn sàng) <span style="font-size:11px;font-weight:normal;color:#d97706;margin-left:6px;"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Đồng bộ ngầm...</span>`;
+              statusChip.style.color = "#059669";
+            }
+          }
+          // 2. Âm thầm đồng bộ sau backend (silent background sync)
+          if (typeof fetchVoipCalls === "function") {
+            fetchVoipCalls(false, true);
           }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -5652,6 +5665,81 @@
       let allR2TempIssues = [];
       let sugFilterType = "mine"; // "all" | "mine" — mặc định lọc theo nhân viên đang chọn
       let isSugCollapsed = false;
+      const VOIP_CACHE_KEY = "voip24h_cached_calls_data_v2";
+
+      function loadVoipCacheFromLocal() {
+        try {
+          const raw = localStorage.getItem(VOIP_CACHE_KEY);
+          if (!raw) return null;
+          const data = JSON.parse(raw);
+          if (data && Array.isArray(data.calls) && data.calls.length > 0) {
+            voipCalls = data.calls;
+            return data;
+          }
+        } catch (e) {
+          console.warn("loadVoipCacheFromLocal error:", e);
+        }
+        return null;
+      }
+
+      function saveVoipCacheToLocal(data) {
+        try {
+          localStorage.setItem(VOIP_CACHE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn("saveVoipCacheToLocal error:", e);
+        }
+      }
+
+      function updateVoipKpiCardsAndBadges(rangeStart, rangeEnd) {
+        let unnotedCount = 0;
+        let answeredCount = 0;
+        let missedCount = 0;
+        let inboundCount = 0;
+        let outboundCount = 0;
+        (voipCalls || []).forEach(c => {
+          const noteInfo = checkCallNoteStatus(c);
+          const isAnswered = callIsAnswered(c);
+          if (noteInfo.status === "unnoted" && isAnswered) {
+            unnotedCount++;
+          }
+          if (isAnswered) answeredCount++;
+          else missedCount++;
+          const to = (c.type_origin || "").toLowerCase();
+          const tt = (c.typeText || "").toLowerCase();
+          if (to === "inbound" || tt.includes("vao") || tt.includes("vào")) inboundCount++;
+          else if (to === "outbound" || tt.includes("ra")) outboundCount++;
+        });
+
+        // Update KPI cards
+        const el = id => document.getElementById(id);
+        if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = voipCalls.length;
+        if (el("kpiVoipAnswered")) el("kpiVoipAnswered").textContent = answeredCount;
+        if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = missedCount;
+        if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = inboundCount;
+        if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = outboundCount;
+        if (el("kpiVoipUnnoted")) el("kpiVoipUnnoted").textContent = unnotedCount;
+        if (rangeStart && rangeEnd && el("kpiVoipTotalSub")) {
+          el("kpiVoipTotalSub").textContent = `${rangeStart.slice(0, 10)} → ${rangeEnd.slice(0, 10)}`;
+        }
+
+        // Update badge on nav (hiển thị số cuộc gọi chưa note nếu có, hoặc tổng)
+        const badge = document.getElementById("navVoipCallsBadge");
+        if (badge) {
+          if (unnotedCount > 0) {
+            badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> ${unnotedCount} chưa note`;
+            badge.style.background = "#fee2e2";
+            badge.style.color = "#dc2626";
+            badge.style.borderColor = "#fca5a5";
+          } else {
+            badge.textContent = `${voipCalls.length} cuộc`;
+            badge.style.background = "#eef2ff";
+            badge.style.color = "#4f46e5";
+            badge.style.borderColor = "#c7d2fe";
+          }
+        }
+
+        return { unnotedCount, answeredCount, missedCount, inboundCount, outboundCount };
+      }
 
       function getVoipApiBase() {
         return "/api/voip24h-calls";
@@ -5898,17 +5986,25 @@
         window.onVoipRangeChange(range);
       };
 
-      window.fetchVoipCalls = async function(showLoading) {
+      window.fetchVoipCalls = async function(showLoading = false, isSilent = false) {
         if (voipLoading) return;
         voipLoading = true;
 
         const statusChip = document.getElementById("voipSyncStatusChip");
         const refreshBtn = document.getElementById("btnVoipRefresh");
+        const hasExistingData = Array.isArray(voipCalls) && voipCalls.length > 0;
+        const displayAsBlocking = showLoading || (!hasExistingData && !isSilent);
+
         if (statusChip) {
-          statusChip.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang tải...`;
-          statusChip.style.color = "#f59e0b";
+          if (hasExistingData) {
+            statusChip.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang đồng bộ dữ liệu mới...`;
+            statusChip.style.color = "#d97706";
+          } else {
+            statusChip.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang tải...`;
+            statusChip.style.color = "#f59e0b";
+          }
         }
-        if (refreshBtn) {
+        if (refreshBtn && displayAsBlocking) {
           refreshBtn.disabled = true;
           refreshBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang đồng bộ...`;
         }
@@ -5936,51 +6032,18 @@
           if (data.status === "success") {
             voipCalls = data.calls || [];
 
-            // Đếm số cuộc gọi chưa note & thống kê KPI chuẩn theo callIsAnswered
-            let unnotedCount = 0;
-            let answeredCount = 0;
-            let missedCount = 0;
-            let inboundCount = 0;
-            let outboundCount = 0;
-            voipCalls.forEach(c => {
-              const noteInfo = checkCallNoteStatus(c);
-              const isAnswered = callIsAnswered(c);
-              if (noteInfo.status === "unnoted" && isAnswered) {
-                unnotedCount++;
-              }
-              if (isAnswered) answeredCount++;
-              else missedCount++;
-              const to = (c.type_origin || "").toLowerCase();
-              const tt = (c.typeText || "").toLowerCase();
-              if (to === "inbound" || tt.includes("vao") || tt.includes("vào")) inboundCount++;
-              else if (to === "outbound" || tt.includes("ra")) outboundCount++;
+            // Lưu vào localStorage để lần sau vào trang là có dữ liệu hiển thị ngay lập tức
+            saveVoipCacheToLocal({
+              calls: voipCalls,
+              source: data.source,
+              syncedAt: Date.now(),
+              date_start,
+              date_end,
+              did
             });
 
-            // Update KPI cards
-            const el = id => document.getElementById(id);
-            if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = voipCalls.length;
-            if (el("kpiVoipAnswered")) el("kpiVoipAnswered").textContent = answeredCount;
-            if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = missedCount;
-            if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = inboundCount;
-            if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = outboundCount;
-            if (el("kpiVoipUnnoted")) el("kpiVoipUnnoted").textContent = unnotedCount;
-            if (el("kpiVoipTotalSub")) el("kpiVoipTotalSub").textContent = `${date_start.slice(0, 10)} → ${date_end.slice(0, 10)}`;
-
-            // Update badge on nav (hiển thị số cuộc gọi chưa note nếu có, hoặc tổng)
-            const badge = document.getElementById("navVoipCallsBadge");
-            if (badge) {
-              if (unnotedCount > 0) {
-                badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> ${unnotedCount} chưa note`;
-                badge.style.background = "#fee2e2";
-                badge.style.color = "#dc2626";
-                badge.style.borderColor = "#fca5a5";
-              } else {
-                badge.textContent = `${voipCalls.length} cuộc`;
-                badge.style.background = "#eef2ff";
-                badge.style.color = "#4f46e5";
-                badge.style.borderColor = "#c7d2fe";
-              }
-            }
+            // Cập nhật thẻ KPI và Badge
+            updateVoipKpiCardsAndBadges(date_start, date_end);
 
             if (statusChip) {
               const srcIcon = data.source === "r2_cloud" ? '<i class="fa-solid fa-cloud"></i>' : '<i class="fa-solid fa-circle-check"></i>';
@@ -5991,16 +6054,28 @@
 
             renderVoipTable();
             renderUnnotedSuggestions();
+
+            if (showLoading) {
+              showToast(`Đã đồng bộ thành công ${voipCalls.length} cuộc gọi!`, "fa-circle-check");
+            }
           } else {
             throw new Error(data.message || "Không thể tải dữ liệu");
           }
         } catch (err) {
           console.error("fetchVoipCalls error:", err);
-          if (statusChip) {
-            statusChip.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${err.message}`;
-            statusChip.style.color = "#dc2626";
+          if (!hasExistingData || !isSilent) {
+            if (statusChip) {
+              statusChip.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${err.message}`;
+              statusChip.style.color = "#dc2626";
+            }
+            showToast("Lỗi tải lịch sử cuộc gọi: " + err.message, "fa-circle-exclamation");
+          } else {
+            // Đã có data hiện sẵn, chỉ cần thông báo trạng thái ngoại tuyến trên chip mà không làm phiền người dùng
+            if (statusChip) {
+              statusChip.innerHTML = `<i class="fa-solid fa-cloud"></i> ${voipCalls.length} cuộc gọi (Cache ngoại tuyến)`;
+              statusChip.style.color = "#64748b";
+            }
           }
-          showToast("Lỗi tải lịch sử cuộc gọi: " + err.message, "fa-circle-exclamation");
         } finally {
           voipLoading = false;
           if (refreshBtn) {
@@ -6457,6 +6532,8 @@
 
       async function init() {
         initDateInputs();
+        if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
+        if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
         await checkMemberRequirement();
         await fetchSystemMembers();
         loadTempNotes();
