@@ -267,6 +267,11 @@ module.exports = async function handler(req, res) {
 
   const payload = Object.assign({}, queryParams, req.body || {});
   const action = payload.action || "fetch";
+
+  if (payload.ping || action === "ping") {
+    return res.status(200).json({ status: "ok", message: "pong" });
+  }
+
   const date_start = payload.date_start || defaultDates.date_start;
   const date_end = payload.date_end || defaultDates.date_end;
   const did = payload.did !== undefined ? payload.did : "02873065650";
@@ -402,8 +407,8 @@ module.exports = async function handler(req, res) {
         calls
       };
 
-      // Save to Cloudflare R2 cache asynchronously so Vercel can always read it
-      saveCacheToR2(responsePayload);
+      // Save to Cloudflare R2 cache so Vercel can always read it
+      await saveCacheToR2(responsePayload);
 
       return res.status(200).json(responsePayload);
     }

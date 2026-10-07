@@ -6081,7 +6081,28 @@
           if (did && did !== "all") url.searchParams.set("did", did);
           url.searchParams.set("_t", Date.now());
 
-          const res = await fetch(url.toString(), {
+          let fetchUrl = url.toString();
+          // Nếu đang mở trên web (Vercel) nhưng máy tính có bật localhost:3000, ưu tiên gọi qua localhost để lấy live Voip24h & sync lên R2
+          if (window.location.origin && window.location.origin.includes("vercel.app")) {
+            try {
+              const pingCtrl = new AbortController();
+              const pingTimer = setTimeout(() => pingCtrl.abort(), 800);
+              const testLocal = await fetch("http://localhost:3000/api/voip24h-calls?ping=1", {
+                signal: pingCtrl.signal,
+                headers: { "Pragma": "no-cache" }
+              });
+              clearTimeout(pingTimer);
+              if (testLocal.ok) {
+                const localUrl = new URL("http://localhost:3000/api/voip24h-calls");
+                localUrl.search = url.search;
+                fetchUrl = localUrl.toString();
+              }
+            } catch (_) {
+              // Localhost không bật, dùng trực tiếp endpoint Vercel (đọc cache Cloud R2)
+            }
+          }
+
+          const res = await fetch(fetchUrl, {
             cache: "no-store",
             headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
           });
@@ -6091,6 +6112,8 @@
           if (data.status === "success") {
             voipCalls = data.calls || [];
 
+            // Dùng syncedAt từ server: phản ánh đúng thời điểm data thực sự được lấy từ Voip24h
+            // (nếu từ R2 cache thì hiển giờ cache, không lừa user nghĩ data mới)
             const syncTime = data.syncedAt || new Date().toISOString();
 
             // Lưu vào localStorage để lần sau vào trang là có dữ liệu hiển thị ngay lập tức
