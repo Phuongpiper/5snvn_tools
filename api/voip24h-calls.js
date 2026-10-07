@@ -336,6 +336,42 @@ module.exports = async function handler(req, res) {
   }
 
   // ── FETCH action (default) ─────────────────────────────────────────────────
+  const isVercel = Boolean(process.env.VERCEL || process.env.NOW_REGION);
+  if (isVercel && !payload.force_live) {
+    const cachedData = await getCacheFromR2();
+    if (cachedData && cachedData.calls) {
+      let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
+      for (const c of cachedData.calls) {
+        const disp = (c.disposition || "").toUpperCase();
+        const st = (c.statusText || "").toLowerCase();
+        const byDisp = disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời");
+        const bs = c.billsec;
+        let ans = false;
+        if (byDisp && bs !== undefined && bs !== null && bs !== "" && bs !== "—") {
+          if (typeof bs === "number") ans = bs > 0;
+          else {
+            const parts = String(bs).split(":").map(Number);
+            const totalSec = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
+            ans = totalSec > 0;
+          }
+        }
+        if (ans) cAnswered++;
+        else cMissed++;
+        const t = (c.type_origin || "").toLowerCase();
+        const tt = (c.typeText || "").toLowerCase();
+        if (t === "inbound" || tt.includes("vao") || tt.includes("vào")) cInbound++;
+        else if (t === "outbound" || tt.includes("ra")) cOutbound++;
+      }
+
+      return res.status(200).json({
+        ...cachedData,
+        stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
+        source: "r2_cloud",
+        note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Được đồng bộ từ máy nội bộ)"
+      });
+    }
+  }
+
   try {
     let jar = await getVoipSession();
     let data = await fetchCallList(jar, { date_start, date_end, did, ...payload });

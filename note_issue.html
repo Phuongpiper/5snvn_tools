@@ -4772,9 +4772,13 @@
             if (typeof renderVoipTable === "function") renderVoipTable();
             if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
           }
-          // Cập nhật trạng thái và thời gian đồng bộ gần nhất (KHÔNG tự động gọi API ngầm)
+          // Cập nhật trạng thái và thời gian đồng bộ gần nhất
           if (typeof updateVoipSyncStatusDisplay === "function") {
             updateVoipSyncStatusDisplay();
+          }
+          // Tự động tải dữ liệu mới nhất từ Cloud R2 ngầm
+          if (typeof fetchVoipCalls === "function") {
+            fetchVoipCalls(false, true);
           }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -6622,18 +6626,41 @@
         fetchAllTempNotesFromR2(true);
         await loadSolutions();
         await loadDtList();
+        // Tự động tải cuộc gọi mới nhất từ R2 (chạy ngầm, không block giao diện)
+        if (typeof fetchVoipCalls === "function") {
+          fetchVoipCalls(false, true);
+        }
       }
 
       window.addEventListener("pageshow", () => {
         fetchIssuesFromR2(true);
         fetchTempNotesFromR2(true);
+        if (typeof fetchVoipCalls === "function") fetchVoipCalls(false, true);
+      });
+      window.addEventListener("focus", () => {
+        if (currentStudioView === "voip" && typeof fetchVoipCalls === "function") {
+          fetchVoipCalls(false, true);
+        }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && currentStudioView === "voip" && typeof fetchVoipCalls === "function") {
+          fetchVoipCalls(false, true);
+        }
       });
       window.addEventListener("message", (e) => {
         if (e.data === "tab-activated") {
           fetchIssuesFromR2(true);
           fetchTempNotesFromR2(true);
+          if (typeof fetchVoipCalls === "function") fetchVoipCalls(false, true);
         }
       });
+
+      // Kiểm tra định kỳ mỗi 25s: nếu vừa có sync từ máy Local thì Production tự cập nhật ngay
+      setInterval(() => {
+        if (document.visibilityState === "visible" && currentStudioView === "voip" && typeof fetchVoipCalls === "function" && !voipLoading) {
+          fetchVoipCalls(false, true);
+        }
+      }, 25000);
 
       init();
     })();

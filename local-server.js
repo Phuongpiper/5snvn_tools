@@ -95,8 +95,9 @@ function r2Fetch(method, body) {
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Methods": "GET,POST,HEAD,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, If-Match, If-None-Match",
-  "Access-Control-Expose-Headers": "ETag, Last-Modified"
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, If-Match, If-None-Match, Pragma, Cache-Control",
+  "Access-Control-Expose-Headers": "ETag, Last-Modified",
+  "Access-Control-Allow-Private-Network": "true"
 };
 
 async function handleApiGet(req, res) {
@@ -439,15 +440,18 @@ const server = http.createServer(function(req, res) {
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Pragma, Cache-Control");
+        res.setHeader("Access-Control-Allow-Private-Network", "true");
         res.status = function(code) { res.statusCode = code; return this; };
         res.json = function(data) {
           res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Private-Network", "true");
           res.setHeader("Content-Type", "application/json; charset=utf-8");
           res.end(JSON.stringify(data));
           return this;
         };
         res.send = function(data) {
           res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Private-Network", "true");
           res.end(typeof data === "string" ? data : JSON.stringify(data));
           return this;
         };
