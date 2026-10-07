@@ -2405,8 +2405,110 @@
       background: #ecfdf5;
       color: #065f46;
     }
-    .btn-sug-action.add-temp:hover {
-      background: #a7f3d0;
+    /* ── Report Page Styling ── */
+    .report-header-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+    }
+    .report-header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .report-title-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .report-title-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: #eef2ff;
+      color: #4f46e5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      border: 1px solid #c7d2fe;
+    }
+    .report-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .report-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1200px) {
+      .report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 640px) {
+      .report-kpi-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .report-card-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+    .report-card-box:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .report-card-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+    .report-card-box.blue::before { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+    .report-card-box.purple::before { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+    .report-card-box.emerald::before { background: linear-gradient(90deg, #059669, #34d399); }
+    .report-card-box.amber::before { background: linear-gradient(90deg, #d97706, #fbbf24); }
+
+    .report-metric-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .report-split-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -2437,6 +2539,9 @@
       <button type="button" class="studio-nav-btn" id="btnNavVoip" onclick="switchStudioView('voip')" title="Lịch sử cuộc gọi tổng đài Voip24h (Hotline)">
         <i class="fa-solid fa-phone-volume"></i> Lịch sử cuộc gọi
         <span class="nav-count-badge" id="navVoipCallsBadge" style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;">0</span>
+      </button>
+      <button type="button" class="studio-nav-btn" id="btnNavReport" onclick="switchStudioView('report')" title="Báo cáo tổng hợp số liệu (Cuộc gọi, Issue, Email, OTRS)">
+        <i class="fa-solid fa-chart-column"></i> Báo cáo
       </button>
     </div>
 
@@ -3085,6 +3190,311 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+    <!-- ── VIEW 4: BÁO CÁO TỔNG HỢP (CUỘC GỌI, ISSUE, EMAIL, TICKET OTRS) ── -->
+    <!-- ════════════════════════════════════════════════════════════════════════ -->
+    <div class="studio-view" id="viewReport" style="display: none;">
+      
+      <!-- Report Header -->
+      <div class="report-header-card">
+        <div class="report-header-top">
+          <div class="report-title-group">
+            <div class="report-title-icon">
+              <i class="fa-solid fa-chart-column"></i>
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h2 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin:0;">
+                  Báo Cáo Tổng Hợp Hoạt Động &amp; Năng Suất
+                </h2>
+                <span class="brand-badge" style="background:#e0e7ff; color:#4338ca; border-color:#c7d2fe;">LIVE</span>
+              </div>
+              <p style="font-size: 12.5px; color: var(--text-muted); margin: 3px 0 0 0;">
+                Tổng hợp số liệu cuộc gọi tổng đài, ghi chú Issue DMS, Email hỗ trợ &amp; Ticket OTRS
+              </p>
+            </div>
+          </div>
+
+          <div class="report-header-actions">
+            <!-- Badges ngày tháng -->
+            <span class="report-metric-pill" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;" id="reportTodayBadge">
+              <i class="fa-regular fa-calendar-check"></i> Hôm nay: --/--/----
+            </span>
+            <span class="report-metric-pill" style="background:#f3e8ff; color:#7e22ce; border:1px solid #e9d5ff;" id="reportMonthBadge">
+              <i class="fa-regular fa-calendar"></i> Tháng --/----
+            </span>
+            <button type="button" class="btn-stats-tool primary" id="btnRefreshReport" onclick="fetchReportData(true)" title="Cập nhật số liệu mới nhất từ tất cả hệ thống">
+              <i class="fa-solid fa-arrows-rotate" id="iconRefreshReport"></i> Làm mới báo cáo
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
+          <div>
+            <i class="fa-regular fa-clock"></i> Cập nhật gần nhất: <span id="reportLastUpdatedText" style="font-weight:700; color:var(--text-main);">Chưa cập nhật</span>
+          </div>
+          <div id="reportLoadingIndicator" style="display:none; color:var(--primary); font-weight:700;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Đang tải dữ liệu từ các hệ thống...
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Pillars KPI Cards -->
+      <div class="report-kpi-grid">
+        
+        <!-- CARD 1: CUỘC GỌI TỔNG ĐÀI VOIP24H -->
+        <div class="report-card-box blue">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div class="kpi-label" style="color:#0284c7;"><i class="fa-solid fa-phone-volume"></i> CUỘC GỌI TỔNG ĐÀI</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">Voip24h Hotline</div>
+            </div>
+            <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;">
+              <i class="fa-solid fa-headset"></i>
+            </div>
+          </div>
+
+          <!-- Số lượng trong tháng -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+              Số lượng cuộc gọi trong tháng
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
+              <span class="kpi-value" id="repVoipMonthTotal" style="color:#0284c7; font-size:28px;">0</span>
+              <span style="font-size:13px; font-weight:700; color:var(--text-muted);">cuộc</span>
+            </div>
+          </div>
+
+          <!-- Số lượng trong ngày -->
+          <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:12px; font-weight:800; color:var(--text-main);">Số lượng trong ngày:</span>
+              <span style="font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--text-main);" id="repVoipTodayTotal">0</span>
+            </div>
+            <div class="report-split-row">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-arrow-down-left" style="color:#0284c7;"></i>
+                <span style="font-size:12px; color:var(--text-muted);">Nhận:</span>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#0284c7;" id="repVoipTodayInbound">0</strong>
+              </div>
+              <div style="width:1px; height:16px; background:#cbd5e1;"></div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-arrow-up-right" style="color:#d97706;"></i>
+                <span style="font-size:12px; color:var(--text-muted);">Gọi ra:</span>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#b45309;" id="repVoipTodayOutbound">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 2: GHI CHÚ ISSUE (DMS HUB) -->
+        <div class="report-card-box purple">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div class="kpi-label" style="color:#7c3aed;"><i class="fa-solid fa-bug"></i> ISSUE GHI CHÚ (DMS)</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">Cloudflare R2 Database</div>
+            </div>
+            <div class="kpi-icon-wrap" style="background:#ede9fe; color:#7c3aed;">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+          </div>
+
+          <!-- Số lượng trong tháng -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+              Số lượng Issue trong tháng
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
+              <span class="kpi-value" id="repIssuesMonthTotal" style="color:#7c3aed; font-size:28px;">0</span>
+              <span style="font-size:13px; font-weight:700; color:var(--text-muted);">Issue</span>
+            </div>
+          </div>
+
+          <!-- Số lượng trong ngày -->
+          <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:12px; font-weight:800; color:var(--text-main);">Số lượng Issue trong ngày:</span>
+              <div style="display:flex; align-items:baseline; gap:4px;">
+                <span style="font-size:18px; font-weight:800; font-family:var(--font-mono); color:#7c3aed;" id="repIssuesTodayTotal">0</span>
+                <span style="font-size:11.5px; font-weight:700; color:var(--text-muted);">Issue</span>
+              </div>
+            </div>
+            <div class="report-split-row">
+              <span style="font-size:11.5px; color:var(--text-muted);"><i class="fa-solid fa-users"></i> Nhân viên hôm nay:</span>
+              <strong style="font-size:12px; color:var(--text-main);" id="repTopStaffIssue">--</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3: EMAIL HỖ TRỢ -->
+        <div class="report-card-box emerald">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div class="kpi-label" style="color:#059669;"><i class="fa-solid fa-envelope"></i> EMAIL HỖ TRỢ</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">Hộp thư Gmail Support</div>
+            </div>
+            <div class="kpi-icon-wrap" style="background:#d1fae5; color:#059669;">
+              <i class="fa-solid fa-inbox"></i>
+            </div>
+          </div>
+
+          <!-- Tổng số lượng email -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+              Tổng số lượng Email
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
+              <span class="kpi-value" id="repEmailTotal" style="color:#059669; font-size:28px;">0</span>
+              <span style="font-size:13px; font-weight:700; color:var(--text-muted);">Email</span>
+            </div>
+          </div>
+
+          <!-- Phân loại Nhận & Gửi -->
+          <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:12px; font-weight:800; color:var(--text-main);">Chi tiết luồng Email:</span>
+              <span class="report-metric-pill" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:10.5px;">API GAS</span>
+            </div>
+            <div class="report-split-row">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-inbox" style="color:#059669;"></i>
+                <span style="font-size:12px; color:var(--text-muted);">Nhận:</span>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#059669;" id="repEmailReceived">0</strong>
+              </div>
+              <div style="width:1px; height:16px; background:#cbd5e1;"></div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-paper-plane" style="color:#0284c7;"></i>
+                <span style="font-size:12px; color:var(--text-muted);">Gửi:</span>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#0284c7;" id="repEmailSent">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 4: TICKET OTRS -->
+        <div class="report-card-box amber">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div class="kpi-label" style="color:#d97706;"><i class="fa-solid fa-ticket"></i> TICKET OTRS</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">Hệ thống Ticketing OTRS</div>
+            </div>
+            <div class="kpi-icon-wrap" style="background:#fef3c7; color:#d97706;">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+          </div>
+
+          <!-- Tổng số lượng ticket -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.03em;">
+              Tổng số lượng ticket OTRS
+            </div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-top:2px;">
+              <span class="kpi-value" id="repOtrsTotal" style="color:#d97706; font-size:28px;">0</span>
+              <span style="font-size:13px; font-weight:700; color:var(--text-muted);">ticket</span>
+            </div>
+          </div>
+
+          <!-- Phân loại Issue & Request -->
+          <div style="border-top:1px dashed #e2e8f0; padding-top:12px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:12px; font-weight:800; color:var(--text-main);">Phân loại ticket:</span>
+              <span class="report-metric-pill" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:10.5px;">API GAS</span>
+            </div>
+            <div class="report-split-row">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-circle-exclamation" style="color:#dc2626;"></i>
+                <span style="font-size:12px; color:var(--text-muted);">Issue:</span>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#dc2626;" id="repOtrsIssues">0</strong>
+              </div>
+              <div style="width:1px; height:16px; background:#cbd5e1;"></div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-lightbulb" style="color:#2563eb;"></i>
+                <span style="font-size:12px; color:var(--text-muted);">Request:</span>
+                <strong style="font-size:13px; font-family:var(--font-mono); color:#2563eb;" id="repOtrsRequests">0</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BẢNG TỔNG HỢP & BẢNG CHI TIẾT OTRS -->
+      <div style="display:grid; grid-template-columns: 1fr; gap: 20px;">
+        
+        <!-- BẢNG TỔNG HỢP ĐỐI CHIẾU CHỈ SỐ -->
+        <div class="stats-card">
+          <div class="stats-card-header">
+            <div class="stats-card-title">
+              <i class="fa-solid fa-table-list" style="color:var(--primary); font-size:16px;"></i>
+              <h3>Bảng đối chiếu tổng hợp các kênh hỗ trợ</h3>
+            </div>
+            <span class="stats-card-badge">Đa kênh tích hợp</span>
+          </div>
+
+          <div class="stats-table-wrapper">
+            <table class="table-stitch-stats" style="width:100%;">
+              <thead>
+                <tr>
+                  <th style="width: 220px;">KÊNH HỖ TRỢ</th>
+                  <th style="width: 150px;" class="text-center">TRONG NGÀY</th>
+                  <th style="width: 150px;" class="text-center">TRONG THÁNG</th>
+                  <th style="width: 280px;">CHI TIẾT PHÂN LOẠI</th>
+                  <th style="width: 180px;" class="text-center">NGUỒN DỮ LIỆU</th>
+                  <th style="width: 140px;" class="text-center">TRẠNG THÁI</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyReportSummaryTable">
+                <!-- Sẽ được fill bằng JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BẢNG CHI TIẾT TICKET OTRS -->
+        <div class="stats-card">
+          <div class="stats-card-header" style="flex-wrap:wrap; gap:12px;">
+            <div class="stats-card-title">
+              <i class="fa-solid fa-ticket-simple" style="color:#d97706; font-size:16px;"></i>
+              <h3>Danh sách Ticket OTRS</h3>
+              <span class="stats-card-badge" id="otrsListBadge">0 ticket</span>
+            </div>
+
+            <!-- Toolbar lọc ticket OTRS -->
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div class="stats-search-box" style="margin:0;">
+                <i class="fa-solid fa-magnifying-glass stats-search-icon"></i>
+                <input type="text" class="stats-search-input" id="otrsSearchInput" placeholder="Tìm theo mã ticket, tiêu đề..." oninput="filterOtrsList()">
+              </div>
+              <div class="date-preset-pills">
+                <button type="button" class="preset-pill active" id="btnOtrsFilterAll" onclick="setOtrsCategoryFilter('all')">Tất cả</button>
+                <button type="button" class="preset-pill" id="btnOtrsFilterIssue" onclick="setOtrsCategoryFilter('Issue')">Chỉ Issue</button>
+                <button type="button" class="preset-pill" id="btnOtrsFilterRequest" onclick="setOtrsCategoryFilter('Request')">Chỉ Request</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-table-wrapper">
+            <table class="table-stitch-stats" style="width:100%;">
+              <thead>
+                <tr>
+                  <th style="width: 60px;" class="text-center">STT</th>
+                  <th style="width: 180px;">MÃ TICKET</th>
+                  <th>TIÊU ĐỀ TICKET</th>
+                  <th style="width: 130px;" class="text-center">NGÀY TẠO</th>
+                  <th style="width: 140px;" class="text-center">PHÂN LOẠI</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyOtrsTickets">
+                <!-- Dynamic OTRS list -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
   </main>
@@ -4736,28 +5146,43 @@
       };
 
       /* ──────────────────────────────────────────────────────────────────────────
-         VIEW SWITCHER: SOẠN ISSUE <-> SỐ LƯỢNG THEO NHÂN VIÊN
+         VIEW SWITCHER: SOẠN ISSUE <-> SỐ LƯỢNG THEO NHÂN VIÊN <-> VOIP <-> BÁO CÁO
       ────────────────────────────────────────────────────────────────────────── */
       let currentStudioView = "editor";
       let statsRange = "today";
       let statsSelectedStaff = null;
 
+      // Report state
+      let reportEmailData = null;
+      let reportOtrsData = null;
+      let reportLoading = false;
+      let reportLastUpdated = null;
+      let otrsSearchKeyword = "";
+      let otrsCategoryFilter = "all";
+      const REPORT_EMAIL_API_URL = "https://script.google.com/macros/s/AKfycbz1pvoCUvAAA24XziiJZhTOc0zdxaaoLGkkWTYXyAlecU2pNyT0taW1ARDerqw8MBao/exec";
+      const REPORT_OTRS_API_URL = "https://script.google.com/macros/s/AKfycbwJJxwDVjqx-AQtaLg3TKXtUS2RWOi2JiqNb0BNTpWK-GKOyTrd9zL9uk5Rfdj68n0oRg/exec";
+      const REPORT_CACHE_KEY = "dms_report_cached_data_v1";
+
       window.switchStudioView = function(view) {
-        currentStudioView = ["stats", "voip"].includes(view) ? view : "editor";
+        currentStudioView = ["stats", "voip", "report"].includes(view) ? view : "editor";
         const viewEditor = document.getElementById("viewEditor");
         const viewStats = document.getElementById("viewStats");
         const viewVoip = document.getElementById("viewVoip");
+        const viewReport = document.getElementById("viewReport");
         const btnNavEditor = document.getElementById("btnNavEditor");
         const btnNavStats = document.getElementById("btnNavStats");
         const btnNavVoip = document.getElementById("btnNavVoip");
+        const btnNavReport = document.getElementById("btnNavReport");
 
         if (viewEditor) viewEditor.style.display = currentStudioView === "editor" ? "block" : "none";
         if (viewStats) viewStats.style.display = currentStudioView === "stats" ? "block" : "none";
         if (viewVoip) viewVoip.style.display = currentStudioView === "voip" ? "block" : "none";
+        if (viewReport) viewReport.style.display = currentStudioView === "report" ? "block" : "none";
 
         if (btnNavEditor) btnNavEditor.classList.toggle("active", currentStudioView === "editor");
         if (btnNavStats) btnNavStats.classList.toggle("active", currentStudioView === "stats");
         if (btnNavVoip) btnNavVoip.classList.toggle("active", currentStudioView === "voip");
+        if (btnNavReport) btnNavReport.classList.toggle("active", currentStudioView === "report");
 
         if (currentStudioView === "stats") {
           renderStatsPage();
@@ -4776,9 +5201,431 @@
           if (typeof updateVoipSyncStatusDisplay === "function") {
             updateVoipSyncStatusDisplay();
           }
+        } else if (currentStudioView === "report") {
+          openReportPage();
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
       };
+
+      /* ──────────────────────────────────────────────────────────────────────────
+         REPORT DASHBOARD LOGIC (CUỘC GỌI, ISSUE, EMAIL, TICKET OTRS)
+      ────────────────────────────────────────────────────────────────────────── */
+      function loadReportCache() {
+        try {
+          const raw = localStorage.getItem(REPORT_CACHE_KEY);
+          if (raw) {
+            const cached = JSON.parse(raw);
+            if (cached) {
+              if (cached.email) reportEmailData = cached.email;
+              if (cached.otrs) reportOtrsData = cached.otrs;
+              if (cached.updatedAt) reportLastUpdated = new Date(cached.updatedAt);
+            }
+          }
+        } catch (e) {
+          console.warn("loadReportCache error:", e);
+        }
+      }
+
+      function saveReportCache() {
+        try {
+          localStorage.setItem(REPORT_CACHE_KEY, JSON.stringify({
+            email: reportEmailData,
+            otrs: reportOtrsData,
+            updatedAt: reportLastUpdated ? reportLastUpdated.getTime() : Date.now()
+          }));
+        } catch (e) {
+          console.warn("saveReportCache error:", e);
+        }
+      }
+
+      async function openReportPage() {
+        // 1. Tải cache nhanh nếu có
+        if (!reportEmailData || !reportOtrsData) {
+          loadReportCache();
+        }
+        if (!voipCalls || voipCalls.length === 0) {
+          if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
+        }
+
+        // 2. Render ngay lập tức những gì đang có
+        renderReportPage();
+
+        // 3. Nếu chưa từng fetch hoặc data rỗng, tự động fetch mới
+        if (!reportEmailData || !reportOtrsData) {
+          fetchReportData(false);
+        } else {
+          // Nếu data VoIP hoặc Issue chưa có, fetch ngầm
+          if ((!voipCalls || voipCalls.length === 0) && typeof fetchVoipCalls === "function") {
+            fetchVoipCalls(false, true);
+          }
+          if ((!r2Issues || r2Issues.length === 0) && typeof fetchIssuesFromR2 === "function") {
+            fetchIssuesFromR2(true);
+          }
+        }
+      }
+
+      window.fetchReportData = async function(force = false) {
+        if (reportLoading) return;
+        reportLoading = true;
+
+        const iconRefresh = document.getElementById("iconRefreshReport");
+        const loadingIndicator = document.getElementById("reportLoadingIndicator");
+        const btnRefresh = document.getElementById("btnRefreshReport");
+
+        if (iconRefresh) iconRefresh.classList.add("fa-spin");
+        if (loadingIndicator) loadingIndicator.style.display = "inline-flex";
+        if (btnRefresh && force) btnRefresh.disabled = true;
+
+        try {
+          // Đảm bảo có VoIP và Issue mới nhất
+          const bgPromises = [];
+          if ((force || !voipCalls || voipCalls.length === 0) && typeof fetchVoipCalls === "function") {
+            bgPromises.push(fetchVoipCalls(false, true));
+          }
+          if ((force || !r2Issues || r2Issues.length === 0) && typeof fetchIssuesFromR2 === "function") {
+            bgPromises.push(fetchIssuesFromR2(true));
+          }
+
+          // Fetch đồng thời cả 2 Google Apps Script APIs
+          const fetchEmailPromise = fetch(REPORT_EMAIL_API_URL, { cache: "no-cache" })
+            .then(res => res.json())
+            .catch(err => {
+              console.warn("Lỗi fetch Email API:", err);
+              return null;
+            });
+
+          const fetchOtrsPromise = fetch(REPORT_OTRS_API_URL, { cache: "no-cache" })
+            .then(res => res.json())
+            .catch(err => {
+              console.warn("Lỗi fetch OTRS API:", err);
+              return null;
+            });
+
+          const [emailRes, otrsRes] = await Promise.all([fetchEmailPromise, fetchOtrsPromise]);
+          await Promise.allSettled(bgPromises);
+
+          if (emailRes) reportEmailData = emailRes;
+          if (otrsRes) reportOtrsData = otrsRes;
+          reportLastUpdated = new Date();
+          saveReportCache();
+
+          renderReportPage();
+          if (force) showToast("Đã cập nhật số liệu Báo cáo mới nhất!", "fa-circle-check");
+        } catch (err) {
+          console.error("fetchReportData error:", err);
+          if (force) showToast("Lỗi khi tải dữ liệu báo cáo!", "fa-triangle-exclamation");
+        } finally {
+          reportLoading = false;
+          if (iconRefresh) iconRefresh.classList.remove("fa-spin");
+          if (loadingIndicator) loadingIndicator.style.display = "none";
+          if (btnRefresh) btnRefresh.disabled = false;
+        }
+      };
+
+      function renderReportPage() {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const todayDateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+        const thisMonthStr = `${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+        const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+        // 1. Badges ngày tháng
+        const todayBadge = document.getElementById("reportTodayBadge");
+        const monthBadge = document.getElementById("reportMonthBadge");
+        const lastUpdatedText = document.getElementById("reportLastUpdatedText");
+        if (todayBadge) todayBadge.innerHTML = `<i class="fa-regular fa-calendar-check"></i> Hôm nay: ${todayDateStr}`;
+        if (monthBadge) monthBadge.innerHTML = `<i class="fa-regular fa-calendar"></i> Tháng ${thisMonthStr}`;
+        if (lastUpdatedText) {
+          lastUpdatedText.textContent = reportLastUpdated
+            ? `${pad(reportLastUpdated.getHours())}:${pad(reportLastUpdated.getMinutes())}:${pad(reportLastUpdated.getSeconds())} ${todayDateStr}`
+            : "Chưa cập nhật";
+        }
+
+        // 2. TÍNH TOÁN CUỘC GỌI VOIP24H
+        const calls = Array.isArray(voipCalls) ? voipCalls : [];
+        const voipMonthTotal = calls.length; // Danh sách VoIP mặc định tải từ 01/tháng đến nay
+        const voipTodayCalls = calls.filter(c => (c.calldate || "").startsWith(todayYMD));
+        const voipTodayTotal = voipTodayCalls.length;
+        let voipTodayInbound = 0;
+        let voipTodayOutbound = 0;
+        voipTodayCalls.forEach(c => {
+          const to = (c.type_origin || "").toLowerCase();
+          const tt = (c.typeText || "").toLowerCase();
+          if (to === "inbound" || tt.includes("vao") || tt.includes("vào")) voipTodayInbound++;
+          else if (to === "outbound" || tt.includes("ra")) voipTodayOutbound++;
+        });
+
+        const elRepVoipMonth = document.getElementById("repVoipMonthTotal");
+        const elRepVoipToday = document.getElementById("repVoipTodayTotal");
+        const elRepVoipInbound = document.getElementById("repVoipTodayInbound");
+        const elRepVoipOutbound = document.getElementById("repVoipTodayOutbound");
+        if (elRepVoipMonth) elRepVoipMonth.textContent = voipMonthTotal.toLocaleString();
+        if (elRepVoipToday) elRepVoipToday.textContent = voipTodayTotal.toLocaleString();
+        if (elRepVoipInbound) elRepVoipInbound.textContent = voipTodayInbound.toLocaleString();
+        if (elRepVoipOutbound) elRepVoipOutbound.textContent = voipTodayOutbound.toLocaleString();
+
+        // 3. TÍNH TOÁN ISSUE DMS (Cloud R2)
+        const allIssues = Array.isArray(r2Issues) ? r2Issues : [];
+        const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
+        const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
+        const issuesMonthTotal = issuesInMonth.length;
+        const issuesTodayTotal = issuesToday.length;
+
+        // Tìm nhân viên có nhiều Issue hôm nay nhất
+        const staffTodayCount = {};
+        issuesToday.forEach(n => {
+          const sName = n.memberName || n.memberCode || "Khác";
+          staffTodayCount[sName] = (staffTodayCount[sName] || 0) + 1;
+        });
+        let topStaffName = "--";
+        let topStaffMax = 0;
+        Object.keys(staffTodayCount).forEach(name => {
+          if (staffTodayCount[name] > topStaffMax) {
+            topStaffMax = staffTodayCount[name];
+            topStaffName = `${name} (${topStaffMax})`;
+          }
+        });
+
+        const elRepIssuesMonth = document.getElementById("repIssuesMonthTotal");
+        const elRepIssuesToday = document.getElementById("repIssuesTodayTotal");
+        const elRepTopStaff = document.getElementById("repTopStaffIssue");
+        if (elRepIssuesMonth) elRepIssuesMonth.textContent = issuesMonthTotal.toLocaleString();
+        if (elRepIssuesToday) elRepIssuesToday.textContent = issuesTodayTotal.toLocaleString();
+        if (elRepTopStaff) elRepTopStaff.textContent = topStaffName;
+
+        // 4. TÍNH TOÁN EMAIL HỖ TRỢ
+        const emailTotal = reportEmailData?.total ?? 0;
+        const emailReceived = reportEmailData?.received ?? 0;
+        const emailSent = reportEmailData?.sent ?? 0;
+
+        const elRepEmailTotal = document.getElementById("repEmailTotal");
+        const elRepEmailRecv = document.getElementById("repEmailReceived");
+        const elRepEmailSent = document.getElementById("repEmailSent");
+        if (elRepEmailTotal) elRepEmailTotal.textContent = emailTotal.toLocaleString();
+        if (elRepEmailRecv) elRepEmailRecv.textContent = emailReceived.toLocaleString();
+        if (elRepEmailSent) elRepEmailSent.textContent = emailSent.toLocaleString();
+
+        // 5. TÍNH TOÁN TICKET OTRS
+        const otrsList = Array.isArray(reportOtrsData) ? reportOtrsData : [];
+        const otrsTotal = otrsList.length;
+        const otrsIssues = otrsList.filter(t => (t.ticketCategory || "").toLowerCase() === "issue").length;
+        const otrsRequests = otrsList.filter(t => (t.ticketCategory || "").toLowerCase() === "request").length;
+
+        const elRepOtrsTotal = document.getElementById("repOtrsTotal");
+        const elRepOtrsIssues = document.getElementById("repOtrsIssues");
+        const elRepOtrsRequests = document.getElementById("repOtrsRequests");
+        if (elRepOtrsTotal) elRepOtrsTotal.textContent = otrsTotal.toLocaleString();
+        if (elRepOtrsIssues) elRepOtrsIssues.textContent = otrsIssues.toLocaleString();
+        if (elRepOtrsRequests) elRepOtrsRequests.textContent = otrsRequests.toLocaleString();
+
+        // 6. RENDER BẢNG TỔNG HỢP ĐỐI CHIẾU
+        const tbodySummary = document.getElementById("tbodyReportSummaryTable");
+        if (tbodySummary) {
+          tbodySummary.innerHTML = `
+            <tr>
+              <td>
+                <div style="font-weight:700; color:#0284c7; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-phone-volume"></i> Cuộc gọi tổng đài
+                </div>
+                <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Hotline Voip24h 02873065650</div>
+              </td>
+              <td class="text-center">
+                <strong style="color:var(--text-main); font-size:14px; font-family:var(--font-mono);">${voipTodayTotal}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);"> cuộc</span>
+              </td>
+              <td class="text-center">
+                <strong style="color:#0284c7; font-size:14px; font-family:var(--font-mono);">${voipMonthTotal}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);"> cuộc</span>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px;">
+                  <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-weight:700;">
+                    Nhận: ${voipTodayInbound}
+                  </span>
+                  <span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px; font-weight:700;">
+                    Gọi ra: ${voipTodayOutbound}
+                  </span>
+                </div>
+              </td>
+              <td class="text-center font-bold" style="color:var(--text-muted); font-size:12px;">Voip24h / R2 Cloud</td>
+              <td class="text-center">
+                <span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">
+                  <i class="fa-solid fa-circle-check"></i> Đã đồng bộ
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <div style="font-weight:700; color:#7c3aed; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-bug"></i> Ghi chú Issue DMS
+                </div>
+                <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Hệ thống ghi chú chuẩn hoá</div>
+              </td>
+              <td class="text-center">
+                <strong style="color:var(--text-main); font-size:14px; font-family:var(--font-mono);">${issuesTodayTotal}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);"> Issue</span>
+              </td>
+              <td class="text-center">
+                <strong style="color:#7c3aed; font-size:14px; font-family:var(--font-mono);">${issuesMonthTotal}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);"> Issue</span>
+              </td>
+              <td>
+                <span style="font-size:12px; color:var(--text-muted);">
+                  Top nhân viên hôm nay: <strong style="color:var(--text-main);">${escapeHTML(topStaffName)}</strong>
+                </span>
+              </td>
+              <td class="text-center font-bold" style="color:var(--text-muted); font-size:12px;">Cloudflare R2</td>
+              <td class="text-center">
+                <span style="background:#ede9fe; color:#6d28d9; border:1px solid #ddd6fe; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">
+                  <i class="fa-solid fa-circle-check"></i> Đã đồng bộ
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <div style="font-weight:700; color:#059669; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-envelope"></i> Email hỗ trợ
+                </div>
+                <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Gmail Support API</div>
+              </td>
+              <td class="text-center" colspan="2">
+                <strong style="color:#059669; font-size:14px; font-family:var(--font-mono);">${emailTotal}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);"> email tổng cộng</span>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px;">
+                  <span style="background:#d1fae5; color:#047857; padding:2px 8px; border-radius:4px; font-weight:700;">
+                    Nhận: ${emailReceived}
+                  </span>
+                  <span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-weight:700;">
+                    Gửi: ${emailSent}
+                  </span>
+                </div>
+              </td>
+              <td class="text-center font-bold" style="color:var(--text-muted); font-size:12px;">Google Apps Script</td>
+              <td class="text-center">
+                <span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">
+                  <i class="fa-solid fa-bolt"></i> Live API
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td>
+                <div style="font-weight:700; color:#d97706; display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-ticket"></i> Ticket OTRS
+                </div>
+                <div style="font-size:11.5px; color:var(--text-muted); margin-top:2px;">Hệ thống Ticketing OTRS</div>
+              </td>
+              <td class="text-center" colspan="2">
+                <strong style="color:#d97706; font-size:14px; font-family:var(--font-mono);">${otrsTotal}</strong>
+                <span style="font-size:11.5px; color:var(--text-muted);"> ticket tổng cộng</span>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px; font-size:12px;">
+                  <span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-weight:700;">
+                    Issue: ${otrsIssues}
+                  </span>
+                  <span style="background:#dbeafe; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-weight:700;">
+                    Request: ${otrsRequests}
+                  </span>
+                </div>
+              </td>
+              <td class="text-center font-bold" style="color:var(--text-muted); font-size:12px;">Google Apps Script</td>
+              <td class="text-center">
+                <span style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700;">
+                  <i class="fa-solid fa-bolt"></i> Live API
+                </span>
+              </td>
+            </tr>
+          `;
+        }
+
+        // 7. RENDER BẢNG CHI TIẾT TICKET OTRS
+        renderOtrsTicketList();
+      }
+
+      window.filterOtrsList = function() {
+        otrsSearchKeyword = (document.getElementById("otrsSearchInput")?.value || "").trim().toLowerCase();
+        renderOtrsTicketList();
+      };
+
+      window.setOtrsCategoryFilter = function(category) {
+        otrsCategoryFilter = category;
+        const btnAll = document.getElementById("btnOtrsFilterAll");
+        const btnIssue = document.getElementById("btnOtrsFilterIssue");
+        const btnRequest = document.getElementById("btnOtrsFilterRequest");
+        if (btnAll) btnAll.classList.toggle("active", category === "all");
+        if (btnIssue) btnIssue.classList.toggle("active", category === "Issue");
+        if (btnRequest) btnRequest.classList.toggle("active", category === "Request");
+        renderOtrsTicketList();
+      };
+
+      function renderOtrsTicketList() {
+        const tbody = document.getElementById("tbodyOtrsTickets");
+        const badge = document.getElementById("otrsListBadge");
+        if (!tbody) return;
+
+        const allTickets = Array.isArray(reportOtrsData) ? reportOtrsData : [];
+        const filtered = allTickets.filter(t => {
+          if (otrsCategoryFilter !== "all") {
+            if ((t.ticketCategory || "").toLowerCase() !== otrsCategoryFilter.toLowerCase()) return false;
+          }
+          if (otrsSearchKeyword) {
+            const haystack = `${t.ticketNumber || ""} ${t.title || ""} ${t.ticketCategory || ""} ${t.issueDate || ""}`.toLowerCase();
+            if (!haystack.includes(otrsSearchKeyword)) return false;
+          }
+          return true;
+        });
+
+        if (badge) badge.textContent = `${filtered.length}/${allTickets.length} ticket`;
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="temp-empty-view">
+                <i class="fa-solid fa-ticket-simple" style="font-size:24px; opacity:0.3; margin-bottom:8px;"></i>
+                <div>Chưa có dữ liệu ticket OTRS nào phù hợp.</div>
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map((t, idx) => {
+          const isIssue = (t.ticketCategory || "").toLowerCase() === "issue";
+          const catBadgeClass = isIssue
+            ? "background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;"
+            : "background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe;";
+          const catIcon = isIssue ? "fa-circle-exclamation" : "fa-lightbulb";
+
+          return `
+            <tr>
+              <td class="text-center font-bold" style="color:var(--text-muted);">${idx + 1}</td>
+              <td>
+                <span style="font-family:var(--font-mono); font-weight:700; color:var(--text-main); background:#f8fafc; padding:3px 8px; border-radius:4px; border:1px solid var(--border);">
+                  ${escapeHTML(t.ticketNumber || "—")}
+                </span>
+              </td>
+              <td>
+                <div style="font-weight:600; color:var(--text-main); font-size:13px; line-height:1.4;">
+                  ${escapeHTML(t.title || "—")}
+                </div>
+              </td>
+              <td class="text-center font-bold" style="color:var(--text-muted); font-size:12px; font-family:var(--font-mono);">
+                <i class="fa-regular fa-calendar" style="font-size:10px; margin-right:4px;"></i>${escapeHTML(t.issueDate || "—")}
+              </td>
+              <td class="text-center">
+                <span style="${catBadgeClass} font-size:11px; font-weight:700; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
+                  <i class="fa-solid ${catIcon}" style="font-size:10px;"></i> ${escapeHTML(t.ticketCategory || "Khác")}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join("");
+      }
 
       window.filterStatsByStaff = function(memberCode) {
         statsSelectedStaff = memberCode ? String(memberCode).trim().toUpperCase() : null;
@@ -5210,6 +6057,9 @@
         loadSolutions(true);
         loadDtList(true);
         fetchIssuesFromR2(false);
+        if (currentStudioView === "report" && typeof fetchReportData === "function") {
+          fetchReportData(true);
+        }
       });
 
       // Nút đồng bộ R2 ở tab Temp (Soạn Issue): Đẩy ghi chú tạm vào Issue & Call Log
