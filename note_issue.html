@@ -2656,7 +2656,7 @@
                 <!-- H: Hotline -->
                 <td class="td-field-cell">
                   <div class="field-input-box">
-                    <input type="text" id="inputHotline" class="form-control-studio" placeholder="VD: 0909280969..."
+                    <input type="text" id="inputHotline" class="form-control-studio" placeholder="VD: 0909280969, Zalo, OTRS..."
                       autocomplete="off" spellcheck="false" />
                   </div>
                   <div class="field-hint-chip" id="hintHotline"></div>
@@ -4626,14 +4626,49 @@
         }
       }
 
-      // 6. Hotline Validation
-      function formatHotline(raw) {
-        let val = raw.trim().replace(/\D/g, "");
-        if (!val) return "";
-        if (val.length === 9 && !val.startsWith("0")) {
-          val = "0" + val;
+      // 6. Hotline Validation (Hỗ trợ 10-11 số & Zalo, OTRS/ORTS, Mail, Line, Viber)
+      const SUPPORTED_HOTLINE_CHANNELS = ["Zalo", "OTRS", "Mail", "Line", "Viber"];
+
+      function isChannelHotline(raw) {
+        if (!raw) return null;
+        let s = String(raw).trim().replace(/^hotline[\s_:]*/i, "").trim();
+        if (!s) return null;
+        const lower = s.toLowerCase();
+        if (lower === "otrs" || lower === "orts") return "OTRS";
+        if (lower === "zalo") return "Zalo";
+        if (lower === "mail" || lower === "email") return "Mail";
+        if (lower === "line") return "Line";
+        if (lower === "viber") return "Viber";
+        for (const ch of SUPPORTED_HOTLINE_CHANNELS) {
+          if (lower.startsWith(ch.toLowerCase() + " ") || lower.startsWith(ch.toLowerCase() + ":") || lower.startsWith(ch.toLowerCase() + "_")) {
+            return ch + s.slice(ch.length);
+          }
         }
-        return val;
+        return null;
+      }
+
+      function formatHotline(raw) {
+        if (!raw) return "";
+        let s = String(raw).trim().replace(/^hotline[\s_:]*/i, "").trim();
+
+        // 1. Nếu là kênh (Zalo, OTRS, Mail, Line, Viber)
+        const channel = isChannelHotline(s);
+        if (channel) return channel;
+
+        // 2. Nếu là số điện thoại (10 hoặc 11 số)
+        let digits = s.replace(/\D/g, "");
+        if (!digits) return "";
+
+        // 9 số thiếu 0 đầu (vd: 909280969) -> 0909280969 (10 số)
+        if (digits.length === 9 && !digits.startsWith("0")) {
+          digits = "0" + digits;
+        }
+        // 10 số thiếu 0 đầu (số bàn 11 số thiếu 0, vd: 2593889979) -> 02593889979 (11 số)
+        else if (digits.length === 10 && !digits.startsWith("0")) {
+          digits = "0" + digits;
+        }
+
+        return digits;
       }
 
       function validateHotline() {
@@ -4644,17 +4679,33 @@
           return;
         }
 
-        const formatted = formatHotline(raw);
-        const isValid = /^0\d{9}$/.test(formatted);
-
-        if (isValid) {
+        // Kiểm tra kênh liên lạc
+        const channel = isChannelHotline(raw);
+        if (channel) {
           hintHotline.className = "field-hint-chip success";
-          hintHotline.innerHTML = `<i class="fa-solid fa-phone"></i> Hotline: <strong>${escapeHTML(formatted)}</strong>`;
+          let icon = "fa-headset";
+          if (channel.startsWith("Zalo")) icon = "fa-comment-dots";
+          else if (channel.startsWith("OTRS")) icon = "fa-ticket";
+          else if (channel.startsWith("Mail")) icon = "fa-envelope";
+          else if (channel.startsWith("Line")) icon = "fa-comments";
+          else if (channel.startsWith("Viber")) icon = "fa-phone-volume";
+          hintHotline.innerHTML = `<i class="fa-solid ${icon}"></i> Kênh: <strong>${escapeHTML(channel)}</strong>`;
+          return;
+        }
+
+        // Kiểm tra số điện thoại (chấp nhận cả 10 số và 11 số)
+        const formatted = formatHotline(raw);
+        const isValidPhone = /^0\d{9,10}$/.test(formatted);
+
+        if (isValidPhone) {
+          hintHotline.className = "field-hint-chip success";
+          hintHotline.innerHTML = `<i class="fa-solid fa-phone"></i> Hotline: <strong>${escapeHTML(formatted)}</strong> (${formatted.length} số)`;
         } else {
           hintHotline.className = "field-hint-chip warning";
-          hintHotline.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Cần 10 số (VD: 0909280969)`;
+          hintHotline.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Cần 10-11 số (VD: 0909280969) hoặc Zalo, OTRS, Mail, Line, Viber`;
         }
       }
+
 
       /* ──────────────────────────────────────────────────────────────────────────
          MUTUAL EXCLUSION CONTROLLERS (CHỈ NOTE 1 TRONG 2)
@@ -4980,7 +5031,7 @@
             nvbh: inputNvbh.value.trim(),
             nvbhFormatted: formatNvbh(inputNvbh.value),
             role: inputRole.value.trim(),
-            hotline: inputHotline.value.trim()
+            hotline: formatHotline(inputHotline.value) || inputHotline.value.trim()
           }
         };
 
@@ -6707,7 +6758,7 @@
         if (!iss) return "";
         if (iss.fields && iss.fields.hotline) return String(iss.fields.hotline).trim();
         const res = String(iss.result || "");
-        const m = res.match(/Hotline\s*([0-9]{9,11})/i) || res.match(/([0-9]{10,11})/);
+        const m = res.match(/Hotline[_\s]*([0-9a-zA-Z]{3,15})/i) || res.match(/([0-9]{10,11})/);
         return m ? m[1].trim() : "";
       }
 

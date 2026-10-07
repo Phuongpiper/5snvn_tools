@@ -123,7 +123,7 @@ function buildCallLogRow(issue, dtRows = []) {
   // 3. Hotline
   let hotline = (issue.fields?.hotline || "").trim();
   if (!hotline && resultText) {
-    const m = resultText.match(/_Hotline\s+([0-9]+)/i);
+    const m = resultText.match(/_Hotline[_\s]+([0-9a-zA-Z]+)/i);
     if (m) hotline = m[1].trim();
   }
 
