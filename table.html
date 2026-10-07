@@ -4436,27 +4436,55 @@
       const newId = "row_" + Date.now();
       const newRow = { id: newId };
 
+      const currentMemberFilter = document.getElementById("filterMemberSelect")?.value || "";
+      const currentProjectFilter = document.getElementById("filterProjectSelect")?.value || "";
+      const currentStatusFilter = document.getElementById("filterStatusSelect")?.value || "";
+
       // Initialize default values based on column type
       sheet.columns.forEach(col => {
         if (col.type === "date") newRow[col.id] = getTodayIso();
-        else if (col.type === "project") newRow[col.id] = (getAvailableProjects()[0] || "NVN");
-        else if (col.type === "member") newRow[col.id] = (getAvailableMembers()[0] || "Team NVN");
-        else if (col.type === "status") newRow[col.id] = (col.options && col.options[0]) || "Pending";
+        else if (col.type === "project") newRow[col.id] = currentProjectFilter || (getAvailableProjects()[0] || "NVN");
+        else if (col.type === "member") newRow[col.id] = currentMemberFilter || (getAvailableMembers()[0] || "Team NVN");
+        else if (col.type === "status") newRow[col.id] = currentStatusFilter || ((col.options && col.options[0]) || "Pending");
         else if (col.type === "checkbox") newRow[col.id] = false;
         else if (col.type === "number") newRow[col.id] = 0;
         else newRow[col.id] = "";
       });
 
-      sheet.rows.unshift(newRow); // Add to top
+      // Nếu đang tìm kiếm làm ẩn dòng mới, tự động xoá tìm kiếm để thấy dòng mới tạo
+      const searchInput = document.getElementById("globalSearchInput");
+      if (searchInput && searchInput.value) {
+        searchInput.value = "";
+      }
+
+      sheet.rows.push(newRow); // Thêm vào dưới cùng của bảng
       saveState(true);
       renderTableRowsOnly();
       updateFooterStats();
 
-      // Scroll to top
+      // Cuộn xuống dòng cuối cùng
       const scrollArea = document.getElementById("tableScrollArea");
-      if (scrollArea) scrollArea.scrollTop = 0;
+      if (scrollArea) {
+        requestAnimationFrame(() => {
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+        });
+      }
 
-      toast("Đã thêm dòng mới ở đầu bảng", "success");
+      // Highlight nhẹ dòng mới tạo để người dùng nhận diện ngay
+      setTimeout(() => {
+        const tr = document.querySelector(`tr[data-row-id="${newId}"]`);
+        if (tr) {
+          tr.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          tr.style.transition = "background-color 0.4s ease";
+          const originalBg = tr.style.backgroundColor;
+          tr.style.backgroundColor = "rgba(16, 185, 129, 0.15)";
+          setTimeout(() => {
+            tr.style.backgroundColor = originalBg;
+          }, 1200);
+        }
+      }, 60);
+
+      toast("Đã thêm dòng mới ở cuối bảng", "success");
     }
 
     /* ── CONFIRM MODAL SYSTEM (REPLACES NATIVE WINDOW.CONFIRM) ── */
