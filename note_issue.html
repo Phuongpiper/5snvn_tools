@@ -2836,6 +2836,22 @@
         <!-- Filter Sub-row -->
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:14px;">
 
+          <!-- Selection 1: Khoảng thời gian (Mặc định Tháng hiện tại) -->
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i class="fa-regular fa-calendar-days"></i> Thời gian:</span>
+            <select id="voipSelectRange" style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;" onchange="onVoipRangeChange(this.value)">
+              <option value="thisMonth" selected>Tháng này (01/MM → Nay)</option>
+              <option value="today">Hôm nay</option>
+              <option value="yesterday">Hôm qua</option>
+              <option value="7days">7 ngày qua</option>
+              <option value="custom">Tùy chọn ngày...</option>
+            </select>
+            <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:6px;">
+              <input type="date" id="voipDateStart" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" onchange="fetchVoipCalls(false)" />
+              <span style="font-size:12px; color:var(--text-muted);">đến</span>
+              <input type="date" id="voipDateEnd" style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;" onchange="fetchVoipCalls(false)" />
+            </div>
+          </div>
 
           <!-- Selection 2: Đầu số (DID) -->
           <div style="display:flex; align-items:center; gap:8px;">
@@ -5535,7 +5551,7 @@
          VOIP24H CALL HISTORY LOGIC & NOTE ISSUE STATUS MATCHING
       ────────────────────────────────────────────────────────────────────────── */
       let voipCalls = [];
-      let voipCurrentRange = "today";
+      let voipCurrentRange = "thisMonth";
       let voipLoading = false;
       let allR2TempIssues = [];
       let sugFilterType = "mine"; // "all" | "mine" — mặc định lọc theo nhân viên đang chọn
@@ -5693,7 +5709,9 @@
         }
 
         let start, end;
-        if (range === "yesterday") {
+        if (range === "today") {
+          start = end = now;
+        } else if (range === "yesterday") {
           const yesterday = new Date(now);
           yesterday.setDate(yesterday.getDate() - 1);
           start = end = yesterday;
@@ -5701,9 +5719,6 @@
           const from = new Date(now);
           from.setDate(from.getDate() - 6);
           start = from; end = now;
-        } else if (range === "thisMonth") {
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          end = now;
         } else if (range === "custom") {
           const s = document.getElementById("voipDateStart")?.value;
           const e = document.getElementById("voipDateEnd")?.value;
@@ -5714,9 +5729,12 @@
               date_end: `${fmt(ed)} 23:59:59`
             };
           }
-          start = end = now;
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = now;
         } else {
-          start = end = now;
+          // "thisMonth" hoặc mặc định: Từ ngày 1 tháng hiện tại đến hôm nay 23:59:59
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = now;
         }
 
         return {
@@ -5725,19 +5743,34 @@
         };
       }
 
-      window.setVoipDateRange = function(range, el) {
+      window.onVoipRangeChange = function(range) {
         voipCurrentRange = range;
-        document.querySelectorAll("[data-voip-range]").forEach(b => b.classList.remove("active"));
-        if (el) el.classList.add("active");
-
         const customWrap = document.getElementById("voipCustomDateWrap");
         if (customWrap) {
-          customWrap.style.display = range === "custom" ? "flex" : "none";
+          customWrap.style.display = range === "custom" ? "inline-flex" : "none";
+          if (range === "custom") {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, "0");
+            const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            const firstDayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+            const sEl = document.getElementById("voipDateStart");
+            const eEl = document.getElementById("voipDateEnd");
+            if (sEl && !sEl.value) sEl.value = firstDayStr;
+            if (eEl && !eEl.value) eEl.value = todayStr;
+          }
         }
-
         if (range !== "custom") {
           fetchVoipCalls(false);
         }
+      };
+
+      window.setVoipDateRange = function(range, el) {
+        voipCurrentRange = range;
+        const selectRange = document.getElementById("voipSelectRange");
+        if (selectRange) selectRange.value = range;
+        document.querySelectorAll("[data-voip-range]").forEach(b => b.classList.remove("active"));
+        if (el) el.classList.add("active");
+        window.onVoipRangeChange(range);
       };
 
       window.fetchVoipCalls = async function(showLoading) {

@@ -182,6 +182,17 @@ async function getVoipSession(forceRefresh = false) {
   }
 }
 
+function getCurrentMonthFormatted() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const startStr = `01-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
+  const endStr = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()}`;
+  return {
+    date_start: `${startStr} 00:00:00`,
+    date_end: `${endStr} 23:59:59`
+  };
+}
+
 function getTodayFormatted() {
   const now = new Date();
   const pad = n => String(n).padStart(2, "0");
@@ -196,7 +207,7 @@ async function fetchCallList(jar, params) {
   const searchParams = new URLSearchParams();
   searchParams.append("draw", "1");
   searchParams.append("start", "0");
-  searchParams.append("length", params.length || "1000");
+  searchParams.append("length", params.length || "5000");
   searchParams.append("date_start", params.date_start);
   searchParams.append("date_end", params.date_end);
   if (params.did && params.did !== "all") {
@@ -240,7 +251,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).end();
   }
 
-  const defaultDates = getTodayFormatted();
+  const defaultDates = getCurrentMonthFormatted();
 
   // Parse query params
   let queryParams = {};
