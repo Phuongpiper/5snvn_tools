@@ -2551,6 +2551,20 @@
       border-left: 4px solid #10b981 !important;
     }
 
+    .table-stitch-stats tr.call-row-excluded td {
+      background: #f8fafc !important;
+      color: #94a3b8;
+    }
+
+    .table-stitch-stats tr.call-row-excluded:hover td {
+      background: #f1f5f9 !important;
+      color: #64748b;
+    }
+
+    .table-stitch-stats tr.call-row-excluded td:first-child {
+      border-left: 4px solid #cbd5e1 !important;
+    }
+
     .voip-note-badge {
       display: inline-flex;
       align-items: center;
@@ -3426,6 +3440,15 @@
             </div>
           </div>
           <div class="stats-quick-actions">
+            <button type="button" class="btn-stats-tool" id="btnOpenExcludedPhonesModal" onclick="openExcludedPhonesModal()"
+              style="background:#ffffff; color:#dc2626; border-color:#fca5a5; font-weight:700;"
+              title="Quản lý danh sách các số điện thoại không cần Note Issue">
+              <i class="fa-solid fa-phone-slash" style="color:#dc2626;"></i> Số miễn note
+              <span id="badgeExcludedPhonesCount"
+                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:1px 6px; border-radius:10px; font-size:11px; font-weight:800; margin-left:3px;">
+                0
+              </span>
+            </button>
             <button type="button" class="btn-stats-tool primary" id="btnVoipRefresh" onclick="fetchVoipCalls(true)"
               title="Làm mới dữ liệu từ tổng đài">
               <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
@@ -3507,6 +3530,7 @@
               <option value="unnoted">🔴 Chưa note (Cần xử lý)</option>
               <option value="in_temp">🟡 Đang trong Temp</option>
               <option value="noted">🟢 Đã note R2</option>
+              <option value="excluded">⚪ Miễn note (Bỏ qua)</option>
             </select>
           </div>
 
@@ -4118,6 +4142,76 @@
             <i class="fa-solid fa-check"></i> Xác nhận đổi nhân viên
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QUẢN LÝ SỐ ĐIỆN THOẠI MIỄN NOTE ISSUE -->
+  <div class="member-modal-backdrop" id="excludedPhonesModalBackdrop" onclick="if(event.target===this) closeExcludedPhonesModal()">
+    <div class="member-modal-box" style="max-width: 660px;">
+      <div class="member-modal-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">
+            <i class="fa-solid fa-phone-slash"></i>
+          </div>
+          <div>
+            <h3>Số điện thoại miễn Note Issue</h3>
+            <p>Không cần ghi chú Issue &amp; không tính vào bất kỳ báo cáo / thống kê nào</p>
+          </div>
+        </div>
+        <button type="button" class="member-modal-close-btn" onclick="closeExcludedPhonesModal()" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="member-modal-body" style="padding: 18px 22px; max-height: 70vh; display: flex; flex-direction: column; gap: 14px;">
+        <!-- Form thêm số mới -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-md); padding:14px;">
+          <div style="font-weight:700; font-size:12.5px; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-plus-circle" style="color:#ef4444;"></i> Thêm số điện thoại miễn note
+          </div>
+          <div style="display:grid; grid-template-columns: 1.2fr 1fr auto; gap:8px;">
+            <input type="text" class="form-control-studio" id="inputNewExcludedPhone"
+              placeholder="Nhập SĐT (hỗ trợ nhiều số cách bởi dấu phẩy)..."
+              style="font-size:12.5px; padding:8px 10px;" onkeydown="if(event.key==='Enter') submitAddExcludedPhone()" />
+            <input type="text" class="form-control-studio" id="inputNewExcludedNote"
+              placeholder="Ghi chú lý do (vd: Nội bộ, Cá nhân, Spam...)"
+              style="font-size:12.5px; padding:8px 10px;" onkeydown="if(event.key==='Enter') submitAddExcludedPhone()" />
+            <button type="button" class="btn-studio-action" onclick="submitAddExcludedPhone()"
+              style="background:#dc2626; color:#fff; border:none; padding:8px 14px; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap; border-radius:var(--radius-sm);">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+            <i class="fa-solid fa-circle-info"></i> Các số trong danh sách này sẽ hiển thị xám nhạt, tự động gán trạng thái <em>Miễn note</em> và được loại trừ khỏi toàn bộ thẻ KPI và Báo cáo.
+          </div>
+        </div>
+
+        <!-- Ô tìm kiếm và số lượng -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div class="member-search-box" style="margin-bottom:0; flex:1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="excludedPhoneSearchInput" placeholder="Tìm kiếm số điện thoại trong danh sách..."
+              oninput="renderExcludedPhonesList(this.value)" />
+          </div>
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); white-space:nowrap;" id="excludedPhonesCountLabel">
+            0 số miễn note
+          </div>
+        </div>
+
+        <!-- Danh sách các số điện thoại -->
+        <div id="excludedPhonesListContainer" style="overflow-y:auto; max-height:280px; border:1px solid #e2e8f0; border-radius:var(--radius-sm); background:#fff;">
+          <!-- render bằng JS -->
+        </div>
+      </div>
+
+      <div class="member-modal-footer" style="padding:12px 22px; display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border-top:1px solid var(--border);">
+        <div style="font-size:11.5px; color:var(--text-muted);">
+          Dữ liệu lưu tự động trên trình duyệt này
+        </div>
+        <button type="button" class="btn-modal-cancel" onclick="closeExcludedPhonesModal()" style="display:inline-flex;">
+          Đóng
+        </button>
       </div>
     </div>
   </div>
@@ -6146,8 +6240,9 @@
             : "Chưa cập nhật";
         }
 
-        // 2. TÍNH TOÁN CUỘC GỌI VOIP24H
-        const calls = Array.isArray(voipCalls) ? voipCalls : [];
+        // 2. TÍNH TOÁN CUỘC GỌI VOIP24H (LOẠI BỎ CÁC SỐ MIỄN NOTE)
+        const rawCalls = Array.isArray(voipCalls) ? voipCalls : [];
+        const calls = rawCalls.filter(c => typeof isCallExcluded === "function" ? !isCallExcluded(c) : true);
         const voipMonthTotal = calls.length; // Danh sách VoIP mặc định tải từ 01/tháng đến nay
         const voipTodayCalls = calls.filter(c => (c.calldate || "").startsWith(todayYMD));
         const voipTodayTotal = voipTodayCalls.length;
@@ -6169,8 +6264,13 @@
         if (elRepVoipInbound) elRepVoipInbound.textContent = voipTodayInbound.toLocaleString();
         if (elRepVoipOutbound) elRepVoipOutbound.textContent = voipTodayOutbound.toLocaleString();
 
-        // 3. TÍNH TOÁN ISSUE DMS (Cloud R2)
-        const allIssues = Array.isArray(r2Issues) ? r2Issues : [];
+        // 3. TÍNH TOÁN ISSUE DMS (Cloud R2 - LOẠI TRỪ SỐ MIỄN NOTE)
+        const rawIssues = Array.isArray(r2Issues) ? r2Issues : [];
+        const allIssues = rawIssues.filter(iss => {
+          if (typeof isPhoneExcluded !== "function") return true;
+          const p = typeof extractHotlineFromIssue === "function" ? extractHotlineFromIssue(iss) : "";
+          return !isPhoneExcluded(p);
+        });
         const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
         const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
         const issuesMonthTotal = issuesInMonth.length;
@@ -6404,8 +6504,9 @@
         const pad = n => String(n).padStart(2, "0");
         const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-        // 1. Cuộc gọi tổng đài VoIP24h
-        const calls = Array.isArray(voipCalls) ? voipCalls : [];
+        // 1. Cuộc gọi tổng đài VoIP24h (LOẠI BỎ CÁC SỐ MIỄN NOTE)
+        const rawCalls = Array.isArray(voipCalls) ? voipCalls : [];
+        const calls = rawCalls.filter(c => typeof isCallExcluded === "function" ? !isCallExcluded(c) : true);
         const voipMonthTotal = calls.length;
         const voipTodayCalls = calls.filter(c => (c.calldate || "").startsWith(todayYMD));
         const voipTodayTotal = voipTodayCalls.length;
@@ -6423,8 +6524,13 @@
         const emailReceived = reportEmailData?.received ?? 0;
         const emailSent = reportEmailData?.sent ?? 0;
 
-        // 3. Issue DMS (Quy tắc: Hotline = số Issue note trên DMS, Mail = số mail nhận, Tổng Issue trong ngày = Hotline + Mail)
-        const allIssues = Array.isArray(r2Issues) ? r2Issues : [];
+        // 3. Issue DMS (Quy tắc: Hotline = số Issue note trên DMS, Mail = số mail nhận, Tổng Issue trong ngày = Hotline + Mail - LOẠI TRỪ SỐ MIỄN NOTE)
+        const rawIssues = Array.isArray(r2Issues) ? r2Issues : [];
+        const allIssues = rawIssues.filter(iss => {
+          if (typeof isPhoneExcluded !== "function") return true;
+          const p = typeof extractHotlineFromIssue === "function" ? extractHotlineFromIssue(iss) : "";
+          return !isPhoneExcluded(p);
+        });
         const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
         const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
         const issuesMonthTotal = issuesInMonth.length;
@@ -7565,6 +7671,251 @@
       }
 
       /* ──────────────────────────────────────────────────────────────────────────
+         QUẢN LÝ DANH SÁCH SỐ ĐIỆN THOẠI MIỄN NOTE ISSUE
+      ────────────────────────────────────────────────────────────────────────── */
+      const LS_EXCLUDED_PHONES_KEY = "dms_excluded_phones_v1";
+
+      function getExcludedPhones() {
+        try {
+          const raw = localStorage.getItem(LS_EXCLUDED_PHONES_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            return parsed.map(item => {
+              if (typeof item === "string") {
+                return { phone: item.trim(), note: "", addedAt: new Date().toISOString() };
+              }
+              return {
+                phone: String(item.phone || "").trim(),
+                note: String(item.note || "").trim(),
+                addedAt: item.addedAt || new Date().toISOString()
+              };
+            }).filter(item => Boolean(item.phone));
+          }
+        } catch (e) {
+          console.warn("getExcludedPhones parse error:", e);
+        }
+        return [];
+      }
+
+      function saveExcludedPhones(list) {
+        try {
+          const clean = (list || []).filter(item => item && item.phone);
+          localStorage.setItem(LS_EXCLUDED_PHONES_KEY, JSON.stringify(clean));
+        } catch (e) {
+          console.warn("saveExcludedPhones error:", e);
+        }
+        updateExcludedPhonesBadge();
+        if (typeof updateVoipKpiCardsAndBadges === "function") {
+          updateVoipKpiCardsAndBadges();
+        }
+        if (typeof renderVoipTable === "function") {
+          renderVoipTable();
+        }
+        if (typeof renderUnnotedSuggestions === "function") {
+          renderUnnotedSuggestions();
+        }
+        if (typeof renderReportPage === "function") {
+          renderReportPage();
+        }
+      }
+
+      function updateExcludedPhonesBadge() {
+        const list = getExcludedPhones();
+        const badge = document.getElementById("badgeExcludedPhonesCount");
+        if (badge) {
+          badge.textContent = list.length;
+        }
+        const label = document.getElementById("excludedPhonesCountLabel");
+        if (label) {
+          label.textContent = `${list.length} số miễn note`;
+        }
+      }
+
+      function isPhoneExcluded(rawPhone) {
+        if (!rawPhone) return false;
+        const clean = normalizePhone(rawPhone);
+        if (!clean) return false;
+        const list = getExcludedPhones();
+        return list.some(item => {
+          const itemClean = normalizePhone(item.phone);
+          return phoneMatches(clean, itemClean) || (clean.length >= 9 && itemClean.length >= 9 && clean.slice(-9) === itemClean.slice(-9));
+        });
+      }
+
+      function isCallExcluded(call) {
+        if (!call) return false;
+        const isInbound = (call.type_origin || "").toLowerCase() === "inbound" || (call.typeText || "").toLowerCase().includes("vào");
+        const hotline = isInbound ? (call.src || "") : (call.dst || "");
+        return isPhoneExcluded(hotline) || isPhoneExcluded(call.src) || isPhoneExcluded(call.dst);
+      }
+
+      window.openExcludedPhonesModal = function () {
+        const modal = document.getElementById("excludedPhonesModalBackdrop");
+        if (modal) {
+          modal.classList.add("show");
+          renderExcludedPhonesList();
+          setTimeout(() => {
+            document.getElementById("inputNewExcludedPhone")?.focus();
+          }, 150);
+        }
+      };
+
+      window.closeExcludedPhonesModal = function () {
+        const modal = document.getElementById("excludedPhonesModalBackdrop");
+        if (modal) {
+          modal.classList.remove("show");
+        }
+      };
+
+      window.renderExcludedPhonesList = function (filterQuery = "") {
+        const container = document.getElementById("excludedPhonesListContainer");
+        if (!container) return;
+
+        let list = getExcludedPhones();
+        updateExcludedPhonesBadge();
+
+        const q = String(filterQuery || "").toLowerCase().trim();
+        if (q) {
+          list = list.filter(item => {
+            const cleanPhone = normalizePhone(item.phone);
+            return item.phone.toLowerCase().includes(q) ||
+              cleanPhone.includes(q) ||
+              item.note.toLowerCase().includes(q);
+          });
+        }
+
+        if (list.length === 0) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:30px 20px; color:var(--text-muted); font-size:13px;">
+              <i class="fa-solid fa-phone-slash" style="font-size:24px; opacity:0.35; margin-bottom:8px; display:block;"></i>
+              ${q ? "Không tìm thấy số điện thoại nào khớp với tìm kiếm." : "Chưa có số điện thoại nào trong danh sách miễn note."}
+            </div>
+          `;
+          return;
+        }
+
+        let html = `
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <thead>
+              <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; color:var(--text-muted); font-size:11.5px; text-transform:uppercase; letter-spacing:0.03em;">
+                <th style="padding:8px 12px; text-align:left; font-weight:700;">#</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:700;">Số điện thoại</th>
+                <th style="padding:8px 12px; text-align:left; font-weight:700;">Ghi chú / Lý do</th>
+                <th style="padding:8px 12px; text-align:center; font-weight:700; width:60px;">Xoá</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        list.forEach((item, idx) => {
+          const dateStr = item.addedAt ? new Date(item.addedAt).toLocaleDateString("vi-VN") : "";
+          html += `
+            <tr style="border-bottom:1px solid #f1f5f9; transition:background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+              <td style="padding:9px 12px; color:var(--text-muted); font-size:11px;">${idx + 1}</td>
+              <td style="padding:9px 12px;">
+                <span style="font-family:var(--font-mono); font-weight:700; color:#dc2626; background:#fee2e2; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:5px;">
+                  <i class="fa-solid fa-phone-slash" style="font-size:10px;"></i> ${escapeHTML(item.phone)}
+                </span>
+              </td>
+              <td style="padding:9px 12px; color:var(--text-main);">
+                <div>${escapeHTML(item.note || "—")}</div>
+                ${dateStr ? `<div style="font-size:10.5px; color:var(--text-muted);">Thêm ngày: ${escapeHTML(dateStr)}</div>` : ''}
+              </td>
+              <td style="padding:9px 12px; text-align:center;">
+                <button type="button" class="btn-row-circle" style="color:#ef4444; border-color:#fecaca;"
+                  title="Xoá khỏi danh sách miễn note"
+                  onclick="deleteExcludedPhone('${escapeHTML(item.phone)}')">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+      };
+
+      window.submitAddExcludedPhone = function () {
+        const phoneInput = document.getElementById("inputNewExcludedPhone");
+        const noteInput = document.getElementById("inputNewExcludedNote");
+        const rawPhone = (phoneInput?.value || "").trim();
+        const note = (noteInput?.value || "").trim();
+
+        if (!rawPhone) {
+          showToast("Vui lòng nhập số điện thoại cần miễn note!", "fa-triangle-exclamation");
+          phoneInput?.focus();
+          return;
+        }
+
+        const parts = rawPhone.split(/[,;\n\r]+/).map(p => p.trim()).filter(Boolean);
+        if (parts.length === 0) {
+          showToast("Số điện thoại không hợp lệ!", "fa-triangle-exclamation");
+          return;
+        }
+
+        let list = getExcludedPhones();
+        let addedCount = 0;
+
+        parts.forEach(p => {
+          const cleanP = normalizePhone(p);
+          if (!cleanP) return;
+          const exists = list.some(item => phoneMatches(cleanP, normalizePhone(item.phone)));
+          if (!exists) {
+            list.unshift({
+              phone: p,
+              note: note || "Miễn note issue",
+              addedAt: new Date().toISOString()
+            });
+            addedCount++;
+          }
+        });
+
+        if (addedCount === 0) {
+          showToast("Các số điện thoại này đã có sẵn trong danh sách!", "fa-circle-info");
+          return;
+        }
+
+        saveExcludedPhones(list);
+        if (phoneInput) phoneInput.value = "";
+        if (noteInput) noteInput.value = "";
+        renderExcludedPhonesList();
+        showToast(`Đã thêm thành công ${addedCount} số điện thoại miễn note!`, "fa-circle-check");
+      };
+
+      window.deleteExcludedPhone = function (phoneToDelete) {
+        if (!phoneToDelete) return;
+        let list = getExcludedPhones();
+        const filtered = list.filter(item => !phoneMatches(item.phone, phoneToDelete));
+        saveExcludedPhones(filtered);
+        renderExcludedPhonesList(document.getElementById("excludedPhoneSearchInput")?.value || "");
+        showToast(`Đã xoá số ${phoneToDelete} khỏi danh sách miễn note.`, "fa-trash-can");
+      };
+
+      window.toggleExcludePhone = function (phone) {
+        if (!phone) return;
+        const cleanPhone = normalizePhone(phone);
+        if (!cleanPhone) return;
+
+        let list = getExcludedPhones();
+        const idx = list.findIndex(item => phoneMatches(item.phone, cleanPhone));
+        if (idx >= 0) {
+          const removed = list.splice(idx, 1)[0];
+          saveExcludedPhones(list);
+          showToast(`Đã gỡ miễn note cho số: ${removed.phone}! Cuộc gọi sẽ được tính lại bình thường.`, "fa-arrows-rotate");
+        } else {
+          list.unshift({
+            phone: phone,
+            note: "Miễn note trực tiếp từ danh sách cuộc gọi",
+            addedAt: new Date().toISOString()
+          });
+          saveExcludedPhones(list);
+          showToast(`Đã đánh dấu MIỄN NOTE cho số: ${phone}! Số này sẽ không tính vào báo cáo.`, "fa-phone-slash");
+        }
+      };
+
+      /* ──────────────────────────────────────────────────────────────────────────
          VOIP24H CALL HISTORY LOGIC & NOTE ISSUE STATUS MATCHING
       ────────────────────────────────────────────────────────────────────────── */
       let voipCalls = [];
@@ -7604,7 +7955,10 @@
         let missedCount = 0;
         let inboundCount = 0;
         let outboundCount = 0;
+        let validCallsCount = 0;
         (voipCalls || []).forEach(c => {
+          if (typeof isCallExcluded === "function" && isCallExcluded(c)) return; // BỎ QUA HOÀN TOÀN CÁC SỐ MIỄN NOTE!
+          validCallsCount++;
           const isAnswered = callIsAnswered(c);
           const noteInfo = checkCallNoteStatus(c);
           if (isAnswered && noteInfo.status === "unnoted") {
@@ -7620,7 +7974,7 @@
 
         // Update KPI cards
         const el = id => document.getElementById(id);
-        if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = voipCalls.length;
+        if (el("kpiVoipTotal")) el("kpiVoipTotal").textContent = validCallsCount;
         if (el("kpiVoipAnswered")) el("kpiVoipAnswered").textContent = answeredCount;
         if (el("kpiVoipMissed")) el("kpiVoipMissed").textContent = missedCount;
         if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = inboundCount;
@@ -7639,14 +7993,14 @@
             badge.style.color = "#dc2626";
             badge.style.borderColor = "#fca5a5";
           } else {
-            badge.textContent = `${voipCalls.length} cuộc`;
+            badge.textContent = `${validCallsCount} cuộc`;
             badge.style.background = "#eef2ff";
             badge.style.color = "#4f46e5";
             badge.style.borderColor = "#c7d2fe";
           }
         }
 
-        return { unnotedCount, answeredCount, missedCount, inboundCount, outboundCount };
+        return { unnotedCount, answeredCount, missedCount, inboundCount, outboundCount, validCallsCount };
       }
 
       function formatSyncTime(ts) {
@@ -7779,6 +8133,20 @@
         const staff = allSystemMembers.find(m => m.extension && String(m.extension).trim() === String(ext).trim()) || null;
 
         const isAnswered = callIsAnswered(call);
+
+        // QUY TẮC: Số điện thoại thuộc danh sách MIỄN NOTE ISSUE (Bỏ qua hoàn toàn)
+        if (typeof isCallExcluded === "function" && isCallExcluded(call)) {
+          return {
+            status: "excluded",
+            badgeText: "Miễn note",
+            hotline,
+            ext,
+            staff,
+            isInbound,
+            isAnswered,
+            isExcluded: true
+          };
+        }
 
         // QUY TẮC: Cuộc gọi nhỡ / đàm thoại <= 0 KHÔNG CẦN note issue!
         if (!isAnswered) {
@@ -8114,11 +8482,12 @@
             if (filterType === "outbound" && !(to === "outbound" || tt.includes("ra"))) return false;
           }
 
-          // Note Status filter (unnoted / in_temp / noted)
+          // Note Status filter (unnoted / in_temp / noted / excluded)
           if (filterNote !== "all") {
             if (filterNote === "unnoted" && noteInfo.status !== "unnoted") return false;
             if (filterNote === "in_temp" && noteInfo.status !== "in_temp") return false;
             if (filterNote === "noted" && noteInfo.status !== "noted") return false;
+            if (filterNote === "excluded" && noteInfo.status !== "excluded") return false;
           }
 
           // Search query
@@ -8151,13 +8520,16 @@
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
 
           const noteInfo = checkCallNoteStatus(c);
+          const isExcluded = noteInfo.status === "excluded";
           const isUnnoted = noteInfo.status === "unnoted";
           const isInTemp = noteInfo.status === "in_temp";
           const isNoted = noteInfo.status === "noted";
 
           // Row class highlight
           let rowClass = "";
-          if (isUnnoted && isAnswered) {
+          if (isExcluded) {
+            rowClass = "call-row-excluded";
+          } else if (isUnnoted && isAnswered) {
             rowClass = "call-row-unnoted"; // HIỆN ĐỎ!
           } else if (isUnnoted && isMissed) {
             rowClass = "call-row-missed-unnoted";
@@ -8177,7 +8549,9 @@
             : `<span class="voip-type-badge outbound"><i class="fa-solid fa-phone-arrow-up-right"></i> Gọi ra</span>`;
 
           let noteBadge = "";
-          if (!isAnswered) {
+          if (isExcluded) {
+            noteBadge = `<span class="voip-note-badge" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;" title="Số điện thoại thuộc danh sách miễn note Issue"><i class="fa-solid fa-phone-slash" style="font-size:10px;"></i> Miễn note</span>`;
+          } else if (!isAnswered) {
             // Cuộc gọi nhỡ (đàm thoại = 0): KHÔNG CẦN note, không hiện badge note
             noteBadge = "";
           } else if (isNoted) {
@@ -8218,8 +8592,8 @@
             </td>
             <td>
               <span class="voip-phone-chip" onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}', '${escapeHTML(cDateRaw)}')" title="Bấm để nạp số vào form Soạn Issue">
-                <i class="fa-solid fa-phone" style="font-size:10px; ${isUnnoted && isAnswered ? 'color:#dc2626;' : 'opacity:0.6;'}"></i>
-                <strong style="${isUnnoted && isAnswered ? 'color:#b91c1c;' : ''}">${escapeHTML(hotlineNum || "—")}</strong>
+                <i class="fa-solid fa-phone" style="font-size:10px; ${(isUnnoted && isAnswered && !isExcluded) ? 'color:#dc2626;' : 'opacity:0.6;'}"></i>
+                <strong style="${(isUnnoted && isAnswered && !isExcluded) ? 'color:#b91c1c;' : (isExcluded ? 'color:#94a3b8;' : '')}">${escapeHTML(hotlineNum || "—")}</strong>
               </span>
             </td>
             <td>${extChipHtml}</td>
@@ -8245,11 +8619,16 @@
                   onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}', '${escapeHTML(cDateRaw)}')">
                   <i class="fa-solid fa-bolt" style="color:var(--primary);"></i>
                 </button>
-                ${(isUnnoted && isAnswered) ? `
+                ${(isUnnoted && isAnswered && !isExcluded) ? `
                 <button type="button" class="btn-row-circle" style="color:#059669; border-color:#a7f3d0; background:#ecfdf5;" title="Thêm nhanh vào danh sách tạm (Temp)"
                   onclick="quickAddCallToTemp('${escapeHTML(c.id)}')">
                   <i class="fa-solid fa-plus"></i>
                 </button>` : ''}
+                <button type="button" class="btn-row-circle" title="${isExcluded ? 'Gỡ khỏi danh sách miễn note' : 'Thêm vào danh sách miễn note'}"
+                  style="${isExcluded ? 'color:#dc2626; border-color:#fca5a5; background:#fee2e2;' : 'color:#64748b;'}"
+                  onclick="toggleExcludePhone('${escapeHTML(hotlineNum || "")}')">
+                  <i class="fa-solid fa-phone-slash"></i>
+                </button>
                 <button type="button" class="btn-row-circle" title="Sao chép số Hotline"
                   onclick="navigator.clipboard.writeText('${escapeHTML(hotlineNum || "")}').then(() => showToast('Đã sao chép: ${escapeHTML(hotlineNum || "")}', 'fa-copy'))">
                   <i class="fa-regular fa-copy"></i>
@@ -8536,6 +8915,7 @@
 
       async function init() {
         initDateInputs();
+        if (typeof updateExcludedPhonesBadge === "function") updateExcludedPhonesBadge();
         if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
         if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
         if (typeof updateVoipSyncStatusDisplay === "function") updateVoipSyncStatusDisplay();
