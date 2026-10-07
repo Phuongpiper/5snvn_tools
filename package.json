@@ -1,5 +1,10 @@
 {
   "dependencies": {
     "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "libsodium-wrappers": "^0.8.4",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
   }
 }
