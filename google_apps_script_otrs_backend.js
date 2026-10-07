@@ -76,7 +76,7 @@ function doGet(e) {
 }
 
 // ==============================
-// 2. POST REQUEST: THÊM DÒNG OTRS VÀO CUỐI SHEET
+// 2. POST REQUEST: THÊM DÒNG OTRS VÀO CUỐI SHEET (TỰ ĐỘNG CHỐNG TRÙNG)
 // ==============================
 function doPost(e) {
   try {
@@ -88,12 +88,32 @@ function doPost(e) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const otrsSheet = ss.getSheets().find(s => s.getSheetId() === OTRS_SHEET_GID) || ss.getActiveSheet();
 
+    // 1. Quét danh sách các Ticket / Chi tiết đã có sẵn trên Sheet để chống trùng lặp tuyệt đối
+    const lastRow = otrsSheet.getLastRow();
+    const existingMap = {};
+    if (lastRow > 1) {
+      // Đọc từ cột F (Tên CV) và G (Chi tiết) từ dòng 2
+      const existingData = otrsSheet.getRange(2, 6, lastRow - 1, 2).getValues();
+      for (let i = 0; i < existingData.length; i++) {
+        const cv = String(existingData[i][0] || "").trim().toLowerCase();
+        const detail = String(existingData[i][1] || "").trim().toLowerCase();
+        if (detail) existingMap[detail] = true;
+        const m = detail.match(/\b\d{14,18}\b/);
+        if (m) {
+          existingMap[cv + "__" + m[0]] = true;
+          existingMap[m[0]] = true; // Lưu mã số ticket thuần
+        }
+      }
+    }
+
     // Hỗ trợ cả mảng rows hoặc 1 dòng đơn lẻ (data / postData)
     const rowsToAdd = Array.isArray(postData.rows) && postData.rows.length > 0 
       ? postData.rows 
       : (postData.data ? [postData.data] : [postData]);
 
-    let count = 0;
+    let insertedCount = 0;
+    let skippedCount = 0;
+
     rowsToAdd.forEach(function(row) {
       // 12 cột từ A đến L theo chuẩn Template.xlsx
       const rowValues = [
@@ -111,17 +131,38 @@ function doPost(e) {
         row.colL || ""  // L: Kết quả CV (Đã hoàn tất + Chi tiết)
       ];
 
-      // Chỉ thêm dòng nếu có dữ liệu
-      if (rowValues.some(val => val !== "")) {
-        otrsSheet.appendRow(rowValues);
-        count++;
+      // Bỏ qua nếu dòng rỗng
+      if (!rowValues.some(val => val !== "")) return;
+
+      const gVal = String(row.colG || "").trim().toLowerCase();
+      const fVal = String(row.colF || "").trim().toLowerCase();
+      const m = gVal.match(/\b\d{14,18}\b/);
+      const ticketNum = m ? m[0] : "";
+
+      // Kiểm tra xem ticket này đã tồn tại trên Sheet chưa
+      const isDuplicate = existingMap[gVal] || (ticketNum && (existingMap[fVal + "__" + ticketNum] || existingMap[ticketNum]));
+      if (isDuplicate) {
+        skippedCount++;
+        return; // ĐÃ CÓ TRÊN SHEET -> BỎ QUA KHÔNG CHÈN TRÙNG!
+      }
+
+      // Thêm dòng mới vào cuối sheet
+      otrsSheet.appendRow(rowValues);
+      insertedCount++;
+
+      // Ghi nhớ ngay để tránh trùng nếu trong cùng batch có dòng lặp lại
+      if (gVal) existingMap[gVal] = true;
+      if (ticketNum) {
+        existingMap[fVal + "__" + ticketNum] = true;
+        existingMap[ticketNum] = true;
       }
     });
 
     return jsonResponse({
       success: true,
-      message: "Đã thêm " + count + " dòng mới thành công vào sheet!",
-      insertedCount: count
+      message: "Đã xử lý: thêm " + insertedCount + " dòng mới, bỏ qua " + skippedCount + " dòng đã tồn tại trên Sheet!",
+      insertedCount: insertedCount,
+      skippedCount: skippedCount
     });
 
   } catch (error) {

@@ -4848,13 +4848,21 @@
 
       function getOtrsItemUniqueId(item) {
         if (!item) return "";
-        return String(item.id || (item.date + "_" + (item.result || item.issue) + "_" + (item.memberCode || ""))).trim();
+        const row = extractOtrsRowData(item);
+        if (!row) return "";
+        const matchNum = String(row.colG || "").match(/\b\d{14,18}\b/);
+        const ticketNum = matchNum ? matchNum[0] : "";
+        const cv = String(row.colF || "").trim().toLowerCase();
+        if (ticketNum) {
+          return `${cv}__${ticketNum}`;
+        }
+        return `${cv}__${String(row.colG || "").trim().toLowerCase()}`;
       }
 
       async function syncOtrsTicketsToGoogleSheet(notesList) {
         if (!Array.isArray(notesList) || notesList.length === 0) return 0;
 
-        // 1. Lấy danh sách ID đã sync trước đó từ localStorage để tránh ghi trùng lặp
+        // 1. Lấy danh sách ticket đã sync trước đó từ localStorage để tránh ghi trùng lặp
         let syncedIds = [];
         try {
           const raw = localStorage.getItem(OTRS_SYNCED_STORAGE_KEY);
@@ -4864,16 +4872,19 @@
           syncedIds = [];
         }
         const syncedSet = new Set(syncedIds);
+        const seenInBatch = new Set();
 
         // 2. Lọc ra các ticket OTRS hợp lệ và chưa từng được sync
         const pendingItems = [];
         for (const item of notesList) {
           if (!item) continue;
           const uId = getOtrsItemUniqueId(item);
-          if (syncedSet.has(uId)) continue;
+          if (!uId) continue;
+          if (syncedSet.has(uId) || seenInBatch.has(uId)) continue;
 
           const rowData = extractOtrsRowData(item);
           if (rowData) {
+            seenInBatch.add(uId);
             pendingItems.push({ item, uId, rowData });
           }
         }
@@ -4902,9 +4913,11 @@
             if (res.ok) {
               const resData = await res.json().catch(() => ({ success: true }));
               if (resData && resData.success !== false) {
-                successCount++;
                 newlySyncedIds.push(p.uId);
                 syncedSet.add(p.uId);
+                if (resData.insertedCount !== 0) {
+                  successCount++;
+                }
               } else {
                 console.warn("GAS trả về trạng thái không thành công cho ticket:", p.rowData, resData);
               }
@@ -4923,9 +4936,11 @@
             localStorage.setItem(OTRS_SYNCED_STORAGE_KEY, JSON.stringify(updatedList));
           } catch (_) { }
 
-          setTimeout(() => {
-            showToast(`Đã tự động đẩy ${newlySyncedIds.length} ticket OTRS vào Google Sheet báo cáo!`, "fa-file-excel");
-          }, 1200);
+          if (successCount > 0) {
+            setTimeout(() => {
+              showToast(`Đã tự động đẩy ${successCount} ticket OTRS mới vào Google Sheet báo cáo!`, "fa-file-excel");
+            }, 1200);
+          }
         }
 
         return successCount;
