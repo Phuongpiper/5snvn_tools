@@ -2853,13 +2853,16 @@
               <i class="fa-solid fa-headset"></i>
             </div>
             <div>
-              <div style="display:flex; align-items:center; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <h2>Lịch sử cuộc gọi Voip24h</h2>
                 <span class="stats-card-badge" style="background:#e0f2fe; color:#0284c7; border:1px solid #bae6fd;">
                   <i class="fa-solid fa-phone"></i> 02873065650
                 </span>
                 <span id="voipSyncStatusChip" style="font-size:11px; font-weight:700; color:#059669; display:inline-flex; align-items:center; gap:4px; margin-left:4px;">
                   <i class="fa-solid fa-circle-check"></i> Sẵn sàng
+                </span>
+                <span id="voipLastSyncTimeBadge" style="font-size:11.5px; font-weight:600; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;" title="Thời điểm đồng bộ dữ liệu gần nhất">
+                  <i class="fa-regular fa-clock" style="color:#6366f1;"></i> Đồng bộ gần nhất: <span id="voipLastSyncTimeText" style="color:var(--text-main); font-weight:700;">Chưa có</span>
                 </span>
               </div>
               <p>Đồng bộ dữ liệu trực tiếp từ tổng đài Voip24h. Tra cứu cuộc gọi, tải file CSV/Excel &amp; nạp số Hotline vào form Soạn Issue.</p>
@@ -4768,15 +4771,10 @@
             if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges(date_start, date_end);
             if (typeof renderVoipTable === "function") renderVoipTable();
             if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
-            const statusChip = document.getElementById("voipSyncStatusChip");
-            if (statusChip && !voipLoading) {
-              statusChip.innerHTML = `<i class="fa-solid fa-cloud"></i> ${voipCalls.length} cuộc gọi (Sẵn sàng) <span style="font-size:11px;font-weight:normal;color:#d97706;margin-left:6px;"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Đồng bộ ngầm...</span>`;
-              statusChip.style.color = "#059669";
-            }
           }
-          // 2. Âm thầm đồng bộ sau backend (silent background sync)
-          if (typeof fetchVoipCalls === "function") {
-            fetchVoipCalls(false, true);
+          // Cập nhật trạng thái và thời gian đồng bộ gần nhất (KHÔNG tự động gọi API ngầm)
+          if (typeof updateVoipSyncStatusDisplay === "function") {
+            updateVoipSyncStatusDisplay();
           }
         }
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -5741,6 +5739,55 @@
         return { unnotedCount, answeredCount, missedCount, inboundCount, outboundCount };
       }
 
+      function formatSyncTime(ts) {
+        if (!ts) return "Chưa có";
+        const d = new Date(ts);
+        if (isNaN(d.getTime())) return String(ts);
+        const pad = n => String(n).padStart(2, "0");
+        const hours = pad(d.getHours());
+        const minutes = pad(d.getMinutes());
+        const seconds = pad(d.getSeconds());
+        const day = pad(d.getDate());
+        const month = pad(d.getMonth() + 1);
+        const year = d.getFullYear();
+        return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+      }
+
+      function updateVoipSyncStatusDisplay(data) {
+        const statusChip = document.getElementById("voipSyncStatusChip");
+        const timeText = document.getElementById("voipLastSyncTimeText");
+
+        let syncedAt = null;
+        let source = "r2_cloud";
+        let count = (voipCalls && Array.isArray(voipCalls)) ? voipCalls.length : 0;
+
+        if (data && data.syncedAt) {
+          syncedAt = data.syncedAt;
+          source = data.source || source;
+        } else {
+          try {
+            const raw = localStorage.getItem(VOIP_CACHE_KEY);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed.syncedAt) syncedAt = parsed.syncedAt;
+              if (parsed.source) source = parsed.source;
+              if (parsed.calls && count === 0) count = parsed.calls.length;
+            }
+          } catch (_) {}
+        }
+
+        if (statusChip) {
+          const srcIcon = source === "r2_cloud" ? '<i class="fa-solid fa-cloud"></i>' : '<i class="fa-solid fa-circle-check"></i>';
+          const srcNote = source === "r2_cloud" ? ' (Cloud R2)' : ' (Live Voip24h)';
+          statusChip.innerHTML = `${srcIcon} ${count} cuộc gọi${srcNote}`;
+          statusChip.style.color = source === "r2_cloud" ? "#0284c7" : "#059669";
+        }
+
+        if (timeText) {
+          timeText.textContent = formatSyncTime(syncedAt);
+        }
+      }
+
       function getVoipApiBase() {
         return "/api/voip24h-calls";
       }
@@ -6032,11 +6079,13 @@
           if (data.status === "success") {
             voipCalls = data.calls || [];
 
+            const syncTime = data.syncedAt || new Date().toISOString();
+
             // Lưu vào localStorage để lần sau vào trang là có dữ liệu hiển thị ngay lập tức
             saveVoipCacheToLocal({
               calls: voipCalls,
               source: data.source,
-              syncedAt: Date.now(),
+              syncedAt: syncTime,
               date_start,
               date_end,
               did
@@ -6045,19 +6094,15 @@
             // Cập nhật thẻ KPI và Badge
             updateVoipKpiCardsAndBadges(date_start, date_end);
 
-            if (statusChip) {
-              const srcIcon = data.source === "r2_cloud" ? '<i class="fa-solid fa-cloud"></i>' : '<i class="fa-solid fa-circle-check"></i>';
-              const srcNote = data.source === "r2_cloud" ? ' (Cloud R2)' : ' (Live Voip24h)';
-              statusChip.innerHTML = `${srcIcon} ${voipCalls.length} cuộc gọi${srcNote}`;
-              statusChip.style.color = "#059669";
-            }
+            updateVoipSyncStatusDisplay({
+              syncedAt: syncTime,
+              source: data.source
+            });
 
             renderVoipTable();
             renderUnnotedSuggestions();
 
-            if (showLoading) {
-              showToast(`Đã đồng bộ thành công ${voipCalls.length} cuộc gọi!`, "fa-circle-check");
-            }
+            showToast(`Đã đồng bộ thành công ${voipCalls.length} cuộc gọi! (${formatSyncTime(syncTime)})`, "fa-circle-check");
           } else {
             throw new Error(data.message || "Không thể tải dữ liệu");
           }
@@ -6534,6 +6579,7 @@
         initDateInputs();
         if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
         if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
+        if (typeof updateVoipSyncStatusDisplay === "function") updateVoipSyncStatusDisplay();
         await checkMemberRequirement();
         await fetchSystemMembers();
         loadTempNotes();

@@ -395,6 +395,7 @@ module.exports = async function handler(req, res) {
         recordsFiltered: data.recordsFiltered || calls.length,
         stats: { total: calls.length, answered, missed, inbound, outbound },
         filter: { date_start, date_end, did },
+        syncedAt: new Date().toISOString(),
         calls
       };
 
