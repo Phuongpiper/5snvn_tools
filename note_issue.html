@@ -5695,9 +5695,9 @@
         let inboundCount = 0;
         let outboundCount = 0;
         (voipCalls || []).forEach(c => {
-          const noteInfo = checkCallNoteStatus(c);
           const isAnswered = callIsAnswered(c);
-          if (noteInfo.status === "unnoted" && isAnswered) {
+          const noteInfo = checkCallNoteStatus(c);
+          if (isAnswered && noteInfo.status === "unnoted") {
             unnotedCount++;
           }
           if (isAnswered) answeredCount++;
@@ -5804,16 +5804,13 @@
         return clean;
       }
 
-      // Helper: cuộc gọi được coi là "Trả lời" khi disposition=ANSWERED VÀ đàm thoại > 0
+      // Helper: Cuộc gọi được tính là "Trả lời" khi ĐÀM THOẠI (billsec) > 0.
+      // Khi ĐÀM THOẠI > 0 thì mới tính là trả lời và mới cần note Issue.
       function callIsAnswered(c) {
-        const byDisposition = (c.disposition || "").toUpperCase() === "ANSWERED"
-          || (c.statusText || "").toLowerCase().includes("trả lời");
-        if (!byDisposition) return false;
-        // Kiểm tra billsec: có thể là số giây (integer) hoặc chuỗi "HH:MM:SS"
+        if (!c) return false;
         const bs = c.billsec;
         if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
         if (typeof bs === "number") return bs > 0;
-        // Dạng "HH:MM:SS" → chuyển thành giây
         const parts = String(bs).split(":").map(Number);
         const totalSec = parts.length === 3
           ? parts[0] * 3600 + parts[1] * 60 + parts[2]
@@ -5871,11 +5868,24 @@
         // Tìm nhân viên theo máy nhánh
         const staff = allSystemMembers.find(m => m.extension && String(m.extension).trim() === String(ext).trim()) || null;
 
-        if (!cleanCallPhone) {
-          return { status: "unknown", hotline, ext, staff, isInbound, isAnswered: false };
+        const isAnswered = callIsAnswered(call);
+
+        // QUY TẮC: Cuộc gọi nhỡ / đàm thoại <= 0 KHÔNG CẦN note issue!
+        if (!isAnswered) {
+          return {
+            status: "not_needed",
+            badgeText: "Không cần note",
+            hotline,
+            ext,
+            staff,
+            isInbound,
+            isAnswered: false
+          };
         }
 
-        const isAnswered = callIsAnswered(call);
+        if (!cleanCallPhone) {
+          return { status: "unknown", hotline, ext, staff, isInbound, isAnswered: true };
+        }
 
         // Lấy ngày gọi dạng DD/MM/YYYY để ưu tiên so khớp issue đúng ngày
         let callDateFormatted = "";
@@ -6257,14 +6267,17 @@
             : `<span class="voip-type-badge outbound"><i class="fa-solid fa-phone-arrow-up-right"></i> Gọi ra</span>`;
 
           let noteBadge = "";
-          if (isNoted) {
+          if (!isAnswered) {
+            // Cuộc gọi nhỡ (đàm thoại = 0): KHÔNG CẦN note, không hiện badge note
+            noteBadge = "";
+          } else if (isNoted) {
             const noteDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
             noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú trên Cloud R2 ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-circle-check"></i> Đã note${noteDateSuffix}</span>`;
           } else if (isInTemp) {
             const tempDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
             noteBadge = `<span class="voip-note-badge in-temp" title="Đang có trong Danh sách tạm (Temp) ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-clock-rotate-left"></i> Temp${tempDateSuffix}</span>`;
           } else {
-            noteBadge = `<span class="voip-note-badge unnoted" title="Chưa có ghi chú nào cho cuộc gọi này!"><i class="fa-solid fa-triangle-exclamation"></i> Chưa note</span>`;
+            noteBadge = `<span class="voip-note-badge unnoted" title="Cuộc gọi đã trả lời nhưng chưa note Issue!"><i class="fa-solid fa-triangle-exclamation"></i> Chưa note</span>`;
           }
 
           // Hotline number (src for inbound, dst for outbound)
@@ -6322,7 +6335,7 @@
                   onclick="useVoipHotline('${escapeHTML(hotlineNum || "")}', '${escapeHTML(cDateRaw)}')">
                   <i class="fa-solid fa-bolt" style="color:var(--primary);"></i>
                 </button>
-                ${isUnnoted ? `
+                ${(isUnnoted && isAnswered) ? `
                 <button type="button" class="btn-row-circle" style="color:#059669; border-color:#a7f3d0; background:#ecfdf5;" title="Thêm nhanh vào danh sách tạm (Temp)"
                   onclick="quickAddCallToTemp('${escapeHTML(c.id)}')">
                   <i class="fa-solid fa-plus"></i>

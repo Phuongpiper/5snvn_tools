@@ -18,6 +18,18 @@ function sha256hex(msg) {
   return crypto.createHash("sha256").update(buf).digest("hex");
 }
 
+function isCallAnswered(c) {
+  if (!c) return false;
+  const bs = c.billsec;
+  if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
+  if (typeof bs === "number") return bs > 0;
+  const parts = String(bs).split(":").map(Number);
+  const totalSec = parts.length === 3
+    ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+    : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
+  return totalSec > 0;
+}
+
 function r2Fetch(method, body, objectKey = R2_CACHE_KEY) {
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
     return Promise.resolve({ statusCode: 500, body: "" });
@@ -346,20 +358,7 @@ module.exports = async function handler(req, res) {
     if (cachedData && cachedData.calls) {
       let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
       for (const c of cachedData.calls) {
-        const disp = (c.disposition || "").toUpperCase();
-        const st = (c.statusText || "").toLowerCase();
-        const byDisp = disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời");
-        const bs = c.billsec;
-        let ans = false;
-        if (byDisp && bs !== undefined && bs !== null && bs !== "" && bs !== "—") {
-          if (typeof bs === "number") ans = bs > 0;
-          else {
-            const parts = String(bs).split(":").map(Number);
-            const totalSec = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
-            ans = totalSec > 0;
-          }
-        }
-        if (ans) cAnswered++;
+        if (isCallAnswered(c)) cAnswered++;
         else cMissed++;
         const t = (c.type_origin || "").toLowerCase();
         const tt = (c.typeText || "").toLowerCase();
@@ -411,21 +410,6 @@ module.exports = async function handler(req, res) {
         };
       });
 
-      function isCallAnswered(c) {
-        const disp = (c.disposition || "").toUpperCase();
-        const st = (c.statusText || "").toLowerCase();
-        const byDisp = disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời");
-        if (!byDisp) return false;
-        const bs = c.billsec;
-        if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
-        if (typeof bs === "number") return bs > 0;
-        const parts = String(bs).split(":").map(Number);
-        const totalSec = parts.length === 3
-          ? parts[0] * 3600 + parts[1] * 60 + parts[2]
-          : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
-        return totalSec > 0;
-      }
-
       let answered = 0, missed = 0, inbound = 0, outbound = 0;
       for (const c of calls) {
         if (isCallAnswered(c)) answered++;
@@ -463,23 +447,9 @@ module.exports = async function handler(req, res) {
   // load the latest synced data from Cloudflare R2!
   const cachedData = await getCacheFromR2();
   if (cachedData && cachedData.calls) {
-    // Recalculate stats with strict billsec > 0 rule
     let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
     for (const c of cachedData.calls) {
-      const disp = (c.disposition || "").toUpperCase();
-      const st = (c.statusText || "").toLowerCase();
-      const byDisp = disp === "ANSWERED" || st.includes("tra loi") || st.includes("trả lời");
-      const bs = c.billsec;
-      let ans = false;
-      if (byDisp && bs !== undefined && bs !== null && bs !== "" && bs !== "—") {
-        if (typeof bs === "number") ans = bs > 0;
-        else {
-          const parts = String(bs).split(":").map(Number);
-          const totalSec = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
-          ans = totalSec > 0;
-        }
-      }
-      if (ans) cAnswered++;
+      if (isCallAnswered(c)) cAnswered++;
       else cMissed++;
       const t = (c.type_origin || "").toLowerCase();
       const tt = (c.typeText || "").toLowerCase();

@@ -3,7 +3,7 @@ const handler = require('./api/voip24h-calls.js');
 
 async function sync() {
   console.log("Đang kết nối tổng đài Voip24h để lấy danh sách cuộc gọi mới nhất...");
-  const req = { method: 'GET', url: '/api/voip24h-calls?_t=' + Date.now() };
+  const req = { method: 'GET', url: '/api/voip24h-calls?sync=1&_t=' + Date.now() };
   const res = {
     setHeader: () => {},
     status: function() { return this; },
