@@ -6174,7 +6174,6 @@
         const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
         const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
         const issuesMonthTotal = issuesInMonth.length;
-        const issuesTodayTotal = issuesToday.length;
 
         // Tìm nhân viên có nhiều Issue hôm nay nhất
         const staffTodayCount = {};
@@ -6190,31 +6189,6 @@
             topStaffName = `${name} (${topStaffMax})`;
           }
         });
-
-        // Phân loại Issue hôm nay theo Hotline và Mail
-        let issuesTodayHotline = 0;
-        let issuesTodayMail = 0;
-        issuesToday.forEach(n => {
-          const hl = String(n.fields?.hotline || "").trim().toLowerCase();
-          const res = String(n.result || "").toLowerCase();
-          const isMail = hl === "mail" || hl === "email" || hl.startsWith("mail") || res.includes("_mail") || res.includes("hotline mail");
-          if (isMail) {
-            issuesTodayMail++;
-          } else {
-            issuesTodayHotline++;
-          }
-        });
-
-        const elRepIssuesMonth = document.getElementById("repIssuesMonthTotal");
-        const elRepIssuesToday = document.getElementById("repIssuesTodayTotal");
-        const elRepIssuesTodayHotline = document.getElementById("repIssuesTodayHotline");
-        const elRepIssuesTodayMail = document.getElementById("repIssuesTodayMail");
-        const elRepTopStaff = document.getElementById("repTopStaffIssue");
-        if (elRepIssuesMonth) elRepIssuesMonth.textContent = issuesMonthTotal.toLocaleString();
-        if (elRepIssuesToday) elRepIssuesToday.textContent = issuesTodayTotal.toLocaleString();
-        if (elRepIssuesTodayHotline) elRepIssuesTodayHotline.textContent = issuesTodayHotline.toLocaleString();
-        if (elRepIssuesTodayMail) elRepIssuesTodayMail.textContent = issuesTodayMail.toLocaleString();
-        if (elRepTopStaff) elRepTopStaff.textContent = topStaffName;
 
         // 4. TÍNH TOÁN EMAIL HỖ TRỢ
         const emailTotal = reportEmailData?.total ?? 0;
@@ -6232,6 +6206,31 @@
         const elRepEmailSent = document.getElementById("repEmailSent");
         const elRepEmailDateText = document.getElementById("repEmailDateText");
         const elRepEmailSubDateNote = document.getElementById("repEmailSubDateNote");
+
+        if (elRepEmailTotal) elRepEmailTotal.textContent = emailTotal.toLocaleString();
+        if (elRepEmailRecv) elRepEmailRecv.textContent = emailReceived.toLocaleString();
+        if (elRepEmailSent) elRepEmailSent.textContent = emailSent.toLocaleString();
+        if (elRepEmailDateText) elRepEmailDateText.textContent = emailDateFormatted || "Hôm nay";
+        if (elRepEmailSubDateNote) elRepEmailSubDateNote.textContent = emailDateFormatted ? `Ngày: ${emailDateFormatted}` : "API GAS";
+
+        // Quy tắc Issue trong ngày:
+        // Hotline = số Issue note trên DMS
+        // Mail = số mail nhận (emailReceived)
+        // Tổng Issue trong ngày = Hotline + Mail
+        const issuesTodayHotline = issuesToday.length;
+        const issuesTodayMail = emailReceived;
+        const issuesTodayTotal = issuesTodayHotline + issuesTodayMail;
+
+        const elRepIssuesMonth = document.getElementById("repIssuesMonthTotal");
+        const elRepIssuesToday = document.getElementById("repIssuesTodayTotal");
+        const elRepIssuesTodayHotline = document.getElementById("repIssuesTodayHotline");
+        const elRepIssuesTodayMail = document.getElementById("repIssuesTodayMail");
+        const elRepTopStaff = document.getElementById("repTopStaffIssue");
+        if (elRepIssuesMonth) elRepIssuesMonth.textContent = issuesMonthTotal.toLocaleString();
+        if (elRepIssuesToday) elRepIssuesToday.textContent = issuesTodayTotal.toLocaleString();
+        if (elRepIssuesTodayHotline) elRepIssuesTodayHotline.textContent = issuesTodayHotline.toLocaleString();
+        if (elRepIssuesTodayMail) elRepIssuesTodayMail.textContent = issuesTodayMail.toLocaleString();
+        if (elRepTopStaff) elRepTopStaff.textContent = topStaffName;
 
         if (elRepEmailTotal) elRepEmailTotal.textContent = emailTotal.toLocaleString();
         if (elRepEmailRecv) elRepEmailRecv.textContent = emailReceived.toLocaleString();
@@ -6419,29 +6418,20 @@
           else if (to === "outbound" || tt.includes("ra")) voipTodayOutbound++;
         });
 
-        // 2. Issue DMS
+        // 2. Email hỗ trợ
+        const emailTotal = reportEmailData?.total ?? 0;
+        const emailReceived = reportEmailData?.received ?? 0;
+        const emailSent = reportEmailData?.sent ?? 0;
+
+        // 3. Issue DMS (Quy tắc: Hotline = số Issue note trên DMS, Mail = số mail nhận, Tổng Issue trong ngày = Hotline + Mail)
         const allIssues = Array.isArray(r2Issues) ? r2Issues : [];
         const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
         const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
         const issuesMonthTotal = issuesInMonth.length;
-        const issuesTodayTotal = issuesToday.length;
-        let issuesTodayHotline = 0;
-        let issuesTodayMail = 0;
-        issuesToday.forEach(n => {
-          const hl = String(n.fields?.hotline || "").trim().toLowerCase();
-          const res = String(n.result || "").toLowerCase();
-          const isMail = hl === "mail" || hl === "email" || hl.startsWith("mail") || res.includes("_mail") || res.includes("hotline mail");
-          if (isMail) {
-            issuesTodayMail++;
-          } else {
-            issuesTodayHotline++;
-          }
-        });
 
-        // 3. Email hỗ trợ
-        const emailTotal = reportEmailData?.total ?? 0;
-        const emailReceived = reportEmailData?.received ?? 0;
-        const emailSent = reportEmailData?.sent ?? 0;
+        const issuesTodayHotline = issuesToday.length;
+        const issuesTodayMail = emailReceived;
+        const issuesTodayTotal = issuesTodayHotline + issuesTodayMail;
 
         // 4. Ticket OTRS
         const otrsList = Array.isArray(reportOtrsData) ? reportOtrsData : [];
