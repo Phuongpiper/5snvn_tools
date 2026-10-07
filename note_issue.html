@@ -1029,6 +1029,46 @@
       box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
     }
 
+    .result-date-picker-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(79, 70, 229, 0.08);
+      border: 1px solid rgba(79, 70, 229, 0.25);
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .result-date-picker-wrap:hover {
+      background: rgba(79, 70, 229, 0.15);
+      border-color: rgba(79, 70, 229, 0.5);
+    }
+    .input-issue-date {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #c7d2fe;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: var(--font-mono, monospace);
+      cursor: pointer;
+      width: 120px;
+    }
+    .input-issue-date::-webkit-calendar-picker-indicator {
+      filter: invert(0.7) sepia(1) saturate(3) hue-rotate(200deg);
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    /* Highlight khi chọn ngày khác hôm nay */
+    .input-issue-date.is-backdate {
+      color: #fbbf24;
+    }
+    .result-date-picker-wrap.is-backdate {
+      background: rgba(251, 191, 36, 0.1);
+      border-color: rgba(251, 191, 36, 0.4);
+    }
+
     .btn-studio-clear {
       background: rgba(255, 255, 255, 0.1);
       color: #cbd5e1;
@@ -2533,6 +2573,11 @@
                 title="Sao chép cú pháp vào bộ nhớ tạm (Ctrl+C)">
                 <i class="fa-regular fa-copy"></i> Sao chép cú pháp
               </button>
+              <div class="result-date-picker-wrap" title="Ngày ghi nhận Issue. Mặc định là hôm nay, có thể đổi để note lại issue cũ bị miss.">
+                <i class="fa-regular fa-calendar" style="color:var(--primary); font-size:13px;"></i>
+                <input type="date" id="inputIssueDate" class="input-issue-date"
+                  title="Chọn ngày ghi nhận (mặc định hôm nay)" />
+              </div>
               <button type="button" class="btn-studio-action btn-studio-save" id="btnSaveTemp"
                 title="Lưu vào bảng tạm & Đồng bộ Cloud R2 (Enter / Ctrl+S)">
                 <i class="fa-solid fa-floppy-disk"></i> Lưu vào TEMP
@@ -3233,6 +3278,34 @@
         const mm = String(now.getMonth() + 1).padStart(2, "0");
         const yyyy = now.getFullYear();
         return `${dd}/${mm}/${yyyy}`;
+      }
+
+      // Lấy giá trị YYYY-MM-DD từ ngày hôm nay (cho input[type=date])
+      function getTodayISO() {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, "0");
+        const mm = String(now.getMonth() + 1).padStart(2, "0");
+        return `${now.getFullYear()}-${mm}-${dd}`;
+      }
+
+      // Khởi tạo date picker + xử lý visual feedback khi chọn ngày cũ
+      function initIssueDatePicker() {
+        const input = document.getElementById("inputIssueDate");
+        const wrap = input ? input.closest(".result-date-picker-wrap") : null;
+        if (!input) return;
+        const todayISO = getTodayISO();
+        input.value = todayISO;
+        input.max = todayISO; // Không cho chọn ngày tương lai
+        const updateStyle = () => {
+          const isBackdate = input.value && input.value !== todayISO;
+          input.classList.toggle("is-backdate", !!isBackdate);
+          if (wrap) wrap.classList.toggle("is-backdate", !!isBackdate);
+          if (wrap) wrap.title = isBackdate
+            ? `⚠️ Đang note ngày cũ: ${input.value.split("-").reverse().join("/")} (backdate)`
+            : "Ngày ghi nhận Issue. Mặc định là hôm nay.";
+        };
+        input.addEventListener("change", updateStyle);
+        updateStyle();
       }
 
       function getYesterdayString() {
@@ -4431,21 +4504,31 @@
         const curCode = (currentSelectedMember?.code || "").trim().toUpperCase();
         const todayStr = getTodayString();
 
+        // Lấy ngày từ input chọn ngày (nếu có), mặc định là hôm nay
+        const issueDateInput = document.getElementById("inputIssueDate");
+        let selectedDateStr = todayStr;
+        if (issueDateInput && issueDateInput.value) {
+          // Chuyển từ YYYY-MM-DD sang DD/MM/YYYY
+          const parts = issueDateInput.value.split("-");
+          if (parts.length === 3) selectedDateStr = parts[2] + "/" + parts[1] + "/" + parts[0];
+        }
+        const isBackdate = selectedDateStr !== todayStr;
+
         const isDuplicate = tempNotes.some(n => {
           const sameText = String(n.result || "").trim().toLowerCase() === cleanText;
           const noteCode = String(n.memberCode || "").trim().toUpperCase();
           const noteDate = String(n.date || "").trim();
-          return sameText && (noteCode === curCode) && (noteDate === todayStr);
+          return sameText && (noteCode === curCode) && (noteDate === selectedDateStr);
         });
 
         if (isDuplicate) {
-          showToast("Bạn đã lưu ghi chú này trong ngày hôm nay rồi!", "fa-triangle-exclamation");
+          showToast(`Bạn đã lưu ghi chú này cho ngày ${selectedDateStr} rồi!`, "fa-triangle-exclamation");
           copyResult();
           return;
         }
 
         const now = new Date();
-        const timeStr = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+        const timeStr = isBackdate ? "--:--" : (String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0"));
 
         // Tìm mã NPP (Dist code)
         let nppDistCode = currentNppObj?.code || "";
@@ -4463,7 +4546,7 @@
         const item = {
           id: "note_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6),
           result: text,
-          date: todayStr,
+          date: selectedDateStr,
           time: timeStr,
           createdAt: Date.now(),
           memberCode: currentSelectedMember?.code || "",
@@ -5099,6 +5182,7 @@
       btnCopyResult.addEventListener("click", copyResult);
       btnSaveTemp.addEventListener("click", saveCurrentToTemp);
       btnClearForm.addEventListener("click", clearForm);
+      initIssueDatePicker(); // Khởi tạo date picker với ngày hôm nay
       btnRefreshData.addEventListener("click", () => {
         loadSolutions(true);
         loadDtList(true);
