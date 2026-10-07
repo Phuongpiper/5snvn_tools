@@ -3172,8 +3172,8 @@
     (function initStudio() {
       // API & Keys
       const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbx3m2eFrfAh4xQpGCCdxxnq0ZRPHLCpJ1Xq9RfVcGgz83jivaL-OpnlFm8gOFaQuM1D/exec";
-      const R2_DT_API_URL = "https://search-dms-tool.vercel.app/api/r2-dt";
-      const R2_ISSUES_API_URL = "https://search-dms-tool.vercel.app/api/r2-issues";
+      const R2_DT_API_URL = "https://5snvn-tools.vercel.app/api/r2-dt";
+      const R2_ISSUES_API_URL = "https://5snvn-tools.vercel.app/api/r2-issues";
       const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V1";
       const LS_DT_KEY = "DMS_DT_LIST_DATA_V1";
       const LS_TEMP_KEY = "DMS_NOTE_ISSUE_TEMP_V1";
@@ -3185,7 +3185,7 @@
           return "/api/r2-issues";
         }
         if (window.location.protocol === "file:") {
-          return "https://search-dms-tool.vercel.app/api/r2-issues";
+          return "https://5snvn-tools.vercel.app/api/r2-issues";
         }
         return "/api/r2-issues";
       }
@@ -3195,7 +3195,7 @@
           return "/api/r2-temp-issues";
         }
         if (window.location.protocol === "file:") {
-          return "https://search-dms-tool.vercel.app/api/r2-temp-issues";
+          return "https://5snvn-tools.vercel.app/api/r2-temp-issues";
         }
         return "/api/r2-temp-issues";
       }
@@ -5358,7 +5358,7 @@
 
         // 2. Fetch fresh list from API
         try {
-          const base = window.location.protocol === "file:" ? "https://search-dms-tool.vercel.app" : window.location.origin;
+          const base = window.location.protocol === "file:" ? "https://5snvn-tools.vercel.app" : window.location.origin;
           const res = await fetch(`${base}/api/r2-tasks?action=read_members&t=${Date.now()}`);
           if (res.ok) {
             const json = await res.json();
@@ -5599,7 +5599,7 @@
 
         // Call API to persist to backend
         try {
-          const base = window.location.protocol === "file:" ? "https://search-dms-tool.vercel.app" : window.location.origin;
+          const base = window.location.protocol === "file:" ? "https://5snvn-tools.vercel.app" : window.location.origin;
           await fetch(`${base}/api/r2-tasks?action=add_member`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -5789,6 +5789,9 @@
       }
 
       function getVoipApiBase() {
+        if (window.location.protocol === "file:" || !window.location.origin || window.location.origin === "null") {
+          return "https://5snvn-tools.vercel.app/api/voip24h-calls";
+        }
         return "/api/voip24h-calls";
       }
 
@@ -6067,12 +6070,21 @@
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
           const did = document.getElementById("voipSelectDid")?.value || "02873065650";
 
-          const url = new URL(getVoipApiBase(), window.location.origin);
+          const apiBase = getVoipApiBase();
+          const baseOrigin = (apiBase.startsWith("http") || !window.location.origin || window.location.origin === "null")
+            ? undefined
+            : window.location.origin;
+
+          const url = baseOrigin ? new URL(apiBase, baseOrigin) : new URL(apiBase);
           url.searchParams.set("date_start", date_start);
           url.searchParams.set("date_end", date_end);
           if (did && did !== "all") url.searchParams.set("did", did);
+          url.searchParams.set("_t", Date.now());
 
-          const res = await fetch(url.toString());
+          const res = await fetch(url.toString(), {
+            cache: "no-store",
+            headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+          });
           if (!res.ok) throw new Error("HTTP " + res.status);
           const data = await res.json();
 
