@@ -1556,6 +1556,13 @@
       max-width: 360px;
     }
 
+    #dropdownHotline {
+      min-width: 290px;
+      max-width: 350px;
+      left: auto;
+      right: 0;
+    }
+
     .ac-hq-header {
       padding: 8px 12px;
       background: #f8fafc;
@@ -3101,6 +3108,7 @@
                   <div class="field-input-box">
                     <input type="text" id="inputHotline" class="form-control-studio"
                       placeholder="VD: 0909280969, Zalo, OTRS..." autocomplete="off" spellcheck="false" />
+                    <div class="autocomplete-card" id="dropdownHotline"></div>
                   </div>
                   <div class="field-hint-chip" id="hintHotline"></div>
                 </td>
@@ -4290,6 +4298,7 @@
       const hintRole = document.getElementById("hintRole");
 
       const inputHotline = document.getElementById("inputHotline");
+      const dropdownHotline = document.getElementById("dropdownHotline");
       const hintHotline = document.getElementById("hintHotline");
 
       const resultSyntaxDisplay = document.getElementById("resultSyntaxDisplay");
@@ -5575,6 +5584,7 @@
         dropdownRole.style.display = "block";
         if (dropdownSolution) dropdownSolution.style.display = "none";
         if (dropdownNpp) dropdownNpp.style.display = "none";
+        if (dropdownHotline) dropdownHotline.style.display = "none";
       }
 
       function hideHqDropdown() {
@@ -5645,8 +5655,202 @@
         showToast(`Đã xoá "${targetName}" khỏi danh sách!`, "fa-trash-can");
       }
 
-      // 6. Hotline Validation (Hỗ trợ 10-11 số & Zalo, OTRS/ORTS, Mail, Line, Viber)
-      const SUPPORTED_HOTLINE_CHANNELS = ["Zalo", "OTRS", "Mail", "Line", "Viber"];
+      // 6. Hotline & Kênh hỗ trợ Validation & Dropdown
+      const LS_CHANNEL_CUSTOM_KEY = "dms_custom_channels_v1";
+      const DEFAULT_CHANNEL_LIST = ["OTRS", "Zalo", "Mail", "Line", "Viber"];
+
+      function getChannelList() {
+        try {
+          const raw = localStorage.getItem(LS_CHANNEL_CUSTOM_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              return parsed;
+            }
+          }
+        } catch (e) {
+          console.warn("Lỗi đọc danh sách Kênh từ localStorage:", e);
+        }
+        return [...DEFAULT_CHANNEL_LIST];
+      }
+
+      function saveChannelList(list) {
+        try {
+          localStorage.setItem(LS_CHANNEL_CUSTOM_KEY, JSON.stringify(list));
+        } catch (e) {
+          console.warn("Lỗi lưu danh sách Kênh vào localStorage:", e);
+        }
+      }
+
+      function getChannelMeta(name) {
+        const lower = String(name || "").toLowerCase().trim();
+        if (lower === "otrs" || lower === "orts") {
+          return { name: "OTRS", icon: "fa-ticket", color: "#d97706", bg: "rgba(217, 119, 6, 0.12)", desc: "Hệ thống Ticket OTRS" };
+        }
+        if (lower === "zalo") {
+          return { name: "Zalo", icon: "fa-comment-dots", color: "#2563eb", bg: "rgba(37, 99, 235, 0.12)", desc: "Kênh nhắn tin Zalo" };
+        }
+        if (lower === "mail" || lower === "email") {
+          return { name: "Mail", icon: "fa-envelope", color: "#4f46e5", bg: "rgba(79, 70, 229, 0.12)", desc: "Kênh Email hỗ trợ" };
+        }
+        if (lower === "line") {
+          return { name: "Line", icon: "fa-comments", color: "#10b981", bg: "rgba(16, 185, 129, 0.12)", desc: "Ứng dụng Line chat" };
+        }
+        if (lower === "viber") {
+          return { name: "Viber", icon: "fa-phone-volume", color: "#7c3aed", bg: "rgba(124, 58, 237, 0.12)", desc: "Ứng dụng Viber" };
+        }
+        return { name: name, icon: "fa-headset", color: "#0284c7", bg: "rgba(2, 132, 199, 0.12)", desc: "Kênh hỗ trợ liên lạc" };
+      }
+
+      function renderChannelDropdown(filterText = "") {
+        if (!dropdownHotline) return;
+        const fullList = getChannelList();
+        const rawQ = String(filterText || "").trim();
+        const q = normalizeStr(rawQ);
+
+        // Lọc danh sách theo từ khoá nếu người dùng gõ chữ
+        let filtered = fullList;
+        if (q && !/^\d+$/.test(q)) {
+          filtered = fullList.filter(item => {
+            const norm = normalizeStr(item);
+            return norm.includes(q);
+          });
+        }
+
+        let itemsHtml = "";
+        if (filtered.length === 0) {
+          itemsHtml = `
+            <div class="ac-hq-empty">
+              Không có kênh nào khớp <strong>"${escapeHTML(rawQ)}"</strong><br>
+              <small style="color:#64748b;">(Bạn có thể bấm + Thêm hoặc nhập trực tiếp số điện thoại)</small>
+            </div>
+          `;
+        } else {
+          itemsHtml = filtered.map(item => {
+            const meta = getChannelMeta(item);
+            return `
+              <div class="ac-hq-item" data-channel="${escapeHTML(item)}">
+                <div class="ac-hq-main">
+                  <div style="width: 26px; height: 26px; border-radius: 6px; background: ${meta.bg}; color: ${meta.color}; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;">
+                    <i class="fa-solid ${meta.icon}"></i>
+                  </div>
+                  <div style="display: flex; flex-direction: column; overflow: hidden;">
+                    <span class="ac-hq-name">${escapeHTML(meta.name)}</span>
+                    <span style="font-size: 11px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(meta.desc)}</span>
+                  </div>
+                </div>
+                <div class="ac-hq-ops">
+                  <button type="button" class="btn-hq-op edit" data-op="edit" data-channel="${escapeHTML(item)}" title="Sửa tên kênh">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button type="button" class="btn-hq-op delete" data-op="delete" data-channel="${escapeHTML(item)}" title="Xoá kênh">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join("");
+        }
+
+        dropdownHotline.innerHTML = `
+          <div class="ac-hq-header">
+            <div class="ac-hq-header-title">
+              <i class="fa-solid fa-tower-broadcast" style="color:var(--primary);"></i>
+              <span>Kênh hỗ trợ (${filtered.length}/${fullList.length})</span>
+            </div>
+            <div class="ac-hq-header-actions">
+              <button type="button" class="btn-hq-tool" id="btnChannelShowAdd" title="Thêm kênh mới vào danh sách">
+                <i class="fa-solid fa-plus"></i> Thêm
+              </button>
+              <button type="button" class="btn-hq-tool" id="btnChannelReset" title="Khôi phục danh sách kênh mặc định">
+                <i class="fa-solid fa-rotate-left"></i> Mặc định
+              </button>
+            </div>
+          </div>
+          <div class="ac-hq-add-form" id="boxChannelAddForm">
+            <input type="text" class="ac-hq-add-input" id="inputNewChannel" placeholder="VD: Telegram, Hotline..." spellcheck="false" autocomplete="off" />
+            <button type="button" class="ac-hq-btn-save" id="btnSaveNewChannel"><i class="fa-solid fa-check"></i> Lưu</button>
+            <button type="button" class="ac-hq-btn-cancel" id="btnCancelNewChannel">Huỷ</button>
+          </div>
+          <div class="ac-hq-list-wrap">
+            ${itemsHtml}
+          </div>
+          <div style="padding: 7px 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #64748b; display: flex; align-items: center; gap: 6px; cursor: default;">
+            <i class="fa-solid fa-phone" style="color: var(--primary); font-size: 11px;"></i>
+            <span>Hoặc nhập số điện thoại trực tiếp (10 - 11 số)</span>
+          </div>
+        `;
+      }
+
+      function showChannelDropdown() {
+        if (!dropdownHotline) return;
+        renderChannelDropdown(inputHotline.value);
+        dropdownHotline.style.display = "block";
+        if (dropdownSolution) dropdownSolution.style.display = "none";
+        if (dropdownNpp) dropdownNpp.style.display = "none";
+        if (dropdownRole) dropdownRole.style.display = "none";
+      }
+
+      function hideChannelDropdown() {
+        if (dropdownHotline) dropdownHotline.style.display = "none";
+      }
+
+      function handleAddNewChannel() {
+        const inputNew = dropdownHotline.querySelector("#inputNewChannel");
+        if (!inputNew) return;
+        let val = inputNew.value.trim().replace(/\s+/g, " ");
+        if (!val) {
+          showToast("Vui lòng nhập tên kênh!", "fa-triangle-exclamation");
+          inputNew.focus();
+          return;
+        }
+        const list = getChannelList();
+        if (list.map(c => c.toLowerCase()).includes(val.toLowerCase())) {
+          showToast(`Kênh "${val}" đã có trong danh sách!`, "fa-triangle-exclamation");
+          inputNew.focus();
+          return;
+        }
+        list.push(val);
+        saveChannelList(list);
+        showToast(`Đã thêm kênh "${val}" vào danh sách!`, "fa-check");
+        renderChannelDropdown(inputHotline.value);
+        const form = dropdownHotline.querySelector("#boxChannelAddForm");
+        if (form) form.style.display = "none";
+      }
+
+      function handleEditChannel(oldName) {
+        const newName = prompt(`Sửa tên kênh "${oldName}":`, oldName);
+        if (newName === null) return;
+        let val = newName.trim().replace(/\s+/g, " ");
+        if (!val) {
+          showToast("Tên kênh không được để trống!", "fa-triangle-exclamation");
+          return;
+        }
+        const list = getChannelList();
+        const idx = list.indexOf(oldName);
+        if (idx !== -1) {
+          list[idx] = val;
+          saveChannelList(list);
+          if (inputHotline.value.trim().toLowerCase() === oldName.toLowerCase()) {
+            inputHotline.value = val;
+            validateHotline();
+            updateResultDisplay();
+          }
+          renderChannelDropdown(inputHotline.value);
+          showToast(`Đã đổi tên kênh thành "${val}"!`, "fa-circle-check");
+        }
+      }
+
+      function handleDeleteChannel(targetName) {
+        if (!confirm(`Bạn có chắc chắn muốn xoá kênh "${targetName}" khỏi danh sách?`)) {
+          return;
+        }
+        let list = getChannelList();
+        list = list.filter(item => item !== targetName);
+        saveChannelList(list);
+        renderChannelDropdown(inputHotline.value);
+        showToast(`Đã xoá kênh "${targetName}"!`, "fa-trash-can");
+      }
 
       function isChannelHotline(raw) {
         if (!raw) return null;
@@ -5658,8 +5862,10 @@
         if (lower === "mail" || lower === "email") return "Mail";
         if (lower === "line") return "Line";
         if (lower === "viber") return "Viber";
-        for (const ch of SUPPORTED_HOTLINE_CHANNELS) {
-          if (lower.startsWith(ch.toLowerCase() + " ") || lower.startsWith(ch.toLowerCase() + ":") || lower.startsWith(ch.toLowerCase() + "_")) {
+        const channels = getChannelList();
+        for (const ch of channels) {
+          const chLower = ch.toLowerCase();
+          if (lower === chLower || lower.startsWith(chLower + " ") || lower.startsWith(chLower + ":") || lower.startsWith(chLower + "_")) {
             return ch + s.slice(ch.length);
           }
         }
@@ -5670,7 +5876,7 @@
         if (!raw) return "";
         let s = String(raw).trim().replace(/^hotline[\s_:]*/i, "").trim();
 
-        // 1. Nếu là kênh (Zalo, OTRS, Mail, Line, Viber)
+        // 1. Nếu là kênh (Zalo, OTRS, Mail, Line, Viber hoặc kênh tự thêm)
         const channel = isChannelHotline(s);
         if (channel) return channel;
 
@@ -5701,14 +5907,9 @@
         // Kiểm tra kênh liên lạc
         const channel = isChannelHotline(raw);
         if (channel) {
+          const meta = getChannelMeta(channel);
           hintHotline.className = "field-hint-chip success";
-          let icon = "fa-headset";
-          if (channel.startsWith("Zalo")) icon = "fa-comment-dots";
-          else if (channel.startsWith("OTRS")) icon = "fa-ticket";
-          else if (channel.startsWith("Mail")) icon = "fa-envelope";
-          else if (channel.startsWith("Line")) icon = "fa-comments";
-          else if (channel.startsWith("Viber")) icon = "fa-phone-volume";
-          hintHotline.innerHTML = `<i class="fa-solid ${icon}"></i> Kênh: <strong>${escapeHTML(channel)}</strong>`;
+          hintHotline.innerHTML = `<i class="fa-solid ${meta.icon}"></i> Kênh: <strong>${escapeHTML(channel)}</strong>`;
           return;
         }
 
@@ -5721,7 +5922,7 @@
           hintHotline.innerHTML = `<i class="fa-solid fa-phone"></i> Hotline: <strong>${escapeHTML(formatted)}</strong> (${formatted.length} số)`;
         } else {
           hintHotline.className = "field-hint-chip warning";
-          hintHotline.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Cần 10-11 số (VD: 0909280969) hoặc Zalo, OTRS, Mail, Line, Viber`;
+          hintHotline.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Cần 10-11 số (VD: 0909280969) hoặc chọn kênh hỗ trợ`;
         }
       }
 
@@ -6093,6 +6294,7 @@
         if (dropdownSolution) dropdownSolution.style.display = "none";
         if (dropdownNpp) dropdownNpp.style.display = "none";
         if (dropdownRole) dropdownRole.style.display = "none";
+        if (dropdownHotline) dropdownHotline.style.display = "none";
 
         [hintSolution, hintNpp, hintNvbh, hintRole, hintHotline].forEach(h => {
           h.className = "field-hint-chip";
@@ -7273,6 +7475,26 @@
       inputHotline.addEventListener("input", () => {
         validateHotline();
         updateResultDisplay();
+        const val = inputHotline.value.trim();
+        if (/^\d/.test(val)) {
+          hideChannelDropdown();
+        } else {
+          showChannelDropdown();
+        }
+      });
+
+      inputHotline.addEventListener("click", () => {
+        const val = inputHotline.value.trim();
+        if (!/^\d/.test(val)) {
+          showChannelDropdown();
+        }
+      });
+
+      inputHotline.addEventListener("focus", () => {
+        const val = inputHotline.value.trim();
+        if (!/^\d/.test(val)) {
+          showChannelDropdown();
+        }
       });
 
       dropdownSolution.addEventListener("click", (e) => {
@@ -7399,6 +7621,108 @@
         });
       }
 
+      if (dropdownHotline) {
+        dropdownHotline.addEventListener("click", (e) => {
+          // 1. Mở / Đóng form thêm kênh
+          const btnAdd = e.target.closest("#btnChannelShowAdd");
+          if (btnAdd) {
+            e.stopPropagation();
+            const form = dropdownHotline.querySelector("#boxChannelAddForm");
+            const inputNew = dropdownHotline.querySelector("#inputNewChannel");
+            if (form) {
+              const isShowing = form.style.display === "flex";
+              form.style.display = isShowing ? "none" : "flex";
+              if (!isShowing && inputNew) {
+                inputNew.focus();
+              }
+            }
+            return;
+          }
+
+          // 2. Nút Huỷ form thêm kênh
+          const btnCancel = e.target.closest("#btnCancelNewChannel");
+          if (btnCancel) {
+            e.stopPropagation();
+            const form = dropdownHotline.querySelector("#boxChannelAddForm");
+            if (form) form.style.display = "none";
+            return;
+          }
+
+          // 3. Nút Lưu kênh mới
+          const btnSave = e.target.closest("#btnSaveNewChannel");
+          if (btnSave) {
+            e.stopPropagation();
+            handleAddNewChannel();
+            return;
+          }
+
+          // 4. Form thêm kênh (click vào ô input thì không chọn dòng)
+          if (e.target.closest("#boxChannelAddForm")) {
+            e.stopPropagation();
+            return;
+          }
+
+          // 5. Nút Khôi phục mặc định
+          const btnReset = e.target.closest("#btnChannelReset");
+          if (btnReset) {
+            e.stopPropagation();
+            if (confirm("Khôi phục danh sách kênh hỗ trợ mặc định ban đầu?")) {
+              saveChannelList([...DEFAULT_CHANNEL_LIST]);
+              renderChannelDropdown(inputHotline.value);
+              showToast("Đã khôi phục danh sách kênh mặc định!", "fa-rotate-left");
+            }
+            return;
+          }
+
+          // 6. Nút Sửa kênh
+          const btnEdit = e.target.closest(".btn-hq-op.edit");
+          if (btnEdit) {
+            e.stopPropagation();
+            const oldName = btnEdit.dataset.channel;
+            handleEditChannel(oldName);
+            return;
+          }
+
+          // 7. Nút Xoá kênh
+          const btnDelete = e.target.closest(".btn-hq-op.delete");
+          if (btnDelete) {
+            e.stopPropagation();
+            const targetName = btnDelete.dataset.channel;
+            handleDeleteChannel(targetName);
+            return;
+          }
+
+          // 8. Click chọn dòng Kênh
+          const itemEl = e.target.closest(".ac-hq-item");
+          if (itemEl) {
+            const chName = itemEl.dataset.channel;
+            if (chName) {
+              inputHotline.value = chName;
+              validateHotline();
+              updateResultDisplay();
+              hideChannelDropdown();
+              inputHotline.focus();
+            }
+            return;
+          }
+        });
+
+        dropdownHotline.addEventListener("keydown", (e) => {
+          if (e.target && e.target.id === "inputNewChannel") {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.stopPropagation();
+              handleAddNewChannel();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              e.stopPropagation();
+              const form = dropdownHotline.querySelector("#boxChannelAddForm");
+              if (form) form.style.display = "none";
+            }
+          }
+        });
+      }
+
       document.addEventListener("click", (e) => {
         if (!e.target.closest("#dropdownSolution") && e.target !== inputSolution) {
           if (dropdownSolution) dropdownSolution.style.display = "none";
@@ -7408,6 +7732,9 @@
         }
         if (!e.target.closest("#dropdownRole") && e.target !== inputRole) {
           if (dropdownRole) dropdownRole.style.display = "none";
+        }
+        if (!e.target.closest("#dropdownHotline") && e.target !== inputHotline) {
+          if (dropdownHotline) dropdownHotline.style.display = "none";
         }
       });
 
