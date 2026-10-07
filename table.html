@@ -1846,7 +1846,7 @@
     /* ── TOAST NOTIFICATIONS ── */
     .toast-container {
       position: fixed;
-      bottom: 50px;
+      top: 70px;
       right: 20px;
       display: flex;
       flex-direction: column;
@@ -2661,6 +2661,8 @@
     let currentTableEtag = localStorage.getItem("r2_table_etag") || "";
     let cloudSaveTimer = null;
     let isCloudSaving = false;
+    let lastLocalActionTime = 0;
+    const deletedSheetIds = new Set();
 
     function initApp() {
       initMembers();
@@ -2818,27 +2820,8 @@
       try {
         let endpoint = getTableApiEndpoint();
 
-        // Safe sheet-level merge: check if other sheets were updated in cloud by other users
-        try {
-          const sep = endpoint.includes("?") ? "&" : "?";
-          const checkRes = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
-          if (checkRes.ok) {
-            const cloudData = await checkRes.json();
-            if (cloudData && Array.isArray(cloudData.sheets)) {
-              const currentActive = appData.activeSheetId;
-              cloudData.sheets.forEach(cSheet => {
-                if (cSheet && cSheet.id !== currentActive) {
-                  const idx = appData.sheets.findIndex(s => s.id === cSheet.id);
-                  if (idx !== -1) {
-                    appData.sheets[idx] = cSheet;
-                  } else {
-                    appData.sheets.push(cSheet);
-                  }
-                }
-              });
-            }
-          }
-        } catch (_) {}
+        // Đảm bảo không gửi các sheet đã bị xoá
+        appData.sheets = appData.sheets.filter(s => s && s.id && !deletedSheetIds.has(s.id));
 
         // Never persist activeSheetId to cloud so other users' active view is never hijacked
         const payload = {
@@ -2938,8 +2921,11 @@
         }
         const data = await res.json();
         if (data && Array.isArray(data.sheets) && data.sheets.length > 0) {
+          const validIncomingSheets = data.sheets.filter(s => s && s.id && !deletedSheetIds.has(s.id));
+          if (validIncomingSheets.length === 0) return;
+
           const currentSheetsJson = JSON.stringify(appData.sheets);
-          const incomingSheetsJson = JSON.stringify(data.sheets);
+          const incomingSheetsJson = JSON.stringify(validIncomingSheets);
           if (currentSheetsJson !== incomingSheetsJson) {
             const activeTag = document.activeElement ? document.activeElement.tagName : "";
             const isEditingCell = activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT" ||
@@ -2948,12 +2934,12 @@
               Boolean(document.querySelector(".modal-backdrop.show")) ||
               Boolean(document.querySelector(".context-menu[style*='display: block']"));
 
-            if (silent && isEditingCell) {
+            if ((silent && isEditingCell) || cloudSaveTimer || isCloudSaving || (Date.now() - lastLocalActionTime < 2500)) {
               return;
             }
 
             const myCurrentSheetId = appData.activeSheetId;
-            appData.sheets = data.sheets;
+            appData.sheets = validIncomingSheets;
 
             const sheetExists = appData.sheets.some(s => s.id === myCurrentSheetId);
             if (sheetExists) {
@@ -5630,6 +5616,7 @@
        SHEET OPERATIONS (ADD, RENAME, DUPLICATE, DELETE)
     ────────────────────────────────────────────────────────────────────────── */
     function addNewSheet() {
+      lastLocalActionTime = Date.now();
       const sheetIndex = appData.sheets.length + 1;
       const newSheetId = "sheet_" + Date.now();
       const newSheet = {
@@ -5656,9 +5643,15 @@
 
       appData.sheets.push(newSheet);
       appData.activeSheetId = newSheetId;
+      selectedRowIds.clear();
       saveState(true);
       renderAll();
       toast(`Đã tạo ${newSheet.name}`, "success");
+
+      setTimeout(() => {
+        const tabList = document.getElementById("sheetsTabList");
+        if (tabList) tabList.scrollLeft = tabList.scrollWidth;
+      }, 50);
     }
 
     function openSheetContextMenu(sheetId, anchorEl) {
@@ -5852,10 +5845,15 @@
         `Bạn có chắc muốn xoá Sheet "${sheet.name}"? Toàn bộ dữ liệu của Sheet này sẽ mất.`,
         "Xoá Sheet",
         () => {
-          appData.sheets = appData.sheets.filter(s => s.id !== currentContextSheetId);
-          if (appData.activeSheetId === currentContextSheetId) {
+          lastLocalActionTime = Date.now();
+          const targetId = currentContextSheetId;
+          deletedSheetIds.add(targetId);
+          appData.sheets = appData.sheets.filter(s => s.id !== targetId);
+          if (appData.activeSheetId === targetId) {
             appData.activeSheetId = appData.sheets[0].id;
           }
+          currentContextSheetId = null;
+          selectedRowIds.clear();
           saveState(true);
           renderAll();
           toast(`Đã xoá "${sheet.name}"`, "info");
@@ -6157,77 +6155,160 @@
       document.getElementById("excelFileInput").click();
     }
 
-    function handleExcelFileImport(e) {
-      const file = e.target.files[0];
+    async function handleExcelFileImport(e) {
+      const file = e.target.files && e.target.files[0];
       if (!file) return;
 
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const data = evt.target.result;
-          let sheetData = [];
+      try {
+        lastLocalActionTime = Date.now();
+        showAutoSaveIndicator("saving");
+        toast(`Đang xử lý file "${file.name}"...`, "info");
 
-          if (typeof XLSX !== "undefined") {
-            const workbook = XLSX.read(data, { type: "binary" });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        if (typeof XLSX === "undefined") {
+          // Dynamic fallback to load SheetJS if not already present
+          await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("Không thể tải thư viện XLSX. Vui lòng kiểm tra kết nối mạng."));
+            document.head.appendChild(script);
+          });
+        }
+
+        const arrayBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: "array", cellDates: true });
+
+        if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+          throw new Error("File không chứa sheet dữ liệu nào hợp lệ.");
+        }
+
+        let importedSheetsCount = 0;
+        let firstNewSheetId = null;
+
+        // Xử lý từng sheet trong workbook
+        for (let sIdx = 0; sIdx < workbook.SheetNames.length; sIdx++) {
+          const sheetName = workbook.SheetNames[sIdx];
+          const worksheet = workbook.Sheets[sheetName];
+          if (!worksheet) continue;
+
+          // Convert sheet sang mảng 2 chiều
+          const rawSheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+          if (!rawSheetData || rawSheetData.length === 0) continue;
+
+          // Tìm dòng tiêu đề đầu tiên có dữ liệu (bỏ qua các dòng trống đầu file nếu có)
+          let headerRowIdx = -1;
+          for (let r = 0; r < Math.min(rawSheetData.length, 10); r++) {
+            const row = rawSheetData[r];
+            if (row && row.some(cell => cell !== "" && cell !== null && cell !== undefined)) {
+              headerRowIdx = r;
+              break;
+            }
           }
 
-          if (sheetData.length < 2) {
-            toast("File không có đủ dữ liệu (cần ít nhất tiêu đề và 1 dòng)", "warning");
-            return;
+          if (headerRowIdx === -1 || headerRowIdx >= rawSheetData.length - 1) {
+            if (workbook.SheetNames.length === 1) {
+              toast(`Sheet "${sheetName}" không có đủ dữ liệu (cần tiêu đề và ít nhất 1 dòng)`, "warning");
+            }
+            continue;
           }
 
-          // Header row
-          const headerRow = sheetData[0];
-          const newSheetId = "sheet_" + Date.now();
-          const newColumns = headerRow.map((colName, idx) => {
-            const cleanName = String(colName || `Cột ${idx + 1}`).trim();
+          const headerRow = rawSheetData[headerRowIdx];
+          const newSheetId = "sheet_" + Date.now() + "_" + sIdx;
+          if (!firstNewSheetId) firstNewSheetId = newSheetId;
+
+          // Tạo cấu hình cột
+          const newColumns = headerRow.map((colName, cIdx) => {
+            const cleanName = String(colName !== undefined && colName !== null && colName !== "" ? colName : `Cột ${cIdx + 1}`).trim();
+            const lower = cleanName.toLowerCase();
             let type = "text";
-            if (cleanName.toLowerCase().includes("ngày") || cleanName.toLowerCase().includes("date")) type = "date";
-            if (cleanName.toLowerCase().includes("nhân viên") || cleanName.toLowerCase().includes("người") || cleanName.toLowerCase().includes("assignee")) type = "member";
-            if (cleanName.toLowerCase().includes("trạng thái") || cleanName.toLowerCase().includes("status")) type = "status";
+            let width = 150;
+            if (lower.includes("ngày") || lower.includes("date")) { type = "date"; width = 135; }
+            else if (lower.includes("nhân viên") || lower.includes("người") || lower.includes("assignee") || lower.includes("nv")) { type = "member"; width = 175; }
+            else if (lower.includes("trạng thái") || lower.includes("status")) { type = "status"; width = 135; }
+            else if (lower.includes("hoàn thành") || lower.includes("check")) { type = "checkbox"; width = 100; }
+            else if (lower.includes("tiêu đề") || lower.includes("nội dung") || lower.includes("description") || lower.includes("chi tiết")) { width = 260; }
+
             return {
-              id: "col_" + idx + "_" + Date.now(),
+              id: "col_" + cIdx + "_" + Date.now(),
               name: cleanName,
-              type
+              type,
+              width
             };
           });
 
-          // Row data
+          // Tạo các dòng dữ liệu
           const newRows = [];
-          for (let i = 1; i < sheetData.length; i++) {
-            const rowArr = sheetData[i];
-            if (!rowArr || !rowArr.length) continue;
-            const rowObj = { id: "row_" + i + "_" + Date.now() };
+          for (let r = headerRowIdx + 1; r < rawSheetData.length; r++) {
+            const rowArr = rawSheetData[r];
+            if (!rowArr || !rowArr.some(cell => cell !== "" && cell !== null && cell !== undefined)) continue;
+
+            const rowObj = { id: "row_" + r + "_" + Date.now() };
             newColumns.forEach((col, cIdx) => {
-              rowObj[col.id] = rowArr[cIdx] !== undefined ? rowArr[cIdx] : "";
+              let val = rowArr[cIdx];
+              if (val === undefined || val === null) {
+                val = "";
+              }
+
+              // Xử lý ngày nếu là kiểu date
+              if (col.type === "date") {
+                if (val instanceof Date) {
+                  val = val.toISOString().slice(0, 10);
+                } else if (typeof val === "number" && val > 30000 && val < 60000) {
+                  // Excel serial date number (e.g. 46296)
+                  const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+                  val = d.toISOString().slice(0, 10);
+                }
+              }
+
+              // Xử lý checkbox
+              if (col.type === "checkbox") {
+                val = Boolean(val === true || String(val).toLowerCase() === "true" || val === 1 || String(val).toLowerCase() === "yes");
+              }
+
+              rowObj[col.id] = val;
             });
             newRows.push(rowObj);
           }
 
+          if (newRows.length === 0) continue;
+
+          // Đặt tên sheet
+          let displayName = sheetName.trim();
+          if (workbook.SheetNames.length === 1 && file.name) {
+            displayName = file.name.replace(/\.[^/.]+$/, "").slice(0, 25);
+          }
+
           const importedSheet = {
             id: newSheetId,
-            name: `📥 ${file.name.replace(/\.[^/.]+$/, "").slice(0, 20)}`,
+            name: `📥 ${displayName}`,
             columns: newColumns,
             rows: newRows
           };
 
           appData.sheets.push(importedSheet);
-          appData.activeSheetId = newSheetId;
-          saveState(true);
-          renderAll();
-          toast(`Đã nhập ${newRows.length} dòng vào Sheet mới!`, "success");
-
-        } catch (err) {
-          console.error("Lỗi đọc file:", err);
-          toast("Lỗi đọc file Excel: " + err.message, "danger");
+          importedSheetsCount++;
         }
-      };
 
-      reader.readAsBinaryString(file);
-      e.target.value = "";
+        if (importedSheetsCount === 0) {
+          toast("Không tìm thấy dữ liệu hợp lệ trong file để nhập!", "warning");
+          return;
+        }
+
+        if (firstNewSheetId) {
+          appData.activeSheetId = firstNewSheetId;
+        }
+
+        selectedRowIds.clear();
+        saveState(true);
+        renderAll();
+        toast(`Đã nhập thành công ${importedSheetsCount} sheet từ file "${file.name}"!`, "success");
+
+      } catch (err) {
+        console.error("Lỗi đọc file:", err);
+        toast("Lỗi đọc file Excel: " + err.message, "danger");
+      } finally {
+        e.target.value = "";
+      }
     }
 
     function exportAsJson() {
@@ -6453,7 +6534,10 @@
 
       // Add Row & Sheet
       on("btnAddRow", "click", addNewRow);
-      on("btnAddSheet", "click", addNewSheet);
+      on("btnAddSheet", "click", (e) => {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        addNewSheet();
+      });
 
       // Add & Save Column
       on("btnAddColumnBtn", "click", openAddColumnModal);
