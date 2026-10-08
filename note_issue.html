@@ -4186,6 +4186,10 @@
                   onclick="setOtrsCategoryFilter('Issue')">Chỉ Issue</button>
                 <button type="button" class="preset-pill" id="btnOtrsFilterRequest"
                   onclick="setOtrsCategoryFilter('Request')">Chỉ Request</button>
+                <button type="button" class="preset-pill" style="border-color:#10b981; color:#059669; font-weight:700;"
+                  onclick="window.fixOtrsSheetDates()" title="Sửa lại định dạng dd/MM/yyyy cho các dòng trên Google Sheet báo cáo">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i> Chuẩn hóa ngày Sheet
+                </button>
               </div>
             </div>
           </div>
@@ -5095,6 +5099,63 @@
         return null;
       }
 
+      function formatOtrsDate(rawDate, ticketNum) {
+        // 1. Ưu tiên số ticket OTRS nếu có (dạng YYYYMMDD... ví dụ 2026100855000208)
+        if (ticketNum && /^\d{14,18}$/.test(ticketNum)) {
+          const y = ticketNum.slice(0, 4);
+          const m = ticketNum.slice(4, 6);
+          const d = ticketNum.slice(6, 8);
+          const yNum = parseInt(y, 10);
+          const mNum = parseInt(m, 10);
+          const dNum = parseInt(d, 10);
+          if (yNum >= 2020 && yNum <= 2040 && mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
+            return {
+              dateStr: `${d}/${m}/${y}`,
+              isoDate: `${y}-${m}-${d}`,
+              parts: { day: dNum, month: mNum, year: yNum }
+            };
+          }
+        }
+
+        // 2. Kiểm tra chuỗi ngày truyền vào (dạng DD/MM/YYYY hoặc D/M/YYYY)
+        const str = String(rawDate || "").trim();
+        const dmy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (dmy) {
+          const d = String(dmy[1]).padStart(2, "0");
+          const m = String(dmy[2]).padStart(2, "0");
+          const y = dmy[3];
+          return {
+            dateStr: `${d}/${m}/${y}`,
+            isoDate: `${y}-${m}-${d}`,
+            parts: { day: parseInt(d, 10), month: parseInt(m, 10), year: parseInt(y, 10) }
+          };
+        }
+
+        // 3. Dạng YYYY-MM-DD hoặc YYYY/MM/DD
+        const ymd = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+        if (ymd) {
+          const y = ymd[1];
+          const m = String(ymd[2]).padStart(2, "0");
+          const d = String(ymd[3]).padStart(2, "0");
+          return {
+            dateStr: `${d}/${m}/${y}`,
+            isoDate: `${y}-${m}-${d}`,
+            parts: { day: parseInt(d, 10), month: parseInt(m, 10), year: parseInt(y, 10) }
+          };
+        }
+
+        // 4. Mặc định là ngày hôm nay
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, "0");
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const y = String(now.getFullYear());
+        return {
+          dateStr: `${d}/${m}/${y}`,
+          isoDate: `${y}-${m}-${d}`,
+          parts: { day: now.getDate(), month: now.getMonth() + 1, year: now.getFullYear() }
+        };
+      }
+
       function extractOtrsRowData(item) {
         const tenCV = getOtrsCvName(item);
         if (!tenCV) return null;
@@ -5135,14 +5196,8 @@
           chiTiet = tenCV;
         }
 
-        let dateStr = String(item.date || "").trim();
-        if (!dateStr || !dateStr.includes("/")) {
-          if (typeof getTodayString === "function") dateStr = getTodayString();
-          else {
-            const now = new Date();
-            dateStr = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
-          }
-        }
+        const dateInfo = formatOtrsDate(item.date, ticketNum);
+        const dateStr = dateInfo.dateStr;
 
         const memberCode = String(item.memberCode || (typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) || "").trim().toLowerCase();
 
@@ -5158,7 +5213,10 @@
           colI: "Done",
           colJ: memberCode,
           colK: chiTiet,
-          colL: "Đã hoàn tất " + chiTiet
+          colL: "Đã hoàn tất " + chiTiet,
+          ticketNum: ticketNum,
+          isoDate: dateInfo.isoDate,
+          dateParts: dateInfo.parts
         };
       }
 
@@ -5261,6 +5319,26 @@
 
         return successCount;
       }
+
+      window.fixOtrsSheetDates = async function() {
+        try {
+          showToast("Đang chuẩn hóa định dạng ngày trên Google Sheet...", "fa-spinner fa-spin");
+          const res = await fetch(OTRS_REPORT_GAS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "fix_dates" })
+          });
+          const data = await res.json().catch(() => null);
+          if (data && data.success) {
+            showToast(data.message || "Đã chuẩn hóa định dạng ngày dd/MM/yyyy thành công!", "fa-circle-check");
+          } else {
+            showToast("Lỗi khi chuẩn hóa ngày: " + (data?.error || "Không xác định"), "fa-triangle-exclamation");
+          }
+        } catch (err) {
+          console.warn("Lỗi gọi fix_dates:", err);
+          showToast("Lỗi kết nối tới Google Apps Script!", "fa-triangle-exclamation");
+        }
+      };
 
       // Đẩy tất cả tempNotes local lên R2 (Đồng bộ R2)
       async function pushAllTempToR2() {
