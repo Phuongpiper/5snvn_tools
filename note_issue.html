@@ -9551,33 +9551,47 @@
           return { status: "unknown", hotline, ext, staff, isInbound, isAnswered: true };
         }
 
-        // Lấy ngày gọi dạng DD/MM/YYYY để ưu tiên so khớp issue đúng ngày
+        // Lấy ngày gọi chuẩn để so khớp: BẮT BUỘC NGÀY NÀO NOTE NGÀY ĐÓ
         let callDateFormatted = "";
         if (call.calldate && call.calldate.length >= 10) {
           const cp = call.calldate.slice(0, 10).split("-");
           if (cp.length === 3) callDateFormatted = `${cp[2]}/${cp[1]}/${cp[0]}`;
         }
 
+        function isIssueDateMatched(callDate, issueDate) {
+          if (!callDate || !issueDate) return false;
+          const s1 = String(callDate).trim();
+          const s2 = String(issueDate).trim();
+          if (s1 === s2) return true;
+          // Chuẩn hóa so sánh dd/mm/yyyy
+          const p1 = s1.includes("/") ? s1.split("/") : s1.split("-");
+          const p2 = s2.includes("/") ? s2.split("/") : s2.split("-");
+          let d1, m1, y1, d2, m2, y2;
+          if (p1.length === 3) {
+            if (p1[0].length === 4) { y1 = p1[0]; m1 = p1[1]; d1 = p1[2]; }
+            else { d1 = p1[0]; m1 = p1[1]; y1 = p1[2]; }
+          }
+          if (p2.length === 3) {
+            if (p2[0].length === 4) { y2 = p2[0]; m2 = p2[1]; d2 = p2[2]; }
+            else { d2 = p2[0]; m2 = p2[1]; y2 = p2[2]; }
+          }
+          if (d1 && m1 && y1 && d2 && m2 && y2) {
+            return parseInt(d1, 10) === parseInt(d2, 10) &&
+                   parseInt(m1, 10) === parseInt(m2, 10) &&
+                   parseInt(y1, 10) === parseInt(y2, 10);
+          }
+          return false;
+        }
+
         // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
-        // Ưu tiên trùng số điện thoại VÀ đúng ngày gọi
-        let matchedR2Issue = r2Issues.find(iss => {
+        // QUY TẮC: Phải trùng số điện thoại VÀ BẮT BUỘC ĐÚNG NGÀY GỌI (Ngày nào note ngày đó, tuyệt đối không lấy ngày khác)
+        const matchedR2Issue = r2Issues.find(iss => {
           const issPhone = normalizePhone(extractHotlineFromIssue(iss));
           const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
             (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
           if (!phoneOk) return false;
-          return !callDateFormatted || !iss.date || iss.date === callDateFormatted;
+          return isIssueDateMatched(callDateFormatted, iss.date);
         });
-
-        // Nếu không có issue đúng ngày, fallback tìm bất kỳ issue nào cùng số điện thoại
-        if (!matchedR2Issue) {
-          matchedR2Issue = r2Issues.find(iss => {
-            const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-            if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
-            const resText = (iss.result || "").replace(/\s+/g, "");
-            if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
-            return false;
-          });
-        }
 
         if (matchedR2Issue) {
           return {
@@ -9592,25 +9606,15 @@
           };
         }
 
-        // 2. Kiểm tra trong Temp Notes (danh sách tạm của nhân viên hoặc toàn bộ temp R2)
+        // 2. Kiểm tra trong Temp Notes (BẮT BUỘC PHẢI ĐÚNG NGÀY GỌI)
         const poolTemp = [...tempNotes, ...allR2TempIssues];
-        let matchedTemp = poolTemp.find(iss => {
+        const matchedTemp = poolTemp.find(iss => {
           const issPhone = normalizePhone(extractHotlineFromIssue(iss));
           const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
             (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
           if (!phoneOk) return false;
-          return !callDateFormatted || !iss.date || iss.date === callDateFormatted;
+          return isIssueDateMatched(callDateFormatted, iss.date);
         });
-
-        if (!matchedTemp) {
-          matchedTemp = poolTemp.find(iss => {
-            const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-            if (issPhone && phoneMatches(cleanCallPhone, issPhone)) return true;
-            const resText = (iss.result || "").replace(/\s+/g, "");
-            if (cleanCallPhone.length >= 9 && resText.includes(cleanCallPhone.slice(-9))) return true;
-            return false;
-          });
-        }
 
         if (matchedTemp) {
           return {
@@ -9625,7 +9629,7 @@
           };
         }
 
-        // 3. Chưa note
+        // 3. Chưa note issue cho ngày gọi này!
         return {
           status: "unnoted",
           badgeText: "Chưa note issue",
