@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 > nul
-title DMS Auto-Sync Voip24h -> Cloudflare R2
+title DMS Auto-Sync Voip24h -> Cloudflare R2 (1 tieng / lan)
 color 0A
 
 echo =======================================================
@@ -16,7 +16,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [*] Dang khoi dong tien trinh dong bo tu dong (moi 3 phut/lan)...
+echo [*] Dang khoi dong tien trinh dong bo tu dong (moi 60 phut / 1 tieng 1 lan)...
 echo [*] Khong tat cua so nay de dich vu tiep tuc chay trong nen.
 echo.
 

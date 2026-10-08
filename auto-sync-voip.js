@@ -1,8 +1,9 @@
 // auto-sync-voip.js - Tự động đồng bộ cuộc gọi Voip24h lên Cloudflare R2 theo chu kỳ
 const handler = require('./api/voip24h-calls.js');
 
-// Chu kỳ mặc định: 3 phút (có thể cấu hình qua biến môi trường hoặc tham số --interval)
-let intervalMinutes = parseFloat(process.env.SYNC_INTERVAL_MINUTES || 3);
+// Chu kỳ mặc định: 60 phút (1 tiếng / lần) để tránh bị tổng đài hiểu lầm là spam
+let intervalMinutes = parseFloat(process.env.SYNC_INTERVAL_MINUTES || 60);
+
 const args = process.argv.slice(2);
 const idxInterval = args.indexOf('--interval');
 if (idxInterval !== -1 && args[idxInterval + 1]) {
@@ -26,10 +27,20 @@ async function runSyncOnce() {
     return;
   }
 
+  // Tùy chọn an toàn: Ban đêm (từ 21:30 đến 06:30 sáng) không có cuộc gọi, bỏ qua để tránh gọi tổng đài
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const isNightTime = (currentHour > 21 || (currentHour === 21 && currentMinute >= 30)) || currentHour < 6 || (currentHour === 6 && currentMinute < 30);
+  if (isNightTime && process.env.SYNC_SKIP_NIGHT !== "0") {
+    console.log(`[${getTimestamp()}] 🌙 Ngoài giờ làm việc (21:30 - 06:30), tạm dừng cào để giữ an toàn tuyệt đối cho IP. Hẹn lại vào chu kỳ sau...`);
+    return;
+  }
+
   isSyncing = true;
   syncCount++;
   console.log(`\n-------------------------------------------------------`);
-  console.log(`[${getTimestamp()}] 🚀 Bắt đầu đồng bộ lần #${syncCount}...`);
+  console.log(`[${getTimestamp()}] 🚀 Bắt đầu đồng bộ lần #${syncCount} (Chu kỳ ${intervalMinutes} phút)...`);
 
   return new Promise((resolve) => {
     const req = {
@@ -50,7 +61,7 @@ async function runSyncOnce() {
             console.log(`- Cuộc gọi gần nhất: ${latestCall.calldate || 'N/A'} (Từ: ${latestCall.src || '—'} ➔ Đến: ${latestCall.dst || '—'}) [${latestCall.statusText || latestCall.disposition || '—'}]`);
           }
           console.log(`- Nguồn dữ liệu: ${data.source === 'live_voip24h' ? 'Live Voip24h' : 'Cloud Cache'}`);
-          console.log(`- Lần tiếp theo sau: ${intervalMinutes} phút`);
+          console.log(`- Lần đồng bộ tiếp theo sau: ${intervalMinutes} phút (1 tiếng)`);
         } else {
           console.warn(`[${getTimestamp()}] ⚠️ Tổng đài phản hồi không thành công: ${data?.message || 'Không rõ lỗi'}`);
         }
@@ -70,13 +81,14 @@ async function runSyncOnce() {
 console.log("=======================================================");
 console.log("   DMS HUB - DỊCH VỤ TỰ ĐỘNG SYNC VOIP24H LÊN R2");
 console.log("=======================================================");
-console.log(`- Chu kỳ đồng bộ: mỗi ${intervalMinutes} phút`);
+console.log(`- Chu kỳ đồng bộ: MỖI ${intervalMinutes} PHÚT (1 TIẾNG / LẦN)`);
+console.log(`- Khung giờ hoạt động: 06:30 - 21:30 (Ban đêm tự động nghỉ)`);
 console.log(`- Máy chủ đang chạy liên tục trong nền.`);
 console.log(`- Nhấn Ctrl + C để dừng dịch vụ.`);
 console.log("=======================================================");
 
-// Chạy ngay lần đầu tiên khi khởi động
+// Chạy ngay lần đầu tiên khi bật máy
 runSyncOnce();
 
-// Lặp lại định kỳ
+// Lặp lại định kỳ mỗi 60 phút
 setInterval(runSyncOnce, INTERVAL_MS);
