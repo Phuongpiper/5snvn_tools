@@ -6620,6 +6620,8 @@
           .map(
             (n, idx) => {
               const isPastDate = n.date && todayStr && n.date !== todayStr;
+              const isOtrs = isOtrsRaiseCloseTicket(n);
+              const copyTitle = isOtrs ? "Sao chép Prompt OTRS (Raise & Close ticket)" : "Sao chép kết quả này";
               return `
           <tr data-id="${n.id}">
             <td class="td-stt">${idx + 1}</td>
@@ -6636,7 +6638,7 @@
               ${n.time ? `<div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-top:2px;"><i class="fa-regular fa-clock" style="font-size:9.5px;"></i> ${escapeHTML(n.time)}</div>` : ''}
             </td>
             <td class="td-actions">
-              <button type="button" class="btn-row-circle" onclick="copyTempItem('${n.id}')" title="Sao chép kết quả này">
+              <button type="button" class="btn-row-circle" onclick="copyTempItem('${n.id}')" title="${escapeHTML(copyTitle)}">
                 <i class="fa-regular fa-copy"></i>
               </button>
               <button type="button" class="btn-row-circle" onclick="restoreTempItem('${n.id}')" title="Nạp lại vào form">
@@ -6653,13 +6655,115 @@
           .join("");
       }
 
+      function isOtrsRaiseCloseTicket(item) {
+        if (!item) return false;
+        if (typeof getOtrsCvName === "function" && getOtrsCvName(item)) return true;
+        const resultText = String(item.result || item.issue || "").toLowerCase();
+        const solName = String((item.fields && item.fields.solution) || "").toLowerCase();
+        const solCode = String((item.fields && item.fields.solutionCode) || "").toUpperCase();
+        if (["NVN-665", "NVN-663", "NVN-664", "NVN-399"].includes(solCode)) return true;
+        if (resultText.includes("otrs") && (resultText.includes("raise") || resultText.includes("close"))) return true;
+        if (solName.includes("otrs") && (solName.includes("raise") || solName.includes("close"))) return true;
+        return false;
+      }
+
+      function getSolutionCodeByName(name) {
+        if (!name) return "NVN-665";
+        const clean = name.trim().toLowerCase();
+        if (Array.isArray(solutionsList)) {
+          let item = solutionsList.find(s => s && s.name && s.name.trim().toLowerCase() === clean);
+          if (item && item.code) return item.code;
+          item = solutionsList.find(s => s && s.name && (s.name.trim().toLowerCase().includes(clean) || clean.includes(s.name.trim().toLowerCase())));
+          if (item && item.code) return item.code;
+        }
+        if (/raise\s+otrs/i.test(clean)) return "NVN-665";
+        if (/close\s+otrs/i.test(clean)) return "NVN-663";
+        if (/update\s+otrs/i.test(clean)) return "NVN-664";
+        if (/raise\s+ticket/i.test(clean)) return "NVN-399";
+        return "NVN-665";
+      }
+
+      function formatIssueCopyText(item) {
+        if (!item) return "";
+        const resultText = String(item.result || item.issue || "").trim();
+
+        if (isOtrsRaiseCloseTicket(item)) {
+          const parts = resultText.split("_");
+
+          let solutionName = (item.fields && item.fields.solution) ? item.fields.solution.trim() : "";
+          if (!solutionName && parts.length >= 2) {
+            solutionName = parts[1].trim();
+          }
+          if (!solutionName) {
+            solutionName = (typeof getOtrsCvName === "function" ? getOtrsCvName(item) : "") || "Raise OTRS Ticket";
+          }
+
+          let solCode = (item.fields && item.fields.solutionCode) ? item.fields.solutionCode.trim().toUpperCase() : "";
+          if (!solCode || !solCode.startsWith("NVN-")) {
+            solCode = getSolutionCodeByName(solutionName);
+          }
+          if (!solCode) {
+            solCode = "NVN-665";
+          }
+
+          let rawOtrs = "";
+          if (item.fields && item.fields.npp) rawOtrs = item.fields.npp.trim();
+          if (!rawOtrs && parts.length >= 3) rawOtrs = parts[2].trim();
+          rawOtrs = rawOtrs.replace(/^NPP\s+/i, "").trim();
+
+          let otrsCode = "";
+          let otrsTitle = "";
+          const matchNum = rawOtrs.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i) ||
+            resultText.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i);
+
+          if (matchNum) {
+            otrsCode = matchNum[1];
+            const idx = rawOtrs.indexOf(otrsCode);
+            if (idx !== -1) {
+              otrsTitle = rawOtrs.slice(idx + otrsCode.length).trim();
+            } else {
+              const resIdx = resultText.indexOf(otrsCode);
+              if (resIdx !== -1) {
+                otrsTitle = resultText.slice(resIdx + otrsCode.length).split("_")[0].trim();
+              }
+            }
+            otrsTitle = otrsTitle.replace(/^[\t\s\-_:]+/, "").trim();
+          } else {
+            otrsTitle = rawOtrs;
+          }
+
+          let staffInfo = "";
+          if (item.fields && item.fields.role) {
+            staffInfo = item.fields.role.trim();
+          } else if (item.fields && (item.fields.nvbhFormatted || item.fields.nvbh)) {
+            staffInfo = (item.fields.nvbhFormatted || item.fields.nvbh).trim();
+          } else if (parts.length >= 4) {
+            staffInfo = parts[3].trim();
+          }
+
+          let sourceContact = "OTRS";
+          let rawHotline = String((item.fields && item.fields.hotline) || (parts.length >= 5 ? parts[4] : "")).trim();
+          if (rawHotline) {
+            sourceContact = rawHotline.replace(/^Hotline\s+/i, "").trim() || "OTRS";
+          }
+
+          return `Tạo mới Ticket với thông tin: Project NVN, ${solutionName}_${otrsCode}_${otrsTitle}_Mã DSR, Mã nhân viên: ${staffInfo}_Nguồn liên hệ: ${sourceContact} Gán Solution: ${solCode}\n=> Sau đó hãy tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`;
+        }
+
+        const suffix = "     Tự gán solution và phân tích rồi close ticket";
+        return resultText + suffix;
+      }
+
       window.copyTempItem = function (id) {
         const found = tempNotes.find(n => n.id === id);
         if (found) {
-          const suffix = "     Tự gán solution và phân tích rồi close ticket";
-          const textToCopy = found.result + suffix;
+          const textToCopy = formatIssueCopyText(found);
           navigator.clipboard.writeText(textToCopy);
-          showToast("Đã sao chép: " + found.result.substring(0, 36) + "...");
+          if (isOtrsRaiseCloseTicket(found)) {
+            showToast("Đã sao chép Prompt OTRS (Raise & Close ticket)!", "fa-robot");
+          } else {
+            showToast("Đã sao chép: " + found.result.substring(0, 36) + "...");
+          }
         }
       };
 
@@ -6723,8 +6827,13 @@
       window.copyDetailIssue = function (id) {
         const found = r2Issues.find(n => n.id === id) || tempNotes.find(n => n.id === id);
         if (found) {
-          navigator.clipboard.writeText(found.result);
-          showToast("Đã sao chép: " + found.result.substring(0, 36) + "...", "fa-copy");
+          const textToCopy = formatIssueCopyText(found);
+          navigator.clipboard.writeText(textToCopy);
+          if (isOtrsRaiseCloseTicket(found)) {
+            showToast("Đã sao chép Prompt OTRS (Raise & Close ticket)!", "fa-robot");
+          } else {
+            showToast("Đã sao chép: " + (found.result || "").substring(0, 36) + "...", "fa-copy");
+          }
         }
       };
 
@@ -7512,7 +7621,7 @@
                     ${escapeHTML(timeDisplay)}
                   </td>
                   <td class="text-center">
-                    <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="Sao chép cú pháp issue">
+                    <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="${isOtrsRaiseCloseTicket(n) ? 'Sao chép Prompt OTRS (Raise & Close ticket)' : 'Sao chép cú pháp issue'}">
                       <i class="fa-regular fa-copy"></i>
                     </button>
                     <button type="button" class="btn-row-circle danger" data-delete-id="${n.id}" onclick="window.deleteDetailIssue('${n.id}')" title="Xoá issue này">
