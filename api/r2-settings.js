@@ -81,7 +81,8 @@ function r2Fetch(method, body) {
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Pragma, Cache-Control, X-Requested-With",
+  "Access-Control-Allow-Private-Network": "true"
 };
 
 module.exports = async function handler(req, res) {
@@ -92,39 +93,58 @@ module.exports = async function handler(req, res) {
   res.setHeader("Pragma", "no-cache");
 
   try {
-    // GET: đọc settings từ R2
+    // GET: đọc settings (hiddenTabs & excludedPhones) từ R2
     if (req.method === "GET") {
       const r2Res = await r2Fetch("GET", "");
       if (r2Res.statusCode === 404) {
-        return res.status(200).json({ hiddenTabs: [] });
+        return res.status(200).json({ hiddenTabs: [], excludedPhones: [] });
       }
       if (r2Res.statusCode === 200) {
         try {
           const parsed = JSON.parse(r2Res.body);
-          return res.status(200).json(parsed);
+          return res.status(200).json({
+            hiddenTabs: Array.isArray(parsed.hiddenTabs) ? parsed.hiddenTabs : [],
+            excludedPhones: Array.isArray(parsed.excludedPhones) ? parsed.excludedPhones : [],
+            updatedAt: parsed.updatedAt || Date.now()
+          });
         } catch (_) {
-          return res.status(200).json({ hiddenTabs: [] });
+          return res.status(200).json({ hiddenTabs: [], excludedPhones: [] });
         }
       }
       return res.status(502).json({ error: "R2 GET failed", status: r2Res.statusCode });
     }
 
-    // POST: lưu settings lên R2
+    // POST: lưu settings lên R2 (hỗ trợ cập nhật hiddenTabs hoặc excludedPhones)
     if (req.method === "POST") {
       let bodyData = req.body;
       if (typeof bodyData === "string") {
         try { bodyData = JSON.parse(bodyData); } catch (_) {}
       }
 
-      const hiddenTabs = Array.isArray(bodyData && bodyData.hiddenTabs) ? bodyData.hiddenTabs : [];
-      const payload = {
-        hiddenTabs,
-        updatedAt: Date.now()
-      };
+      // Đọc bản hiện tại từ R2 để merge tránh ghi đè mất dữ liệu khác
+      let current = { hiddenTabs: [], excludedPhones: [] };
+      try {
+        const getR = await r2Fetch("GET", "");
+        if (getR.statusCode === 200 && getR.body) {
+          const parsed = JSON.parse(getR.body);
+          if (parsed && typeof parsed === "object") {
+            if (Array.isArray(parsed.hiddenTabs)) current.hiddenTabs = parsed.hiddenTabs;
+            if (Array.isArray(parsed.excludedPhones)) current.excludedPhones = parsed.excludedPhones;
+          }
+        }
+      } catch (_) {}
 
-      const putR = await r2Fetch("PUT", JSON.stringify(payload));
+      if (bodyData && Array.isArray(bodyData.hiddenTabs)) {
+        current.hiddenTabs = bodyData.hiddenTabs;
+      }
+      if (bodyData && Array.isArray(bodyData.excludedPhones)) {
+        current.excludedPhones = bodyData.excludedPhones;
+      }
+      current.updatedAt = Date.now();
+
+      const putR = await r2Fetch("PUT", JSON.stringify(current));
       if (putR.statusCode >= 200 && putR.statusCode < 300) {
-        return res.status(200).json({ status: "success", hiddenTabs, updatedAt: payload.updatedAt });
+        return res.status(200).json({ status: "success", ...current });
       }
       return res.status(502).json({ error: "R2 PUT failed", status: putR.statusCode });
     }

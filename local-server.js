@@ -95,7 +95,7 @@ function r2Fetch(method, body) {
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Methods": "GET,POST,HEAD,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, If-Match, If-None-Match, Pragma, Cache-Control",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, If-Match, If-None-Match, Pragma, Cache-Control, X-Requested-With",
   "Access-Control-Expose-Headers": "ETag, Last-Modified",
   "Access-Control-Allow-Private-Network": "true"
 };

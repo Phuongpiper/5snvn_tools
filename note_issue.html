@@ -1077,6 +1077,18 @@
       box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4) !important;
     }
 
+    .btn-studio-setup {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    .btn-studio-setup:hover {
+      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4);
+    }
+
     .btn-studio-save {
       background: #4f46e5;
       color: #ffffff;
@@ -2534,6 +2546,63 @@
       box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
     }
 
+    /* ── Split button & dropdown menu cho Đồng bộ cuộc gọi (2 luồng) ── */
+    .voip-sync-split-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: stretch;
+      vertical-align: middle;
+    }
+
+    .voip-sync-split-main {
+      border-top-right-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.28) !important;
+      padding-right: 10px !important;
+    }
+
+    .voip-sync-split-caret {
+      border-top-left-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      padding: 7px 9px !important;
+      min-width: 28px !important;
+      cursor: pointer;
+    }
+
+    .voip-sync-menu {
+      animation: voipMenuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes voipMenuFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .voip-sync-menu-item {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .voip-sync-menu-item:hover {
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+    }
+
+    .voip-sync-menu-item.active {
+      background: #eff6ff !important;
+      border-color: #bfdbfe !important;
+    }
+
     /* ── Unnoted Call Highlighting & Note Status Badges ── */
     .table-stitch-stats tr.call-row-unnoted td {
       background: #fff1f2 !important;
@@ -3132,6 +3201,10 @@
               <span>PREVIEW</span>
             </div>
             <div class="result-actions-group">
+              <button type="button" class="btn-studio-action btn-studio-setup" id="btnOpenSetupModal" onclick="openSetupModal()"
+                title="Xem và sao chép thông số Cài máy cho NVBH">
+                <i class="fa-solid fa-mobile-screen-button"></i> Cài máy
+              </button>
               <button type="button" class="btn-studio-action btn-studio-copy" id="btnCopyResult"
                 title="Sao chép cú pháp vào bộ nhớ tạm (Ctrl+C)">
                 <i class="fa-regular fa-copy"></i> Sao chép cú pháp
@@ -3464,10 +3537,87 @@
                 0
               </span>
             </button>
-            <button type="button" class="btn-stats-tool primary" id="btnVoipRefresh" onclick="fetchVoipCalls(true)"
-              title="Làm mới dữ liệu từ tổng đài">
-              <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
-            </button>
+            <!-- Nút Đồng bộ cuộc gọi (2 luồng: Ưu tiên Local ➔ Fallback Vercel) -->
+            <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi (Ưu tiên Local, fallback Vercel)">
+              <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto')"
+                title="Đồng bộ 2 luồng: Ưu tiên Local ➔ Tự động chuyển Vercel nếu Local tắt">
+                <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
+              </button>
+              <button type="button" class="btn-stats-tool primary voip-sync-split-caret" id="btnVoipSyncDropdown" onclick="toggleVoipSyncMenu(event)"
+                title="Tùy chọn luồng đồng bộ (Local / Vercel)">
+                <i class="fa-solid fa-caret-down" id="iconVoipSyncCaret"></i>
+              </button>
+
+              <!-- Dropdown Menu chọn luồng -->
+              <div id="voipSyncMenu" class="voip-sync-menu"
+                style="display:none; position:absolute; top:calc(100% + 6px); right:0; width:310px; background:#ffffff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 28px rgba(15,23,42,0.15); z-index:1050; padding:8px; font-family:inherit;">
+                
+                <div style="padding:4px 8px 8px; border-bottom:1px solid #f1f5f9; margin-bottom:6px;">
+                  <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+                    <i class="fa-solid fa-sliders"></i> Tùy chọn luồng đồng bộ
+                  </div>
+                  <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
+                    Ưu tiên kết nối máy nội bộ để lấy live từ tổng đài Voip24h.
+                  </div>
+                </div>
+
+                <!-- Tùy chọn 1: Tự động (Khuyên dùng) -->
+                <button type="button" class="voip-sync-menu-item active" id="optVoipSyncAuto" onclick="triggerVoipSyncFlow('auto')">
+                  <div style="width:28px; height:28px; border-radius:6px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
+                      <span>Tự động (2 luồng)</span>
+                      <span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 6px; border-radius:8px; font-weight:700;">Khuyên dùng</span>
+                    </div>
+                    <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
+                      Ưu tiên gọi <strong>Local</strong> ➔ Nếu Local không phản hồi thì tự chuyển <strong>Vercel</strong>
+                    </div>
+                  </div>
+                </button>
+
+                <!-- Tùy chọn 2: Luồng Local -->
+                <button type="button" class="voip-sync-menu-item" id="optVoipSyncLocal" onclick="triggerVoipSyncFlow('local')">
+                  <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
+                    <i class="fa-solid fa-desktop"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
+                      <span>Luồng Local (Nội bộ)</span>
+                      <span id="voipLocalStatusBadge" style="font-size:10px; background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:8px; font-weight:700;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Kiểm tra...
+                      </span>
+                    </div>
+                    <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
+                      Lấy trực tiếp từ Voip24h qua <code>localhost:3000</code> &amp; sync lên Cloud R2
+                    </div>
+                  </div>
+                </button>
+
+                <!-- Tùy chọn 3: Luồng Vercel Cloud -->
+                <button type="button" class="voip-sync-menu-item" id="optVoipSyncVercel" onclick="triggerVoipSyncFlow('vercel')">
+                  <div style="width:28px; height:28px; border-radius:6px; background:#f0f9ff; color:#0284c7; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
+                    <i class="fa-solid fa-cloud"></i>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
+                      <span>Luồng Vercel (Cloud R2)</span>
+                      <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:8px; font-weight:700;">Đám mây</span>
+                    </div>
+                    <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
+                      Lấy từ bộ nhớ đệm Cloudflare R2 qua máy chủ Vercel (nhanh &amp; ổn định)
+                    </div>
+                  </div>
+                </button>
+
+                <!-- Footer thông tin / trợ giúp -->
+                <div style="margin-top:6px; padding-top:6px; border-top:1px solid #f1f5f9; font-size:10.5px; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i>
+                  <span>Bật <code>sync-voip.bat</code> để máy nội bộ đẩy live lên Cloud.</span>
+                </div>
+              </div>
+            </div>
             <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()"
               style="background:#10b981; color:#fff; border-color:#059669;"
               title="Tải file báo cáo gốc từ Voip24h (Bước 3)">
@@ -4140,8 +4290,13 @@
             <i class="fa-solid fa-phone-slash"></i>
           </div>
           <div>
-            <h3>Số điện thoại miễn Note Issue</h3>
-            <p>Không cần ghi chú Issue &amp; không tính vào bất kỳ báo cáo / thống kê nào</p>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="margin:0;">Số điện thoại miễn Note Issue</h3>
+              <span id="tagExcludedPhonesR2Status" style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-cloud"></i> Cloud R2
+              </span>
+            </div>
+            <p style="margin:2px 0 0;">Không cần ghi chú Issue &amp; không tính vào bất kỳ báo cáo / thống kê nào</p>
           </div>
         </div>
         <button type="button" class="member-modal-close-btn" onclick="closeExcludedPhonesModal()" title="Đóng">
@@ -4191,10 +4346,147 @@
       </div>
 
       <div class="member-modal-footer" style="padding:12px 22px; display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border-top:1px solid var(--border);">
-        <div style="font-size:11.5px; color:var(--text-muted);">
-          Dữ liệu lưu tự động trên trình duyệt này
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn-stats-tool" id="btnSyncExcludedPhonesR2" onclick="fetchExcludedPhonesFromR2(false)"
+            style="padding:5px 11px; font-size:12px;" title="Làm mới danh sách từ Cloudflare R2">
+            <i class="fa-solid fa-arrows-rotate" id="iconSyncExcludedPhones"></i> Đồng bộ R2
+          </button>
+          <span id="labelExcludedPhonesR2Status" style="font-size:11.5px; color:#64748b; display:inline-flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Tự động đồng bộ lên Cloud R2
+          </span>
         </div>
         <button type="button" class="btn-modal-cancel" onclick="closeExcludedPhonesModal()" style="display:inline-flex;">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: THÔNG SỐ CÀI MÁY DMS -->
+  <div class="member-modal-backdrop" id="setupDeviceModalBackdrop" onclick="if(event.target===this) closeSetupModal()">
+    <div class="member-modal-box" style="max-width: 580px;">
+      <div class="member-modal-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="margin:0;">Thông số Cài máy DMS</h3>
+              <span style="font-size:11px; font-weight:700; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 8px; border-radius:12px;">
+                Nestlé DMS
+              </span>
+            </div>
+            <p style="margin:2px 0 0;">Cấu hình đăng nhập ứng dụng DMS cho máy cầm tay / Tablet NVBH</p>
+          </div>
+        </div>
+        <button type="button" class="member-modal-close-btn" onclick="closeSetupModal()" title="Đóng (Esc)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="member-modal-body" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px;">
+        <!-- Bảng thông số Cài máy (chuẩn theo mẫu Excel) -->
+        <div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+          <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+            <thead>
+              <tr style="background: #e2e8f0; color: #1e293b; border-bottom: 2px solid #cbd5e1;">
+                <th colspan="3" style="padding: 10px 14px; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: 0.05em; background: #f1f5f9; color: #0f172a;">
+                  <i class="fa-solid fa-wrench" style="margin-right: 6px; color:#0284c7;"></i> Cài máy
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1: Server URL -->
+              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 11px 14px; font-weight: 700; width: 140px; color: #334155; border-right: 1px solid #e2e8f0;">
+                  Server URL
+                </td>
+                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; word-break: break-all;">
+                  <span id="setupDeviceServerUrl">https://fw.np.accenture.com</span>
+                </td>
+                <td style="padding: 11px 14px; text-align: right; width: 90px;">
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField('https://fw.np.accenture.com', 'Server URL')" title="Sao chép Server URL">
+                    <i class="fa-regular fa-copy"></i> Copy
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 2: Company CD -->
+              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 11px 14px; font-weight: 700; color: #334155; border-right: 1px solid #e2e8f0;">
+                  Company CD
+                </td>
+                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 700; color: #1e293b; letter-spacing: 0.03em;">
+                  <span id="setupDeviceCompanyCd">C_NES_VNM</span>
+                </td>
+                <td style="padding: 11px 14px; text-align: right;">
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField('C_NES_VNM', 'Company CD')" title="Sao chép Company CD">
+                    <i class="fa-regular fa-copy"></i> Copy
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 3: User ID -->
+              <tr style="border-bottom: 1px solid #e2e8f0; background: #f0fdf4; transition: background 0.15s ease;" id="rowSetupUserId">
+                <td style="padding: 11px 14px; font-weight: 700; color: #166534; border-right: 1px solid #bbf7d0;">
+                  User ID:
+                </td>
+                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 800; font-size: 14.5px; color: #15803d; letter-spacing: 0.02em;">
+                  <span id="setupDeviceUserId" style="display:inline-block;">7674110_338G0003</span>
+                </td>
+                <td style="padding: 11px 14px; text-align: right;">
+                  <button type="button" class="btn-copy-chip" style="background:#22c55e; color:#fff; border-color:#16a34a;" onclick="copySetupUserId()" title="Sao chép User ID">
+                    <i class="fa-regular fa-copy"></i> Copy
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 4: Pass -->
+              <tr style="transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 11px 14px; font-weight: 700; color: #334155; border-right: 1px solid #e2e8f0;">
+                  Pass
+                </td>
+                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 700; color: #dc2626;">
+                  <span id="setupDevicePass">NPage@0101</span>
+                </td>
+                <td style="padding: 11px 14px; text-align: right;">
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField('NPage@0101', 'Mật khẩu Pass')" title="Sao chép Mật khẩu">
+                    <i class="fa-regular fa-copy"></i> Copy
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Chi tiết giải thích & Tuỳ chỉnh nhanh Mã NPP / NVBH -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px 14px;">
+          <div style="font-size: 11.5px; color: #64748b; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-circle-info" style="color:#0284c7;"></i>
+            <span>Quy tắc: <strong>User ID</strong> = <strong>Mã NPP</strong> _ <strong>Mã NVBH</strong></span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã NPP:</label>
+              <input type="text" id="setupInputMaNpp" class="form-control-studio" placeholder="VD: 7674110"
+                style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;" oninput="onSetupInputChange()" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã NVBH:</label>
+              <input type="text" id="setupInputMaNvbh" class="form-control-studio" placeholder="VD: 338G0003 hoặc 0003"
+                style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;" oninput="onSetupInputChange()" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="member-modal-footer" style="padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; border-top: 1px solid var(--border);">
+        <button type="button" class="btn-studio-action" style="background:#0284c7; color:#fff; box-shadow:0 4px 12px rgba(2,132,199,0.3);" onclick="copyAllSetupInfo()" title="Sao chép toàn bộ thông số">
+          <i class="fa-solid fa-copy"></i> Sao chép tất cả
+        </button>
+        <button type="button" class="btn-modal-cancel" onclick="closeSetupModal()">
           Đóng
         </button>
       </div>
@@ -7683,6 +7975,18 @@
 
       // Keyboard Shortcuts
       window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const setupModal = document.getElementById("setupDeviceModalBackdrop");
+          if (setupModal && setupModal.classList.contains("show")) {
+            closeSetupModal();
+            return;
+          }
+          const exclModal = document.getElementById("excludedPhonesModalBackdrop");
+          if (exclModal && exclModal.classList.contains("show")) {
+            closeExcludedPhonesModal();
+            return;
+          }
+        }
         if ((e.ctrlKey && e.key === "s") || (e.key === "Enter" && !e.target.matches("textarea") && dropdownSolution.style.display !== "block" && dropdownNpp.style.display !== "block" && (!dropdownRole || dropdownRole.style.display !== "block"))) {
           e.preventDefault();
           saveCurrentToTemp();
@@ -8030,9 +8334,63 @@
       }
 
       /* ──────────────────────────────────────────────────────────────────────────
-         QUẢN LÝ DANH SÁCH SỐ ĐIỆN THOẠI MIỄN NOTE ISSUE
+         QUẢN LÝ DANH SÁCH SỐ ĐIỆN THOẠI MIỄN NOTE ISSUE & ĐỒNG BỘ CLOUD R2
       ────────────────────────────────────────────────────────────────────────── */
       const LS_EXCLUDED_PHONES_KEY = "dms_excluded_phones_v1";
+      const LS_EXCLUDED_PHONES_MIGRATED_KEY = "dms_excluded_phones_migrated_r2_v1";
+      const LS_EXCLUDED_PHONES_PENDING_KEY = "dms_excluded_phones_pending_push_v1";
+      let isSyncingExcludedPhones = false;
+
+      function getSettingsApiEndpoint() {
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          return "/api/r2-settings";
+        }
+        if (window.location.protocol === "file:") {
+          return "https://5snvn-tools.vercel.app/api/r2-settings";
+        }
+        return "/api/r2-settings";
+      }
+
+      function updateExcludedModalSyncStatus(status) {
+        const tag = document.getElementById("tagExcludedPhonesR2Status");
+        const label = document.getElementById("labelExcludedPhonesR2Status");
+        const icon = document.getElementById("iconSyncExcludedPhones");
+
+        if (status === "syncing") {
+          if (icon) icon.classList.add("fa-spin");
+          if (tag) {
+            tag.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang đồng bộ...`;
+            tag.style.background = "#fffbeb";
+            tag.style.color = "#d97706";
+            tag.style.borderColor = "#fde68a";
+          }
+          if (label) {
+            label.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin" style="color:#d97706;"></i> Đang lưu lên Cloud R2...`;
+          }
+        } else if (status === "synced") {
+          if (icon) icon.classList.remove("fa-spin");
+          if (tag) {
+            tag.innerHTML = `<i class="fa-solid fa-cloud"></i> Cloud R2`;
+            tag.style.background = "#ecfdf5";
+            tag.style.color = "#047857";
+            tag.style.borderColor = "#a7f3d0";
+          }
+          if (label) {
+            label.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Đã đồng bộ với Cloud R2`;
+          }
+        } else if (status === "error") {
+          if (icon) icon.classList.remove("fa-spin");
+          if (tag) {
+            tag.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Chưa lưu Cloud`;
+            tag.style.background = "#fef2f2";
+            tag.style.color = "#dc2626";
+            tag.style.borderColor = "#fecaca";
+          }
+          if (label) {
+            label.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;"></i> Chưa thể kết nối Cloud R2`;
+          }
+        }
+      }
 
       function getExcludedPhones() {
         try {
@@ -8057,10 +8415,144 @@
         return [];
       }
 
-      function saveExcludedPhones(list) {
+      async function fetchExcludedPhonesFromR2(silent = false) {
+        if (isSyncingExcludedPhones) return;
+        isSyncingExcludedPhones = true;
+        updateExcludedModalSyncStatus("syncing");
+
+        try {
+          const endpoint = getSettingsApiEndpoint();
+          let res = null;
+          try {
+            res = await fetch(`${endpoint}?t=${Date.now()}`, { cache: "no-cache" });
+          } catch (e) {
+            if (!endpoint.includes("5snvn-tools.vercel.app")) {
+              res = await fetch(`https://5snvn-tools.vercel.app/api/r2-settings?t=${Date.now()}`, { cache: "no-cache" });
+            }
+          }
+
+          if (res && res.ok) {
+            const data = await res.json();
+            const r2List = Array.isArray(data.excludedPhones) ? data.excludedPhones : [];
+            const localList = getExcludedPhones();
+            const hasMigrated = localStorage.getItem(LS_EXCLUDED_PHONES_MIGRATED_KEY) === "true";
+            const hasPending = localStorage.getItem(LS_EXCLUDED_PHONES_PENDING_KEY) === "true";
+
+            let merged = [];
+
+            if (hasPending || !hasMigrated) {
+              // Lần đầu hoặc có dữ liệu cục bộ chưa đẩy lên: Merge danh sách local vào R2
+              const map = new Map();
+              r2List.forEach(item => {
+                if (!item || !item.phone) return;
+                const k = normalizePhone(item.phone);
+                if (k) map.set(k, {
+                  phone: String(item.phone).trim(),
+                  note: String(item.note || "").trim(),
+                  addedAt: item.addedAt || new Date().toISOString()
+                });
+              });
+
+              let hasNewLocal = false;
+              localList.forEach(item => {
+                if (!item || !item.phone) return;
+                const k = normalizePhone(item.phone);
+                if (k && !map.has(k)) {
+                  map.set(k, item);
+                  hasNewLocal = true;
+                }
+              });
+
+              merged = Array.from(map.values());
+              localStorage.setItem(LS_EXCLUDED_PHONES_MIGRATED_KEY, "true");
+              if (hasNewLocal || hasPending) {
+                pushExcludedPhonesToR2(merged, true);
+              }
+            } else {
+              // R2 là Single Source of Truth: cập nhật danh sách chuẩn từ Cloud
+              merged = r2List.map(item => ({
+                phone: String(item.phone || "").trim(),
+                note: String(item.note || "").trim(),
+                addedAt: item.addedAt || new Date().toISOString()
+              })).filter(item => Boolean(item.phone));
+            }
+
+            localStorage.setItem(LS_EXCLUDED_PHONES_KEY, JSON.stringify(merged));
+
+            updateExcludedPhonesBadge();
+            if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
+            if (typeof renderVoipTable === "function") renderVoipTable();
+            if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
+            if (typeof renderReportPage === "function") renderReportPage();
+            if (document.getElementById("excludedPhonesModalBackdrop")?.classList.contains("show")) {
+              renderExcludedPhonesList(document.getElementById("excludedPhoneSearchInput")?.value || "");
+            }
+
+            updateExcludedModalSyncStatus("synced");
+
+            if (!silent) {
+              showToast(`Đã đồng bộ ${merged.length} số miễn note từ Cloud R2!`, "fa-cloud-arrow-down");
+            }
+          } else {
+            updateExcludedModalSyncStatus("error");
+          }
+        } catch (err) {
+          console.warn("fetchExcludedPhonesFromR2 error:", err);
+          updateExcludedModalSyncStatus("error");
+          if (!silent) showToast("Không thể kết nối Cloud R2: " + err.message, "fa-circle-exclamation");
+        } finally {
+          isSyncingExcludedPhones = false;
+        }
+      }
+
+      async function pushExcludedPhonesToR2(list, silent = false) {
+        updateExcludedModalSyncStatus("syncing");
+        try {
+          const clean = (list || []).filter(item => item && item.phone);
+          const endpoint = getSettingsApiEndpoint();
+          let res = null;
+          try {
+            res = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ excludedPhones: clean })
+            });
+          } catch (e) {
+            if (!endpoint.includes("5snvn-tools.vercel.app")) {
+              res = await fetch("https://5snvn-tools.vercel.app/api/r2-settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ excludedPhones: clean })
+              });
+            }
+          }
+
+          if (res && res.ok) {
+            localStorage.removeItem(LS_EXCLUDED_PHONES_PENDING_KEY);
+            localStorage.setItem(LS_EXCLUDED_PHONES_MIGRATED_KEY, "true");
+            updateExcludedModalSyncStatus("synced");
+            if (!silent) {
+              showToast("Đã lưu số miễn note lên Cloudflare R2!", "fa-cloud-arrow-up");
+            }
+          } else {
+            localStorage.setItem(LS_EXCLUDED_PHONES_PENDING_KEY, "true");
+            updateExcludedModalSyncStatus("error");
+          }
+        } catch (err) {
+          console.warn("pushExcludedPhonesToR2 error:", err);
+          localStorage.setItem(LS_EXCLUDED_PHONES_PENDING_KEY, "true");
+          updateExcludedModalSyncStatus("error");
+        }
+      }
+
+      function saveExcludedPhones(list, skipPush = false) {
         try {
           const clean = (list || []).filter(item => item && item.phone);
           localStorage.setItem(LS_EXCLUDED_PHONES_KEY, JSON.stringify(clean));
+          localStorage.setItem(LS_EXCLUDED_PHONES_MIGRATED_KEY, "true");
+          if (!skipPush) {
+            pushExcludedPhonesToR2(clean);
+          }
         } catch (e) {
           console.warn("saveExcludedPhones error:", e);
         }
@@ -8117,6 +8609,7 @@
           setTimeout(() => {
             document.getElementById("inputNewExcludedPhone")?.focus();
           }, 150);
+          fetchExcludedPhonesFromR2(true);
         }
       };
 
@@ -8275,6 +8768,128 @@
       };
 
       /* ──────────────────────────────────────────────────────────────────────────
+         THÔNG SỐ CÀI MÁY DMS (MÔ PHỎNG MẪU EXCEL & SAO CHÉP NHANH)
+      ────────────────────────────────────────────────────────────────────────── */
+      function getSetupDeviceValues() {
+        let maNpp = "";
+        if (currentNppObj && currentNppObj.code) {
+          maNpp = String(currentNppObj.code).trim();
+        } else if (inputNpp && inputNpp.value.trim()) {
+          const raw = inputNpp.value.trim();
+          if (/^\d+$/.test(raw)) {
+            maNpp = raw;
+          } else if (Array.isArray(dtList) && dtList.length > 0) {
+            const low = raw.toLowerCase();
+            const found = dtList.find(d =>
+              (d.code && String(d.code).toLowerCase() === low) ||
+              (d.issueName && String(d.issueName).toLowerCase().includes(low)) ||
+              (d.name && String(d.name).toLowerCase().includes(low))
+            );
+            if (found && found.code) maNpp = String(found.code).trim();
+            else maNpp = raw;
+          } else {
+            maNpp = raw;
+          }
+        }
+
+        let maNvbh = "";
+        const rawNvbh = inputNvbh ? inputNvbh.value.trim() : "";
+        if (rawNvbh) {
+          maNvbh = formatNvbh(rawNvbh);
+          if (maNvbh.startsWith("[Chưa có Prefix]")) {
+            maNvbh = maNvbh.replace("[Chưa có Prefix]", "");
+          }
+        }
+
+        return { maNpp, maNvbh };
+      }
+
+      window.openSetupModal = function () {
+        const modal = document.getElementById("setupDeviceModalBackdrop");
+        if (!modal) return;
+
+        const { maNpp, maNvbh } = getSetupDeviceValues();
+        const inputNppEl = document.getElementById("setupInputMaNpp");
+        const inputNvbhEl = document.getElementById("setupInputMaNvbh");
+
+        if (inputNppEl) inputNppEl.value = maNpp;
+        if (inputNvbhEl) inputNvbhEl.value = maNvbh;
+
+        updateSetupModalDisplay();
+        modal.classList.add("show");
+      };
+
+      window.closeSetupModal = function () {
+        const modal = document.getElementById("setupDeviceModalBackdrop");
+        if (modal) modal.classList.remove("show");
+      };
+
+      window.onSetupInputChange = function () {
+        updateSetupModalDisplay();
+      };
+
+      function updateSetupModalDisplay() {
+        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
+        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
+
+        // Tự động format NVBH nếu chỉ nhập số và NPP hiện tại có Prefix
+        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
+          nvbhVal = formatNvbh(nvbhVal);
+          if (nvbhVal.startsWith("[Chưa có Prefix]")) {
+            nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+          }
+        }
+
+        const userIdSpan = document.getElementById("setupDeviceUserId");
+        let userId = "";
+        if (nppVal && nvbhVal) {
+          userId = `${nppVal}_${nvbhVal}`;
+        } else if (nppVal) {
+          userId = `${nppVal}_[Chưa nhập NVBH]`;
+        } else if (nvbhVal) {
+          userId = `[Chưa nhập NPP]_${nvbhVal}`;
+        } else {
+          userId = `[Chưa nhập NPP]_[Chưa nhập NVBH]`;
+        }
+
+        if (userIdSpan) {
+          userIdSpan.textContent = userId;
+        }
+      }
+
+      window.copySetupField = function (text, label) {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        showToast(`Đã sao chép ${label}: ${text}!`, "fa-copy");
+      };
+
+      window.copySetupUserId = function () {
+        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
+        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
+        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
+          nvbhVal = formatNvbh(nvbhVal);
+          if (nvbhVal.startsWith("[Chưa có Prefix]")) nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+        }
+        const text = (nppVal && nvbhVal) ? `${nppVal}_${nvbhVal}` : (document.getElementById("setupDeviceUserId")?.textContent || "");
+        navigator.clipboard.writeText(text);
+        showToast(`Đã sao chép User ID: ${text}!`, "fa-copy");
+      };
+
+      window.copyAllSetupInfo = function () {
+        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
+        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
+        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
+          nvbhVal = formatNvbh(nvbhVal);
+          if (nvbhVal.startsWith("[Chưa có Prefix]")) nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+        }
+        const userId = (nppVal && nvbhVal) ? `${nppVal}_${nvbhVal}` : (document.getElementById("setupDeviceUserId")?.textContent || "");
+
+        const content = `Server URL: https://fw.np.accenture.com\nCompany CD: C_NES_VNM\nUser ID: ${userId}\nPass: NPage@0101`;
+        navigator.clipboard.writeText(content);
+        showToast("Đã sao chép toàn bộ thông số Cài máy!", "fa-copy");
+      };
+
+      /* ──────────────────────────────────────────────────────────────────────────
          VOIP24H CALL HISTORY LOGIC & NOTE ISSUE STATUS MATCHING
       ────────────────────────────────────────────────────────────────────────── */
       let voipCalls = [];
@@ -8382,11 +8997,13 @@
 
         let syncedAt = null;
         let source = "r2_cloud";
+        let flow = null;
         let count = (voipCalls && Array.isArray(voipCalls)) ? voipCalls.length : 0;
 
         if (data && data.syncedAt) {
           syncedAt = data.syncedAt;
           source = data.source || source;
+          flow = data.flow || (source === "live_voip24h" ? "local" : "vercel");
         } else {
           try {
             const raw = localStorage.getItem(VOIP_CACHE_KEY);
@@ -8394,22 +9011,107 @@
               const parsed = JSON.parse(raw);
               if (parsed.syncedAt) syncedAt = parsed.syncedAt;
               if (parsed.source) source = parsed.source;
+              if (parsed.flow) flow = parsed.flow;
               if (parsed.calls && count === 0) count = parsed.calls.length;
             }
           } catch (_) { }
         }
 
         if (statusChip) {
-          const srcIcon = source === "r2_cloud" ? '<i class="fa-solid fa-cloud"></i>' : '<i class="fa-solid fa-circle-check"></i>';
-          const srcNote = source === "r2_cloud" ? ' (Cloud R2)' : ' (Live Voip24h)';
-          statusChip.innerHTML = `${srcIcon} ${count} cuộc gọi${srcNote}`;
-          statusChip.style.color = source === "r2_cloud" ? "#0284c7" : "#059669";
+          if (flow === "local" || source === "live_voip24h") {
+            statusChip.innerHTML = `<i class="fa-solid fa-desktop" style="color:#059669;"></i> ${count} cuộc gọi (Local • Live Voip24h)`;
+            statusChip.style.background = "#ecfdf5";
+            statusChip.style.color = "#047857";
+            statusChip.style.borderColor = "#a7f3d0";
+          } else if (flow === "offline_cache") {
+            statusChip.innerHTML = `<i class="fa-solid fa-database" style="color:#d97706;"></i> ${count} cuộc gọi (Cache ngoại tuyến)`;
+            statusChip.style.background = "#fffbeb";
+            statusChip.style.color = "#b45309";
+            statusChip.style.borderColor = "#fde68a";
+          } else {
+            statusChip.innerHTML = `<i class="fa-solid fa-cloud" style="color:#0284c7;"></i> ${count} cuộc gọi (Vercel • Cloud R2)`;
+            statusChip.style.background = "#f0f9ff";
+            statusChip.style.color = "#0284c7";
+            statusChip.style.borderColor = "#bae6fd";
+          }
         }
 
         if (timeText) {
           timeText.textContent = formatSyncTime(syncedAt);
         }
       }
+
+      window.toggleVoipSyncMenu = function (e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById("voipSyncMenu");
+        if (!menu) return;
+        const isHidden = menu.style.display === "none" || !menu.style.display;
+        if (isHidden) {
+          menu.style.display = "block";
+          checkLocalServerStatusBadge();
+        } else {
+          menu.style.display = "none";
+        }
+      };
+
+      async function checkLocalServerStatusBadge() {
+        const badge = document.getElementById("voipLocalStatusBadge");
+        if (!badge) return;
+        badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Kiểm tra...`;
+        badge.style.background = "#f1f5f9";
+        badge.style.color = "#64748b";
+
+        let isAlive = false;
+        const candidates = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+          ? ["/api/voip24h-calls"]
+          : ["http://localhost:3000/api/voip24h-calls", "http://127.0.0.1:3000/api/voip24h-calls"];
+
+        for (const u of candidates) {
+          try {
+            const ctrl = new AbortController();
+            const tid = setTimeout(() => ctrl.abort(), 1200);
+            const r = await fetch(u + "?ping=1&_t=" + Date.now(), {
+              signal: ctrl.signal,
+              headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+            });
+            clearTimeout(tid);
+            if (r.ok) {
+              isAlive = true;
+              break;
+            }
+          } catch (_) {}
+        }
+
+        if (isAlive) {
+          badge.innerHTML = `<i class="fa-solid fa-circle" style="color:#10b981; font-size:7px;"></i> Đang chạy`;
+          badge.style.background = "#ecfdf5";
+          badge.style.color = "#047857";
+        } else {
+          badge.innerHTML = `<i class="fa-solid fa-circle" style="color:#94a3b8; font-size:7px;"></i> Chưa bật`;
+          badge.style.background = "#f1f5f9";
+          badge.style.color = "#64748b";
+        }
+      }
+
+      window.triggerVoipSyncFlow = function (flow) {
+        const menu = document.getElementById("voipSyncMenu");
+        if (menu) menu.style.display = "none";
+
+        document.querySelectorAll(".voip-sync-menu-item").forEach(el => el.classList.remove("active"));
+        if (flow === "auto") document.getElementById("optVoipSyncAuto")?.classList.add("active");
+        else if (flow === "local") document.getElementById("optVoipSyncLocal")?.classList.add("active");
+        else if (flow === "vercel") document.getElementById("optVoipSyncVercel")?.classList.add("active");
+
+        fetchVoipCalls(true, false, flow);
+      };
+
+      document.addEventListener("click", function (e) {
+        const menu = document.getElementById("voipSyncMenu");
+        const wrap = document.querySelector(".voip-sync-split-wrap");
+        if (menu && wrap && !wrap.contains(e.target)) {
+          menu.style.display = "none";
+        }
+      });
 
       function getVoipApiBase() {
         if (window.location.protocol === "file:" || !window.location.origin || window.location.origin === "null") {
@@ -8683,111 +9385,214 @@
         window.onVoipRangeChange(range);
       };
 
-      window.fetchVoipCalls = async function (showLoading = false, isSilent = false) {
+      window.fetchVoipCalls = async function (showLoading = false, isSilent = false, preferredFlow = "auto") {
         if (voipLoading) return;
         voipLoading = true;
 
         const statusChip = document.getElementById("voipSyncStatusChip");
         const refreshBtn = document.getElementById("btnVoipRefresh");
+        const dropdownBtn = document.getElementById("btnVoipSyncDropdown");
         const hasExistingData = Array.isArray(voipCalls) && voipCalls.length > 0;
         const displayAsBlocking = showLoading || (!hasExistingData && !isSilent);
 
-        if (statusChip) {
-          if (hasExistingData) {
-            statusChip.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang đồng bộ dữ liệu mới...`;
-            statusChip.style.color = "#d97706";
-          } else {
-            statusChip.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang tải...`;
-            statusChip.style.color = "#f59e0b";
+        const updateProgress = (text, icon = "fa-arrows-rotate fa-spin", color = "#d97706") => {
+          if (statusChip) {
+            statusChip.innerHTML = `<i class="fa-solid ${icon}"></i> ${text}`;
+            statusChip.style.color = color;
           }
-        }
-        if (refreshBtn && displayAsBlocking) {
-          refreshBtn.disabled = true;
-          refreshBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin"></i> Đang đồng bộ...`;
+          if (refreshBtn && displayAsBlocking) {
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = `<i class="fa-solid ${icon}"></i> ${text}`;
+          }
+          if (dropdownBtn) dropdownBtn.disabled = true;
+        };
+
+        if (displayAsBlocking) {
+          updateProgress("Đang đồng bộ...");
         }
 
         try {
-          // Song song fetch Issue R2, Temp Notes R2, và danh sách members để có data mới nhất
+          // Song song fetch Issue R2, Temp Notes R2, thành viên và Danh sách số miễn note từ Cloud R2
           await Promise.allSettled([
             fetchSystemMembers(),
             fetchIssuesFromR2(true),
-            fetchAllTempNotesFromR2(true)
+            fetchAllTempNotesFromR2(true),
+            fetchExcludedPhonesFromR2(true)
           ]);
 
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
           const did = document.getElementById("voipSelectDid")?.value || "02873065650";
 
-          const apiBase = getVoipApiBase();
-          const baseOrigin = (apiBase.startsWith("http") || !window.location.origin || window.location.origin === "null")
-            ? undefined
-            : window.location.origin;
+          let data = null;
+          let usedFlow = null;
+          let localError = null;
 
-          const url = baseOrigin ? new URL(apiBase, baseOrigin) : new URL(apiBase);
-          url.searchParams.set("date_start", date_start);
-          url.searchParams.set("date_end", date_end);
-          if (did && did !== "all") url.searchParams.set("did", did);
-          if (showLoading) url.searchParams.set("sync", "1"); // Chỉ gọi live Voip24h khi người dùng bấm nút Đồng bộ
-          url.searchParams.set("_t", Date.now());
+          // ── LUỒNG 1: LOCAL (Ưu tiên gọi server nội bộ để lấy Live Voip24h & sync lên Cloud R2) ──
+          if (preferredFlow === "auto" || preferredFlow === "local") {
+            const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+            const localCandidates = isLocalHost
+              ? ["/api/voip24h-calls"]
+              : ["http://localhost:3000/api/voip24h-calls", "http://127.0.0.1:3000/api/voip24h-calls"];
 
-          let fetchUrl = url.toString();
-          // Nếu đang mở trên web (Vercel) nhưng máy tính có bật localhost:3000, ưu tiên gọi qua localhost để lấy live Voip24h & sync lên R2
-          if (window.location.origin && window.location.origin.includes("vercel.app")) {
-            try {
-              const pingCtrl = new AbortController();
-              const pingTimer = setTimeout(() => pingCtrl.abort(), 800);
-              const testLocal = await fetch("http://localhost:3000/api/voip24h-calls?ping=1", {
-                signal: pingCtrl.signal,
-                headers: { "Pragma": "no-cache" }
-              });
-              clearTimeout(pingTimer);
-              if (testLocal.ok) {
-                const localUrl = new URL("http://localhost:3000/api/voip24h-calls");
-                localUrl.search = url.search;
-                fetchUrl = localUrl.toString();
+            let activeLocalEndpoint = null;
+
+            if (isLocalHost) {
+              activeLocalEndpoint = "/api/voip24h-calls";
+            } else {
+              if (displayAsBlocking) updateProgress("Đang kết nối Local...", "fa-desktop fa-fade", "#2563eb");
+              for (const endpoint of localCandidates) {
+                try {
+                  const pingCtrl = new AbortController();
+                  const pingTid = setTimeout(() => pingCtrl.abort(), 1200);
+                  const pingRes = await fetch(endpoint + "?ping=1&_t=" + Date.now(), {
+                    signal: pingCtrl.signal,
+                    headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+                  });
+                  clearTimeout(pingTid);
+                  if (pingRes.ok) {
+                    activeLocalEndpoint = endpoint;
+                    break;
+                  }
+                } catch (e) {
+                  localError = e;
+                }
               }
-            } catch (_) {
-              // Localhost không bật, dùng trực tiếp endpoint Vercel (đọc cache Cloud R2)
+            }
+
+            if (activeLocalEndpoint) {
+              if (displayAsBlocking) updateProgress("Local đang lấy Live Voip24h...", "fa-arrows-rotate fa-spin", "#059669");
+              const baseOrigin = activeLocalEndpoint.startsWith("http") ? undefined : (window.location.origin || "http://localhost:3000");
+              const localUrl = baseOrigin ? new URL(activeLocalEndpoint, baseOrigin) : new URL(activeLocalEndpoint);
+              localUrl.searchParams.set("date_start", date_start);
+              localUrl.searchParams.set("date_end", date_end);
+              if (did && did !== "all") localUrl.searchParams.set("did", did);
+              if (showLoading) localUrl.searchParams.set("sync", "1");
+              localUrl.searchParams.set("_t", Date.now());
+
+              try {
+                const callCtrl = new AbortController();
+                const callTid = setTimeout(() => callCtrl.abort(), 15000);
+                const localRes = await fetch(localUrl.toString(), {
+                  signal: callCtrl.signal,
+                  cache: "no-store",
+                  headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+                });
+                clearTimeout(callTid);
+                if (localRes.ok) {
+                  const json = await localRes.json();
+                  if (json && json.status === "success") {
+                    data = json;
+                    usedFlow = "local";
+                  } else {
+                    localError = new Error(json?.message || "Local server phản hồi lỗi");
+                  }
+                } else {
+                  localError = new Error("HTTP " + localRes.status);
+                }
+              } catch (callErr) {
+                localError = callErr;
+              }
+            } else if (!localError) {
+              localError = new Error("Local server (localhost:3000) chưa được bật");
+            }
+
+            // Nếu người dùng CHỦ ĐỘNG chọn "Chỉ dùng Local", dừng và báo lỗi nếu không kết nối được
+            if (preferredFlow === "local" && !data) {
+              throw (localError || new Error("Không thể kết nối máy chủ Local (localhost:3000). Vui lòng chạy file sync-voip.bat hoặc local-server.js!"));
             }
           }
 
-          const res = await fetch(fetchUrl, {
-            cache: "no-store",
-            headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
-          });
-          if (!res.ok) throw new Error("HTTP " + res.status);
-          const data = await res.json();
+          // ── LUỒNG 2: VERCEL CLOUD (Fallback khi Local không phản hồi, hoặc người dùng chọn Vercel) ──
+          if (!data && (preferredFlow === "auto" || preferredFlow === "vercel")) {
+            if (preferredFlow === "auto" && displayAsBlocking) {
+              updateProgress("Local không phản hồi ➔ Chuyển Vercel...", "fa-cloud-arrow-down fa-bounce", "#0284c7");
+              await new Promise(r => setTimeout(r, 350));
+            }
+            if (displayAsBlocking) updateProgress("Đang tải dữ liệu từ Vercel Cloud...", "fa-cloud fa-spin", "#0284c7");
 
-          if (data.status === "success") {
+            const vercelEndpoint = (window.location.origin && window.location.origin.includes("vercel.app"))
+              ? "/api/voip24h-calls"
+              : "https://5snvn-tools.vercel.app/api/voip24h-calls";
+
+            const baseOrigin = vercelEndpoint.startsWith("http") ? undefined : window.location.origin;
+            const vercelUrl = baseOrigin ? new URL(vercelEndpoint, baseOrigin) : new URL(vercelEndpoint);
+            vercelUrl.searchParams.set("date_start", date_start);
+            vercelUrl.searchParams.set("date_end", date_end);
+            if (did && did !== "all") vercelUrl.searchParams.set("did", did);
+            if (showLoading) vercelUrl.searchParams.set("sync", "1");
+            vercelUrl.searchParams.set("_t", Date.now());
+
+            const vercelCtrl = new AbortController();
+            const vercelTid = setTimeout(() => vercelCtrl.abort(), 9000);
+            const vercelRes = await fetch(vercelUrl.toString(), {
+              signal: vercelCtrl.signal,
+              cache: "no-store",
+              headers: { "Pragma": "no-cache", "Cache-Control": "no-cache" }
+            });
+            clearTimeout(vercelTid);
+
+            if (vercelRes.ok) {
+              const json = await vercelRes.json();
+              if (json && json.status === "success") {
+                data = json;
+                usedFlow = "vercel";
+              } else {
+                throw new Error(json?.message || "Vercel trả về lỗi");
+              }
+            } else {
+              throw new Error("HTTP " + vercelRes.status + " từ máy chủ Vercel");
+            }
+          }
+
+          // ── LUỒNG 3: NGOẠI TUYẾN (Dự phòng cuối cùng từ LocalStorage nếu mất mạng hoàn toàn) ──
+          if (!data) {
+            const cached = loadVoipCacheFromLocal();
+            if (cached && cached.calls && cached.calls.length > 0) {
+              data = cached;
+              usedFlow = "offline_cache";
+            } else {
+              throw new Error("Không thể kết nối máy chủ Local lẫn Vercel Cloud");
+            }
+          }
+
+          if (data && data.status === "success") {
             voipCalls = data.calls || [];
-
-            // Dùng syncedAt từ server: phản ánh đúng thời điểm data thực sự được lấy từ Voip24h
-            // (nếu từ R2 cache thì hiển giờ cache, không lừa user nghĩ data mới)
             const syncTime = data.syncedAt || new Date().toISOString();
 
-            // Lưu vào localStorage để lần sau vào trang là có dữ liệu hiển thị ngay lập tức
             saveVoipCacheToLocal({
               calls: voipCalls,
               source: data.source,
+              flow: usedFlow,
               syncedAt: syncTime,
               date_start,
               date_end,
               did
             });
 
-            // Cập nhật thẻ KPI và Badge
             updateVoipKpiCardsAndBadges(date_start, date_end);
-
             updateVoipSyncStatusDisplay({
               syncedAt: syncTime,
-              source: data.source
+              source: data.source,
+              flow: usedFlow
             });
 
             renderVoipTable();
             renderUnnotedSuggestions();
 
-            showToast(`Đã đồng bộ thành công ${voipCalls.length} cuộc gọi! (${formatSyncTime(syncTime)})`, "fa-circle-check");
+            // Thông báo Toast tương ứng với luồng đã lấy
+            if (usedFlow === "local") {
+              showToast(`Đã đồng bộ trực tiếp ${voipCalls.length} cuộc gọi từ Voip24h qua Local! (Đã lưu Cloud)`, "fa-circle-check");
+            } else if (usedFlow === "vercel") {
+              if (preferredFlow === "auto") {
+                showToast(`Local không phản hồi ➔ Đã lấy ${voipCalls.length} cuộc gọi từ Vercel (Cloud R2)! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
+              } else {
+                showToast(`Đã tải ${voipCalls.length} cuộc gọi từ Vercel Cloud R2! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
+              }
+            } else if (usedFlow === "offline_cache") {
+              showToast(`Đang hiển thị ${voipCalls.length} cuộc gọi từ bộ nhớ ngoại tuyến`, "fa-database");
+            }
           } else {
-            throw new Error(data.message || "Không thể tải dữ liệu");
+            throw new Error(data?.message || "Không thể tải dữ liệu cuộc gọi");
           }
         } catch (err) {
           console.error("fetchVoipCalls error:", err);
@@ -8796,9 +9601,8 @@
               statusChip.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Lỗi: ${err.message}`;
               statusChip.style.color = "#dc2626";
             }
-            showToast("Lỗi tải lịch sử cuộc gọi: " + err.message, "fa-circle-exclamation");
+            showToast("Lỗi đồng bộ cuộc gọi: " + err.message, "fa-circle-exclamation");
           } else {
-            // Đã có data hiện sẵn, chỉ cần thông báo trạng thái ngoại tuyến trên chip mà không làm phiền người dùng
             if (statusChip) {
               statusChip.innerHTML = `<i class="fa-solid fa-cloud"></i> ${voipCalls.length} cuộc gọi (Cache ngoại tuyến)`;
               statusChip.style.color = "#64748b";
@@ -8809,6 +9613,9 @@
           if (refreshBtn) {
             refreshBtn.disabled = false;
             refreshBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi`;
+          }
+          if (dropdownBtn) {
+            dropdownBtn.disabled = false;
           }
         }
       };
@@ -9250,22 +10057,58 @@
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
           const did = document.getElementById("voipSelectDid")?.value || "02873065650";
 
-          const url = new URL(getVoipApiBase(), window.location.origin);
+          // Thử ưu tiên Local trước, nếu không được thì fallback sang Vercel
+          let downloadEndpoint = null;
+          const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+          if (isLocalHost) {
+            downloadEndpoint = "/api/voip24h-calls";
+          } else {
+            try {
+              const ctrl = new AbortController();
+              const tid = setTimeout(() => ctrl.abort(), 1200);
+              const ping = await fetch("http://localhost:3000/api/voip24h-calls?ping=1", { signal: ctrl.signal });
+              clearTimeout(tid);
+              if (ping.ok) downloadEndpoint = "http://localhost:3000/api/voip24h-calls";
+            } catch (_) {}
+          }
+
+          if (!downloadEndpoint) {
+            downloadEndpoint = getVoipApiBase();
+          }
+
+          const baseOrigin = downloadEndpoint.startsWith("http") ? undefined : (window.location.origin || "http://localhost:3000");
+          const url = baseOrigin ? new URL(downloadEndpoint, baseOrigin) : new URL(downloadEndpoint);
           url.searchParams.set("action", "download");
           url.searchParams.set("date_start", date_start);
           url.searchParams.set("date_end", date_end);
           if (did && did !== "all") url.searchParams.set("did", did);
+          url.searchParams.set("_t", Date.now());
 
-          const res = await fetch(url.toString());
-          const data = await res.json();
+          let res = null;
+          try {
+            res = await fetch(url.toString());
+          } catch (fetchErr) {
+            if (downloadEndpoint.includes("localhost") || downloadEndpoint.includes("127.0.0.1")) {
+              const vercelFallback = "https://5snvn-tools.vercel.app/api/voip24h-calls";
+              const fUrl = new URL(vercelFallback);
+              fUrl.search = url.search;
+              res = await fetch(fUrl.toString());
+            } else {
+              throw fetchErr;
+            }
+          }
 
-          if (data.url || data.data?.url) {
-            const fileUrl = data.url || data.data.url;
-            showToast("Đang tải file... Vui lòng chờ", "fa-file-excel");
-            // Open the URL in new tab to trigger browser download
-            window.open(fileUrl, "_blank");
+          if (res && res.ok) {
+            const data = await res.json();
+            if (data.url || data.data?.url) {
+              const fileUrl = data.url || data.data.url;
+              showToast("Đang tải file... Vui lòng chờ", "fa-file-excel");
+              window.open(fileUrl, "_blank");
+            } else {
+              showToast("Không có dữ liệu để tải: " + (data.message || "Lỗi tổng đài"), "fa-circle-exclamation");
+            }
           } else {
-            showToast("Không có dữ liệu để tải", "fa-circle-exclamation");
+            throw new Error("HTTP " + (res?.status || "Lỗi mạng"));
           }
         } catch (err) {
           showToast("Lỗi tải file: " + err.message, "fa-circle-exclamation");
@@ -9283,6 +10126,7 @@
         loadTempNotes();
         fetchIssuesFromR2(true);
         fetchAllTempNotesFromR2(true);
+        if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
         await loadSolutions();
         await loadDtList();
         // Tự động tải cuộc gọi mới nhất từ R2 (chạy ngầm, không block giao diện)
@@ -9294,11 +10138,13 @@
       window.addEventListener("pageshow", () => {
         fetchIssuesFromR2(true);
         fetchTempNotesFromR2(true);
+        if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
       });
       window.addEventListener("message", (e) => {
         if (e.data === "tab-activated") {
           fetchIssuesFromR2(true);
           fetchTempNotesFromR2(true);
+          if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
         }
       });
 

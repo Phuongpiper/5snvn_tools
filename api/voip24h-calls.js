@@ -257,15 +257,17 @@ async function fetchCallList(jar, params) {
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Pragma, Cache-Control, X-Requested-With");
+  res.setHeader("Access-Control-Allow-Private-Network", "true");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
+  const isVercel = Boolean(process.env.VERCEL || process.env.NOW_REGION);
   const defaultDates = getCurrentMonthFormatted();
 
   // Parse query params
@@ -281,7 +283,7 @@ module.exports = async function handler(req, res) {
   const action = payload.action || "fetch";
 
   if (payload.ping || action === "ping") {
-    return res.status(200).json({ status: "ok", message: "pong" });
+    return res.status(200).json({ status: "ok", message: "pong", server: isVercel ? "vercel" : "local" });
   }
 
   const date_start = payload.date_start || defaultDates.date_start;
@@ -348,7 +350,6 @@ module.exports = async function handler(req, res) {
   }
 
   // ── FETCH action (default) ─────────────────────────────────────────────────
-  const isVercel = Boolean(process.env.VERCEL || process.env.NOW_REGION);
   const shouldSyncLive = Boolean(payload.sync === "1" || payload.sync === true || payload.force_live || action === "sync");
 
   // Nếu không có yêu cầu đồng bộ mới (hoặc đang chạy trên Vercel không có IP VN):
@@ -370,6 +371,7 @@ module.exports = async function handler(req, res) {
         ...cachedData,
         stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
         source: "r2_cloud",
+        server: isVercel ? "vercel" : "local",
         note: isVercel
           ? "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Được đồng bộ từ máy nội bộ)"
           : "Dữ liệu từ bộ nhớ đệm đám mây R2 (Nhấn nút 'Đồng bộ cuộc gọi' để cập nhật mới nhất từ tổng đài)"
@@ -424,6 +426,7 @@ module.exports = async function handler(req, res) {
       const responsePayload = {
         status: "success",
         source: "live_voip24h",
+        server: isVercel ? "vercel" : "local",
         total: calls.length,
         recordsTotal: data.recordsTotal || calls.length,
         recordsFiltered: data.recordsFiltered || calls.length,
@@ -461,6 +464,7 @@ module.exports = async function handler(req, res) {
       ...cachedData,
       stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
       source: "r2_cloud",
+      server: isVercel ? "vercel" : "local",
       note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Do tổng đài Voip24h chặn IP nước ngoài của Vercel)"
     });
   }
