@@ -2475,6 +2475,24 @@
       border: 1px solid #fecaca;
     }
 
+    .voip-status-badge.busy {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .voip-status-badge.no-answer {
+      background: #faf5ff;
+      color: #7e22ce;
+      border: 1px solid #e9d5ff;
+    }
+
+    .voip-status-badge.failed {
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+    }
+
     .voip-type-badge {
       display: inline-flex;
       align-items: center;
@@ -3678,8 +3696,11 @@
               style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
               onchange="renderVoipTable()">
               <option value="all">Tất cả trạng thái</option>
-              <option value="missed">Gọi nhỡ (Missed)</option>
               <option value="answered">Trả lời (Answered)</option>
+              <option value="missed">Gọi nhỡ (Missed)</option>
+              <option value="busy">Máy bận (Busy)</option>
+              <option value="no_answer">Không trả lời (No Answer)</option>
+              <option value="failed">Gọi lỗi (Failed)</option>
             </select>
             <select id="voipFilterType"
               style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
@@ -3748,7 +3769,7 @@
           <div class="kpi-content">
             <div class="kpi-label">Gọi nhỡ</div>
             <div class="kpi-value" id="kpiVoipMissed" style="color:#dc2626;">0</div>
-            <div class="kpi-subtext">Chưa kết nối / cần gọi lại</div>
+            <div class="kpi-subtext" id="kpiVoipMissedSub">Chưa kết nối / cần gọi lại</div>
           </div>
         </div>
 
@@ -9100,6 +9121,9 @@
         let unnotedCount = 0;
         let answeredCount = 0;
         let missedCount = 0;
+        let pureMissedCount = 0;
+        let busyCount = 0;
+        let noAnswerCount = 0;
         let inboundCount = 0;
         let outboundCount = 0;
         let validCallsCount = 0;
@@ -9111,8 +9135,16 @@
           if (isAnswered && noteInfo.status === "unnoted") {
             unnotedCount++;
           }
-          if (isAnswered) answeredCount++;
-          else missedCount++;
+          const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+          const st = String(c.statusText || "").toLowerCase().trim();
+          if (isAnswered) {
+            answeredCount++;
+          } else {
+            missedCount++;
+            if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) busyCount++;
+            else if (disp === "NO ANSWER" || st.includes("không trả lời") || st.includes("khong tra loi")) noAnswerCount++;
+            else pureMissedCount++;
+          }
           const to = (c.type_origin || "").toLowerCase();
           const tt = (c.typeText || "").toLowerCase();
           if (to === "inbound" || tt.includes("vao") || tt.includes("vào")) inboundCount++;
@@ -9127,6 +9159,13 @@
         if (el("kpiVoipInbound")) el("kpiVoipInbound").textContent = inboundCount;
         if (el("kpiVoipOutbound")) el("kpiVoipOutbound").textContent = outboundCount;
         if (el("kpiVoipUnnoted")) el("kpiVoipUnnoted").textContent = unnotedCount;
+        if (el("kpiVoipMissedSub")) {
+          const parts = [];
+          if (pureMissedCount > 0) parts.push(`${pureMissedCount} nhỡ`);
+          if (noAnswerCount > 0) parts.push(`${noAnswerCount} không trả lời`);
+          if (busyCount > 0) parts.push(`${busyCount} máy bận`);
+          el("kpiVoipMissedSub").textContent = parts.length > 0 ? parts.join(" · ") : "Chưa kết nối / cần gọi lại";
+        }
         if (rangeStart && rangeEnd && el("kpiVoipTotalSub")) {
           el("kpiVoipTotalSub").textContent = `${rangeStart.slice(0, 10)} → ${rangeEnd.slice(0, 10)}`;
         }
@@ -9302,10 +9341,23 @@
         return clean;
       }
 
-      // Helper: Cuộc gọi được tính là "Trả lời" khi ĐÀM THOẠI (billsec) > 0.
-      // Khi ĐÀM THOẠI > 0 thì mới tính là trả lời và mới cần note Issue.
+      // Helper: Cuộc gọi được tính là "Trả lời" khi Voip24h ghi nhận ANSWERED hoặc Trả lời (hoặc đàm thoại billsec > 0).
       function callIsAnswered(c) {
         if (!c) return false;
+        const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+        const st = String(c.statusText || "").toLowerCase().trim();
+        if (
+          disp === "MISSED" || disp === "NO ANSWER" || disp === "BUSY" || disp === "FAILED" ||
+          st.includes("nhỡ") || st.includes("nho") ||
+          st.includes("không") || st.includes("khong") ||
+          st.includes("bận") || st.includes("ban") ||
+          st.includes("lỗi") || st.includes("loi")
+        ) {
+          return false;
+        }
+        if (disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi")) {
+          return true;
+        }
         const bs = c.billsec;
         if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
         if (typeof bs === "number") return bs > 0;
@@ -9314,6 +9366,28 @@
           ? parts[0] * 3600 + parts[1] * 60 + parts[2]
           : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
         return totalSec > 0;
+      }
+
+      function renderCallStatusBadge(c) {
+        if (!c) return "";
+        const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+        const st = String(c.statusText || "").toLowerCase().trim();
+        if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) {
+          return `<span class="voip-status-badge busy" title="Máy bận"><i class="fa-solid fa-phone-flip"></i> Máy bận</span>`;
+        }
+        if (disp === "NO ANSWER" || st.includes("không") || st.includes("khong")) {
+          return `<span class="voip-status-badge no-answer" title="Không trả lời"><i class="fa-solid fa-phone-slash"></i> Không trả lời</span>`;
+        }
+        if (disp === "FAILED" || st.includes("lỗi") || st.includes("loi")) {
+          return `<span class="voip-status-badge failed" title="Gọi lỗi"><i class="fa-solid fa-triangle-exclamation"></i> Gọi lỗi</span>`;
+        }
+        if (disp === "MISSED" || st.includes("nhỡ") || st.includes("nho")) {
+          return `<span class="voip-status-badge missed" title="Cuộc gọi nhỡ"><i class="fa-solid fa-phone-slash"></i> Gọi nhỡ</span>`;
+        }
+        if (disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi")) {
+          return `<span class="voip-status-badge answered" title="Cuộc gọi được trả lời"><i class="fa-solid fa-phone"></i> Trả lời</span>`;
+        }
+        return `<span class="voip-status-badge missed" title="Cuộc gọi nhỡ"><i class="fa-solid fa-phone-slash"></i> Gọi nhỡ</span>`;
       }
 
       function phoneMatches(phoneA, phoneB) {
@@ -9807,10 +9881,15 @@
           const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
 
-          // Status filter (answered / missed)
+          // Status filter (answered / missed / busy / no_answer / failed)
           if (filterStatus !== "all") {
-            if (filterStatus === "missed" && !isMissed) return false;
-            if (filterStatus === "answered" && !isAnswered) return false;
+            const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+            const st = String(c.statusText || "").toLowerCase().trim();
+            if (filterStatus === "answered" && !(disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi"))) return false;
+            if (filterStatus === "missed" && !(disp === "MISSED" || st.includes("nhỡ") || st.includes("nho"))) return false;
+            if (filterStatus === "busy" && !(disp === "BUSY" || st.includes("bận") || st.includes("ban"))) return false;
+            if (filterStatus === "no_answer" && !(disp === "NO ANSWER" || st.includes("không trả lời") || st.includes("khong tra loi"))) return false;
+            if (filterStatus === "failed" && !(disp === "FAILED" || st.includes("lỗi") || st.includes("loi"))) return false;
           }
 
           // Type filter (inbound / outbound)
@@ -9879,9 +9958,7 @@
           }
 
           // Badges
-          const callStatusBadge = isAnswered
-            ? `<span class="voip-status-badge answered"><i class="fa-solid fa-phone"></i> Trả lời</span>`
-            : `<span class="voip-status-badge missed"><i class="fa-solid fa-phone-slash"></i> Gọi nhỡ</span>`;
+          const callStatusBadge = renderCallStatusBadge(c);
 
           const typeBadge = isInbound
             ? `<span class="voip-type-badge inbound"><i class="fa-solid fa-phone-arrow-down-left"></i> Gọi vào</span>`

@@ -20,6 +20,20 @@ function sha256hex(msg) {
 
 function isCallAnswered(c) {
   if (!c) return false;
+  const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+  const st = String(c.statusText || "").toLowerCase().trim();
+  if (
+    disp === "MISSED" || disp === "NO ANSWER" || disp === "BUSY" || disp === "FAILED" ||
+    st.includes("nhỡ") || st.includes("nho") ||
+    st.includes("không") || st.includes("khong") ||
+    st.includes("bận") || st.includes("ban") ||
+    st.includes("lỗi") || st.includes("loi")
+  ) {
+    return false;
+  }
+  if (disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi")) {
+    return true;
+  }
   const bs = c.billsec;
   if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
   if (typeof bs === "number") return bs > 0;
@@ -357,10 +371,17 @@ module.exports = async function handler(req, res) {
   if (!shouldSyncLive || isVercel) {
     const cachedData = await getCacheFromR2();
     if (cachedData && cachedData.calls) {
-      let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
+      let cAnswered = 0, cMissed = 0, cBusy = 0, cNoAnswer = 0, cFailed = 0, cInbound = 0, cOutbound = 0;
       for (const c of cachedData.calls) {
-        if (isCallAnswered(c)) cAnswered++;
+        const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+        const st = String(c.statusText || "").toLowerCase().trim();
+        if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) cBusy++;
+        else if (disp === "NO ANSWER" || st.includes("không") || st.includes("khong")) cNoAnswer++;
+        else if (disp === "FAILED" || st.includes("lỗi") || st.includes("loi")) cFailed++;
+        else if (disp === "MISSED" || st.includes("nhỡ") || st.includes("nho")) cMissed++;
+        else if (disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi")) cAnswered++;
         else cMissed++;
+
         const t = (c.type_origin || "").toLowerCase();
         const tt = (c.typeText || "").toLowerCase();
         if (t === "inbound" || tt.includes("vao") || tt.includes("vào")) cInbound++;
@@ -369,7 +390,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({
         ...cachedData,
-        stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
+        stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, busy: cBusy, noAnswer: cNoAnswer, failed: cFailed, inbound: cInbound, outbound: cOutbound },
         source: "r2_cloud",
         server: isVercel ? "vercel" : "local",
         note: isVercel
@@ -412,9 +433,15 @@ module.exports = async function handler(req, res) {
         };
       });
 
-      let answered = 0, missed = 0, inbound = 0, outbound = 0;
+      let answered = 0, missed = 0, busy = 0, noAnswer = 0, failed = 0, inbound = 0, outbound = 0;
       for (const c of calls) {
-        if (isCallAnswered(c)) answered++;
+        const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+        const st = String(c.statusText || "").toLowerCase().trim();
+        if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) busy++;
+        else if (disp === "NO ANSWER" || st.includes("không") || st.includes("khong")) noAnswer++;
+        else if (disp === "FAILED" || st.includes("lỗi") || st.includes("loi")) failed++;
+        else if (disp === "MISSED" || st.includes("nhỡ") || st.includes("nho")) missed++;
+        else if (disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi")) answered++;
         else missed++;
 
         const t = (c.type_origin || "").toLowerCase();
@@ -430,7 +457,7 @@ module.exports = async function handler(req, res) {
         total: calls.length,
         recordsTotal: data.recordsTotal || calls.length,
         recordsFiltered: data.recordsFiltered || calls.length,
-        stats: { total: calls.length, answered, missed, inbound, outbound },
+        stats: { total: calls.length, answered, missed, busy, noAnswer, failed, inbound, outbound },
         filter: { date_start, date_end, did },
         syncedAt: new Date().toISOString(),
         calls
@@ -450,10 +477,17 @@ module.exports = async function handler(req, res) {
   // load the latest synced data from Cloudflare R2!
   const cachedData = await getCacheFromR2();
   if (cachedData && cachedData.calls) {
-    let cAnswered = 0, cMissed = 0, cInbound = 0, cOutbound = 0;
+    let cAnswered = 0, cMissed = 0, cBusy = 0, cNoAnswer = 0, cFailed = 0, cInbound = 0, cOutbound = 0;
     for (const c of cachedData.calls) {
-      if (isCallAnswered(c)) cAnswered++;
+      const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+      const st = String(c.statusText || "").toLowerCase().trim();
+      if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) cBusy++;
+      else if (disp === "NO ANSWER" || st.includes("không") || st.includes("khong")) cNoAnswer++;
+      else if (disp === "FAILED" || st.includes("lỗi") || st.includes("loi")) cFailed++;
+      else if (disp === "MISSED" || st.includes("nhỡ") || st.includes("nho")) cMissed++;
+      else if (disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi")) cAnswered++;
       else cMissed++;
+
       const t = (c.type_origin || "").toLowerCase();
       const tt = (c.typeText || "").toLowerCase();
       if (t === "inbound" || tt.includes("vao") || tt.includes("vào")) cInbound++;
@@ -462,7 +496,7 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       ...cachedData,
-      stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, inbound: cInbound, outbound: cOutbound },
+      stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, busy: cBusy, noAnswer: cNoAnswer, failed: cFailed, inbound: cInbound, outbound: cOutbound },
       source: "r2_cloud",
       server: isVercel ? "vercel" : "local",
       note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Do tổng đài Voip24h chặn IP nước ngoài của Vercel)"
