@@ -3,6 +3,13 @@ Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 currentDir = fso.GetParentFolderName(WScript.ScriptFullName)
 
-' Chạy lệnh node auto-sync-voip.js trong chế độ ẩn hoàn toàn (0)
 WshShell.CurrentDirectory = currentDir
-WshShell.Run "cmd /c node auto-sync-voip.js", 0, False
+
+nodeCmd = "node"
+If fso.FileExists(currentDir & "\node\node.exe") Then
+    nodeCmd = """" & currentDir & "\node\node.exe"""
+ElseIf fso.FileExists(currentDir & "\node-portable\node.exe") Then
+    nodeCmd = """" & currentDir & "\node-portable\node.exe"""
+End If
+
+WshShell.Run "cmd /c " & nodeCmd & " auto-sync-voip.js", 0, False
