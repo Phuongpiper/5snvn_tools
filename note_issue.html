@@ -4460,14 +4460,25 @@
           </table>
         </div>
 
-        <!-- Chi tiết giải thích & Tuỳ chỉnh nhanh Mã NPP / NVBH -->
+        <!-- Chi tiết giải thích & Tuỳ chỉnh nhanh Mã NPP/NVBH hoặc SUP/HQ/Admin -->
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px 14px;">
-          <div style="font-size: 11.5px; color: #64748b; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
+          <div id="setupRuleNote" style="font-size: 11.5px; color: #64748b; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
             <i class="fa-solid fa-circle-info" style="color:#0284c7;"></i>
-            <span>Quy tắc: <strong>User ID</strong> = <strong>Mã NPP</strong> _ <strong>Mã NVBH</strong></span>
+            <span id="setupRuleText">Quy tắc: <strong>User ID</strong> = <strong>Mã NPP</strong> _ <strong>Mã NVBH</strong></span>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px; font-size:12px; font-weight:700;">
+            <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer; color:#334155;">
+              <input type="radio" name="setupMode" value="nvbh" id="setupRadioNvbh" onchange="onSetupModeChange('nvbh')" />
+              <span>Tài khoản NVBH (Mã NPP_ Mã NVBH)</span>
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer; color:#334155;">
+              <input type="radio" name="setupMode" value="hq" id="setupRadioHq" onchange="onSetupModeChange('hq')" />
+              <span>Tài khoản SUP / HQ / Admin</span>
+            </label>
+          </div>
+
+          <div id="setupNvbhInputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
               <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã NPP:</label>
               <input type="text" id="setupInputMaNpp" class="form-control-studio" placeholder="VD: 7674110"
@@ -4478,6 +4489,12 @@
               <input type="text" id="setupInputMaNvbh" class="form-control-studio" placeholder="VD: 338G0003 hoặc 0003"
                 style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;" oninput="onSetupInputChange()" />
             </div>
+          </div>
+
+          <div id="setupHqInputs" style="display: none;">
+            <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã SUP / HQ / Admin (User ID):</label>
+            <input type="text" id="setupInputRole" class="form-control-studio" placeholder="VD: ADMIN, HQTANHBU..."
+              style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px; text-transform:uppercase;" oninput="onSetupInputChange()" />
           </div>
         </div>
       </div>
@@ -8770,7 +8787,13 @@
       /* ──────────────────────────────────────────────────────────────────────────
          THÔNG SỐ CÀI MÁY DMS (MÔ PHỎNG MẪU EXCEL & SAO CHÉP NHANH)
       ────────────────────────────────────────────────────────────────────────── */
+      let currentSetupMode = "nvbh"; // "nvbh" | "hq"
+
       function getSetupDeviceValues() {
+        // 1. Kiểm tra ô HQ trước
+        const rawRole = inputRole ? inputRole.value.trim().toUpperCase() : "";
+
+        // 2. Mã NPP
         let maNpp = "";
         if (currentNppObj && currentNppObj.code) {
           maNpp = String(currentNppObj.code).trim();
@@ -8792,6 +8815,7 @@
           }
         }
 
+        // 3. Mã NVBH
         let maNvbh = "";
         const rawNvbh = inputNvbh ? inputNvbh.value.trim() : "";
         if (rawNvbh) {
@@ -8801,21 +8825,29 @@
           }
         }
 
-        return { maNpp, maNvbh };
+        return { maNpp, maNvbh, role: rawRole };
       }
 
       window.openSetupModal = function () {
         const modal = document.getElementById("setupDeviceModalBackdrop");
         if (!modal) return;
 
-        const { maNpp, maNvbh } = getSetupDeviceValues();
+        const { maNpp, maNvbh, role } = getSetupDeviceValues();
         const inputNppEl = document.getElementById("setupInputMaNpp");
         const inputNvbhEl = document.getElementById("setupInputMaNvbh");
+        const inputRoleEl = document.getElementById("setupInputRole");
 
         if (inputNppEl) inputNppEl.value = maNpp;
         if (inputNvbhEl) inputNvbhEl.value = maNvbh;
+        if (inputRoleEl) inputRoleEl.value = role;
 
-        updateSetupModalDisplay();
+        // QUY TẮC: Nếu ô HQ được nhập -> Tự động chuyển chế độ HQ và USER ID hiện mã HQ!
+        if (role) {
+          onSetupModeChange("hq");
+        } else {
+          onSetupModeChange("nvbh");
+        }
+
         modal.classList.add("show");
       };
 
@@ -8824,37 +8856,82 @@
         if (modal) modal.classList.remove("show");
       };
 
+      window.onSetupModeChange = function (mode) {
+        currentSetupMode = mode;
+        const radioNvbh = document.getElementById("setupRadioNvbh");
+        const radioHq = document.getElementById("setupRadioHq");
+        const nvbhBox = document.getElementById("setupNvbhInputs");
+        const hqBox = document.getElementById("setupHqInputs");
+        const ruleText = document.getElementById("setupRuleText");
+
+        if (mode === "hq") {
+          if (radioHq) radioHq.checked = true;
+          if (nvbhBox) nvbhBox.style.display = "none";
+          if (hqBox) hqBox.style.display = "block";
+          if (ruleText) ruleText.innerHTML = `Quy tắc: <strong>User ID</strong> = <strong>Mã SUP / HQ / Admin</strong>`;
+          setTimeout(() => document.getElementById("setupInputRole")?.focus(), 50);
+        } else {
+          if (radioNvbh) radioNvbh.checked = true;
+          if (nvbhBox) nvbhBox.style.display = "grid";
+          if (hqBox) hqBox.style.display = "none";
+          if (ruleText) ruleText.innerHTML = `Quy tắc: <strong>User ID</strong> = <strong>Mã NPP</strong> _ <strong>Mã NVBH</strong>`;
+        }
+
+        updateSetupModalDisplay();
+      };
+
       window.onSetupInputChange = function () {
         updateSetupModalDisplay();
       };
 
       function updateSetupModalDisplay() {
-        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
-        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
+        const userIdSpan = document.getElementById("setupDeviceUserId");
+        if (!userIdSpan) return;
 
-        // Tự động format NVBH nếu chỉ nhập số và NPP hiện tại có Prefix
-        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
-          nvbhVal = formatNvbh(nvbhVal);
-          if (nvbhVal.startsWith("[Chưa có Prefix]")) {
-            nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+        let userId = "";
+
+        if (currentSetupMode === "hq") {
+          const roleVal = (document.getElementById("setupInputRole")?.value || "").trim().toUpperCase();
+          userId = roleVal || "[Chưa nhập mã HQ/SUP]";
+        } else {
+          const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
+          let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
+
+          // Tự động format NVBH nếu chỉ nhập số và NPP hiện tại có Prefix
+          if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
+            nvbhVal = formatNvbh(nvbhVal);
+            if (nvbhVal.startsWith("[Chưa có Prefix]")) {
+              nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+            }
+          }
+
+          if (nppVal && nvbhVal) {
+            userId = `${nppVal}_${nvbhVal}`;
+          } else if (nppVal) {
+            userId = `${nppVal}_[Chưa nhập NVBH]`;
+          } else if (nvbhVal) {
+            userId = `[Chưa nhập NPP]_${nvbhVal}`;
+          } else {
+            userId = `[Chưa nhập NPP]_[Chưa nhập NVBH]`;
           }
         }
 
-        const userIdSpan = document.getElementById("setupDeviceUserId");
-        let userId = "";
-        if (nppVal && nvbhVal) {
-          userId = `${nppVal}_${nvbhVal}`;
-        } else if (nppVal) {
-          userId = `${nppVal}_[Chưa nhập NVBH]`;
-        } else if (nvbhVal) {
-          userId = `[Chưa nhập NPP]_${nvbhVal}`;
-        } else {
-          userId = `[Chưa nhập NPP]_[Chưa nhập NVBH]`;
+        userIdSpan.textContent = userId;
+      }
+
+      function getCurrentSetupUserId() {
+        if (currentSetupMode === "hq") {
+          return (document.getElementById("setupInputRole")?.value || "").trim().toUpperCase() ||
+            (document.getElementById("setupDeviceUserId")?.textContent || "");
         }
 
-        if (userIdSpan) {
-          userIdSpan.textContent = userId;
+        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
+        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
+        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
+          nvbhVal = formatNvbh(nvbhVal);
+          if (nvbhVal.startsWith("[Chưa có Prefix]")) nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
         }
+        return (nppVal && nvbhVal) ? `${nppVal}_${nvbhVal}` : (document.getElementById("setupDeviceUserId")?.textContent || "");
       }
 
       window.copySetupField = function (text, label) {
@@ -8864,26 +8941,13 @@
       };
 
       window.copySetupUserId = function () {
-        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
-        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
-        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
-          nvbhVal = formatNvbh(nvbhVal);
-          if (nvbhVal.startsWith("[Chưa có Prefix]")) nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
-        }
-        const text = (nppVal && nvbhVal) ? `${nppVal}_${nvbhVal}` : (document.getElementById("setupDeviceUserId")?.textContent || "");
+        const text = getCurrentSetupUserId();
         navigator.clipboard.writeText(text);
         showToast(`Đã sao chép User ID: ${text}!`, "fa-copy");
       };
 
       window.copyAllSetupInfo = function () {
-        const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
-        let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
-        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
-          nvbhVal = formatNvbh(nvbhVal);
-          if (nvbhVal.startsWith("[Chưa có Prefix]")) nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
-        }
-        const userId = (nppVal && nvbhVal) ? `${nppVal}_${nvbhVal}` : (document.getElementById("setupDeviceUserId")?.textContent || "");
-
+        const userId = getCurrentSetupUserId();
         const content = `Server URL: https://fw.np.accenture.com\nCompany CD: C_NES_VNM\nUser ID: ${userId}\nPass: NPage@0101`;
         navigator.clipboard.writeText(content);
         showToast("Đã sao chép toàn bộ thông số Cài máy!", "fa-copy");
