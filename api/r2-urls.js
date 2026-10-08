@@ -127,7 +127,8 @@ module.exports = async function handler(req, res) {
         const r = await r2Fetch("GET", "");
         if (r.statusCode === 404) return res.status(200).json({});
         if (r.statusCode !== 200) return res.status(502).json({ error: "R2 GET failed", status: r.statusCode });
-        return res.status(200).send(r.body);
+        if (typeof res.send === "function") return res.status(200).send(r.body);
+        return res.status(200).end(r.body);
       } catch (err) {
         return res.status(500).json({ error: err.message });
       }

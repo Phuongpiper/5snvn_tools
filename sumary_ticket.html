@@ -2297,7 +2297,7 @@
     const toggleUploadArrow = document.getElementById("toggleUploadArrow");
 
     // Thiết lập giá trị ban đầu cho các input từ localStorage
-    const defaultJsonUrl = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnRayL2R9Ivbr4w-FKAxF1zznB93SlCm3Zgmret9MLoowAjiIav0_KvIxHJ0eC8MvL7OFskVHEwTpyLjQR9Onw1YBzcXRWXnh8QeQuoNxdHwXf5YEy_viR6d9kDYFcE79d9ApQH96JKR-u7gfBqQe2JY12k_30YN8QcjR_NIy01gJf3RoSzeVISFRVULgcGT64o3TrGSU1G-mY-9EhYbU__RNs4oMX4npBQxUtvIUUk&lib=Md7LAhvTqClNnYJkEV3dtMvD8R0iiSsw_";
+    const defaultJsonUrl = "https://script.google.com/macros/s/AKfycbwFUk6bBO_0h2L-UkVrS6cfwz8Di5uqkl7iO1Yyj5wCjoduYlr9U-2lLi1FmHDjbBa4/exec";
     jsonUrlInput.value = localStorage.getItem("NVN_SUMMARY_API_URL") || defaultJsonUrl;
     document.getElementById("workerUrlInput").value = localStorage.getItem("NVN_SUMMARY_WORKER_URL") || "";
 
@@ -2367,7 +2367,7 @@
     }
 
     // Hàm tải dữ liệu chung từ URL bất kỳ (Apps Script hoặc JSON URL)
-    async function loadDataFromUrl(url, sourceName = "JSON URL API") {
+    async function loadDataFromUrl(url, sourceName = "JSON URL API", isSilent = false) {
       if (!url) return;
       setLoading(true, "Đang gọi dữ liệu API từ URL...");
       try {
@@ -2378,8 +2378,10 @@
         rows = buildRowsFromJson(data);
         await applyLoadedRows(sourceName);
       } catch (err) {
-        alert("Tải dữ liệu từ URL thất bại.\n" + err.message);
-        console.error(err);
+        console.warn(`[Summary Ticket] Tải dữ liệu từ URL thất bại (${sourceName}):`, err);
+        if (!isSilent) {
+          alert("Tải dữ liệu từ URL thất bại.\n" + err.message);
+        }
       } finally {
         setLoading(false);
       }
@@ -2701,9 +2703,12 @@
       // 2. Tự động load dữ liệu từ Worker API URL (Apps Script) nếu có, nếu không thì dùng JSON URL (tải từ URL)
       const workerUrl = document.getElementById("workerUrlInput").value.trim();
       if (workerUrl) {
-        loadDataFromUrl(workerUrl, "Summary Ticket R2 API");
+        loadDataFromUrl(workerUrl, "Summary Ticket R2 API", true);
       } else {
-        loadJsonButton.click();
+        const jsonUrl = jsonUrlInput.value.trim();
+        if (jsonUrl) {
+          loadDataFromUrl(jsonUrl, "JSON URL API", true);
+        }
       }
     });
 

@@ -960,7 +960,7 @@
       }
 
       // Hàm tải dữ liệu chung từ URL bất kỳ (Apps Script hoặc JSON URL)
-      async function loadDataFromUrl(url, sourceName = "JSON URL API") {
+      async function loadDataFromUrl(url, sourceName = "JSON URL API", isSilent = false) {
         if (!url) return;
         setImportLoading(true, "Đang gọi dữ liệu API từ URL...");
         try {
@@ -971,8 +971,10 @@
           rows = buildRowsFromJson(data);
           await applyLoadedRows(sourceName);
         } catch (err) {
-          alert("Tải dữ liệu từ URL thất bại.\n" + err.message);
-          console.error(err);
+          console.warn(`[NVN Solutions] Tải dữ liệu từ URL thất bại (${sourceName}):`, err);
+          if (!isSilent) {
+            alert("Tải dữ liệu từ URL thất bại.\n" + err.message);
+          }
         } finally {
           setImportLoading(false);
         }
@@ -1123,9 +1125,12 @@
         // 2. Tự động load dữ liệu từ Worker API URL (Apps Script) nếu có, nếu không thì dùng JSON URL (tải từ URL)
         const workerUrl = document.getElementById("workerUrlInput").value.trim();
         if (workerUrl) {
-          loadDataFromUrl(workerUrl, "Solution R2 API");
+          loadDataFromUrl(workerUrl, "Solution R2 API", true);
         } else {
-          loadJsonButton.click();
+          const jsonUrl = jsonUrlInput.value.trim();
+          if (jsonUrl) {
+            loadDataFromUrl(jsonUrl, "JSON URL API", true);
+          }
         }
       });
 
