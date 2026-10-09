@@ -3555,6 +3555,16 @@
                 0
               </span>
             </button>
+            <!-- Nút Bật/Ẩn Gợi ý line -->
+            <button type="button" class="btn-stats-tool" id="btnToggleSuggestionsTop" onclick="toggleVoipSuggestionsPanel()"
+              style="background:#ffffff; color:#b45309; border-color:#fde68a; font-weight:700;"
+              title="Bật / Ẩn khung Gợi ý các line chưa có trong Temp">
+              <i class="fa-solid fa-lightbulb" style="color:#d97706;"></i> Gợi ý line
+              <span id="sugBadgeTop"
+                style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; padding:1px 6px; border-radius:10px; font-size:11px; font-weight:800; margin-left:3px;">
+                0
+              </span>
+            </button>
             <!-- Nút Đồng bộ cuộc gọi (2 luồng: Ưu tiên Local ➔ Fallback Vercel) -->
             <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi (Ưu tiên Local, fallback Vercel)">
               <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto')"
@@ -3795,19 +3805,19 @@
         </div>
 
         <!-- 6. Unnoted Calls (Chưa note issue) -->
-        <div class="stats-kpi-card" style="border-left: 4px solid #e11d48; background: #fff1f2;">
+        <div class="stats-kpi-card" style="border-left: 4px solid #e11d48; background: #fff1f2; cursor:pointer;" onclick="toggleVoipSuggestionsPanel()" title="Nhấn để xem / ẩn khung Gợi ý line chưa có trong Temp">
           <div class="kpi-icon-wrap" style="background:#ffe4e6; color:#e11d48;"><i
               class="fa-solid fa-triangle-exclamation"></i></div>
           <div class="kpi-content">
             <div class="kpi-label" style="color:#9f1239; font-weight:800;">Chưa note Issue</div>
             <div class="kpi-value" id="kpiVoipUnnoted" style="color:#e11d48;">0</div>
-            <div class="kpi-subtext" style="color:#be123c;">Cuộc gọi cần bổ sung note</div>
+            <div class="kpi-subtext" style="color:#be123c;">Cuộc gọi cần bổ sung note <i class="fa-solid fa-chevron-right" style="font-size:9px; margin-left:2px;"></i></div>
           </div>
         </div>
       </div>
 
-      <!-- ── PANEL: GỢI Ý CÁC LINE CUỘC GỌI CHƯA CÓ TRONG TEMP ── -->
-      <div class="suggestions-panel-card" id="unnotedSuggestionsPanel" style="margin-top:20px;">
+      <!-- ── PANEL: GỢI Ý CÁC LINE CUỘC GỌI CHƯA CÓ TRONG TEMP (MẶC ĐỊNH ẨN) ── -->
+      <div class="suggestions-panel-card" id="unnotedSuggestionsPanel" style="margin-top:20px; display:none;">
         <div class="suggestions-header">
           <div class="suggestions-title-group">
             <div
@@ -3835,10 +3845,10 @@
                 <i class="fa-solid fa-user-check"></i> Máy nhánh của tôi (<span id="sugMyExtLabel">--</span>)
               </button>
             </div>
-            <button type="button" class="btn-toggle-suggestions" onclick="toggleSuggestionsCollapse()" id="btnToggleSug"
-              title="Thu gọn / Mở rộng"
-              style="background:#fff; border:1px solid #fde68a; border-radius:6px; padding:4px 8px; cursor:pointer; color:#92400e;">
-              <i class="fa-solid fa-chevron-up" id="iconToggleSug"></i>
+            <button type="button" class="btn-toggle-suggestions" onclick="toggleVoipSuggestionsPanel(false)" id="btnToggleSug"
+              title="Đóng / Ẩn khung gợi ý"
+              style="background:#fff; border:1px solid #fde68a; border-radius:6px; padding:4px 10px; cursor:pointer; color:#92400e; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-xmark"></i> Ẩn
             </button>
           </div>
         </div>
@@ -9178,6 +9188,7 @@
       let voipLoading = false;
       let allR2TempIssues = [];
       let sugFilterType = "mine"; // "all" | "mine" — mặc định lọc theo nhân viên đang chọn
+      let isVoipSuggestionsVisible = false; // Mặc định ẩn gợi ý line
       let isSugCollapsed = false;
       const VOIP_CACHE_KEY = "voip24h_cached_calls_data_v2";
 
@@ -10331,6 +10342,9 @@
         const extLabel = document.getElementById("sugMyExtLabel");
         if (!panel || !grid) return;
 
+        // Giữ trạng thái ẩn/hiện của panel (mặc định ẩn)
+        panel.style.display = isVoipSuggestionsVisible ? "block" : "none";
+
         // Cập nhật nhãn máy nhánh của tôi
         const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
         if (extLabel) {
@@ -10395,6 +10409,8 @@
         }
 
         if (countBadge) countBadge.textContent = `${list.length} line`;
+        const topBadge = document.getElementById("sugBadgeTop");
+        if (topBadge) topBadge.textContent = `${list.length}`;
 
         if (list.length === 0) {
           grid.innerHTML = `
@@ -10478,12 +10494,29 @@
         renderUnnotedSuggestions(); // sẽ tự đồng bộ nút active bên trong
       };
 
+      window.toggleVoipSuggestionsPanel = function (forceState) {
+        if (typeof forceState === "boolean") {
+          isVoipSuggestionsVisible = forceState;
+        } else {
+          isVoipSuggestionsVisible = !isVoipSuggestionsVisible;
+        }
+        const panel = document.getElementById("unnotedSuggestionsPanel");
+        const btnTop = document.getElementById("btnToggleSuggestionsTop");
+        if (panel) {
+          panel.style.display = isVoipSuggestionsVisible ? "block" : "none";
+          if (isVoipSuggestionsVisible) {
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          }
+        }
+        if (btnTop) {
+          btnTop.style.background = isVoipSuggestionsVisible ? "#fef3c7" : "#ffffff";
+          btnTop.style.borderColor = isVoipSuggestionsVisible ? "#f59e0b" : "#fde68a";
+          btnTop.style.color = isVoipSuggestionsVisible ? "#92400e" : "#b45309";
+        }
+      };
+
       window.toggleSuggestionsCollapse = function () {
-        isSugCollapsed = !isSugCollapsed;
-        const grid = document.getElementById("suggestionsListGrid");
-        const icon = document.getElementById("iconToggleSug");
-        if (grid) grid.style.display = isSugCollapsed ? "none" : "grid";
-        if (icon) icon.className = isSugCollapsed ? "fa-solid fa-chevron-down" : "fa-solid fa-chevron-up";
+        window.toggleVoipSuggestionsPanel();
       };
 
       window.quickAddCallToTemp = async function (callId) {
