@@ -3313,7 +3313,7 @@
           style="display:none; margin:10px 14px 4px 14px; padding:8px 12px; background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:6px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <i class="fa-solid fa-phone-volume" style="color:#d97706; font-size:14px;"></i>
-            <span>Hôm nay có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">0</strong> line cuộc gọi chưa được
+            <span id="tempVoipAlertBannerText">Hôm nay bạn có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">0</strong> line cuộc gọi chưa được
               note vào Temp.</span>
           </div>
           <button type="button" onclick="switchStudioView('voip')"
@@ -6752,6 +6752,10 @@
             }
           )
           .join("");
+
+        if (typeof updateTempVoipBanner === "function") {
+          updateTempVoipBanner();
+        }
       }
 
       function isOtrsRaiseCloseTicket(item) {
@@ -9204,7 +9208,10 @@
         let noAnswerCount = 0;
         let inboundCount = 0;
         let outboundCount = 0;
-        let validCallsCount = 0;
+        let myUnnotedCount = 0;
+        const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
+        const myCode = currentSelectedMember?.code ? String(currentSelectedMember.code).trim() : "";
+
         (voipCalls || []).forEach(c => {
           if (typeof isCallExcluded === "function" && isCallExcluded(c)) return; // BỎ QUA HOÀN TOÀN CÁC SỐ MIỄN NOTE!
           validCallsCount++;
@@ -9212,6 +9219,12 @@
           const noteInfo = checkCallNoteStatus(c);
           if (isAnswered && noteInfo.status === "unnoted") {
             unnotedCount++;
+            const callExt = String(noteInfo.ext || "").trim();
+            const isMyExt = myExt && (callExt === myExt);
+            const isMyStaff = Boolean(noteInfo.staff && myCode && noteInfo.staff.code === myCode);
+            if (isMyExt || isMyStaff) {
+              myUnnotedCount++;
+            }
           }
           const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
           const st = String(c.statusText || "").toLowerCase().trim();
@@ -9248,11 +9261,13 @@
           el("kpiVoipTotalSub").textContent = `${rangeStart.slice(0, 10)} → ${rangeEnd.slice(0, 10)}`;
         }
 
-        // Update badge on nav (hiển thị số cuộc gọi chưa note nếu có, hoặc tổng)
+        // Update badge on nav: Chỉ cảnh báo cuộc gọi chưa note của RIÊNG nhân viên này (không cảnh báo của team)
         const badge = document.getElementById("navVoipCallsBadge");
         if (badge) {
-          if (unnotedCount > 0) {
-            badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> ${unnotedCount} chưa note`;
+          const isTeam = !myExt || myCode === "TEAMNVN";
+          const alertCount = isTeam ? 0 : myUnnotedCount;
+          if (alertCount > 0) {
+            badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> ${alertCount} chưa note`;
             badge.style.background = "#fee2e2";
             badge.style.color = "#dc2626";
             badge.style.borderColor = "#fca5a5";
@@ -9262,6 +9277,10 @@
             badge.style.color = "#4f46e5";
             badge.style.borderColor = "#c7d2fe";
           }
+        }
+
+        if (typeof updateTempVoipBanner === "function") {
+          updateTempVoipBanner();
         }
 
         return { unnotedCount, answeredCount, missedCount, inboundCount, outboundCount, validCallsCount };
@@ -10137,6 +10156,84 @@
         }).join("");
       };
 
+      /* ── CẬP NHẬT BANNER CẢNH BÁO CUỘC GỌI CHƯA NOTE TRONG TEMP ── */
+      // QUY TẮC CỐT LÕI: CỦA NHÂN VIÊN NÀO THÌ CHỈ CẢNH BÁO CỦA NGƯỜI ĐÓ THÔI. TUYỆT ĐỐI KHÔNG CẢNH BÁO CỦA TEAM!
+      window.updateTempVoipBanner = function () {
+        const tempBanner = document.getElementById("tempVoipAlertBanner");
+        const tempBannerCount = document.getElementById("tempVoipUnnotedCount");
+        const tempBannerText = document.getElementById("tempVoipAlertBannerText");
+        if (!tempBanner) return;
+
+        const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
+        const myCode = currentSelectedMember?.code ? String(currentSelectedMember.code).trim() : "";
+        const myName = currentSelectedMember?.name ? String(currentSelectedMember.name).trim() : "";
+
+        // Nếu là tài khoản chung "Team NVN" hoặc chưa cấu hình máy nhánh: ẨN CẢNH BÁO (Không cảnh báo của team)
+        if (!myExt || myCode === "TEAMNVN") {
+          tempBanner.style.display = "none";
+          return;
+        }
+
+        const now = new Date();
+        const pad = n => String(n).padStart(2, "0");
+        const todayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+        // Lọc các cuộc gọi chưa note của RIÊNG nhân viên hiện tại
+        const myUnnotedCalls = (voipCalls || []).filter(c => {
+          if (typeof isCallExcluded === "function" && isCallExcluded(c)) return false;
+          if (!callIsAnswered(c)) return false;
+
+          const noteInfo = checkCallNoteStatus(c);
+          if (noteInfo.status !== "unnoted") return false;
+
+          // So khớp máy nhánh hoặc nhân viên
+          const callExt = String(noteInfo.ext || "").trim();
+          const isMyExt = (callExt && callExt === myExt);
+          const isMyStaff = Boolean(
+            (noteInfo.staff && myCode && noteInfo.staff.code === myCode) ||
+            (noteInfo.staff && myName && noteInfo.staff.name === myName)
+          );
+
+          return isMyExt || isMyStaff;
+        });
+
+        // Gom nhóm theo số Hotline duy nhất (Line)
+        const myTodayLines = new Set();
+        const myOtherDaysLines = new Set();
+
+        myUnnotedCalls.forEach(c => {
+          const noteInfo = checkCallNoteStatus(c);
+          const phone = normalizePhone(noteInfo.hotline);
+          if (!phone) return;
+          const cDateRaw = (c.calldate || "").slice(0, 10);
+          if (cDateRaw === todayISO) {
+            myTodayLines.add(phone);
+          } else {
+            myOtherDaysLines.add(phone);
+          }
+        });
+
+        const todayCount = myTodayLines.size;
+        const otherDaysCount = myOtherDaysLines.size;
+
+        if (todayCount > 0) {
+          tempBanner.style.display = "flex";
+          if (tempBannerCount) tempBannerCount.textContent = todayCount;
+          if (tempBannerText) {
+            tempBannerText.innerHTML = `Hôm nay bạn (<strong>${escapeHTML(myName || myExt)}</strong>) có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">${todayCount}</strong> line cuộc gọi chưa được note vào Temp.`;
+          }
+        } else if (otherDaysCount > 0) {
+          tempBanner.style.display = "flex";
+          if (tempBannerCount) tempBannerCount.textContent = otherDaysCount;
+          if (tempBannerText) {
+            tempBannerText.innerHTML = `Bạn (<strong>${escapeHTML(myName || myExt)}</strong>) có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">${otherDaysCount}</strong> line cuộc gọi ngày trước chưa được note vào Temp.`;
+          }
+        } else {
+          // Hoàn toàn không còn cuộc gọi chưa note nào của nhân viên này -> ẨN BANNER
+          tempBanner.style.display = "none";
+        }
+      };
+
       /* ── RENDER PANEL GỢI Ý CÁC LINE CUỘC GỌI CHƯA CÓ TRONG TEMP ── */
       window.renderUnnotedSuggestions = function () {
         const panel = document.getElementById("unnotedSuggestionsPanel");
@@ -10157,6 +10254,9 @@
         if (btnAll) btnAll.classList.toggle("active", sugFilterType === "all");
         if (btnMy) btnMy.classList.toggle("active", sugFilterType === "mine");
 
+        // Cập nhật banner cảnh báo trong tab Danh sách tạm (chỉ của nhân viên hiện tại)
+        updateTempVoipBanner();
+
         // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2
         // Ưu tiên các cuộc gọi đã đàm thoại (isAnswered)
         const unnotedCalls = voipCalls.filter(c => {
@@ -10164,18 +10264,6 @@
           const isAnswered = callIsAnswered(c);
           return noteInfo.status === "unnoted" && isAnswered;
         });
-
-        // Cập nhật banner cảnh báo trong tab Soạn Issue
-        const tempBanner = document.getElementById("tempVoipAlertBanner");
-        const tempBannerCount = document.getElementById("tempVoipUnnotedCount");
-        if (tempBanner && tempBannerCount) {
-          if (unnotedCalls.length > 0) {
-            tempBanner.style.display = "flex";
-            tempBannerCount.textContent = unnotedCalls.length;
-          } else {
-            tempBanner.style.display = "none";
-          }
-        }
 
         // Gom nhóm theo số Hotline duy nhất (lấy cuộc gọi mới nhất)
         const groups = new Map();
@@ -10199,8 +10287,17 @@
         let list = Array.from(groups.values());
 
         // Lọc theo chế độ xem (Tất cả / Chỉ máy nhánh của tôi)
-        if (sugFilterType === "mine" && myExt) {
-          list = list.filter(item => String(item.ext || "").trim() === myExt);
+        if (sugFilterType === "mine") {
+          if (myExt) {
+            list = list.filter(item => {
+              const itemExt = String(item.ext || "").trim();
+              const isExtMatch = itemExt === myExt;
+              const isStaffMatch = Boolean(item.staff && currentSelectedMember?.code && item.staff.code === currentSelectedMember.code);
+              return isExtMatch || isStaffMatch;
+            });
+          } else {
+            list = [];
+          }
         }
 
         if (countBadge) countBadge.textContent = `${list.length} line`;
