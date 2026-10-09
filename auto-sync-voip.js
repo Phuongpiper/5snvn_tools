@@ -1,4 +1,24 @@
 // auto-sync-voip.js - Tự động đồng bộ cuộc gọi Voip24h lên Cloudflare R2 theo chu kỳ
+try { require("dotenv").config(); } catch (_) {}
+try {
+  const fs = require("fs");
+  const path = require("path");
+  const envPath = path.resolve(__dirname, ".env");
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, "utf8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx !== -1) {
+        const k = trimmed.slice(0, eqIdx).trim();
+        const v = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+        if (!process.env[k]) process.env[k] = v;
+      }
+    }
+  }
+} catch (_) {}
+
 const handler = require('./api/voip24h-calls.js');
 
 // Chu kỳ mặc định: 60 phút (1 tiếng / lần) để tránh bị tổng đài hiểu lầm là spam
@@ -14,11 +34,17 @@ const INTERVAL_MS = Math.max(1, intervalMinutes) * 60 * 1000;
 
 let isSyncing = false;
 let syncCount = 0;
+let syncTimer = null;
 
 function getTimestamp() {
   const now = new Date();
   const pad = n => String(n).padStart(2, "0");
   return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())} ${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+}
+
+function scheduleNext(delayMs) {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(runSyncOnce, delayMs);
 }
 
 async function runSyncOnce() {
@@ -34,6 +60,7 @@ async function runSyncOnce() {
   const isNightTime = (currentHour > 21 || (currentHour === 21 && currentMinute >= 30)) || currentHour < 6 || (currentHour === 6 && currentMinute < 30);
   if (isNightTime && process.env.SYNC_SKIP_NIGHT !== "0") {
     console.log(`[${getTimestamp()}] 🌙 Ngoài giờ làm việc (21:30 - 06:30), tạm dừng cào để giữ an toàn tuyệt đối cho IP. Hẹn lại vào chu kỳ sau...`);
+    scheduleNext(INTERVAL_MS);
     return;
   }
 
@@ -62,8 +89,11 @@ async function runSyncOnce() {
           }
           console.log(`- Nguồn dữ liệu: ${data.source === 'live_voip24h' ? 'Live Voip24h' : 'Cloud Cache'}`);
           console.log(`- Lần đồng bộ tiếp theo sau: ${intervalMinutes} phút (1 tiếng)`);
+          scheduleNext(INTERVAL_MS);
         } else {
           console.warn(`[${getTimestamp()}] ⚠️ Tổng đài phản hồi không thành công: ${data?.message || 'Không rõ lỗi'}`);
+          console.log(`[${getTimestamp()}] 🔄 Sẽ tự động thử lại sau 2 phút...`);
+          scheduleNext(2 * 60 * 1000);
         }
         isSyncing = false;
         resolve();
@@ -72,6 +102,8 @@ async function runSyncOnce() {
 
     handler(req, res).catch(err => {
       console.error(`[${getTimestamp()}] ❌ Lỗi kết nối tổng đài:`, err.message || err);
+      console.log(`[${getTimestamp()}] 🔄 Sẽ tự động thử lại sau 2 phút...`);
+      scheduleNext(2 * 60 * 1000);
       isSyncing = false;
       resolve();
     });
@@ -87,8 +119,5 @@ console.log(`- Máy chủ đang chạy liên tục trong nền.`);
 console.log(`- Nhấn Ctrl + C để dừng dịch vụ.`);
 console.log("=======================================================");
 
-// Chạy ngay lần đầu tiên khi bật máy
+// Chạy ngay lần đầu tiên khi bật máy (các lần tiếp theo sẽ do scheduleNext tự động lên lịch)
 runSyncOnce();
-
-// Lặp lại định kỳ mỗi 60 phút
-setInterval(runSyncOnce, INTERVAL_MS);

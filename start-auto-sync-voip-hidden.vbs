@@ -6,7 +6,9 @@ currentDir = fso.GetParentFolderName(WScript.ScriptFullName)
 WshShell.CurrentDirectory = currentDir
 
 nodeCmd = "node"
-If fso.FileExists(currentDir & "\node\node.exe") Then
+If fso.FileExists(currentDir & "\node.exe") Then
+    nodeCmd = """" & currentDir & "\node.exe"""
+ElseIf fso.FileExists(currentDir & "\node\node.exe") Then
     nodeCmd = """" & currentDir & "\node\node.exe"""
 ElseIf fso.FileExists(currentDir & "\node-portable\node.exe") Then
     nodeCmd = """" & currentDir & "\node-portable\node.exe"""

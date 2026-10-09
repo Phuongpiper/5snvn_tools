@@ -1,0 +1,39 @@
+========================================================================
+   HƯỚNG DẪN CÀI ĐẶT MÁY TREO ĐỒNG BỘ VOIP24H LÊN CLOUDFLARE R2
+========================================================================
+
+ĐẶC ĐIỂM NỔI BẬT:
+ - KHÔNG CẦN quyền Admin, KHÔNG CẦN mật khẩu máy tính!
+ - KHÔNG CẦN cài đặt Node.js trước (chương trình tự lo 100%).
+ - KHÔNG CẦN cấu hình file .env (đã tích hợp sẵn thông tin tài khoản).
+ - CHỈ CẦN GIẢI NÉN VÀ CLICK ĐÚP LÀ CHẠY!
+
+------------------------------------------------------------------------
+CÁC BƯỚC SỬ DỤNG TRÊN MÁY TREO:
+------------------------------------------------------------------------
+
+BƯỚC 1: Tải file dự án về máy treo
+ - Tải file ZIP từ GitHub (hoặc chép thư mục dự án này sang máy treo)
+ - Giải nén ra một thư mục bất kỳ (ví dụ: Desktop hoặc ổ D:\DMS_Tool)
+
+BƯỚC 2: Chạy đồng bộ
+ - Mở thư mục vừa giải nén.
+ - Click đúp vào file:
+       👉 CHAY_DONG_BO_VOIP.bat
+   (Nếu máy chưa có Node.js, cửa sổ sẽ tự tải Node Portable trong 15s và chạy ngay).
+ - Bạn sẽ thấy màn hình hiện thông báo:
+   "✅ ĐỒNG BỘ THÀNH CÔNG LÊN CLOUDFLARE R2!"
+ - Tiến trình sẽ tự động cào cuộc gọi mới mỗi 60 phút (1 tiếng / lần) để tránh bị chặn IP.
+
+BƯỚC 3 (Tùy chọn - Rất khuyên dùng): Tự động chạy khi mở máy tính
+ - Nếu muốn mỗi lần mở máy tính lên nó tự động cào ngầm trong nền mà không cần mở cửa sổ đen:
+ - Click đúp vào file:
+       👉 CAI_DAT_KHOI_DONG_CUNG_WINDOWS.bat
+ - Xong! Từ nay mỗi khi bật máy tính, Windows sẽ tự động chạy ngầm.
+
+------------------------------------------------------------------------
+CÁCH DỪNG CHƯƠNG TRÌNH:
+------------------------------------------------------------------------
+ - Nếu muốn dừng dịch vụ, click đúp vào:
+       👉 DUNG_DONG_BO_VOIP.bat
+========================================================================

@@ -1,13 +1,37 @@
 // api/voip24h-calls.js
 // Vercel Serverless Function & Local Endpoint for fetching Voip24h call history
 try { require("dotenv").config(); } catch (_) {}
+
+// Tự động nạp file .env bằng fs native nếu dotenv không có sẵn trong môi trường
+try {
+  const fs = require("fs");
+  const path = require("path");
+  const envPath = path.resolve(__dirname, "..", ".env");
+  const envPathLocal = path.resolve(__dirname, ".env");
+  const targetPath = fs.existsSync(envPath) ? envPath : (fs.existsSync(envPathLocal) ? envPathLocal : null);
+  if (targetPath) {
+    const lines = fs.readFileSync(targetPath, "utf8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eqIdx = trimmed.indexOf("=");
+      if (eqIdx !== -1) {
+        const k = trimmed.slice(0, eqIdx).trim();
+        const v = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+        if (!process.env[k]) process.env[k] = v;
+      }
+    }
+  }
+} catch (_) {}
+
 const https = require("https");
 const crypto = require("crypto");
 
-const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.env.R2_ACCOUNT_ID        || "";
-const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "";
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.env.R2_SECRET_ACCESS_KEY || "";
-const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "";
+// Fallback mặc định để khi giải nén trên máy mới không cần cấu hình .env vẫn chạy được 100%
+const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.env.R2_ACCOUNT_ID        || "b63e9e1ed38dbfd59b2e77a28bb00a36";
+const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "30d0d30195468279bab5ca499ff39cf0";
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.env.R2_SECRET_ACCESS_KEY || "7f2dc82f5e23d39b0743fbd615ce1ea964f4e182806c0c18ba81fac706c777bd";
+const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "dylan";
 const R2_CACHE_KEY         = "voip24h_calls_cache.json";
 
 function hmacSha256(key, msg, enc) {
@@ -156,8 +180,8 @@ async function getVoipSession(forceRefresh = false) {
     return cachedSession.jar;
   }
 
-  const username = process.env.MISSCALL_USERID;
-  const password = process.env.MISSCALL_PASS;
+  const username = process.env.MISSCALL_USERID || "Misscall@5stars.com.vn";
+  const password = process.env.MISSCALL_PASS || "Misscall@123";
 
   if (!username || !password) {
     throw new Error("MISSCALL_USERID hoặc MISSCALL_PASS chưa được cấu hình.");
