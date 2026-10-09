@@ -3668,11 +3668,11 @@
             <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:6px;">
               <input type="date" id="voipDateStart"
                 style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
-                onchange="fetchVoipCalls(false)" />
+                onchange="onVoipCustomDateChange()" />
               <span style="font-size:12px; color:var(--text-muted);">đến</span>
               <input type="date" id="voipDateEnd"
                 style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
-                onchange="fetchVoipCalls(false)" />
+                onchange="onVoipCustomDateChange()" />
             </div>
           </div>
 
@@ -6991,6 +6991,11 @@
             if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges(date_start, date_end);
             if (typeof renderVoipTable === "function") renderVoipTable();
             if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
+          } else {
+            // Nếu chưa có dữ liệu cuộc gọi, tự động tải ngay lập tức từ server/R2
+            if (typeof fetchVoipCalls === "function") {
+              fetchVoipCalls(true);
+            }
           }
           // Cập nhật trạng thái và thời gian đồng bộ gần nhất
           if (typeof updateVoipSyncStatusDisplay === "function") {
@@ -9208,12 +9213,24 @@
         let noAnswerCount = 0;
         let inboundCount = 0;
         let outboundCount = 0;
+        let validCallsCount = 0;
         let myUnnotedCount = 0;
         const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
         const myCode = currentSelectedMember?.code ? String(currentSelectedMember.code).trim() : "";
+        const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
 
         (voipCalls || []).forEach(c => {
           if (typeof isCallExcluded === "function" && isCallExcluded(c)) return; // BỎ QUA HOÀN TOÀN CÁC SỐ MIỄN NOTE!
+
+          // Lọc theo khoảng thời gian đang chọn
+          if (dateRange && c.calldate && typeof parseCallDate === "function") {
+            const cd = parseCallDate(c.calldate);
+            if (cd) {
+              const t = cd.getTime();
+              if (t < dateRange.startTime || t > dateRange.endTime) return;
+            }
+          }
+
           validCallsCount++;
           const isAnswered = callIsAnswered(c);
           const noteInfo = checkCallNoteStatus(c);
@@ -9660,6 +9677,35 @@
         };
       }
 
+      function parseCallDate(dateStr) {
+        if (!dateStr) return null;
+        const str = String(dateStr).trim();
+        if (str.length >= 10 && str[4] === '-' && str[7] === '-') {
+          const parts = str.slice(0, 10).split('-');
+          const timeParts = str.slice(11).split(':');
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const hr = parseInt(timeParts[0] || 0, 10);
+          const min = parseInt(timeParts[1] || 0, 10);
+          const sec = parseInt(timeParts[2] || 0, 10);
+          return new Date(y, m, d, hr, min, sec);
+        }
+        if (str.length >= 10 && (str[2] === '/' || str[2] === '-')) {
+          const parts = str.slice(0, 10).split(/[\/\-]/);
+          const timeParts = str.slice(11).split(':');
+          const d = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const y = parseInt(parts[2], 10);
+          const hr = parseInt(timeParts[0] || 0, 10);
+          const min = parseInt(timeParts[1] || 0, 10);
+          const sec = parseInt(timeParts[2] || 0, 10);
+          return new Date(y, m, d, hr, min, sec);
+        }
+        const d = new Date(str);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
       function getVoipDateRange(range) {
         const now = new Date();
         const pad = n => String(n).padStart(2, "0");
@@ -9670,36 +9716,43 @@
 
         let start, end;
         if (range === "today") {
-          start = end = now;
+          start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         } else if (range === "yesterday") {
           const yesterday = new Date(now);
           yesterday.setDate(yesterday.getDate() - 1);
-          start = end = yesterday;
+          start = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0);
+          end = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
         } else if (range === "7days") {
           const from = new Date(now);
           from.setDate(from.getDate() - 6);
-          start = from; end = now;
+          start = new Date(from.getFullYear(), from.getMonth(), from.getDate(), 0, 0, 0, 0);
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         } else if (range === "custom") {
           const s = document.getElementById("voipDateStart")?.value;
           const e = document.getElementById("voipDateEnd")?.value;
           if (s && e) {
-            const sd = new Date(s), ed = new Date(e);
-            return {
-              date_start: `${fmt(sd)} 00:00:00`,
-              date_end: `${fmt(ed)} 23:59:59`
-            };
+            const p1 = s.split("-").map(Number);
+            const p2 = e.split("-").map(Number);
+            start = new Date(p1[0], p1[1] - 1, p1[2], 0, 0, 0, 0);
+            end = new Date(p2[0], p2[1] - 1, p2[2], 23, 59, 59, 999);
+          } else {
+            start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+            end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
           }
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          end = now;
         } else {
           // "thisMonth" hoặc mặc định: Từ ngày 1 tháng hiện tại đến hôm nay 23:59:59
-          start = new Date(now.getFullYear(), now.getMonth(), 1);
-          end = now;
+          start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+          end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
         }
 
         return {
           date_start: `${fmt(start)} 00:00:00`,
-          date_end: `${fmt(end)} 23:59:59`
+          date_end: `${fmt(end)} 23:59:59`,
+          startTime: start.getTime(),
+          endTime: end.getTime(),
+          startDateObj: start,
+          endDateObj: end
         };
       }
 
@@ -9719,7 +9772,33 @@
             if (eEl && !eEl.value) eEl.value = todayStr;
           }
         }
-        if (range !== "custom") {
+
+        const dateRange = getVoipDateRange(range);
+
+        // 1. Lọc và cập nhật tức thì 0 giây trên danh sách cuộc gọi hiện có trong RAM
+        if (voipCalls && voipCalls.length > 0) {
+          updateVoipKpiCardsAndBadges(dateRange.date_start, dateRange.date_end);
+          renderVoipTable();
+          renderUnnotedSuggestions();
+        }
+
+        // 2. Nếu chưa có cuộc gọi nào trong bộ nhớ: tải ngay từ server
+        if (!voipCalls || voipCalls.length === 0) {
+          fetchVoipCalls(false);
+        }
+      };
+
+      window.onVoipCustomDateChange = function () {
+        const s = document.getElementById("voipDateStart")?.value;
+        const e = document.getElementById("voipDateEnd")?.value;
+        if (!s || !e) return;
+        const dateRange = getVoipDateRange("custom");
+        if (voipCalls && voipCalls.length > 0) {
+          updateVoipKpiCardsAndBadges(dateRange.date_start, dateRange.date_end);
+          renderVoipTable();
+          renderUnnotedSuggestions();
+        }
+        if (!voipCalls || voipCalls.length === 0) {
           fetchVoipCalls(false);
         }
       };
@@ -9972,12 +10051,22 @@
         const tbody = document.getElementById("tbodyVoipCalls");
         if (!tbody) return;
 
+        const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
         const search = (document.getElementById("voipSearchInput")?.value || "").toLowerCase().trim();
         const filterStatus = document.getElementById("voipFilterStatus")?.value || "all";
         const filterType = document.getElementById("voipFilterType")?.value || "all";
         const filterNote = document.getElementById("voipFilterNoteStatus")?.value || "all";
 
         const filtered = voipCalls.filter(c => {
+          // 1. Lọc theo Khoảng thời gian đang chọn (Tháng này / Hôm nay / Hôm qua / 7 ngày qua / Tùy chọn)
+          if (dateRange && c.calldate && typeof parseCallDate === "function") {
+            const cd = parseCallDate(c.calldate);
+            if (cd) {
+              const t = cd.getTime();
+              if (t < dateRange.startTime || t > dateRange.endTime) return false;
+            }
+          }
+
           const noteInfo = checkCallNoteStatus(c);
           const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
@@ -10257,9 +10346,14 @@
         // Cập nhật banner cảnh báo trong tab Danh sách tạm (chỉ của nhân viên hiện tại)
         updateTempVoipBanner();
 
-        // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2
+        // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2 theo khoảng thời gian đã chọn
         // Ưu tiên các cuộc gọi đã đàm thoại (isAnswered)
+        const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
         const unnotedCalls = voipCalls.filter(c => {
+          if (dateRange && c.calldate && typeof parseCallDate === "function") {
+            const cd = parseCallDate(c.calldate);
+            if (cd && (cd.getTime() < dateRange.startTime || cd.getTime() > dateRange.endTime)) return false;
+          }
           const noteInfo = checkCallNoteStatus(c);
           const isAnswered = callIsAnswered(c);
           return noteInfo.status === "unnoted" && isAnswered;
