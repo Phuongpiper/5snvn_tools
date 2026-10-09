@@ -3517,44 +3517,44 @@
     <!-- ════════════════════════════════════════════════════════════════════════ -->
     <div id="viewVoip" class="studio-view-panel" style="display:none;">
       <!-- Stats Header Card -->
-      <div class="stats-header-card">
-        <div class="stats-filter-row">
-          <div class="stats-title-group">
+      <div class="stats-header-card" style="padding:14px 18px; margin-bottom:16px;">
+        <div class="stats-filter-row" style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; gap:12px;">
+          <div class="stats-title-group" style="gap:10px;">
             <div class="stats-avatar-icon"
-              style="background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color:#0284c7;">
+              style="width:36px; height:36px; border-radius:8px; background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color:#0284c7; font-size:16px;">
               <i class="fa-solid fa-headset"></i>
             </div>
             <div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <h2>Lịch sử cuộc gọi Voip24h</h2>
+                <h2 style="font-size:16px; font-weight:800; margin:0; color:#1e293b;">Lịch sử cuộc gọi Voip24h</h2>
                 <span id="voipSyncStatusChip" style="display:none;"></span>
                 <span id="voipLastSyncTimeBadge"
-                  style="font-size:11.5px; font-weight:600; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 10px; border-radius:12px; display:inline-flex; align-items:center; gap:5px;"
+                  style="font-size:11px; font-weight:600; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"
                   title="Thời điểm đồng bộ dữ liệu gần nhất">
-                  <i class="fa-regular fa-clock" style="color:#6366f1;"></i> Đồng bộ gần nhất: <span
+                  <i class="fa-regular fa-clock" style="color:#6366f1; font-size:10px;"></i> Đồng bộ gần nhất: <span
                     id="voipLastSyncTimeText" style="color:var(--text-main); font-weight:700;">Chưa có</span>
                 </span>
               </div>
             </div>
           </div>
-          <div class="stats-quick-actions">
+          <div class="stats-quick-actions" style="gap:6px;">
             <button type="button" class="btn-stats-tool" id="btnOpenExcludedPhonesModal" onclick="openExcludedPhonesModal()"
-              style="background:#ffffff; color:#dc2626; border-color:#fca5a5; font-weight:700;"
+              style="background:#ffffff; color:#dc2626; border-color:#fca5a5; font-weight:700; padding:5px 11px; font-size:12px;"
               title="Quản lý danh sách các số điện thoại không cần Note Issue">
               <i class="fa-solid fa-phone-slash" style="color:#dc2626;"></i> Số miễn note
               <span id="badgeExcludedPhonesCount"
-                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:1px 6px; border-radius:10px; font-size:11px; font-weight:800; margin-left:3px;">
+                style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:1px 5px; border-radius:10px; font-size:10.5px; font-weight:800; margin-left:2px;">
                 0
               </span>
             </button>
             <!-- Nút Đồng bộ cuộc gọi (2 luồng: Ưu tiên Local ➔ Fallback Vercel) -->
             <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi (Ưu tiên Local, fallback Vercel)">
               <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto')"
-                title="Đồng bộ 2 luồng: Ưu tiên Local ➔ Tự động chuyển Vercel nếu Local tắt">
+                title="Đồng bộ 2 luồng: Ưu tiên Local ➔ Tự động chuyển Vercel nếu Local tắt" style="padding:5px 12px; font-size:12px;">
                 <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
               </button>
               <button type="button" class="btn-stats-tool primary voip-sync-split-caret" id="btnVoipSyncDropdown" onclick="toggleVoipSyncMenu(event)"
-                title="Tùy chọn luồng đồng bộ (Local / Vercel)">
+                title="Tùy chọn luồng đồng bộ (Local / Vercel)" style="padding:5px 8px; font-size:12px;">
                 <i class="fa-solid fa-caret-down" id="iconVoipSyncCaret"></i>
               </button>
 
@@ -3629,59 +3629,60 @@
               </div>
             </div>
             <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()"
-              style="background:#10b981; color:#fff; border-color:#059669;"
-              title="Tải file báo cáo gốc từ Voip24h (Bước 3)">
+              style="background:#10b981; color:#fff; border-color:#059669; padding:5px 12px; font-size:12px;"
+              title="Tải file báo cáo gốc từ Voip24h">
               <i class="fa-solid fa-file-excel"></i> Tải file gốc
             </button>
           </div>
         </div>
 
-        <!-- Filter Sub-row -->
-        <div
-          style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-top:14px;">
-
-          <!-- Selection 1: Khoảng thời gian (Mặc định Tháng hiện tại) -->
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i
-                class="fa-regular fa-calendar-days"></i> Thời gian:</span>
-            <select id="voipSelectRange"
-              style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
-              onchange="onVoipRangeChange(this.value)">
-              <option value="thisMonth" selected>Tháng này (01/MM → Nay)</option>
-              <option value="today">Hôm nay</option>
-              <option value="yesterday">Hôm qua</option>
-              <option value="7days">7 ngày qua</option>
-              <option value="custom">Tùy chọn ngày...</option>
-            </select>
-            <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:6px;">
-              <input type="date" id="voipDateStart"
-                style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
-                onchange="onVoipCustomDateChange()" />
-              <span style="font-size:12px; color:var(--text-muted);">đến</span>
-              <input type="date" id="voipDateEnd"
-                style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
-                onchange="onVoipCustomDateChange()" />
+        <!-- Filter Toolbar Row (Gọn gàng trong 1 hàng duy nhất) -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+          <!-- Left: Bộ lọc Thời gian & Đầu số & Trạng thái -->
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+            <!-- Thời gian -->
+            <div style="display:inline-flex; align-items:center; gap:5px;">
+              <span style="font-size:11px; font-weight:700; color:#6366f1; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fa-regular fa-calendar-days"></i> Thời gian:
+              </span>
+              <select id="voipSelectRange"
+                style="padding:5px 8px; font-size:12px; font-weight:600; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+                onchange="onVoipRangeChange(this.value)">
+                <option value="thisMonth" selected>Tháng này (01/MM → Nay)</option>
+                <option value="today">Hôm nay</option>
+                <option value="yesterday">Hôm qua</option>
+                <option value="7days">7 ngày qua</option>
+                <option value="custom">Tùy chọn ngày...</option>
+              </select>
+              <div id="voipCustomDateWrap" style="display:none; align-items:center; gap:4px;">
+                <input type="date" id="voipDateStart"
+                  style="padding:4px 6px; font-size:11.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
+                  onchange="onVoipCustomDateChange()" />
+                <span style="font-size:11.5px; color:var(--text-muted);">-</span>
+                <input type="date" id="voipDateEnd"
+                  style="padding:4px 6px; font-size:11.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit;"
+                  onchange="onVoipCustomDateChange()" />
+              </div>
             </div>
-          </div>
 
-          <!-- Selection 2: Đầu số (DID) -->
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;"><i
-                class="fa-solid fa-sim-card"></i> Đầu số:</span>
-            <select id="voipSelectDid"
-              style="padding:6px 10px; font-size:12.5px; font-weight:700; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
-              onchange="fetchVoipCalls(false)">
-              <option value="02873065650" selected>02873065650 (Đầu số chính)</option>
-              <option value="02873099980">02873099980</option>
-              <option value="02873095950">02873095950</option>
-              <option value="all">Tất cả đầu số</option>
-            </select>
-          </div>
+            <!-- Đầu số -->
+            <div style="display:inline-flex; align-items:center; gap:5px;">
+              <span style="font-size:11px; font-weight:700; color:#0284c7; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-sim-card"></i> Đầu số:
+              </span>
+              <select id="voipSelectDid"
+                style="padding:5px 8px; font-size:12px; font-weight:600; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+                onchange="fetchVoipCalls(false)">
+                <option value="02873065650" selected>02873065650 (Đầu số chính)</option>
+                <option value="02873099980">02873099980</option>
+                <option value="02873095950">02873095950</option>
+                <option value="all">Tất cả đầu số</option>
+              </select>
+            </div>
 
-          <!-- Trạng thái & Loại & Trạng thái Note Issue -->
-          <div style="display:flex; align-items:center; gap:8px;">
+            <!-- Trạng thái, Loại, Ghi chú -->
             <select id="voipFilterStatus"
-              style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+              style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
               onchange="renderVoipTable()">
               <option value="all">Tất cả trạng thái</option>
               <option value="answered">Trả lời (Answered)</option>
@@ -3691,14 +3692,14 @@
               <option value="failed">Gọi lỗi (Failed)</option>
             </select>
             <select id="voipFilterType"
-              style="padding:6px 10px; font-size:12.5px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
+              style="padding:5px 8px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
               onchange="renderVoipTable()">
               <option value="all">Tất cả loại</option>
               <option value="inbound">Gọi vào</option>
               <option value="outbound">Gọi ra</option>
             </select>
             <select id="voipFilterNoteStatus"
-              style="padding:6px 10px; font-size:12.5px; font-weight:700; border:1px solid #fecaca; border-radius:6px; font-family:inherit; background:#fff1f2; color:#b91c1c;"
+              style="padding:5px 8px; font-size:12px; font-weight:700; border:1px solid #fecaca; border-radius:6px; font-family:inherit; background:#fff1f2; color:#b91c1c;"
               onchange="renderVoipTable()" title="Lọc theo trạng thái đã ghi chú Issue hay chưa">
               <option value="all" selected>Tất cả ghi chú</option>
               <option value="unnoted">🔴 Chưa note (Cần xử lý)</option>
@@ -3708,22 +3709,11 @@
             </select>
           </div>
 
-          <!-- Search & Action buttons (Bước 2 & Bước 3) -->
-          <div style="display:flex; align-items:center; gap:8px; flex-grow:1; justify-content:flex-end;">
-            <div class="stats-search-box" style="margin-left:0; width:200px;">
-              <i class="fa-solid fa-magnify"></i>
-              <input type="text" id="voipSearchInput" placeholder="Tìm SĐT, máy nhánh..." oninput="renderVoipTable()"
-                style="width:100%;" />
-            </div>
-            <button type="button" class="btn-stats-tool primary" onclick="fetchVoipCalls(false)"
-              title="Bước 2: Tìm kiếm cuộc gọi" style="padding:6px 14px; font-size:12.5px;">
-              <i class="fa-solid fa-magnify"></i> Tìm kiếm
-            </button>
-            <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()"
-              style="background:#10b981; color:#fff; border-color:#059669; padding:6px 14px; font-size:12.5px;"
-              title="Bước 3: Tải file về máy">
-              <i class="fa-solid fa-download"></i> Tải về
-            </button>
+          <!-- Right: Ô Tìm kiếm tức thì -->
+          <div style="position:relative; display:inline-flex; align-items:center;">
+            <i class="fa-solid fa-magnify" style="position:absolute; left:9px; font-size:11px; color:#94a3b8; pointer-events:none;"></i>
+            <input type="text" id="voipSearchInput" placeholder="Tìm SĐT, máy nhánh..." oninput="renderVoipTable()"
+              style="padding:5px 9px 5px 28px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit; width:190px; background:#ffffff;" />
           </div>
         </div>
       </div>
