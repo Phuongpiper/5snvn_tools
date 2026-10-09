@@ -1,5 +1,5 @@
 ========================================================================
-   HƯỚNG DẪN CÀI ĐẶT MÁY TREO ĐỒNG BỘ VOIP24H LÊN CLOUDFLARE R2
+   HƯỚNG DẪN CÀI ĐẶT MÁY TREO ĐỒNG BỘ CUỘC GỌI TỰ ĐỘNG
 ========================================================================
 
 ĐẶC ĐIỂM NỔI BẬT:
@@ -22,7 +22,7 @@ BƯỚC 2: Chạy đồng bộ
        👉 CHAY_DONG_BO_VOIP.bat
    (Nếu máy chưa có Node.js, cửa sổ sẽ tự tải Node Portable trong 15s và chạy ngay).
  - Bạn sẽ thấy màn hình hiện thông báo:
-   "✅ ĐỒNG BỘ THÀNH CÔNG LÊN CLOUDFLARE R2!"
+   "✅ ĐỒNG BỘ THÀNH CÔNG LÊN HỆ THỐNG!"
  - Tiến trình sẽ tự động cào cuộc gọi mới mỗi 60 phút (1 tiếng / lần) để tránh bị chặn IP.
 
 BƯỚC 3 (Tùy chọn - Rất khuyên dùng): Tự động chạy khi mở máy tính

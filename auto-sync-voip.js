@@ -82,12 +82,12 @@ async function runSyncOnce() {
         if (data && data.status === "success") {
           const total = data.total || 0;
           const latestCall = data.calls?.[0];
-          console.log(`[${getTimestamp()}] ✅ ĐỒNG BỘ THÀNH CÔNG LÊN CLOUDFLARE R2!`);
+          console.log(`[${getTimestamp()}] ✅ ĐỒNG BỘ THÀNH CÔNG LÊN HỆ THỐNG!`);
           console.log(`- Tổng số cuộc gọi trong tháng: ${total} cuộc`);
           if (latestCall) {
             console.log(`- Cuộc gọi gần nhất: ${latestCall.calldate || 'N/A'} (Từ: ${latestCall.src || '—'} ➔ Đến: ${latestCall.dst || '—'}) [${latestCall.statusText || latestCall.disposition || '—'}]`);
           }
-          console.log(`- Nguồn dữ liệu: ${data.source === 'live_voip24h' ? 'Live Voip24h' : 'Cloud Cache'}`);
+          console.log(`- Nguồn dữ liệu: ${data.source === 'live_voip24h' ? 'Trực tiếp' : 'Bộ nhớ đệm'}`);
           console.log(`- Lần đồng bộ tiếp theo sau: ${intervalMinutes} phút (1 tiếng)`);
           scheduleNext(INTERVAL_MS);
         } else {
@@ -111,7 +111,7 @@ async function runSyncOnce() {
 }
 
 console.log("=======================================================");
-console.log("   DMS HUB - DỊCH VỤ TỰ ĐỘNG SYNC VOIP24H LÊN R2");
+console.log("   DMS HUB - DỊCH VỤ TỰ ĐỘNG ĐỒNG BỘ CUỘC GỌI");
 console.log("=======================================================");
 console.log(`- Chu kỳ đồng bộ: MỖI ${intervalMinutes} PHÚT (1 TIẾNG / LẦN)`);
 console.log(`- Khung giờ hoạt động: 06:30 - 21:30 (Ban đêm tự động nghỉ)`);

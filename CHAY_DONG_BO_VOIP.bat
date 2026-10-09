@@ -1,11 +1,11 @@
 @echo off
 setlocal
 chcp 65001 > nul
-title DMS - Dong Bo Tu Dong VoIP24h Sang Cloudflare R2
+title DMS - Dong Bo Cuoc Goi Tu Dong
 color 0A
 
 echo =======================================================
-echo    DMS HUB - DICH VU TU DONG DONG BO VOIP24H LEN R2
+echo    DMS HUB - DICH VU TU DONG DONG BO CUOC GOI
 echo =======================================================
 echo.
 
@@ -37,7 +37,7 @@ if "%NODE_CMD%"=="" (
     )
 )
 
-echo [*] Dang khoi dong tien trinh dong bo VoIP24h - Moi 60 phut 1 lan...
+echo [*] Dang khoi dong tien trinh dong bo cuoc goi - Moi 60 phut 1 lan...
 echo [*] KHONG TAT cua so nay de chuong trinh tiep tuc chay trong nen.
 echo.
 

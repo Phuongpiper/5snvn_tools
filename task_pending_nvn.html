@@ -1877,14 +1877,14 @@
         try { result = JSON.parse(rawText); } catch (e) { throw new Error("Response không phải JSON: " + rawText); }
 
         if (result.status === "success" || result.success) {
-          toast("✅ Đã đồng bộ URL Task Pending lên R2!", "s");
+          toast("✅ Đã đồng bộ URL Task Pending thành công!", "s");
         } else {
-          const detail = [result.message, result.r2Body].filter(Boolean).join(" | R2: ");
-          toast("⚠️ Lưu R2 thất bại: " + (detail || "lỗi không rõ"), "e");
+          const detail = [result.message, result.r2Body].filter(Boolean).join(" | ");
+          toast("⚠️ Lưu cấu hình thất bại: " + (detail || "lỗi không rõ"), "e");
         }
       } catch (err) {
         console.error("[R2 Save] Error:", err);
-        toast(`Lưu R2 thất bại: ${err.message}`, "e");
+        toast(`Lưu cấu hình thất bại: ${err.message}`, "e");
       }
 
       loadAll();
@@ -3145,14 +3145,14 @@
         try { result = JSON.parse(rawText); } catch (e) { throw new Error("Response không phải JSON: " + rawText); }
 
         if (result.status === "success" || result.success) {
-          toast(`Đã lưu URL "${sysName}" lên R2!`, "s");
+          toast(`Đã lưu URL "${sysName}" thành công!`, "s");
           if (urlInput) urlInput.value = "";
           loadWorkerUrls();
         } else {
           toast("Lỗi lưu URL: " + (result.message || "Không rõ"), "e");
         }
       } catch (err) {
-        toast("Lỗi kết nối R2: " + err.message, "e");
+        toast("Lỗi kết nối: " + err.message, "e");
       }
     }
 

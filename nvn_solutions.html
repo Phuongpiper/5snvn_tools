@@ -651,7 +651,7 @@
             <div style="display:flex; gap:8px; width:100%; align-items:center;">
               <label style="font-size:11px; font-weight:600; color:var(--text-secondary); white-space:nowrap;">Worker API URL:</label>
               <input id="workerUrlInput" type="text" placeholder="Dán Cloudflare Worker URL tại đây để đồng bộ..." style="flex:1; padding:6px 10px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); font-size:13px; outline:none;" />
-              <button id="saveR2Button" type="button" class="primary" style="padding: 6px 12px; font-size:13px;"><i class="fa-solid fa-floppy-disk"></i> Lưu vào R2</button>
+              <button id="saveR2Button" type="button" class="primary" style="padding: 6px 12px; font-size:13px;"><i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình</button>
             </div>
           </div>
           <div class="upload-overlay" id="uploadLoading">
@@ -1006,16 +1006,16 @@
           let result;
           try { result = JSON.parse(rawText); } catch(e) { throw new Error("Response không phải JSON: " + rawText); }
           if (result.status === "success" || result.success) {
-            alert("✅ Đã đồng bộ URL Solutions từ ô Worker API URL lên R2 thành công!");
+            alert("✅ Đã đồng bộ URL Solutions thành công!");
             // Sau khi lưu thành công, tải lại dữ liệu từ URL này
-            loadDataFromUrl(workerUrlVal, "Solution R2 API");
+            loadDataFromUrl(workerUrlVal, "Solution API");
           } else {
-            const detail = [result.message, result.r2Body].filter(Boolean).join(" | R2: ");
-            alert("⚠️ Lưu R2 thất bại: " + (detail || "lỗi không rõ"));
+            const detail = [result.message, result.r2Body].filter(Boolean).join(" | ");
+            alert("⚠️ Lưu cấu hình thất bại: " + (detail || "lỗi không rõ"));
           }
         } catch (err) {
           console.error("[R2 Save] Error:", err);
-          alert(`Lưu R2 thất bại:\n${err.message}`);
+          alert(`Lưu cấu hình thất bại:\n${err.message}`);
         }
       });
 

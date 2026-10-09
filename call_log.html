@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
@@ -858,7 +858,7 @@
             display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm);
           ">
             <i class="fa-solid fa-cloud" style="color:var(--accent);"></i>
-            <span id="cloudStatusText">Đang kiểm tra R2...</span>
+            <span id="cloudStatusText">Đang kiểm tra...</span>
           </div>
           <button id="syncR2Btn" type="button" style="
             font-size:12px; font-weight:600; color:var(--text-secondary);
@@ -866,8 +866,8 @@
             border-radius:var(--radius-sm); padding:6px 12px;
             cursor:pointer; display:flex; align-items:center; gap:6px;
             box-shadow:var(--shadow-sm); white-space:nowrap;
-          " title="Tải lại dữ liệu mới nhất từ Cloud R2">
-            <i class="fa-solid fa-arrows-rotate" id="syncR2Icon"></i> Đồng bộ R2
+          " title="Tải lại dữ liệu mới nhất từ hệ thống">
+            <i class="fa-solid fa-arrows-rotate" id="syncR2Icon"></i> Đồng bộ
           </button>
           <button id="toggleUploadBtn" type="button" style="
             font-size:12px; font-weight:600; color:#ffffff;
@@ -877,7 +877,7 @@
             box-shadow:var(--shadow-sm); white-space:nowrap;
           ">
             <i class="fa-solid fa-cloud-arrow-up"></i>
-            Tải file lên R2 <span id="toggleUploadArrow">▾</span>
+            Tải file lên <span id="toggleUploadArrow">▾</span>
           </button>
         </div>
       </div>
@@ -886,12 +886,12 @@
       <div class="card" id="uploadCard" style="display:none">
         <div class="section-label">
           <i class="fa-solid fa-cloud-arrow-up" style="color:var(--accent);"></i>
-          Tải file Call Log lên Cloud R2
+          Tải file Call Log lên hệ thống
         </div>
         <div class="upload-zone" id="uploadBox">
           <span class="upload-zone-icon"><i class="fa-solid fa-file-excel" style="color:#10b981; font-size:36px;"></i></span>
           <strong>Chọn hoặc kéo thả file Call Log Excel (.xlsx / .xls)</strong>
-          <small>Dữ liệu sau khi đọc sẽ tự động được lưu và đồng bộ lên Cloud R2 cho toàn bộ hệ thống.</small>
+          <small>Dữ liệu sau khi đọc sẽ tự động được lưu và đồng bộ cho toàn bộ hệ thống.</small>
           <input id="fileInput" type="file" accept=".xlsx,.xls,.json" />
           <div class="upload-overlay" id="uploadLoading">
             <div class="spinner"></div>
@@ -975,7 +975,7 @@
                 <i class="fa-solid fa-broom"></i> Xoá tất cả
               </button>
               <div class="result-badge" id="countBadge">0 kết quả</div>
-              <button type="button" class="delete-filtered-btn" id="deleteFilteredBtn" style="display:none;" title="Xóa toàn bộ các dòng đang hiển thị theo bộ lọc khỏi Cloud R2">
+              <button type="button" class="delete-filtered-btn" id="deleteFilteredBtn" style="display:none;" title="Xóa toàn bộ các dòng đang hiển thị theo bộ lọc khỏi hệ thống">
                 <i class="fa-solid fa-trash-can"></i> Xóa kết quả lọc (<span id="deleteFilteredCount">0</span>)
               </button>
             </div>
@@ -1050,7 +1050,7 @@
             <div class="confirm-modal-title" id="confirmModalTitle">Xác nhận xóa Call Log</div>
           </div>
           <div class="confirm-modal-body">
-            <div id="confirmModalBody">Bạn có chắc chắn muốn xóa dòng này khỏi Cloud R2 không?</div>
+            <div id="confirmModalBody">Bạn có chắc chắn muốn xóa dòng này khỏi hệ thống không?</div>
             <div id="confirmModalPreview" class="confirm-modal-preview" style="display:none;"></div>
           </div>
           <div class="confirm-modal-footer">
@@ -1138,7 +1138,7 @@
       function updateCloudStatusBadge(sourceName, rowCount, updatedAt) {
         if (!cloudStatusBadge || !cloudStatusText) return;
         if (!rowCount) {
-          cloudStatusText.innerHTML = `R2: Chưa có dữ liệu`;
+          cloudStatusText.innerHTML = `Chưa có dữ liệu`;
           return;
         }
         let timeStr = "";
@@ -1147,10 +1147,10 @@
           timeStr = ` · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
         }
         const displayName = escapeHTML(sourceName || "Call Log");
-        cloudStatusText.innerHTML = `<strong>R2:</strong> ${displayName} (${rowCount.toLocaleString()} dòng${timeStr})`;
+        cloudStatusText.innerHTML = `<strong>Đã lưu:</strong> ${displayName} (${rowCount.toLocaleString()} dòng${timeStr})`;
       }
 
-      /* ─── Save to R2 ─── */
+      /* ─── Save to Cloud ─── */
       async function saveCallLogToCloud(rowsToSave, sourceName = "Call Log Upload") {
         if (!rowsToSave || !rowsToSave.length) return false;
         try {
@@ -1186,19 +1186,19 @@
             throw new Error(`HTTP ${res.status}: ${errText}`);
           }
           updateCloudStatusBadge(sourceName, rowsToSave.length, payload.updatedAt);
-          showToast(`Đã lưu ${rowsToSave.length.toLocaleString()} dòng lên Cloud R2!`);
+          showToast(`Đã lưu ${rowsToSave.length.toLocaleString()} dòng lên hệ thống!`);
           return true;
         } catch (err) {
           console.error("Lỗi lưu Call Log lên Cloud R2:", err);
-          alert("Lưu dữ liệu lên Cloud R2 thất bại:\n" + err.message);
+          alert("Lưu dữ liệu lên hệ thống thất bại:\n" + err.message);
           return false;
         }
       }
 
-      /* ─── Fetch from R2 ─── */
+      /* ─── Fetch from Cloud ─── */
       async function fetchCallLogFromCloud(isBackground = false) {
         if (!isBackground) {
-          setLoading(true, "Đang tải dữ liệu từ Cloud R2...");
+          setLoading(true, "Đang tải dữ liệu từ hệ thống...");
         }
         const syncIcon = document.getElementById("syncR2Icon");
         if (syncIcon) syncIcon.classList.add("fa-spin");
@@ -1221,11 +1221,11 @@
             if (data && Array.isArray(data.rows) && data.rows.length > 0) {
               workbookData = null;
               rows = data.rows;
-              const sourceName = data.sourceName || "Cloud R2";
+              const sourceName = data.sourceName || "Đám mây";
               await applyLoadedRows(sourceName, { keepFilters: true });
               updateCloudStatusBadge(sourceName, rows.length, data.updatedAt);
               if (!isBackground) {
-                showToast(`Đã đồng bộ ${rows.length.toLocaleString()} dòng từ Cloud R2!`);
+                showToast(`Đã đồng bộ ${rows.length.toLocaleString()} dòng từ hệ thống!`);
               }
               return true;
             } else {
@@ -1235,7 +1235,7 @@
         } catch (err) {
           console.warn("Lỗi tải Call Log từ Cloud R2:", err);
           if (!isBackground) {
-            alert("Không tải được dữ liệu từ Cloud R2:\n" + err.message);
+            alert("Không tải được dữ liệu từ hệ thống:\n" + err.message);
           }
         } finally {
           if (syncIcon) syncIcon.classList.remove("fa-spin");
@@ -1269,8 +1269,8 @@
             return;
           }
 
-          // Tự động lưu lên Cloud R2
-          setLoading(true, `Đang lưu ${rows.length.toLocaleString()} dòng lên Cloud R2...`);
+          // Tự động lưu lên hệ thống
+          setLoading(true, `Đang lưu ${rows.length.toLocaleString()} dòng lên hệ thống...`);
           await saveCallLogToCloud(rows, fileName);
 
           // Thu gọn upload card
@@ -1278,7 +1278,7 @@
           toggleUploadArrow.textContent = "▾";
         } catch (err) {
           console.error("Lỗi xử lý file Call Log:", err);
-          alert("Không đọc hoặc lưu được file Call Log lên R2:\n" + err.message);
+          alert("Không đọc hoặc lưu được file Call Log:\n" + err.message);
         } finally {
           setLoading(false);
           fileInput.value = "";
@@ -1643,7 +1643,7 @@
         sheetSelect.innerHTML = "";
         const option = document.createElement("option");
         option.value = "cloud";
-        option.textContent = name || "Cloud R2";
+        option.textContent = name || "Đám mây";
         sheetSelect.appendChild(option);
       }
 
@@ -1934,7 +1934,7 @@
           const rawEscaped = escapeHTML(value);
           const dateCol = findColumn("date");
           const rowDateEscaped = escapeHTML(row[dateCol] || row["Date"] || row["date"] || "");
-          return `<span class="details-content">${content}</span><div class="row-actions"><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button><button type="button" class="del-row-btn" title="Xóa dòng này khỏi Cloud R2" data-call-details="${rawEscaped}" data-date="${rowDateEscaped}" onclick="confirmDeleteCallLogRow(event, this)"><i class="fa-regular fa-trash-can"></i></button></div>`;
+          return `<span class="details-content">${content}</span><div class="row-actions"><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button><button type="button" class="del-row-btn" title="Xóa dòng này khỏi hệ thống" data-call-details="${rawEscaped}" data-date="${rowDateEscaped}" onclick="confirmDeleteCallLogRow(event, this)"><i class="fa-regular fa-trash-can"></i></button></div>`;
         }
         return escapeHTML(value);
       }
@@ -2293,7 +2293,7 @@
 
         openConfirmModal({
           title: "Xác nhận xóa dòng Call Log",
-          message: `Bạn có chắc chắn muốn xóa dòng Call Log này khỏi <strong>Cloud R2</strong> không?<br><small style="color:var(--text-muted);">Ngày: ${escapeHTML(dateStr || "Không rõ")}</small>`,
+          message: `Bạn có chắc chắn muốn xóa dòng Call Log này khỏi hệ thống không?<br><small style="color:var(--text-muted);">Ngày: ${escapeHTML(dateStr || "Không rõ")}</small>`,
           preview: callDetails,
           onConfirm: async () => {
             try {
@@ -2317,10 +2317,10 @@
                   rows.splice(idx, 1);
                   searchIndex.splice(idx, 1);
                 }
-                updateCloudStatusBadge(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                updateCloudStatusBadge(data.sourceName || "Đám mây", rows.length, data.updatedAt);
                 renderTable();
                 saveCachedData();
-                showToast("Đã xóa dòng Call Log khỏi Cloud R2 thành công!", "fa-check");
+                showToast("Đã xóa dòng Call Log thành công!", "fa-check");
               } else {
                 throw new Error(data.error || "Xóa thất bại");
               }
@@ -2339,7 +2339,7 @@
 
         openConfirmModal({
           title: `Xác nhận xóa ${count.toLocaleString()} dòng Call Log đang lọc`,
-          message: `Bạn có chắc chắn muốn xóa toàn bộ <strong>${count.toLocaleString()} dòng</strong> đang hiển thị khỏi <strong>Cloud R2</strong> không?<br><small style="color:#ef4444; font-weight:600;">Hành động này sẽ cập nhật trực tiếp lên hệ thống và không thể hoàn tác.</small>`,
+          message: `Bạn có chắc chắn muốn xóa toàn bộ <strong>${count.toLocaleString()} dòng</strong> đang hiển thị khỏi hệ thống không?<br><small style="color:#ef4444; font-weight:600;">Hành động này sẽ cập nhật trực tiếp lên hệ thống và không thể hoàn tác.</small>`,
           preview: `${itemsToDelete.slice(0, 3).map(r => `• [${r.Date || ''}] ${r['Call Details'] || ''}`).join("\n")}${count > 3 ? `\n... và ${count - 3} dòng khác` : ''}`,
           onConfirm: async () => {
             try {
@@ -2366,10 +2366,10 @@
                     searchIndex.splice(i, 1);
                   }
                 }
-                updateCloudStatusBadge(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                updateCloudStatusBadge(data.sourceName || "Đám mây", rows.length, data.updatedAt);
                 renderTable();
                 saveCachedData();
-                showToast(`Đã xóa thành công ${count.toLocaleString()} dòng khỏi Cloud R2!`, "fa-check");
+                showToast(`Đã xóa thành công ${count.toLocaleString()} dòng!`, "fa-check");
               } else {
                 throw new Error(data.error || "Xóa thất bại");
               }
@@ -2391,7 +2391,7 @@
 
         openConfirmModal({
           title: `Xóa tất cả cuộc gọi ngày ${dateStr}`,
-          message: `Tìm thấy <strong>${rowsForDate.length.toLocaleString()} cuộc gọi</strong> trong ngày <strong>${escapeHTML(dateStr)}</strong>.<br>Bạn có chắc chắn muốn xóa toàn bộ cuộc gọi của ngày này khỏi <strong>Cloud R2</strong> không?`,
+          message: `Tìm thấy <strong>${rowsForDate.length.toLocaleString()} cuộc gọi</strong> trong ngày <strong>${escapeHTML(dateStr)}</strong>.<br>Bạn có chắc chắn muốn xóa toàn bộ cuộc gọi của ngày này khỏi hệ thống không?`,
           preview: rowsForDate.slice(0, 3).map(r => `• ${r['Call Details'] || ''}`).join("\n"),
           onConfirm: async () => {
             try {
@@ -2412,11 +2412,11 @@
                     searchIndex.splice(i, 1);
                   }
                 }
-                updateCloudStatusBadge(data.sourceName || "Cloud R2", rows.length, data.updatedAt);
+                updateCloudStatusBadge(data.sourceName || "Đám mây", rows.length, data.updatedAt);
                 dateFilterPopover.classList.remove("open");
                 renderTable();
                 saveCachedData();
-                showToast(`Đã xóa ${data.deletedCount} cuộc gọi ngày ${dateStr} khỏi Cloud R2!`, "fa-check");
+                showToast(`Đã xóa ${data.deletedCount} cuộc gọi ngày ${dateStr} thành công!`, "fa-check");
               } else {
                 throw new Error(data.error || "Xóa thất bại");
               }

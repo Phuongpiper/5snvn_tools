@@ -3072,7 +3072,7 @@
         <span class="nav-count-badge" id="navTotalIssuesBadge">0</span>
       </button>
       <button type="button" class="studio-nav-btn" id="btnNavVoip" onclick="switchStudioView('voip')"
-        title="Lịch sử cuộc gọi tổng đài Voip24h (Hotline)">
+        title="Lịch sử cuộc gọi tổng đài (Hotline)">
         <i class="fa-solid fa-phone-volume"></i> Lịch sử cuộc gọi
         <span class="nav-count-badge" id="navVoipCallsBadge"
           style="background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;">0</span>
@@ -3097,7 +3097,7 @@
       </div>
 
       <button type="button" class="btn-header-action" id="btnRefreshData"
-        title="Tải lại dữ liệu mới nhất từ Cloud R2 & Hệ thống">
+        title="Tải lại dữ liệu mới nhất từ hệ thống">
         <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ
       </button>
     </div>
@@ -3234,7 +3234,7 @@
                   title="Chọn ngày ghi nhận (mặc định hôm nay)" />
               </div>
               <button type="button" class="btn-studio-action btn-studio-save" id="btnSaveTemp"
-                title="Lưu vào bảng tạm & Đồng bộ Cloud R2 (Enter / Ctrl+S)">
+                title="Lưu vào bảng tạm & Đồng bộ (Enter / Ctrl+S)">
                 <i class="fa-solid fa-floppy-disk"></i> Lưu vào TEMP
               </button>
               <button type="button" class="btn-studio-action btn-studio-clear" id="btnClearForm"
@@ -3271,13 +3271,13 @@
                 </span>
                 <span id="tempCloudStatus"
                   style="font-size:11px; color:#10b981; display:inline-flex; align-items:center; gap:4px; font-weight:600; white-space:nowrap;"
-                  title="Trạng thái Cloud R2">
-                  <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Cloud R2</span>
+                  title="Trạng thái đồng bộ">
+                  <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Đã đồng bộ</span>
                 </span>
               </div>
               <p style="font-size:11.5px; color:var(--text-muted); margin:2px 0 0 0; white-space:nowrap;"
-                title="Danh sách tạm riêng cho từng nhân viên, đồng bộ đa thiết bị. Nhấn Đồng bộ R2 để chuyển vào Issue & Call Log.">
-                Đồng bộ Cloud R2 · Nhấn <strong>Đồng bộ R2</strong> để chuyển vào Call Log &amp; Issue</p>
+                title="Danh sách tạm riêng cho từng nhân viên, đồng bộ đa thiết bị. Nhấn Đồng bộ để chuyển vào Issue & Call Log.">
+                Đồng bộ trực tuyến · Nhấn <strong>Đồng bộ</strong> để chuyển vào Call Log &amp; Issue</p>
             </div>
           </div>
 
@@ -3298,8 +3298,8 @@
               <i class="fa-solid fa-trash-can"></i> Xoá hết
             </button>
             <button type="button" class="btn-temp-action" id="btnSyncR2Temp"
-              title="Đồng bộ danh sách Issue với Cloud R2">
-              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary);"></i> Đồng bộ R2
+              title="Đồng bộ danh sách Issue">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary);"></i> Đồng bộ
             </button>
             <button type="button" class="btn-temp-action" id="btnOpenStatsFromTemp" onclick="switchStudioView('stats')"
               title="Xem thống kê số lượng Issue theo nhân viên">
@@ -3353,12 +3353,12 @@
             </div>
             <div>
               <h2>Thống kê số lượng Issue theo nhân viên</h2>
-              <p>Dữ liệu tổng hợp từ toàn bộ nhân viên, đồng bộ trực tiếp qua Cloud R2</p>
+              <p>Dữ liệu tổng hợp từ toàn bộ nhân viên, đồng bộ trực tiếp qua hệ thống</p>
             </div>
           </div>
           <div class="stats-quick-actions">
-            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Lấy dữ liệu mới nhất từ R2">
-              <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Đồng bộ R2
+            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Lấy dữ liệu mới nhất từ hệ thống">
+              <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Đồng bộ
             </button>
             <button type="button" class="btn-stats-tool" id="btnExportStatsExcel"
               title="Xuất báo cáo thống kê ra Excel">
@@ -3526,7 +3526,7 @@
             </div>
             <div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <h2 style="font-size:16px; font-weight:800; margin:0; color:#1e293b;">Lịch sử cuộc gọi Voip24h</h2>
+                <h2 style="font-size:16px; font-weight:800; margin:0; color:#1e293b;">Lịch sử cuộc gọi</h2>
                 <span id="voipSyncStatusChip" style="display:none;"></span>
                 <span id="voipLastSyncTimeBadge"
                   style="font-size:11px; font-weight:600; color:#475569; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;"
@@ -3547,14 +3547,14 @@
                 0
               </span>
             </button>
-            <!-- Nút Đồng bộ cuộc gọi (2 luồng: Ưu tiên Local ➔ Fallback Vercel) -->
-            <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi (Ưu tiên Local, fallback Vercel)">
+            <!-- Nút Đồng bộ cuộc gọi (Tự động) -->
+            <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi (Tự động)">
               <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto')"
-                title="Đồng bộ 2 luồng: Ưu tiên Local ➔ Tự động chuyển Vercel nếu Local tắt" style="padding:5px 12px; font-size:12px;">
+                title="Đồng bộ: Ưu tiên máy chủ nội bộ ➔ Tự động chuyển sang Đám mây nếu nội bộ tắt" style="padding:5px 12px; font-size:12px;">
                 <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
               </button>
               <button type="button" class="btn-stats-tool primary voip-sync-split-caret" id="btnVoipSyncDropdown" onclick="toggleVoipSyncMenu(event)"
-                title="Tùy chọn luồng đồng bộ (Local / Vercel)" style="padding:5px 8px; font-size:12px;">
+                title="Tùy chọn luồng đồng bộ" style="padding:5px 8px; font-size:12px;">
                 <i class="fa-solid fa-caret-down" id="iconVoipSyncCaret"></i>
               </button>
 
@@ -3567,7 +3567,7 @@
                     <i class="fa-solid fa-sliders"></i> Tùy chọn luồng đồng bộ
                   </div>
                   <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
-                    Ưu tiên kết nối máy nội bộ để lấy live từ tổng đài Voip24h.
+                    Ưu tiên kết nối máy nội bộ để lấy trực tiếp từ tổng đài.
                   </div>
                 </div>
 
@@ -3582,7 +3582,7 @@
                       <span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 6px; border-radius:8px; font-weight:700;">Khuyên dùng</span>
                     </div>
                     <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
-                      Ưu tiên gọi <strong>Local</strong> ➔ Nếu Local không phản hồi thì tự chuyển <strong>Vercel</strong>
+                      Ưu tiên kết nối <strong>Nội bộ</strong> ➔ Tự động chuyển sang <strong>Đám mây</strong>
                     </div>
                   </div>
                 </button>
@@ -3600,7 +3600,7 @@
                       </span>
                     </div>
                     <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
-                      Lấy trực tiếp từ Voip24h qua <code>localhost:3000</code> &amp; sync lên Cloud R2
+                      Lấy trực tiếp từ tổng đài qua máy nội bộ &amp; lưu lên hệ thống
                     </div>
                   </div>
                 </button>
@@ -3612,11 +3612,11 @@
                   </div>
                   <div style="flex:1;">
                     <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
-                      <span>Luồng Vercel (Cloud R2)</span>
+                      <span>Luồng Đám mây</span>
                       <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:8px; font-weight:700;">Đám mây</span>
                     </div>
                     <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
-                      Lấy từ bộ nhớ đệm Cloudflare R2 qua máy chủ Vercel (nhanh &amp; ổn định)
+                      Lấy từ bộ nhớ đệm máy chủ đám mây (nhanh &amp; ổn định)
                     </div>
                   </div>
                 </button>
@@ -3624,13 +3624,13 @@
                 <!-- Footer thông tin / trợ giúp -->
                 <div style="margin-top:6px; padding-top:6px; border-top:1px solid #f1f5f9; font-size:10.5px; color:#94a3b8; display:flex; align-items:center; gap:6px;">
                   <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i>
-                  <span>Bật <code>sync-voip.bat</code> để máy nội bộ đẩy live lên Cloud.</span>
+                  <span>Bật <code>sync-voip.bat</code> để máy nội bộ tự động đồng bộ.</span>
                 </div>
               </div>
             </div>
             <button type="button" class="btn-stats-tool" onclick="downloadVoipExport()"
               style="background:#10b981; color:#fff; border-color:#059669; padding:5px 12px; font-size:12px;"
-              title="Tải file báo cáo gốc từ Voip24h">
+              title="Tải file báo cáo gốc">
               <i class="fa-solid fa-file-excel"></i> Tải file gốc
             </button>
           </div>
@@ -3704,7 +3704,7 @@
               <option value="all" selected>Tất cả ghi chú</option>
               <option value="unnoted">🔴 Chưa note (Cần xử lý)</option>
               <option value="in_temp">🟡 Đang trong Temp</option>
-              <option value="noted">🟢 Đã note R2</option>
+              <option value="noted">🟢 Đã note</option>
               <option value="excluded">⚪ Miễn note (Bỏ qua)</option>
             </select>
           </div>
@@ -3933,7 +3933,7 @@
             <div>
               <div class="kpi-label" style="color:#0284c7;"><i class="fa-solid fa-phone-volume"></i> CUỘC GỌI TỔNG ĐÀI
               </div>
-              <div style="font-size:11.5px; color:var(--text-muted);">Voip24h Hotline</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">Tổng đài Hotline</div>
             </div>
             <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;">
               <i class="fa-solid fa-headset"></i>
@@ -3982,7 +3982,7 @@
           <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
             <div>
               <div class="kpi-label" style="color:#7c3aed;"><i class="fa-solid fa-bug"></i> ISSUE GHI CHÚ (DMS)</div>
-              <div style="font-size:11.5px; color:var(--text-muted);">Cloudflare R2 Database</div>
+              <div style="font-size:11.5px; color:var(--text-muted);">Hệ thống lưu trữ</div>
             </div>
             <div class="kpi-icon-wrap" style="background:#ede9fe; color:#7c3aed;">
               <i class="fa-solid fa-clipboard-check"></i>
@@ -4296,7 +4296,7 @@
             <div style="display:flex; align-items:center; gap:8px;">
               <h3 style="margin:0;">Số điện thoại miễn Note Issue</h3>
               <span id="tagExcludedPhonesR2Status" style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
-                <i class="fa-solid fa-cloud"></i> Cloud R2
+                <i class="fa-solid fa-cloud"></i> Đã đồng bộ
               </span>
             </div>
             <p style="margin:2px 0 0;">Không cần ghi chú Issue &amp; không tính vào bất kỳ báo cáo / thống kê nào</p>
@@ -4351,11 +4351,11 @@
       <div class="member-modal-footer" style="padding:12px 22px; display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border-top:1px solid var(--border);">
         <div style="display:flex; align-items:center; gap:8px;">
           <button type="button" class="btn-stats-tool" id="btnSyncExcludedPhonesR2" onclick="fetchExcludedPhonesFromR2(false)"
-            style="padding:5px 11px; font-size:12px;" title="Làm mới danh sách từ Cloudflare R2">
-            <i class="fa-solid fa-arrows-rotate" id="iconSyncExcludedPhones"></i> Đồng bộ R2
+            style="padding:5px 11px; font-size:12px;" title="Làm mới danh sách từ hệ thống">
+            <i class="fa-solid fa-arrows-rotate" id="iconSyncExcludedPhones"></i> Đồng bộ
           </button>
           <span id="labelExcludedPhonesR2Status" style="font-size:11.5px; color:#64748b; display:inline-flex; align-items:center; gap:5px;">
-            <i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Tự động đồng bộ lên Cloud R2
+            <i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Tự động đồng bộ lên hệ thống
           </span>
         </div>
         <button type="button" class="btn-modal-cancel" onclick="closeExcludedPhonesModal()" style="display:inline-flex;">
@@ -4785,7 +4785,7 @@
                   issueName: String(r.col_issue_name || "").trim(),
                   prefix: String(r.col_prefix || "").trim().toUpperCase()
                 }));
-                if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục (R2)`;
+                if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục`;
                 if (pillDtStatus) pillDtStatus.classList.add("active");
               }
             }
@@ -4828,7 +4828,7 @@
         badge.title = `Hôm nay: ${todayCount} issue | Toàn bộ: ${(r2Issues || []).length} issue`;
       }
 
-      /* ── TRẠNG THÁI ĐỒNG BỘ CLOUD R2 CHO DANH SÁCH TẠM ── */
+      /* ── TRẠNG THÁI ĐỒNG BỘ CHO DANH SÁCH TẠM ── */
       function updateTempSyncIndicator(status) {
         if (!iconTempCloud || !textTempCloud) return;
         if (status === "syncing") {
@@ -4839,7 +4839,7 @@
         } else if (status === "synced") {
           iconTempCloud.className = "fa-solid fa-cloud";
           iconTempCloud.style.color = "#10b981";
-          textTempCloud.textContent = "Cloud R2";
+          textTempCloud.textContent = "Đã đồng bộ";
           textTempCloud.style.color = "#10b981";
         } else if (status === "error") {
           iconTempCloud.className = "fa-solid fa-triangle-exclamation";
@@ -4959,7 +4959,7 @@
                 updateIssuesBadge();
                 updateTempSyncIndicator("synced");
                 if (!silent && r2Notes.length > 0) {
-                  showToast(`Đã tải ${r2Notes.length} note tạm của ${currentSelectedMember.name} từ Cloud R2!`, "fa-cloud-arrow-down");
+                  showToast(`Đã tải ${r2Notes.length} note tạm của ${currentSelectedMember.name}!`, "fa-cloud-arrow-down");
                 }
               } else if (tempNotes.length > 0 && r2Notes.length === 0) {
                 // Local có note (vừa migrate hoặc offline), R2 chưa có -> tự động lưu lên R2
@@ -5043,12 +5043,12 @@
             if (currentStudioView === "stats") renderStatsPage();
 
             if (!silent) {
-              showToast(`Đã tải ${r2Issues.length} issue từ Cloud R2!`, "fa-cloud-arrow-down");
+              showToast(`Đã tải ${r2Issues.length} issue từ hệ thống!`, "fa-cloud-arrow-down");
             }
           }
         } catch (err) {
           console.warn("Lỗi tải R2:", err);
-          if (!silent) showToast("Không thể kết nối Cloud R2", "fa-triangle-exclamation");
+          if (!silent) showToast("Không thể kết nối máy chủ", "fa-triangle-exclamation");
         } finally {
           isSyncingR2 = false;
           if (iconSync) iconSync.classList.remove("fa-spin");
@@ -5362,7 +5362,7 @@
           }
         } catch (err) {
           console.warn("Lỗi đồng bộ R2:", err);
-          showToast("Lỗi kết nối khi đồng bộ R2!", "fa-triangle-exclamation");
+          showToast("Lỗi kết nối khi đồng bộ!", "fa-triangle-exclamation");
         } finally {
           if (iEl) iEl.className = "fa-solid fa-cloud-arrow-up";
         }
@@ -5403,7 +5403,7 @@
               }
 
               if (json.callLogRecorded) {
-                showToast("Đã lưu Issue lên R2 & ghi nhận vào Call Log!", "fa-circle-check");
+                showToast("Đã lưu Issue & ghi nhận vào Call Log!", "fa-circle-check");
               }
             }
           }
@@ -6890,7 +6890,7 @@
           updateR2Badge();
           renderStatsPage();
           deleteIssueFromR2(id);
-          showToast('Đã xoá issue khỏi R2', 'fa-trash-can');
+          showToast('Đã xoá issue thành công', 'fa-trash-can');
         } else {
           const btn = document.querySelector('[data-delete-id="' + id + '"]');
           if (btn) { btn.style.background = '#dc2626'; btn.style.color = '#fff'; btn.title = 'Bấm lần nữa để xác nhận xoá'; btn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; }
@@ -7723,7 +7723,7 @@
 
       function exportStatsExcel() {
         if (r2Issues.length === 0) {
-          showToast("Chưa có dữ liệu R2 để xuất báo cáo! Hãy bấm Đồng bộ R2 trước.", "fa-triangle-exclamation");
+          showToast("Chưa có dữ liệu để xuất báo cáo! Hãy bấm Đồng bộ trước.", "fa-triangle-exclamation");
           return;
         }
 
@@ -8577,29 +8577,29 @@
             tag.style.borderColor = "#fde68a";
           }
           if (label) {
-            label.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin" style="color:#d97706;"></i> Đang lưu lên Cloud R2...`;
+            label.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin" style="color:#d97706;"></i> Đang lưu lên hệ thống...`;
           }
         } else if (status === "synced") {
           if (icon) icon.classList.remove("fa-spin");
           if (tag) {
-            tag.innerHTML = `<i class="fa-solid fa-cloud"></i> Cloud R2`;
+            tag.innerHTML = `<i class="fa-solid fa-cloud"></i> Đã đồng bộ`;
             tag.style.background = "#ecfdf5";
             tag.style.color = "#047857";
             tag.style.borderColor = "#a7f3d0";
           }
           if (label) {
-            label.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Đã đồng bộ với Cloud R2`;
+            label.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#059669;"></i> Đã đồng bộ với hệ thống`;
           }
         } else if (status === "error") {
           if (icon) icon.classList.remove("fa-spin");
           if (tag) {
-            tag.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Chưa lưu Cloud`;
+            tag.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Chưa lưu`;
             tag.style.background = "#fef2f2";
             tag.style.color = "#dc2626";
             tag.style.borderColor = "#fecaca";
           }
           if (label) {
-            label.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;"></i> Chưa thể kết nối Cloud R2`;
+            label.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;"></i> Chưa thể kết nối máy chủ`;
           }
         }
       }
@@ -8703,7 +8703,7 @@
             updateExcludedModalSyncStatus("synced");
 
             if (!silent) {
-              showToast(`Đã đồng bộ ${merged.length} số miễn note từ Cloud R2!`, "fa-cloud-arrow-down");
+              showToast(`Đã đồng bộ ${merged.length} số miễn note từ hệ thống!`, "fa-cloud-arrow-down");
             }
           } else {
             updateExcludedModalSyncStatus("error");
@@ -8711,7 +8711,7 @@
         } catch (err) {
           console.warn("fetchExcludedPhonesFromR2 error:", err);
           updateExcludedModalSyncStatus("error");
-          if (!silent) showToast("Không thể kết nối Cloud R2: " + err.message, "fa-circle-exclamation");
+          if (!silent) showToast("Không thể kết nối máy chủ: " + err.message, "fa-circle-exclamation");
         } finally {
           isSyncingExcludedPhones = false;
         }
@@ -8744,7 +8744,7 @@
             localStorage.setItem(LS_EXCLUDED_PHONES_MIGRATED_KEY, "true");
             updateExcludedModalSyncStatus("synced");
             if (!silent) {
-              showToast("Đã lưu số miễn note lên Cloudflare R2!", "fa-cloud-arrow-up");
+              showToast("Đã lưu số miễn note lên hệ thống!", "fa-cloud-arrow-up");
             }
           } else {
             localStorage.setItem(LS_EXCLUDED_PHONES_PENDING_KEY, "true");
@@ -9323,7 +9323,7 @@
 
         if (statusChip) {
           if (flow === "local" || source === "live_voip24h") {
-            statusChip.innerHTML = `<i class="fa-solid fa-desktop" style="color:#059669;"></i> ${count} cuộc gọi (Local • Live Voip24h)`;
+            statusChip.innerHTML = `<i class="fa-solid fa-desktop" style="color:#059669;"></i> ${count} cuộc gọi (Trực tiếp)`;
             statusChip.style.background = "#ecfdf5";
             statusChip.style.color = "#047857";
             statusChip.style.borderColor = "#a7f3d0";
@@ -9333,7 +9333,7 @@
             statusChip.style.color = "#b45309";
             statusChip.style.borderColor = "#fde68a";
           } else {
-            statusChip.innerHTML = `<i class="fa-solid fa-cloud" style="color:#0284c7;"></i> ${count} cuộc gọi (Vercel • Cloud R2)`;
+            statusChip.innerHTML = `<i class="fa-solid fa-cloud" style="color:#0284c7;"></i> ${count} cuộc gọi (Đám mây)`;
             statusChip.style.background = "#f0f9ff";
             statusChip.style.color = "#0284c7";
             statusChip.style.borderColor = "#bae6fd";
@@ -9610,7 +9610,7 @@
         if (matchedR2Issue) {
           return {
             status: "noted",
-            badgeText: "Đã note R2",
+            badgeText: "Đã note",
             hotline,
             ext,
             staff,
@@ -9865,7 +9865,7 @@
             }
 
             if (activeLocalEndpoint) {
-              if (displayAsBlocking) updateProgress("Local đang lấy Live Voip24h...", "fa-arrows-rotate fa-spin", "#059669");
+              if (displayAsBlocking) updateProgress("Đang kết nối lấy dữ liệu trực tiếp...", "fa-arrows-rotate fa-spin", "#059669");
               const baseOrigin = activeLocalEndpoint.startsWith("http") ? undefined : (window.location.origin || "http://localhost:3000");
               const localUrl = baseOrigin ? new URL(activeLocalEndpoint, baseOrigin) : new URL(activeLocalEndpoint);
               localUrl.searchParams.set("date_start", date_start);
@@ -9903,17 +9903,17 @@
 
             // Nếu người dùng CHỦ ĐỘNG chọn "Chỉ dùng Local", dừng và báo lỗi nếu không kết nối được
             if (preferredFlow === "local" && !data) {
-              throw (localError || new Error("Không thể kết nối máy chủ Local (localhost:3000). Vui lòng chạy file sync-voip.bat hoặc local-server.js!"));
+              throw (localError || new Error("Không thể kết nối máy chủ nội bộ. Vui lòng kiểm tra lại!"));
             }
           }
 
           // ── LUỒNG 2: VERCEL CLOUD (Fallback khi Local không phản hồi, hoặc người dùng chọn Vercel) ──
           if (!data && (preferredFlow === "auto" || preferredFlow === "vercel")) {
             if (preferredFlow === "auto" && displayAsBlocking) {
-              updateProgress("Local không phản hồi ➔ Chuyển Vercel...", "fa-cloud-arrow-down fa-bounce", "#0284c7");
+              updateProgress("Chuyển kết nối sang máy chủ đám mây...", "fa-cloud-arrow-down fa-bounce", "#0284c7");
               await new Promise(r => setTimeout(r, 350));
             }
-            if (displayAsBlocking) updateProgress("Đang tải dữ liệu từ Vercel Cloud...", "fa-cloud fa-spin", "#0284c7");
+            if (displayAsBlocking) updateProgress("Đang tải dữ liệu từ máy chủ đám mây...", "fa-cloud fa-spin", "#0284c7");
 
             const vercelEndpoint = (window.location.origin && window.location.origin.includes("vercel.app"))
               ? "/api/voip24h-calls"
@@ -9942,10 +9942,10 @@
                 data = json;
                 usedFlow = "vercel";
               } else {
-                throw new Error(json?.message || "Vercel trả về lỗi");
+                throw new Error(json?.message || "Máy chủ đám mây trả về lỗi");
               }
             } else {
-              throw new Error("HTTP " + vercelRes.status + " từ máy chủ Vercel");
+              throw new Error("HTTP " + vercelRes.status + " từ máy chủ đám mây");
             }
           }
 
@@ -9956,7 +9956,7 @@
               data = cached;
               usedFlow = "offline_cache";
             } else {
-              throw new Error("Không thể kết nối máy chủ Local lẫn Vercel Cloud");
+              throw new Error("Không thể kết nối máy chủ");
             }
           }
 
@@ -9986,12 +9986,12 @@
 
             // Thông báo Toast tương ứng với luồng đã lấy
             if (usedFlow === "local") {
-              showToast(`Đã đồng bộ trực tiếp ${voipCalls.length} cuộc gọi từ Voip24h qua Local! (Đã lưu Cloud)`, "fa-circle-check");
+              showToast(`Đã đồng bộ trực tiếp ${voipCalls.length} cuộc gọi!`, "fa-circle-check");
             } else if (usedFlow === "vercel") {
               if (preferredFlow === "auto") {
-                showToast(`Local không phản hồi ➔ Đã lấy ${voipCalls.length} cuộc gọi từ Vercel (Cloud R2)! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
+                showToast(`Đã đồng bộ ${voipCalls.length} cuộc gọi từ đám mây! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
               } else {
-                showToast(`Đã tải ${voipCalls.length} cuộc gọi từ Vercel Cloud R2! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
+                showToast(`Đã tải ${voipCalls.length} cuộc gọi từ đám mây! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
               }
             } else if (usedFlow === "offline_cache") {
               showToast(`Đang hiển thị ${voipCalls.length} cuộc gọi từ bộ nhớ ngoại tuyến`, "fa-database");
@@ -10140,7 +10140,7 @@
             noteBadge = "";
           } else if (isNoted) {
             const noteDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
-            noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú trên Cloud R2 ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-circle-check"></i> Đã note${noteDateSuffix}</span>`;
+            noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-circle-check"></i> Đã note${noteDateSuffix}</span>`;
           } else if (isInTemp) {
             const tempDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
             noteBadge = `<span class="voip-note-badge in-temp" title="Đang có trong Danh sách tạm (Temp) ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-clock-rotate-left"></i> Temp${tempDateSuffix}</span>`;

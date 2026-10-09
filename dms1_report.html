@@ -948,10 +948,10 @@
         <div style="display:flex; gap:8px; width:100%; align-items:center;">
           <label style="font-size:11.5px; font-weight:600; color:var(--text-muted); white-space:nowrap;">Worker API
             URL:</label>
-          <input id="workerUrlInput" type="text" placeholder="Dán Worker API URL tại đây để đồng bộ R2..."
+          <input id="workerUrlInput" type="text" placeholder="Dán Worker API URL tại đây để đồng bộ..."
             style="flex:1; padding:7px 10px; border:1px solid var(--border-strong); border-radius:var(--radius-sm); font-size:13px; outline:none;" />
           <button id="saveR2Button" type="button" class="btn-primary" style="padding: 7px 12px; font-size:13px;">
-            <i class="fa-solid fa-floppy-disk"></i> Lưu vào R2
+            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
           </button>
         </div>
       </div>
@@ -1693,7 +1693,7 @@
       localStorage.setItem(STORAGE_KEY_API, workerVal);
       jsonUrlInput.value = workerVal;
 
-      showToast("Đang lưu cấu hình lên R2...", "success");
+      showToast("Đang lưu cấu hình lên hệ thống...", "success");
 
       try {
         const payload = JSON.stringify({
@@ -1717,15 +1717,15 @@
         }
 
         if (result.status === "success" || result.success) {
-          showToast("✅ Đã đồng bộ URL DMS1 Report lên Cloudflare R2!", "success");
-          loadDataFromUrl(workerVal, "DMS1 Report R2 API");
+          showToast("✅ Đã đồng bộ URL DMS1 Report thành công!", "success");
+          loadDataFromUrl(workerVal, "DMS1 Report API");
         } else {
           const detail = [result.message, result.r2Body].filter(Boolean).join(" | ");
-          showToast("⚠️ Lưu R2 thất bại: " + (detail || "lỗi không rõ"), "error");
+          showToast("⚠️ Lưu cấu hình thất bại: " + (detail || "lỗi không rõ"), "error");
         }
       } catch (err) {
         console.error("[R2 Save] Error:", err);
-        showToast("Lưu R2 thất bại: " + err.message, "error");
+        showToast("Lưu cấu hình thất bại: " + err.message, "error");
       }
     });
 
