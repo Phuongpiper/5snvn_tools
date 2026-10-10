@@ -5684,15 +5684,6 @@
         if (dropdownRole) dropdownRole.style.display = "none";
         const val = inputNpp.value.trim();
         const roleVal = inputRole.value.trim().toUpperCase();
-
-        // QUY TẮC: Khi xử lý issue cho HQ thì bỏ trống ô NPP.
-        // Nếu người dùng nhập NPP khi Role đang là HQ -> tự động xoá ô Role
-        if (val && roleVal.startsWith("HQ")) {
-          inputRole.value = "";
-          if (dropdownRole) dropdownRole.style.display = "none";
-          validateRole();
-        }
-
         if (!val) {
           dropdownNpp.style.display = "none";
           if (roleVal === "ADMIN" || roleVal === "AD" || roleVal === "ADM" || roleVal === "ADMI") {
@@ -5792,11 +5783,6 @@
       }
 
       function applyNpp(item, fillInput = true) {
-        // QUY TẮC: Nếu Role đang là HQ thì tự động xoá Role khi chọn NPP
-        if (inputRole.value.trim().toUpperCase().startsWith("HQ")) {
-          inputRole.value = "";
-          if (dropdownRole) dropdownRole.style.display = "none";
-        }
         currentNppObj = item;
         if (fillInput) {
           inputNpp.value = item.issueName.replace(/^NPP\s+/i, "");
@@ -5807,7 +5793,6 @@
         validateNvbh();
         validateRole();
         updateResultDisplay();
-        if (typeof syncInputClearButtons === "function") syncInputClearButtons();
       }
 
       // 4. NVBH Validation & Prefix Auto-Padding
@@ -5936,18 +5921,6 @@
             hintRole.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Nhập ADMIN bắt buộc phải có NPP!`;
             hintNpp.className = "field-hint-chip warning";
             hintNpp.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Đang chọn ADMIN: Bắt buộc phải có NPP!`;
-          } else if (trimmed.startsWith("HQ")) {
-            // QUY TẮC: Khi xử lý issue cho HQ thì bỏ trống ô NPP
-            if (inputNpp.value.trim() || currentNppObj) {
-              inputNpp.value = "";
-              currentNppObj = null;
-              currentNppMatches = [];
-              if (dropdownNpp) dropdownNpp.style.display = "none";
-            }
-            hintRole.className = "field-hint-chip success";
-            hintRole.innerHTML = `<i class="fa-solid fa-check"></i> Hợp lệ: <strong>${escapeHTML(trimmed)}</strong>`;
-            hintNpp.className = "field-hint-chip info";
-            hintNpp.innerHTML = `<i class="fa-solid fa-info-circle"></i> Đang để trống (Xử lý cho HQ)`;
           } else {
             hintRole.className = "field-hint-chip success";
             hintRole.innerHTML = `<i class="fa-solid fa-check"></i> Hợp lệ: <strong>${escapeHTML(trimmed)}</strong>`;
@@ -6446,26 +6419,15 @@
       });
 
       inputRole.addEventListener("input", () => {
-        const val = inputRole.value.trim().toUpperCase();
-        if (val) {
+        if (inputRole.value.trim()) {
           // Tự động xoá ô NVBH khi nhập Role
           if (inputNvbh.value) {
             inputNvbh.value = "";
-          }
-          // QUY TẮC: Khi xử lý issue cho HQ thì bỏ trống ô NPP
-          if (val.startsWith("HQ")) {
-            if (inputNpp.value.trim() || currentNppObj) {
-              inputNpp.value = "";
-              currentNppObj = null;
-              currentNppMatches = [];
-              if (dropdownNpp) dropdownNpp.style.display = "none";
-            }
           }
         }
         validateRole();
         validateNvbh();
         updateResultDisplay();
-        if (typeof syncInputClearButtons === "function") syncInputClearButtons();
         renderHqDropdown(inputRole.value);
         if (dropdownRole) dropdownRole.style.display = "block";
       });
@@ -6539,11 +6501,6 @@
           if (roleVal === "ADMIN" || roleVal.startsWith("HQ")) {
             pStaff = roleVal;
           }
-        }
-
-        // QUY TẮC: Khi xử lý issue cho HQ thì bỏ trống ô NPP (không sinh _NPP ... trong cú pháp)
-        if (pStaff && pStaff.startsWith("HQ")) {
-          pNpp = "";
         }
 
         let pHotline = "";
@@ -6746,23 +6703,16 @@
         const timeStr = isBackdate ? "--:--" : (String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0"));
 
         // Tìm mã NPP (Dist code)
-        const isHqRole = Boolean(roleRaw && roleRaw.startsWith("HQ"));
-        let nppDistCode = "";
-        if (isHqRole) {
-          inputNpp.value = "";
-          currentNppObj = null;
-        } else {
-          nppDistCode = currentNppObj?.code || "";
-          if (!nppDistCode && dtList && dtList.length > 0) {
-            const nppVal = inputNpp.value.trim().toLowerCase();
-            const cleanVal = nppVal.replace(/^npp\s+/i, "").trim();
-            const found = dtList.find(d => {
-              const iss = String(d.issueName || "").replace(/^npp\s+/i, "").trim().toLowerCase();
-              const full = String(d.name || "").trim().toLowerCase();
-              return iss === cleanVal || full.includes(cleanVal) || d.code.toLowerCase() === nppVal;
-            });
-            if (found && found.code) nppDistCode = found.code;
-          }
+        let nppDistCode = currentNppObj?.code || "";
+        if (!nppDistCode && dtList && dtList.length > 0) {
+          const nppVal = inputNpp.value.trim().toLowerCase();
+          const cleanVal = nppVal.replace(/^npp\s+/i, "").trim();
+          const found = dtList.find(d => {
+            const iss = String(d.issueName || "").replace(/^npp\s+/i, "").trim().toLowerCase();
+            const full = String(d.name || "").trim().toLowerCase();
+            return iss === cleanVal || full.includes(cleanVal) || d.code.toLowerCase() === nppVal;
+          });
+          if (found && found.code) nppDistCode = found.code;
         }
 
         const item = {
@@ -6773,14 +6723,14 @@
           createdAt: Date.now(),
           memberCode: currentSelectedMember?.code || "",
           memberName: currentSelectedMember?.name || "",
-          distCode: isHqRole ? "" : nppDistCode,
+          distCode: nppDistCode,
           fields: {
             solution: currentSolutionObj?.name || inputSolution.value.trim(),
             solutionCode: currentSolutionObj?.code || "",
             type: currentType,
-            npp: isHqRole ? "" : (currentNppObj?.issueName || inputNpp.value.trim()),
-            distCode: isHqRole ? "" : nppDistCode,
-            nppCode: isHqRole ? "" : nppDistCode,
+            npp: currentNppObj?.issueName || inputNpp.value.trim(),
+            distCode: nppDistCode,
+            nppCode: nppDistCode,
             nvbh: inputNvbh.value.trim(),
             nvbhFormatted: formatNvbh(inputNvbh.value),
             role: inputRole.value.trim(),
@@ -8170,17 +8120,9 @@
               if (inputNvbh.value) {
                 inputNvbh.value = "";
               }
-              // QUY TẮC: Khi xử lý issue cho HQ thì bỏ trống ô NPP
-              if (name.toUpperCase().startsWith("HQ")) {
-                inputNpp.value = "";
-                currentNppObj = null;
-                currentNppMatches = [];
-                if (dropdownNpp) dropdownNpp.style.display = "none";
-              }
               validateRole();
               validateNvbh();
               updateResultDisplay();
-              if (typeof syncInputClearButtons === "function") syncInputClearButtons();
               hideHqDropdown();
               inputRole.focus();
             }
