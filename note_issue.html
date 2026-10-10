@@ -762,7 +762,7 @@
     .form-control-studio {
       width: 100%;
       height: 42px;
-      padding: 0 14px;
+      padding: 0 30px 0 14px;
       font-family: inherit;
       font-size: 13.5px;
       font-weight: 600;
@@ -772,6 +772,112 @@
       border-radius: var(--radius-sm);
       outline: none;
       transition: all 0.18s ease;
+    }
+
+    /* Nút xoá cho từng ô input */
+    .btn-clear-field {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      background: #e2e8f0;
+      color: #64748b;
+      font-size: 11px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.16s ease;
+      z-index: 10;
+      outline: none;
+      line-height: 1;
+    }
+
+    .btn-clear-field:hover {
+      background: #fee2e2;
+      color: #e11d48;
+      transform: translateY(-50%) scale(1.12);
+    }
+
+    .btn-clear-field:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .btn-clear-field.is-visible {
+      display: flex !important;
+    }
+
+    .form-control-studio:not(:placeholder-shown) ~ .btn-clear-field {
+      display: flex;
+    }
+
+    /* Nút Xoá tất cả trong bảng */
+    .btn-table-clear-all {
+      width: 100%;
+      height: 42px;
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #be123c;
+      border: 1.5px solid #fecdd3;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      padding: 0 6px;
+      font-family: inherit;
+    }
+
+    .btn-table-clear-all:hover {
+      background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
+      border-color: #fda4af;
+      color: #9f1239;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(225, 29, 72, 0.18);
+    }
+
+    .btn-table-clear-all:active {
+      transform: translateY(0);
+    }
+
+    /* Nút Xoá tất cả trên Banner thông báo */
+    .btn-notice-clear-all {
+      background: #ffffff;
+      color: #be123c;
+      border: 1.5px solid #fecdd3;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(190, 18, 60, 0.06);
+      font-family: inherit;
+    }
+
+    .btn-notice-clear-all:hover {
+      background: #ffe4e6;
+      border-color: #fda4af;
+      color: #9f1239;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(190, 18, 60, 0.15);
+    }
+
+    .btn-notice-clear-all:active {
+      transform: translateY(0);
     }
 
     .form-control-studio:focus {
@@ -1147,15 +1253,17 @@
     }
 
     .btn-studio-clear {
-      background: rgba(255, 255, 255, 0.1);
-      color: #cbd5e1;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
     }
 
     .btn-studio-clear:hover {
-      background: rgba(239, 68, 68, 0.2);
+      background: #ef4444;
       border-color: #ef4444;
-      color: #fca5a5;
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
     }
 
     /* Result Preview Container */
@@ -3123,6 +3231,11 @@
               <strong>NVBH</strong> và <strong>SUP/HQ/Admin</strong>.</span>
           </div>
         </div>
+        <div class="notice-bar-right">
+          <button type="button" class="btn-notice-clear-all" id="btnNoticeClearAll" title="Xoá tất cả các ô để nhập mới">
+            <i class="fa-solid fa-trash-can"></i> Xoá tất cả
+          </button>
+        </div>
       </div>
 
       <!-- ── MAIN STUDIO CARD (INPUT SPREADSHEET MODERN) ── -->
@@ -3132,14 +3245,15 @@
             <thead>
               <!-- Field Titles -->
               <tr>
-                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-circle-question"></i> Tên solution
+                <th class="th-field-title" style="width: 22%;"><i class="fa-solid fa-circle-question"></i> Tên solution
                 </th>
-                <th class="th-field-title" style="width: 9%;"><i class="fa-solid fa-layer-group"></i> HH / DC</th>
-                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-store"></i> Nhà phân phối (NPP)
+                <th class="th-field-title" style="width: 8%;"><i class="fa-solid fa-layer-group"></i> HH / DC</th>
+                <th class="th-field-title" style="width: 22%;"><i class="fa-solid fa-store"></i> Nhà phân phối (NPP)
                 </th>
-                <th class="th-field-title" style="width: 13%;"><i class="fa-solid fa-user-tag"></i> NVBH</th>
-                <th class="th-field-title" style="width: 18%;"><i class="fa-solid fa-user-shield"></i> SUP/HQ/Admin</th>
-                <th class="th-field-title" style="width: 14%;"><i class="fa-solid fa-phone"></i> Hotline</th>
+                <th class="th-field-title" style="width: 12%;"><i class="fa-solid fa-user-tag"></i> NVBH</th>
+                <th class="th-field-title" style="width: 17%;"><i class="fa-solid fa-user-shield"></i> SUP/HQ/Admin</th>
+                <th class="th-field-title" style="width: 12%;"><i class="fa-solid fa-phone"></i> Hotline</th>
+                <th class="th-field-title" style="width: 7%; text-align: center;"><i class="fa-solid fa-trash-can"></i> Xoá</th>
               </tr>
             </thead>
             <tbody>
@@ -3149,6 +3263,9 @@
                   <div class="field-input-box">
                     <input type="text" id="inputSolution" class="form-control-studio"
                       placeholder="Gõ từ khóa, VD: kht, đăng nhập..." autocomplete="off" spellcheck="false" />
+                    <button type="button" class="btn-clear-field" id="btnClearSolution" title="Xoá ô Tên solution" tabindex="-1">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <div class="autocomplete-card" id="dropdownSolution"></div>
                   </div>
                   <div class="field-hint-chip" id="hintSolution"></div>
@@ -3173,6 +3290,9 @@
                   <div class="field-input-box">
                     <input type="text" id="inputNpp" class="form-control-studio" placeholder="VD: tuan viet, van anh..."
                       autocomplete="off" spellcheck="false" />
+                    <button type="button" class="btn-clear-field" id="btnClearNpp" title="Xoá ô Nhà phân phối" tabindex="-1">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <div class="autocomplete-card" id="dropdownNpp"></div>
                   </div>
                   <div class="field-hint-chip" id="hintNpp"></div>
@@ -3183,6 +3303,9 @@
                   <div class="field-input-box">
                     <input type="text" id="inputNvbh" class="form-control-studio" placeholder="VD: 01, 11, 22..."
                       autocomplete="off" spellcheck="false" />
+                    <button type="button" class="btn-clear-field" id="btnClearNvbh" title="Xoá ô NVBH" tabindex="-1">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
                   </div>
                   <div class="field-hint-chip" id="hintNvbh"></div>
                 </td>
@@ -3192,6 +3315,9 @@
                   <div class="field-input-box">
                     <input type="text" id="inputRole" class="form-control-studio" placeholder="VD: ADMIN, HQTANHBU..."
                       autocomplete="off" spellcheck="false" />
+                    <button type="button" class="btn-clear-field" id="btnClearRole" title="Xoá ô SUP/HQ/Admin" tabindex="-1">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <div class="autocomplete-card" id="dropdownRole"></div>
                   </div>
                   <div class="field-hint-chip" id="hintRole"></div>
@@ -3202,9 +3328,21 @@
                   <div class="field-input-box">
                     <input type="text" id="inputHotline" class="form-control-studio"
                       placeholder="VD: 0909280969, Zalo, OTRS..." autocomplete="off" spellcheck="false" />
+                    <button type="button" class="btn-clear-field" id="btnClearHotline" title="Xoá ô Hotline" tabindex="-1">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
                     <div class="autocomplete-card" id="dropdownHotline"></div>
                   </div>
                   <div class="field-hint-chip" id="hintHotline"></div>
+                </td>
+
+                <!-- Nút Xoá tất cả trong bảng -->
+                <td class="td-field-cell" style="text-align: center; vertical-align: top;">
+                  <button type="button" class="btn-table-clear-all" id="btnTableClearAll"
+                    title="Xoá tất cả các ô để nhập mới">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Xoá tất cả</span>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -3238,8 +3376,8 @@
                 <i class="fa-solid fa-floppy-disk"></i> Lưu vào TEMP
               </button>
               <button type="button" class="btn-studio-action btn-studio-clear" id="btnClearForm"
-                title="Xoá trắng các ô để nhập mới">
-                <i class="fa-solid fa-rotate-left"></i> Làm mới
+                title="Xoá tất cả các ô để nhập mới">
+                <i class="fa-solid fa-trash-can"></i> Xoá tất cả
               </button>
             </div>
           </div>
@@ -6435,6 +6573,7 @@
 
         if (!str) {
           resultSyntaxDisplay.innerHTML = `<span style="color:#64748b;">[NVN-DMS]-[HH]_Kiểm tra thông tin KHT_NPP Tuan Viet_ADMIN_Hotline 0909280969</span>`;
+          if (typeof syncInputClearButtons === "function") syncInputClearButtons();
           return;
         }
 
@@ -6453,6 +6592,7 @@
         if (p.hotline) html += `<span class="t-sep">_</span><span class="t-hotline">${escapeHTML(p.hotline)}</span>`;
 
         resultSyntaxDisplay.innerHTML = html;
+        if (typeof syncInputClearButtons === "function") syncInputClearButtons();
       }
 
       function highlightStaffInputsError() {
@@ -6643,7 +6783,87 @@
         copyResult();
       }
 
-      /* ── CLEAR FORM ── */
+      /* ── CLEAR SINGLE FIELDS & CLEAR ALL ── */
+      function syncInputClearButtons() {
+        const fields = [
+          { input: inputSolution, btn: document.getElementById("btnClearSolution") },
+          { input: inputNpp, btn: document.getElementById("btnClearNpp") },
+          { input: inputNvbh, btn: document.getElementById("btnClearNvbh") },
+          { input: inputRole, btn: document.getElementById("btnClearRole") },
+          { input: inputHotline, btn: document.getElementById("btnClearHotline") }
+        ];
+        fields.forEach(({ input, btn }) => {
+          if (!btn || !input) return;
+          const hasVal = Boolean(input.value && input.value.trim().length > 0);
+          if (hasVal) {
+            btn.classList.add("is-visible");
+          } else {
+            btn.classList.remove("is-visible");
+          }
+        });
+      }
+
+      function clearSolutionField() {
+        inputSolution.value = "";
+        currentSolutionObj = null;
+        currentSolutionMatches = [];
+        if (dropdownSolution) dropdownSolution.style.display = "none";
+        hintSolution.className = "field-hint-chip";
+        hintSolution.textContent = "";
+        updateResultDisplay();
+        syncInputClearButtons();
+        inputSolution.focus();
+      }
+
+      function clearNppField() {
+        inputNpp.value = "";
+        currentNppObj = null;
+        currentNppMatches = [];
+        if (dropdownNpp) dropdownNpp.style.display = "none";
+        const roleVal = inputRole.value.trim().toUpperCase();
+        if (roleVal === "ADMIN" || roleVal === "AD" || roleVal === "ADM" || roleVal === "ADMI") {
+          hintNpp.className = "field-hint-chip warning";
+          hintNpp.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Đang chọn ADMIN: Bắt buộc phải có NPP!`;
+        } else {
+          hintNpp.className = "field-hint-chip info";
+          hintNpp.innerHTML = `<i class="fa-solid fa-info-circle"></i> Đang để trống (Xử lý cho HQ)`;
+        }
+        validateNvbh();
+        validateRole();
+        updateResultDisplay();
+        syncInputClearButtons();
+        inputNpp.focus();
+      }
+
+      function clearNvbhField() {
+        inputNvbh.value = "";
+        validateNvbh();
+        validateRole();
+        updateResultDisplay();
+        syncInputClearButtons();
+        inputNvbh.focus();
+      }
+
+      function clearRoleField() {
+        inputRole.value = "";
+        if (dropdownRole) dropdownRole.style.display = "none";
+        validateRole();
+        validateNvbh();
+        updateResultDisplay();
+        syncInputClearButtons();
+        inputRole.focus();
+      }
+
+      function clearHotlineField() {
+        inputHotline.value = "";
+        if (dropdownHotline) dropdownHotline.style.display = "none";
+        validateHotline();
+        updateResultDisplay();
+        syncInputClearButtons();
+        inputHotline.focus();
+      }
+
+      /* ── CLEAR FORM (XOÁ TẤT CẢ) ── */
       function clearForm() {
         inputSolution.value = "";
         inputNpp.value = "";
@@ -6665,8 +6885,9 @@
         });
 
         updateResultDisplay();
+        syncInputClearButtons();
         inputSolution.focus();
-        showToast("Đã làm mới các ô nhập!", "fa-rotate-left");
+        showToast("Đã xoá trắng tất cả các ô nhập!", "fa-trash-can");
       }
 
       /* ── RENDER TEMP TABLE ── */
@@ -8081,6 +8302,41 @@
       btnCopyResult.addEventListener("click", copyResult);
       btnSaveTemp.addEventListener("click", saveCurrentToTemp);
       btnClearForm.addEventListener("click", clearForm);
+      document.getElementById("btnTableClearAll")?.addEventListener("click", clearForm);
+      document.getElementById("btnNoticeClearAll")?.addEventListener("click", clearForm);
+
+      // Nút xoá từng ô input
+      document.getElementById("btnClearSolution")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearSolutionField();
+      });
+      document.getElementById("btnClearNpp")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearNppField();
+      });
+      document.getElementById("btnClearNvbh")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearNvbhField();
+      });
+      document.getElementById("btnClearRole")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearRoleField();
+      });
+      document.getElementById("btnClearHotline")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearHotlineField();
+      });
+
+      // Lắng nghe sự kiện input để cập nhật tức thì trạng thái nút xoá
+      [inputSolution, inputNpp, inputNvbh, inputRole, inputHotline].forEach(inp => {
+        inp?.addEventListener("input", syncInputClearButtons);
+      });
+      syncInputClearButtons();
       initIssueDatePicker(); // Khởi tạo date picker với ngày hôm nay
       btnRefreshData.addEventListener("click", () => {
         loadSolutions(true);
