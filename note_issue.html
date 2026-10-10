@@ -816,38 +816,7 @@
       display: flex;
     }
 
-    /* Nút Xoá tất cả trong bảng */
-    .btn-table-clear-all {
-      width: 100%;
-      height: 42px;
-      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-      color: #be123c;
-      border: 1.5px solid #fecdd3;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
-      white-space: nowrap;
-      padding: 0 6px;
-      font-family: inherit;
-    }
 
-    .btn-table-clear-all:hover {
-      background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);
-      border-color: #fda4af;
-      color: #9f1239;
-      transform: translateY(-1px);
-      box-shadow: 0 2px 6px rgba(225, 29, 72, 0.18);
-    }
-
-    .btn-table-clear-all:active {
-      transform: translateY(0);
-    }
 
     /* Nút Xoá tất cả trên Banner thông báo */
     .btn-notice-clear-all {
@@ -902,6 +871,7 @@
       height: 42px;
       user-select: none;
       gap: 3px;
+      min-width: 96px;
     }
 
     .type-option-btn {
@@ -915,7 +885,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
+      gap: 4px;
+      padding: 0 4px;
+      white-space: nowrap;
       transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
       color: var(--text-muted);
     }
@@ -3245,15 +3217,14 @@
             <thead>
               <!-- Field Titles -->
               <tr>
-                <th class="th-field-title" style="width: 22%;"><i class="fa-solid fa-circle-question"></i> Tên solution
+                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-circle-question"></i> Tên solution
                 </th>
-                <th class="th-field-title" style="width: 8%;"><i class="fa-solid fa-layer-group"></i> HH / DC</th>
-                <th class="th-field-title" style="width: 22%;"><i class="fa-solid fa-store"></i> Nhà phân phối (NPP)
+                <th class="th-field-title" style="width: 10%;"><i class="fa-solid fa-layer-group"></i> HH / DC</th>
+                <th class="th-field-title" style="width: 23%;"><i class="fa-solid fa-store"></i> Nhà phân phối (NPP)
                 </th>
                 <th class="th-field-title" style="width: 12%;"><i class="fa-solid fa-user-tag"></i> NVBH</th>
-                <th class="th-field-title" style="width: 17%;"><i class="fa-solid fa-user-shield"></i> SUP/HQ/Admin</th>
-                <th class="th-field-title" style="width: 12%;"><i class="fa-solid fa-phone"></i> Hotline</th>
-                <th class="th-field-title" style="width: 7%; text-align: center;"><i class="fa-solid fa-trash-can"></i> Xoá</th>
+                <th class="th-field-title" style="width: 18%;"><i class="fa-solid fa-user-shield"></i> SUP/HQ/Admin</th>
+                <th class="th-field-title" style="width: 14%;"><i class="fa-solid fa-phone"></i> Hotline</th>
               </tr>
             </thead>
             <tbody>
@@ -3272,7 +3243,7 @@
                 </td>
 
                 <!-- D: HH/DC (Segmented Switch) -->
-                <td class="td-field-cell">
+                <td class="td-field-cell" style="padding: 14px 10px;">
                   <div class="type-switcher-pill" id="typeSwitcher">
                     <button type="button" class="type-option-btn active hh" id="btnTypeHH"
                       title="Handheld - Máy bán hàng DSR">
@@ -3336,14 +3307,7 @@
                   <div class="field-hint-chip" id="hintHotline"></div>
                 </td>
 
-                <!-- Nút Xoá tất cả trong bảng -->
-                <td class="td-field-cell" style="text-align: center; vertical-align: top;">
-                  <button type="button" class="btn-table-clear-all" id="btnTableClearAll"
-                    title="Xoá tất cả các ô để nhập mới">
-                    <i class="fa-solid fa-trash-can"></i>
-                    <span>Xoá tất cả</span>
-                  </button>
-                </td>
+
               </tr>
             </tbody>
           </table>
