@@ -1,4 +1,4 @@
-// auto-sync-voip.js - Tự động đồng bộ cuộc gọi Voip24h lên Cloudflare R2 theo chu kỳ
+// auto-sync-voip.js - Tự động đồng bộ cuộc gọi Voip24h & Ticket Chatbox AI lên Cloudflare R2 theo chu kỳ
 try { require("dotenv").config(); } catch (_) {}
 try {
   const fs = require("fs");
@@ -19,9 +19,10 @@ try {
   }
 } catch (_) {}
 
-const handler = require('./api/voip24h-calls.js');
+const voipHandler = require('./api/voip24h-calls.js');
+const { syncHelpdeskTickets } = require('./api/helpdesk-tickets.js');
 
-// Chu kỳ mặc định: 60 phút (1 tiếng / lần) để tránh bị tổng đài hiểu lầm là spam
+// Chu kỳ mặc định: 60 phút (1 tiếng / lần) để tránh bị coi là spam
 let intervalMinutes = parseFloat(process.env.SYNC_INTERVAL_MINUTES || 60);
 
 const args = process.argv.slice(2);
@@ -53,13 +54,13 @@ async function runSyncOnce() {
     return;
   }
 
-  // Tùy chọn an toàn: Ban đêm (từ 21:30 đến 06:30 sáng) không có cuộc gọi, bỏ qua để tránh gọi tổng đài
+  // Ban đêm (từ 21:30 đến 06:30 sáng) tạm dừng để giữ an toàn tuyệt đối cho IP/tài khoản
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
   const isNightTime = (currentHour > 21 || (currentHour === 21 && currentMinute >= 30)) || currentHour < 6 || (currentHour === 6 && currentMinute < 30);
   if (isNightTime && process.env.SYNC_SKIP_NIGHT !== "0") {
-    console.log(`[${getTimestamp()}] 🌙 Ngoài giờ làm việc (21:30 - 06:30), tạm dừng cào để giữ an toàn tuyệt đối cho IP. Hẹn lại vào chu kỳ sau...`);
+    console.log(`[${getTimestamp()}] 🌙 Ngoài giờ làm việc (21:30 - 06:30), tạm dừng cào để giữ an toàn tuyệt đối. Hẹn lại vào chu kỳ sau...`);
     scheduleNext(INTERVAL_MS);
     return;
   }
@@ -69,55 +70,65 @@ async function runSyncOnce() {
   console.log(`\n-------------------------------------------------------`);
   console.log(`[${getTimestamp()}] 🚀 Bắt đầu đồng bộ lần #${syncCount} (Chu kỳ ${intervalMinutes} phút)...`);
 
-  return new Promise((resolve) => {
-    const req = {
-      method: 'GET',
-      url: '/api/voip24h-calls?sync=1&_t=' + Date.now()
-    };
-
-    const res = {
-      setHeader: () => {},
-      status: function() { return this; },
-      json: function(data) {
-        if (data && data.status === "success") {
-          const total = data.total || 0;
-          const latestCall = data.calls?.[0];
-          console.log(`[${getTimestamp()}] ✅ ĐỒNG BỘ THÀNH CÔNG LÊN HỆ THỐNG!`);
-          console.log(`- Tổng số cuộc gọi trong tháng: ${total} cuộc`);
-          if (latestCall) {
-            console.log(`- Cuộc gọi gần nhất: ${latestCall.calldate || 'N/A'} (Từ: ${latestCall.src || '—'} ➔ Đến: ${latestCall.dst || '—'}) [${latestCall.statusText || latestCall.disposition || '—'}]`);
+  try {
+    // 1. Đồng bộ cuộc gọi Voip24h
+    console.log(`[${getTimestamp()}] 📞 Đang đồng bộ cuộc gọi Voip24h...`);
+    await new Promise((resolve, reject) => {
+      const req = {
+        method: 'GET',
+        url: '/api/voip24h-calls?sync=1&_t=' + Date.now()
+      };
+      const res = {
+        setHeader: () => {},
+        status: function() { return this; },
+        json: function(data) {
+          if (data && data.status === "success") {
+            const total = data.total || 0;
+            const latestCall = data.calls?.[0];
+            console.log(`[${getTimestamp()}] ✅ ĐỒNG BỘ CUỘC GỌI THÀNH CÔNG!`);
+            console.log(`- Tổng số cuộc gọi trong tháng: ${total} cuộc`);
+            if (latestCall) {
+              console.log(`- Cuộc gọi gần nhất: ${latestCall.calldate || 'N/A'} (Từ: ${latestCall.src || '—'} ➔ Đến: ${latestCall.dst || '—'})`);
+            }
+          } else {
+            console.warn(`[${getTimestamp()}] ⚠️ Tổng đài phản hồi: ${data?.message || 'Không rõ lỗi'}`);
           }
-          console.log(`- Nguồn dữ liệu: ${data.source === 'live_voip24h' ? 'Trực tiếp' : 'Bộ nhớ đệm'}`);
-          console.log(`- Lần đồng bộ tiếp theo sau: ${intervalMinutes} phút (1 tiếng)`);
-          scheduleNext(INTERVAL_MS);
-        } else {
-          console.warn(`[${getTimestamp()}] ⚠️ Tổng đài phản hồi không thành công: ${data?.message || 'Không rõ lỗi'}`);
-          console.log(`[${getTimestamp()}] 🔄 Sẽ tự động thử lại sau 2 phút...`);
-          scheduleNext(2 * 60 * 1000);
+          resolve();
         }
-        isSyncing = false;
-        resolve();
-      }
-    };
-
-    handler(req, res).catch(err => {
-      console.error(`[${getTimestamp()}] ❌ Lỗi kết nối tổng đài:`, err.message || err);
-      console.log(`[${getTimestamp()}] 🔄 Sẽ tự động thử lại sau 2 phút...`);
-      scheduleNext(2 * 60 * 1000);
-      isSyncing = false;
-      resolve();
+      };
+      voipHandler(req, res).catch(reject);
     });
-  });
+
+    // 2. Đồng bộ Ticket Helpdesk (Chatbox AI)
+    console.log(`[${getTimestamp()}] 🎫 Đang đồng bộ Ticket Chatbox AI...`);
+    try {
+      const tResult = await syncHelpdeskTickets(true);
+      console.log(`[${getTimestamp()}] ✅ ĐỒNG BỘ TICKET THÀNH CÔNG: ${tResult?.total || 0} ticket trên R2!`);
+      console.log(`- Nguồn dữ liệu: ${tResult?.source === 'live_crawled' ? 'Trực tiếp Helpdesk (Live)' : 'Bộ nhớ đệm R2'}`);
+    } catch (tErr) {
+      console.warn(`[${getTimestamp()}] ⚠️ Đồng bộ Ticket Helpdesk gặp lỗi:`, tErr.message);
+    }
+
+    console.log(`[${getTimestamp()}] ⏰ Lần đồng bộ tiếp theo sau: ${intervalMinutes} phút (1 tiếng)`);
+    scheduleNext(INTERVAL_MS);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Lỗi kết nối trong tiến trình đồng bộ:`, err.message || err);
+    console.log(`[${getTimestamp()}] 🔄 Sẽ tự động thử lại sau 2 phút...`);
+    scheduleNext(2 * 60 * 1000);
+  } finally {
+    isSyncing = false;
+  }
 }
 
 console.log("=======================================================");
-console.log("   DMS HUB - DỊCH VỤ TỰ ĐỘNG ĐỒNG BỘ CUỘC GỌI");
+console.log("   DMS HUB - DỊCH VỤ TỰ ĐỘNG ĐỒNG BỘ VOIP & TICKET AI");
 console.log("=======================================================");
 console.log(`- Chu kỳ đồng bộ: MỖI ${intervalMinutes} PHÚT (1 TIẾNG / LẦN)`);
+console.log(`- Dữ liệu đồng bộ: Cuộc gọi Voip24h & Ticket Chatbox AI`);
 console.log(`- Khung giờ hoạt động: 06:30 - 21:30 (Ban đêm tự động nghỉ)`);
 console.log(`- Máy chủ đang chạy liên tục trong nền.`);
 console.log(`- Nhấn Ctrl + C để dừng dịch vụ.`);
 console.log("=======================================================");
 
-// Chạy ngay lần đầu tiên khi bật máy (các lần tiếp theo sẽ do scheduleNext tự động lên lịch)
+// Chạy ngay lần đầu tiên khi bật máy
 runSyncOnce();

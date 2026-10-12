@@ -466,6 +466,43 @@ const server = http.createServer(function(req, res) {
     return;
   }
 
+  if (pathname === "/api/helpdesk-tickets" || pathname === "/api/r2-helpdesk-tickets") {
+    let body = "";
+    req.on("data", function(chunk) { body += chunk; });
+    req.on("end", async function() {
+      try {
+        if (body) {
+          try { req.body = JSON.parse(body); } catch(_) { req.body = body; }
+        }
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+        res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Pragma, Cache-Control");
+        res.setHeader("Access-Control-Allow-Private-Network", "true");
+        res.status = function(code) { res.statusCode = code; return this; };
+        res.json = function(data) {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Private-Network", "true");
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(data));
+          return this;
+        };
+        res.send = function(data) {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Private-Network", "true");
+          res.end(typeof data === "string" ? data : JSON.stringify(data));
+          return this;
+        };
+        delete require.cache[require.resolve("./api/helpdesk-tickets.js")];
+        const handler = require("./api/helpdesk-tickets.js");
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(500, Object.assign({ "Content-Type": "application/json" }, CORS));
+        res.end(JSON.stringify({ status: "error", message: err.message }));
+      }
+    });
+    return;
+  }
+
   const safeSuffix = path.normalize(pathname).replace(/^(\.\.[\\/])+/, "");
   let filePath = path.join(PUBLIC_DIR, safeSuffix);
 

@@ -2531,6 +2531,97 @@
       color: var(--primary);
     }
 
+    /* ── Chatbox AI Ticket Badges & Modals ── */
+    .kpi-icon-wrap.cyan {
+      background: #e0f2fe;
+      color: #0284c7;
+    }
+    .btn-ticket-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-ticket-pill.noted {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+    }
+    .btn-ticket-pill.noted:hover {
+      background: #d1fae5;
+      color: #065f46;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(16, 185, 129, 0.25);
+    }
+    .btn-ticket-pill.unnoted {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+      cursor: pointer;
+    }
+    .btn-ticket-pill.unnoted:hover {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+    }
+    .staff-chatbox-stat-pill {
+      font-size: 11px;
+      margin-top: 4px;
+      color: #0284c7;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .staff-chatbox-stat-pill.full {
+      color: #059669;
+    }
+    .chatbox-filter-pills {
+      display: inline-flex;
+      gap: 4px;
+      background: #f1f5f9;
+      padding: 3px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+    }
+    .chatbox-filter-pills .preset-pill {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .chatbox-filter-pills .preset-pill.active {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .badge-mini-count {
+      font-size: 10px;
+      background: #e0f2fe;
+      color: #0284c7;
+      padding: 1px 5px;
+      border-radius: 8px;
+      font-weight: 800;
+    }
+
     /* ── Voip24h Call History Specific Styles ── */
     .voip-status-badge {
       display: inline-flex;
@@ -3458,12 +3549,15 @@
               <p>Dữ liệu tổng hợp từ toàn bộ nhân viên, đồng bộ trực tiếp qua hệ thống</p>
             </div>
           </div>
-          <div class="stats-quick-actions">
-            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Lấy dữ liệu mới nhất từ hệ thống">
+          <div class="stats-quick-actions" style="align-items:center; gap:8px;">
+            <span id="helpdeskSyncTimeBadge" onclick="fetchHelpdeskTickets(false, true)" style="font-size:11px; font-weight:600; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Thời điểm đồng bộ Chatbox AI gần nhất (Tự động cập nhật 1 tiếng / lần). Bấm vào đây để đồng bộ ngay!">
+              <i class="fa-solid fa-robot" style="color:#0284c7;"></i> Chatbox AI: <span id="helpdeskLastSyncText" style="color:#0369a1; font-weight:700;">Đang nạp...</span>
+            </span>
+            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Lấy dữ liệu mới nhất từ hệ thống (Đồng bộ Issue & Ticket Chatbox AI)">
               <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Đồng bộ
             </button>
             <button type="button" class="btn-stats-tool" id="btnExportStatsExcel"
-              title="Xuất báo cáo thống kê ra Excel">
+              title="Xuất báo cáo thống kê ra Excel (kèm dữ liệu Chatbox AI)">
               <i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Xuất báo cáo Excel
             </button>
             <button type="button" class="btn-stats-tool secondary" onclick="switchStudioView('editor')"
@@ -3546,6 +3640,17 @@
             <div class="kpi-subtext" id="kpiTopSolutionSub">0 lượt</div>
           </div>
         </div>
+
+        <div class="stats-kpi-card">
+          <div class="kpi-icon-wrap cyan" style="background:#e0f2fe; color:#0284c7;">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-label">Đã note Chatbox AI</div>
+            <div class="kpi-value" id="kpiChatboxNoted">0 / 0</div>
+            <div class="kpi-subtext" id="kpiChatboxNotedSub">0% tỷ lệ note ticket</div>
+          </div>
+        </div>
       </div>
 
       <!-- ── Staff Ranking & Aggregation Table ── -->
@@ -3585,7 +3690,18 @@
             <i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i>
             <h3 id="statsDetailTitle">Danh sách chi tiết Issue</h3>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div class="chatbox-filter-pills" id="chatboxFilterPillsBox">
+              <button type="button" class="preset-pill active" id="btnFilterChatboxAll" onclick="setStatsChatboxFilter('all')" title="Xem tất cả issue">
+                Tất cả (<span id="cntChatboxAll">0</span>)
+              </button>
+              <button type="button" class="preset-pill" id="btnFilterChatboxNoted" onclick="setStatsChatboxFilter('noted')" title="Chỉ xem issue đã ghi nhận ticket Chatbox AI">
+                <i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Đã note (<span id="cntChatboxNoted">0</span>)
+              </button>
+              <button type="button" class="preset-pill" id="btnFilterChatboxUnnoted" onclick="setStatsChatboxFilter('unnoted')" title="Chỉ xem issue chưa có ticket Chatbox AI">
+                <i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Chưa note (<span id="cntChatboxUnnoted">0</span>)
+              </button>
+            </div>
             <span class="stats-card-badge" id="statsDetailCountBadge">0 issue</span>
             <button type="button" class="btn-stat-filter-clear" id="btnResetStaffFilter" style="display:none;"
               onclick="filterStatsByStaff(null)">
@@ -3599,11 +3715,12 @@
             <thead>
               <tr>
                 <th style="width: 50px;" class="text-center">STT</th>
-                <th style="width: 180px;">NHÂN VIÊN</th>
+                <th style="width: 170px;">NHÂN VIÊN</th>
                 <th>NỘI DUNG ISSUE</th>
-                <th style="width: 120px;" class="text-center">NGÀY</th>
-                <th style="width: 90px;" class="text-center">GIỜ</th>
-                <th style="width: 100px;" class="text-center">THAO TÁC</th>
+                <th style="width: 135px;" class="text-center">CHATBOX AI</th>
+                <th style="width: 110px;" class="text-center">NGÀY</th>
+                <th style="width: 85px;" class="text-center">GIỜ</th>
+                <th style="width: 90px;" class="text-center">THAO TÁC</th>
               </tr>
             </thead>
             <tbody id="tbodyDetailIssues">
@@ -4467,6 +4584,124 @@
     </div>
   </div>
 
+  <!-- MODAL: CHI TIẾT TICKET CHATBOX AI (HELPDESK) -->
+  <div class="member-modal-backdrop" id="ticketDetailModalBackdrop" onclick="if(event.target===this) closeTicketDetailModal()">
+    <div class="member-modal-box" style="max-width: 720px;">
+      <div class="member-modal-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="margin:0;" id="modalTicketTitle">Chi tiết Ticket Chatbox AI</h3>
+              <span id="modalTicketStatusBadge" style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px;">
+                CLOSED
+              </span>
+            </div>
+            <p style="margin:2px 0 0;" id="modalTicketSub">Đã ghi nhận trên hệ thống Helpdesk AI Assistant (Category: HELPDESK | Project: NVN)</p>
+          </div>
+        </div>
+        <button type="button" class="member-modal-close-btn" onclick="closeTicketDetailModal()" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="member-modal-body" id="modalTicketBody" style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="member-modal-footer" style="padding: 12px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <a id="btnOpenHelpdeskWeb" href="https://helpdesk.ai-audit-test.online/helpdesk/tickets" target="_blank" class="btn-stats-tool primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none;">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trên Chatbox AI Helpdesk
+        </a>
+        <button type="button" class="btn-modal-cancel" onclick="closeTicketDetailModal()" style="display:inline-flex;">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GỬI TICKET CHATBOX AI CHO ISSUE CHƯA NOTE -->
+  <div class="member-modal-backdrop" id="unnotedTicketModalBackdrop" onclick="if(event.target===this) closeUnnotedTicketModal()">
+    <div class="member-modal-box" style="max-width: 650px;">
+      <div class="member-modal-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="margin:0;">Tạo Ticket trên Chatbox AI</h3>
+              <span style="font-size:11px; font-weight:700; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:12px;">
+                Chưa note
+              </span>
+            </div>
+            <p style="margin:2px 0 0;" id="modalUnnotedSub">Hỗ trợ tự động tạo & đóng ticket trên Helpdesk AI Assistant</p>
+          </div>
+        </div>
+        <button type="button" class="member-modal-close-btn" onclick="closeUnnotedTicketModal()" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="member-modal-body" style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
+        <div style="background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px 14px;">
+          <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+            <span><i class="fa-solid fa-terminal" style="color:var(--primary);"></i> Nội dung Prompt tạo ticket</span>
+            <button type="button" class="btn-stats-tool" onclick="copyUnnotedPromptOnly()" style="padding:2px 8px; font-size:11px;">
+              <i class="fa-regular fa-copy"></i> Sao chép
+            </button>
+          </div>
+          <div id="modalUnnotedPromptText" style="font-family:var(--font-mono); font-size:12px; color:#1e293b; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; white-space:pre-wrap; word-break:break-word; max-height:120px; overflow-y:auto; line-height:1.5;"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
+          <!-- Option 1: Tự động chạy trực tiếp từ Client -->
+          <div style="border:1.5px solid #38bdf8; background:#f0f9ff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-bolt" style="color:#0284c7;"></i> Cách 1: Tự động tạo Ticket qua AI (Khuyên dùng)
+              </span>
+              <span style="font-size:10px; font-weight:800; background:#0284c7; color:#fff; padding:2px 6px; border-radius:6px;">100% Tự động</span>
+            </div>
+            <p style="font-size:12px; color:#0369a1; margin:0; line-height:1.4;">
+              Hệ thống dùng chính trình duyệt client gửi lệnh thẳng đến Chatbox AI. AI tự động tạo ticket, phân tích và close ticket, sau đó gắn mã Ticket vào bảng ngay (0% tốn CPU server).
+            </p>
+            <div>
+              <button type="button" id="btnRunAiAutoTicket" class="btn-stats-tool primary" onclick="runAiAutoCreateTicketClient()" style="width:100%; justify-content:center; padding:9px 14px; font-size:13px; font-weight:700;">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Bấm để AI tự tạo Ticket ngay
+              </button>
+            </div>
+          </div>
+
+          <!-- Option 2: Mở trang Chatbox AI -->
+          <div style="border:1px solid var(--border); background:#ffffff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:700; color:#334155; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-arrow-up-right-from-square" style="color:#64748b;"></i> Cách 2: Mở trang Chatbox AI (Dán bằng Ctrl + V)
+              </span>
+            </div>
+            <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">
+              Do cơ chế bảo mật trình duyệt chặn can thiệp trang khác, hệ thống đã copy sẵn nội dung vào máy. Mở tab mới, bạn chỉ cần bấm vào ô chat và nhấn <strong>Ctrl + V</strong> rồi <strong>Enter</strong>.
+            </p>
+            <div>
+              <button type="button" class="btn-stats-tool secondary" onclick="openChatboxTabManual()" style="width:100%; justify-content:center; padding:8px 14px; font-size:12.5px;">
+                <i class="fa-regular fa-copy"></i> Mở Chatbox AI & Copy Prompt
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="member-modal-footer" style="padding: 10px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; align-items: center;">
+        <button type="button" class="btn-modal-cancel" onclick="closeUnnotedTicketModal()" style="display:inline-flex;">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: THÔNG SỐ CÀI MÁY DMS -->
   <div class="member-modal-backdrop" id="setupDeviceModalBackdrop" onclick="if(event.target===this) closeSetupModal()">
     <div class="member-modal-box" style="max-width: 580px;">
@@ -5156,6 +5391,355 @@
           if (iconSync) iconSync.classList.remove("fa-spin");
         }
       }
+
+      /* ── CHATBOX AI HELPDESK TICKETS INTEGRATION ── */
+      const LS_HELPDESK_TICKETS_CACHE = "dms_helpdesk_tickets_cache_v1";
+      let helpdeskTickets = [];
+      let isSyncingHelpdesk = false;
+      let lastHelpdeskSyncTime = "";
+      let statsChatboxFilter = "all"; // "all" | "noted" | "unnoted"
+
+      function getHelpdeskApiEndpoint() {
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          return "/api/helpdesk-tickets";
+        }
+        if (window.location.protocol === "file:") {
+          return "http://localhost:3000/api/helpdesk-tickets";
+        }
+        return "/api/helpdesk-tickets";
+      }
+
+      function loadHelpdeskCacheFromLocal() {
+        try {
+          const raw = localStorage.getItem(LS_HELPDESK_TICKETS_CACHE);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed.tickets)) {
+              helpdeskTickets = parsed.tickets;
+              lastHelpdeskSyncTime = parsed.syncedAt || "";
+              updateHelpdeskSyncUI();
+            }
+          }
+        } catch (_) {}
+      }
+
+      function saveHelpdeskCacheToLocal(data) {
+        try {
+          localStorage.setItem(LS_HELPDESK_TICKETS_CACHE, JSON.stringify(data));
+        } catch (_) {}
+      }
+
+      function updateHelpdeskSyncUI() {
+        const badgeText = document.getElementById("helpdeskLastSyncText");
+        const countBadge = document.getElementById("badgeHelpdeskTicketsCount");
+        if (countBadge) countBadge.textContent = helpdeskTickets.length;
+
+        if (badgeText) {
+          if (!lastHelpdeskSyncTime) {
+            badgeText.textContent = helpdeskTickets.length > 0 ? `${helpdeskTickets.length} ticket` : "Chưa tải";
+          } else {
+            const d = new Date(lastHelpdeskSyncTime);
+            const timeStr = !isNaN(d.getTime())
+              ? d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + " " + d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })
+              : "Vừa xong";
+            badgeText.textContent = `${helpdeskTickets.length} ticket (${timeStr})`;
+          }
+        }
+      }
+
+      async function fetchHelpdeskTickets(silent = false, force = false) {
+        if (isSyncingHelpdesk) return;
+        isSyncingHelpdesk = true;
+        const iconSync = document.getElementById("iconSyncStats");
+        const badgeText = document.getElementById("helpdeskLastSyncText");
+        if (iconSync && force) iconSync.classList.add("fa-spin");
+        if (badgeText && force) badgeText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đồng bộ...`;
+
+        try {
+          const endpoint = getHelpdeskApiEndpoint();
+          const url = `${endpoint}?_t=${Date.now()}${force ? "&sync=1" : ""}`;
+          let res = null;
+          try {
+            res = await fetch(url, { cache: "no-cache" });
+          } catch (netErr) {
+            if (window.location.protocol === "file:" || !window.location.origin.includes("vercel.app")) {
+              try {
+                res = await fetch(`https://5snvn-tools.vercel.app/api/helpdesk-tickets?_t=${Date.now()}${force ? "&sync=1" : ""}`, { cache: "no-cache" });
+              } catch (_) {}
+            }
+          }
+
+          if (res && res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.tickets)) {
+              helpdeskTickets = data.tickets;
+              lastHelpdeskSyncTime = data.syncedAt || new Date().toISOString();
+              saveHelpdeskCacheToLocal(data);
+              updateHelpdeskSyncUI();
+              if (currentStudioView === "stats") renderStatsPage();
+
+              if (!silent) {
+                showToast(`Đã đồng bộ ${helpdeskTickets.length} ticket Chatbox AI!`, "fa-robot");
+              }
+            }
+          } else {
+            if (!silent) showToast("Không thể tải ticket Chatbox AI", "fa-triangle-exclamation");
+          }
+        } catch (err) {
+          console.warn("Lỗi tải ticket Helpdesk:", err);
+          if (!silent) showToast("Lỗi đồng bộ ticket Chatbox AI", "fa-triangle-exclamation");
+        } finally {
+          isSyncingHelpdesk = false;
+          if (iconSync && !isSyncingR2) iconSync.classList.remove("fa-spin");
+          updateHelpdeskSyncUI();
+        }
+      }
+
+      function normalizeDateStr(dStr) {
+        if (!dStr) return "";
+        const s = String(dStr).trim();
+        const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (m1) return `${m1[3]}-${m1[2].padStart(2, "0")}-${m1[1].padStart(2, "0")}`;
+        const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m2) return `${m2[1]}-${m2[2].padStart(2, "0")}-${m2[3].padStart(2, "0")}`;
+        return s;
+      }
+
+      function cleanDigits(val) {
+        if (!val) return "";
+        return String(val).replace(/\D/g, "").replace(/^84/, "0");
+      }
+
+      function extractOtrsNum(str) {
+        if (!str) return "";
+        const m = String(str).match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i);
+        return m ? m[1] : "";
+      }
+
+      function findMatchedTicket(issue, tickets, usedTicketIds = null) {
+        if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
+        const issueDate = normalizeDateStr(issue.date);
+        const issueAgent = String(issue.memberCode || "").trim().toLowerCase();
+        const issueOtrs = extractOtrsNum(issue.result || issue.fields?.npp);
+
+        let issuePhone = cleanDigits(issue.fields?.hotline);
+        if (!issuePhone && issue.result) {
+          const pm = issue.result.match(/Hotline\s*(\d+)/i) || issue.result.match(/0\d{8,10}/);
+          if (pm) issuePhone = cleanDigits(pm[1] || pm[0]);
+        }
+
+        const issueSolCode = String(issue.fields?.solutionCode || "").trim().toUpperCase();
+        const issueDsr = String(issue.fields?.nvbhFormatted || issue.fields?.nvbh || "").trim().toUpperCase();
+        const issueSolName = String(issue.fields?.solution || "").trim().toLowerCase();
+
+        // Chỉ tìm trong các ticket chưa được ghép cho issue khác
+        const availableTickets = usedTicketIds
+          ? tickets.filter(t => !usedTicketIds.has(t.id))
+          : tickets;
+
+        const agentDateCandidates = availableTickets.filter(t => {
+          const tAgent = String(t.agentId || "").trim().toLowerCase();
+          const tDate = normalizeDateStr(t.createdDate || t.date || (t.createdAt ? t.createdAt.slice(0, 10) : ""));
+          return tAgent === issueAgent && tDate === issueDate;
+        });
+
+        // 1. Nếu là OTRS Ticket (có mã 14-18 số), BẮT BUỘC phải khớp đúng mã OTRS
+        if (issueOtrs) {
+          const m = agentDateCandidates.find(t => {
+            const tOtrs = extractOtrsNum(t.description || "") ||
+                          extractOtrsNum(t.rootCause || "") ||
+                          extractOtrsNum(t.result || "") ||
+                          extractOtrsNum(t.callDetails || "");
+            return tOtrs === issueOtrs;
+          });
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+          // Nếu issue này là OTRS nhưng không có ticket nào trên Helpdesk chứa đúng mã OTRS này -> Chưa note!
+          return null;
+        }
+
+        // 2. Với các issue Hotline: Cùng Agent + Cùng Ngày + Trùng Số Điện Thoại
+        if (issuePhone && issuePhone.length >= 7) {
+          const m = agentDateCandidates.find(t => cleanDigits(t.phone) === issuePhone);
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+        }
+
+        // 3. Cùng Agent + Cùng Ngày + Trùng Solution Code + Trùng DSR Code
+        if (issueSolCode && issueDsr) {
+          const m = agentDateCandidates.find(t => {
+            const tSol = String(t.solutionCode || "").trim().toUpperCase();
+            const tDsr = String(t.dsrCode || "").trim().toUpperCase();
+            return tSol === issueSolCode && tDsr === issueDsr;
+          });
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+        }
+
+        // 4. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi không phải OTRS)
+        if (issueSolCode && !isOtrsRaiseCloseTicket(issue)) {
+          const m = agentDateCandidates.find(t => {
+            const tSol = String(t.solutionCode || "").trim().toUpperCase();
+            return tSol === issueSolCode;
+          });
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+        }
+
+        // 5. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi không phải OTRS)
+        if (issueSolName && issueSolName.length > 5 && !isOtrsRaiseCloseTicket(issue)) {
+          const m = agentDateCandidates.find(t => {
+            const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
+            return tName.includes(issueSolName) || issueSolName.includes(tName);
+          });
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+        }
+
+        // Fallback: Khớp qua SĐT + Agent nếu lệch ngày
+        if (issuePhone && issuePhone.length >= 7) {
+          const m = availableTickets.find(t => {
+            const tAgent = String(t.agentId || "").trim().toLowerCase();
+            return tAgent === issueAgent && cleanDigits(t.phone) === issuePhone;
+          });
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+        }
+
+        return null;
+      }
+
+      window.setStatsChatboxFilter = function(mode) {
+        statsChatboxFilter = ["all", "noted", "unnoted"].includes(mode) ? mode : "all";
+        ["btnFilterChatboxAll", "btnFilterChatboxNoted", "btnFilterChatboxUnnoted"].forEach(btnId => {
+          const btn = document.getElementById(btnId);
+          if (btn) btn.classList.toggle("active", btnId.toLowerCase().includes(statsChatboxFilter));
+        });
+        renderStatsPage();
+      };
+
+      window.openTicketDetailModal = function(ticketId) {
+        const modal = document.getElementById("ticketDetailModalBackdrop");
+        if (!modal) return;
+        const t = helpdeskTickets.find(item => String(item.id) === String(ticketId));
+        if (!t) {
+          showToast(`Không tìm thấy chi tiết Ticket #${ticketId}`, "fa-circle-exclamation");
+          return;
+        }
+
+        const modalTitle = document.getElementById("modalTicketTitle");
+        if (modalTitle) modalTitle.textContent = `Ticket #${t.id} - ${t.solutionName || t.description || 'Chi tiết'}`;
+
+        const badgeStatus = document.getElementById("modalTicketStatusBadge");
+        if (badgeStatus) {
+          badgeStatus.textContent = t.status || "CLOSED";
+          badgeStatus.style.background = t.status === "CLOSED" ? "#ecfdf5" : "#eff6ff";
+          badgeStatus.style.color = t.status === "CLOSED" ? "#047857" : "#1d4ed8";
+          badgeStatus.style.borderColor = t.status === "CLOSED" ? "#a7f3d0" : "#bfdbfe";
+        }
+
+        const bodyEl = document.getElementById("modalTicketBody");
+        if (bodyEl) {
+          bodyEl.innerHTML = `
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-md); padding:14px;">
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Mã Ticket</div>
+                <div style="font-size:14px; font-weight:800; color:var(--primary); font-family:var(--font-mono);">#${escapeHTML(String(t.id))}</div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Nhân viên ghi nhận</div>
+                <div style="font-size:13px; font-weight:700; color:var(--text-main);">${escapeHTML(t.agentName || 'Chưa rõ')} <span style="font-size:11px; color:#6366f1; font-family:var(--font-mono);">(${escapeHTML(t.agentId || '--')})</span></div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Thời gian tạo ticket</div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--text-main);"><i class="fa-regular fa-clock" style="color:#0284c7;"></i> ${escapeHTML(t.createdAt || t.createdDate || t.date || '--')}</div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Dự án / Phân loại</div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--text-main);"><span style="background:#e0e7ff; color:#4338ca; padding:1px 6px; border-radius:4px; font-size:11px; font-weight:800;">${escapeHTML(t.project || 'NVN')}</span> <span style="background:#f1f5f9; color:#475569; padding:1px 6px; border-radius:4px; font-size:11px; font-weight:800;">${escapeHTML(t.category || 'HELPDESK')}</span></div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Hotline / SĐT</div>
+                <div style="font-size:13px; font-weight:800; color:#059669; font-family:var(--font-mono);"><i class="fa-solid fa-phone" style="font-size:11px;"></i> ${escapeHTML(t.phone || '--')}</div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Nhà phân phối (NPP)</div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--text-main);">${escapeHTML(t.distName || '--')}</div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Mã NVBH (DSR)</div>
+                <div style="font-size:12.5px; font-weight:800; color:var(--primary); font-family:var(--font-mono);">${escapeHTML(t.dsrCode || '--')}</div>
+              </div>
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Mã giải pháp</div>
+                <div style="font-size:12.5px; font-weight:800; color:#d97706; font-family:var(--font-mono);">${escapeHTML(t.solutionCode || '--')}</div>
+              </div>
+            </div>
+
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:var(--radius-md); padding:14px; display:flex; flex-direction:column; gap:10px;">
+              <div>
+                <div style="font-size:11.5px; font-weight:800; color:#334155; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-heading" style="color:var(--primary);"></i> Tiêu đề / Tên giải pháp:
+                </div>
+                <div style="font-size:13px; font-weight:700; color:var(--text-main); background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #f1f5f9;">
+                  ${escapeHTML(t.solutionName || t.description || 'Chưa có thông tin')}
+                </div>
+              </div>
+
+              ${t.processSteps || t.callDetailsParsed?.solution_linked?.solution_steps ? `
+              <div>
+                <div style="font-size:11.5px; font-weight:800; color:#334155; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-list-check" style="color:#0284c7;"></i> Các bước xử lý / Hướng dẫn:
+                </div>
+                <div style="font-size:12.5px; color:#334155; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #f1f5f9; white-space:pre-wrap;">${escapeHTML(t.processSteps || t.callDetailsParsed?.solution_linked?.solution_steps || '')}</div>
+              </div>` : ''}
+
+              ${t.rootCause ? `
+              <div>
+                <div style="font-size:11.5px; font-weight:800; color:#334155; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-magnifying-glass-chart" style="color:#f59e0b;"></i> Nguyên nhân gốc (Root Cause):
+                </div>
+                <div style="font-size:12.5px; color:#334155; background:#f8fafc; padding:8px 12px; border-radius:6px; border:1px solid #f1f5f9;">${escapeHTML(t.rootCause)}</div>
+              </div>` : ''}
+
+              ${t.result ? `
+              <div>
+                <div style="font-size:11.5px; font-weight:800; color:#334155; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                  <i class="fa-solid fa-square-check" style="color:#10b981;"></i> Kết quả xử lý (Result):
+                </div>
+                <div style="font-size:12.5px; color:#065f46; background:#ecfdf5; padding:8px 12px; border-radius:6px; border:1px solid #a7f3d0; font-weight:600;">${escapeHTML(t.result)}</div>
+              </div>` : ''}
+
+              ${t.callDetails && typeof t.callDetails === 'string' && t.callDetails.length > 5 ? `
+              <div>
+                <details style="font-size:11.5px; color:#64748b;">
+                  <summary style="cursor:pointer; font-weight:700; color:#64748b; padding:4px 0;">Xem dữ liệu Call Details gốc (JSON)</summary>
+                  <pre style="background:#f1f5f9; padding:8px; border-radius:4px; overflow-x:auto; margin-top:6px; font-family:var(--font-mono); font-size:11px;">${escapeHTML(t.callDetails)}</pre>
+                </details>
+              </div>` : ''}
+            </div>
+          `;
+        }
+
+        modal.classList.add("show");
+      };
+
+      window.closeTicketDetailModal = function() {
+        const modal = document.getElementById("ticketDetailModalBackdrop");
+        if (modal) modal.classList.remove("show");
+      };
 
       // ── TỰ ĐỘNG ĐỒNG BỘ OTRS TICKET LÊN GOOGLE SHEET BÁO CÁO ──
       const OTRS_REPORT_GAS_URL = "https://script.google.com/macros/s/AKfycbyRUc1eYmsjxJOvOnCr6Rmg-PRnVzGTZaTuym5r8b-3hkiWG7zfVl4ITfAxePPaqgcK/exec";
@@ -7020,6 +7604,156 @@
         return resultText + suffix;
       }
 
+      function formatChatboxAiPrompt(item) {
+        if (!item) return "";
+        if (isOtrsRaiseCloseTicket(item)) {
+          return formatIssueCopyText(item);
+        }
+        const resultText = String(item.result || item.issue || "").trim();
+        if (resultText.startsWith("Tạo mới Ticket")) return resultText;
+        return `Tạo mới Ticket với thông tin: Project NVN, ${resultText}\n=> Sau đó hãy tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`;
+      }
+
+      let currentUnnotedIssue = null;
+
+      window.openChatboxForUnnotedIssue = function (id) {
+        const found = (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null) ||
+                      (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null);
+        if (!found) {
+          showToast("Không tìm thấy thông tin issue", "fa-triangle-exclamation");
+          return;
+        }
+
+        currentUnnotedIssue = found;
+        const promptText = formatChatboxAiPrompt(found);
+
+        // Tự động sao chép vào Clipboard ngay khi mở
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(promptText);
+          }
+        } catch (_) {}
+
+        // Hiển thị modal xử lý
+        const modal = document.getElementById("unnotedTicketModalBackdrop");
+        const elText = document.getElementById("modalUnnotedPromptText");
+        const elSub = document.getElementById("modalUnnotedSub");
+        const btnAi = document.getElementById("btnRunAiAutoTicket");
+
+        if (elText) elText.textContent = promptText;
+        if (elSub) {
+          elSub.textContent = `Nhân viên: ${found.memberCode || 'N/A'} · Ngày: ${found.date || 'Hôm nay'}`;
+        }
+        if (btnAi) {
+          btnAi.disabled = false;
+          btnAi.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Bấm để AI tự tạo Ticket ngay';
+        }
+
+        if (modal) modal.classList.add("show");
+      };
+
+      window.closeUnnotedTicketModal = function () {
+        const modal = document.getElementById("unnotedTicketModalBackdrop");
+        if (modal) modal.classList.remove("show");
+        currentUnnotedIssue = null;
+      };
+
+      window.copyUnnotedPromptOnly = async function () {
+        if (!currentUnnotedIssue) return;
+        const promptText = formatChatboxAiPrompt(currentUnnotedIssue);
+        try {
+          await navigator.clipboard.writeText(promptText);
+          showToast("Đã sao chép nội dung prompt!", "fa-copy");
+        } catch (_) {
+          showToast("Không thể sao chép tự động", "fa-triangle-exclamation");
+        }
+      };
+
+      window.openChatboxTabManual = async function () {
+        if (!currentUnnotedIssue) return;
+        const promptText = formatChatboxAiPrompt(currentUnnotedIssue);
+        try {
+          await navigator.clipboard.writeText(promptText);
+        } catch (_) {}
+
+        const targetUrl = "https://helpdesk.ai-audit-test.online/helpdesk/#prompt=" + encodeURIComponent(promptText);
+        window.open(targetUrl, "_blank");
+        showToast("📋 Đã copy prompt! Bạn bấm vào ô chat và nhấn Ctrl + V rồi Enter", "fa-robot", 7000);
+      };
+
+      window.runAiAutoCreateTicketClient = async function () {
+        if (!currentUnnotedIssue) return;
+        const found = currentUnnotedIssue;
+        const promptText = formatChatboxAiPrompt(found);
+        const btnAi = document.getElementById("btnRunAiAutoTicket");
+
+        if (btnAi) {
+          btnAi.disabled = true;
+          btnAi.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi lệnh đến Chatbox AI... Vui lòng chờ 10s...';
+        }
+
+        try {
+          // 1. Đăng nhập trực tiếp từ Client (0% CPU server hosting)
+          const agentId = (found.memberCode || "").trim().toLowerCase() || "tanh.h.bui.3811";
+          const loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: agentId, password: "1" })
+          });
+
+          if (!loginRes.ok) {
+            throw new Error(`Đăng nhập Helpdesk thất bại (HTTP ${loginRes.status})`);
+          }
+          const authData = await loginRes.json();
+          const token = authData.access_token;
+          if (!token) throw new Error("Không nhận được access token từ Helpdesk");
+
+          // 2. Gửi prompt tạo & đóng ticket sang /api/chat
+          const formData = new FormData();
+          formData.append("text", promptText);
+
+          if (btnAi) {
+            btnAi.innerHTML = '<i class="fa-solid fa-robot fa-spin"></i> Chatbox AI đang phân tích & tạo ticket...';
+          }
+
+          const chatRes = await fetch("https://helpdesk.ai-audit-test.online/api/chat", {
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer " + token
+            },
+            body: formData
+          });
+
+          if (!chatRes.ok) {
+            throw new Error(`Chatbox AI phản hồi lỗi (HTTP ${chatRes.status})`);
+          }
+
+          const chatData = await chatRes.json();
+          console.log("Chatbox AI response:", chatData);
+
+          const ticketId = chatData.ticket_id;
+          if (ticketId) {
+            showToast(`🎉 Chatbox AI đã tạo & đóng thành công Ticket #${ticketId}!`, "fa-circle-check", 6000);
+          } else {
+            showToast("✅ Chatbox AI đã tiếp nhận và đang xử lý tạo ticket!", "fa-robot", 6000);
+          }
+
+          // 3. Tự động đồng bộ lại ticket về R2
+          closeUnnotedTicketModal();
+          setTimeout(() => {
+            fetchHelpdeskTickets(false, true);
+          }, 1500);
+
+        } catch (err) {
+          console.error("Lỗi khi tự động tạo ticket bằng AI:", err);
+          showToast("Lỗi gửi AI: " + err.message + ". Vui lòng dùng Cách 2 mở tab!", "fa-triangle-exclamation", 6000);
+          if (btnAi) {
+            btnAi.disabled = false;
+            btnAi.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Thử lại hoặc Mở tab dán Ctrl + V';
+          }
+        }
+      };
+
       window.copyTempItem = function (id) {
         const found = tempNotes.find(n => n.id === id);
         if (found) {
@@ -7143,6 +7877,10 @@
         if (btnNavReport) btnNavReport.classList.toggle("active", currentStudioView === "report");
 
         if (currentStudioView === "stats") {
+          if (!helpdeskTickets || helpdeskTickets.length === 0) {
+            if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
+            if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
+          }
           renderStatsPage();
         } else if (currentStudioView === "voip") {
           // 1. Hiển thị data đang có trước ngay lập tức (từ RAM hoặc Cache LocalStorage)
@@ -7698,12 +8436,18 @@
         });
 
         const totalIssues = filtered.length;
+        let totalNotedChatbox = 0;
 
-        // 2. Aggregate by Employee
+        // 2. Aggregate by Employee & Match with Helpdesk Tickets
         const staffMap = new Map();
         const globalSolMap = new Map();
+        const usedTicketIds = new Set();
 
         filtered.forEach(n => {
+          // Khớp issue với ticket Helpdesk (Chatbox AI) - đảm bảo 1 ticket chỉ gán cho 1 issue duy nhất
+          n.matchedTicket = findMatchedTicket(n, helpdeskTickets, usedTicketIds);
+          if (n.matchedTicket) totalNotedChatbox++;
+
           const code = (n.memberCode || "").trim().toUpperCase() || "CHƯA GẮN MÃ";
           const name = (n.memberName || "").trim() || code;
 
@@ -7712,12 +8456,14 @@
               code,
               name,
               count: 0,
+              notedCount: 0,
               solutions: new Map(),
               issues: []
             });
           }
           const sObj = staffMap.get(code);
           sObj.count++;
+          if (n.matchedTicket) sObj.notedCount = (sObj.notedCount || 0) + 1;
           sObj.issues.push(n);
 
           // Solution name extraction: ưu tiên parse từ result string (chứa tên đầy đủ)
@@ -7778,6 +8524,17 @@
           elTopSolSub.textContent = topSolCount > 0 ? `${topSolCount} lượt phát sinh` : "0 lượt";
         }
 
+        // Cập nhật KPI Đã note Chatbox AI
+        const elChatboxNoted = document.getElementById("kpiChatboxNoted");
+        const elChatboxNotedSub = document.getElementById("kpiChatboxNotedSub");
+        if (elChatboxNoted) {
+          elChatboxNoted.textContent = `${totalNotedChatbox} / ${totalIssues}`;
+        }
+        if (elChatboxNotedSub) {
+          const pctNoted = totalIssues > 0 ? Math.round((totalNotedChatbox / totalIssues) * 100) : 0;
+          elChatboxNotedSub.textContent = `${pctNoted}% tỷ lệ note ticket`;
+        }
+
         // 2.2 Render Bảng thống kê nhân viên (#tbodyStaffStats)
         const elStaffBadge = document.getElementById("statsStaffCountBadge");
         if (elStaffBadge) elStaffBadge.textContent = `${staffList.length} nhân viên`;
@@ -7801,6 +8558,8 @@
               const pct = totalIssues > 0 ? Math.round((s.count / totalIssues) * 100) : 0;
               const isSelected = statsSelectedStaff === s.code.toUpperCase();
               const initial = s.name ? s.name.trim().charAt(0).toUpperCase() : '?';
+              const notedPct = s.count > 0 ? Math.round(((s.notedCount || 0) / s.count) * 100) : 0;
+              const isFullNoted = (s.notedCount || 0) === s.count && s.count > 0;
 
               return `
                 <tr class="${isSelected ? 'selected-row' : ''}">
@@ -7823,6 +8582,9 @@
                         <div class="stats-progress-fill" style="width: ${pct}%;"></div>
                       </div>
                     </div>
+                    <div class="staff-chatbox-stat-pill ${isFullNoted ? 'full' : ''}">
+                      <i class="fa-solid fa-robot"></i> Đã note Chatbox AI: <strong>${s.notedCount || 0}/${s.count}</strong> (${notedPct}%)
+                    </div>
                   </td>
                   <td class="text-center font-bold" style="color:#64748b; font-family:var(--font-mono);">
                     ${pct}%
@@ -7842,20 +8604,39 @@
         }
 
         // 3. Render Detail Table (#tbodyDetailIssues)
-        let detailList = filtered;
         const btnResetFilter = document.getElementById("btnResetStaffFilter");
         const titleDetail = document.getElementById("statsDetailTitle");
 
+        let baseDetailList = filtered;
         if (statsSelectedStaff) {
-          detailList = detailList.filter(n => (n.memberCode || "").trim().toUpperCase() === statsSelectedStaff);
+          baseDetailList = baseDetailList.filter(n => (n.memberCode || "").trim().toUpperCase() === statsSelectedStaff);
           if (btnResetFilter) btnResetFilter.style.display = "inline-flex";
           const staffObj = staffList.find(s => s.code.toUpperCase() === statsSelectedStaff);
           if (titleDetail) {
-            titleDetail.innerHTML = `Danh sách chi tiết Issue - <span style="color:var(--primary); font-weight:800;">${escapeHTML(staffObj ? staffObj.name : statsSelectedStaff)}</span> (${detailList.length})`;
+            titleDetail.innerHTML = `Danh sách chi tiết Issue - <span style="color:var(--primary); font-weight:800;">${escapeHTML(staffObj ? staffObj.name : statsSelectedStaff)}</span> (${baseDetailList.length})`;
           }
         } else {
           if (btnResetFilter) btnResetFilter.style.display = "none";
           if (titleDetail) titleDetail.textContent = "Danh sách chi tiết Issue";
+        }
+
+        // Cập nhật số lượng trên các nút lọc Chatbox
+        const cntAll = document.getElementById("cntChatboxAll");
+        const cntNoted = document.getElementById("cntChatboxNoted");
+        const cntUnnoted = document.getElementById("cntChatboxUnnoted");
+        const cTotal = baseDetailList.length;
+        const cNoted = baseDetailList.filter(n => n.matchedTicket != null).length;
+        const cUnnoted = cTotal - cNoted;
+        if (cntAll) cntAll.textContent = cTotal;
+        if (cntNoted) cntNoted.textContent = cNoted;
+        if (cntUnnoted) cntUnnoted.textContent = cUnnoted;
+
+        // Áp dụng bộ lọc Chatbox (All / Noted / Unnoted)
+        let detailList = baseDetailList;
+        if (statsChatboxFilter === "noted") {
+          detailList = detailList.filter(n => n.matchedTicket != null);
+        } else if (statsChatboxFilter === "unnoted") {
+          detailList = detailList.filter(n => n.matchedTicket == null);
         }
 
         const badgeDetail = document.getElementById("statsDetailCountBadge");
@@ -7866,7 +8647,7 @@
           if (detailList.length === 0) {
             tbodyDetail.innerHTML = `
               <tr>
-                <td colspan="6" class="temp-empty-view">
+                <td colspan="7" class="temp-empty-view">
                   <i class="fa-solid fa-clock-rotate-left"></i>
                   Chưa có chi tiết issue nào phù hợp.
                 </td>
@@ -7884,6 +8665,17 @@
                   </td>
                   <td class="td-result-code" style="font-size:12.5px;">
                     <div>${escapeHTML(n.result)}</div>
+                  </td>
+                  <td class="text-center">
+                    ${n.matchedTicket ? `
+                      <button type="button" class="btn-ticket-pill noted" onclick="window.openTicketDetailModal('${escapeHTML(String(n.matchedTicket.id))}')" title="Bấm để xem chi tiết Ticket #${escapeHTML(String(n.matchedTicket.id))}">
+                        <i class="fa-solid fa-circle-check"></i> #${escapeHTML(String(n.matchedTicket.id))}
+                      </button>
+                    ` : `
+                      <button type="button" class="btn-ticket-pill unnoted" onclick="window.openChatboxForUnnotedIssue('${escapeHTML(String(n.id))}')" title="Bấm để sao chép prompt và mở Chatbox AI tạo ticket">
+                        <i class="fa-solid fa-circle-exclamation"></i> Chưa note
+                      </button>
+                    `}
                   </td>
                   <td class="text-center" style="font-size:12px; font-weight:600; color:#475569; white-space:nowrap;">
                     <i class="fa-regular fa-calendar" style="color:var(--primary);"></i> ${escapeHTML(n.date)}
@@ -7917,14 +8709,20 @@
           const filtered = r2Issues.filter(n => matchDateRange(n, statsRange));
           const totalIssues = filtered.length;
           const staffMap = new Map();
+          const usedTicketIds = new Set();
           filtered.forEach(n => {
+            const matchedT = findMatchedTicket(n, helpdeskTickets, usedTicketIds);
+            n.matchedTicket = matchedT;
+
             const code = (n.memberCode || "").trim().toUpperCase() || "CHƯA GẮN MÃ";
             const name = (n.memberName || "").trim() || code;
             if (!staffMap.has(code)) {
-              staffMap.set(code, { code, name, count: 0, solutions: new Map() });
+              staffMap.set(code, { code, name, count: 0, notedCount: 0, solutions: new Map() });
             }
             const sObj = staffMap.get(code);
             sObj.count++;
+            if (matchedT) sObj.notedCount = (sObj.notedCount || 0) + 1;
+
             let sol = "";
             if (n.result) {
               const m = n.result.match(/\[NVN-DMS\]-\[[A-Z]+\]_([^_]+)/);
@@ -7940,7 +8738,9 @@
             "MÃ NHÂN VIÊN": s.code,
             "TÊN NHÂN VIÊN": s.name,
             "SỐ LƯỢNG ISSUE": s.count,
-            "TỈ LỆ %": totalIssues > 0 ? `${((s.count / totalIssues) * 100).toFixed(1)}%` : "0%",
+            "ĐÃ NOTE CHATBOX AI": s.notedCount || 0,
+            "TỈ LỆ NOTE %": s.count > 0 ? `${Math.round(((s.notedCount || 0) / s.count) * 100)}%` : "0%",
+            "TỈ LỆ ISSUE %": totalIssues > 0 ? `${((s.count / totalIssues) * 100).toFixed(1)}%` : "0%",
             "TOP SOLUTIONS": Array.from(s.solutions.entries())
               .sort((a, b) => b[1] - a[1])
               .slice(0, 3)
@@ -7949,20 +8749,27 @@
           }));
 
           // Sheet 2: Danh sách chi tiết
-          const detailRows = filtered.map((n, idx) => ({
-            "STT": idx + 1,
-            "MÃ NHÂN VIÊN": n.memberCode || "",
-            "TÊN NHÂN VIÊN": n.memberName || "",
-            "CÚ PHÁP ISSUE": n.result,
-            "NGÀY": n.date,
-            "GIỜ": n.time || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : ""),
-            "SOLUTION": n.fields?.solution || "",
-            "TYPE": n.fields?.type || "",
-            "NHÀ PHÂN PHỐI": n.fields?.npp || "",
-            "MÃ NVBH": n.fields?.nvbh || "",
-            "SUP/HQ/ADMIN": n.fields?.role || "",
-            "HOTLINE": n.fields?.hotline || ""
-          }));
+          const detailRows = filtered.map((n, idx) => {
+            const t = n.matchedTicket;
+            return {
+              "STT": idx + 1,
+              "MÃ NHÂN VIÊN": n.memberCode || "",
+              "TÊN NHÂN VIÊN": n.memberName || "",
+              "CÚ PHÁP ISSUE": n.result,
+              "TRẠNG THÁI CHATBOX AI": t ? `Đã note (#${t.id})` : "Chưa note",
+              "TICKET ID": t ? t.id : "",
+              "TICKET TẠO LÚC": t ? (t.createdAt || t.createdDate || "") : "",
+              "TICKET GIẢI PHÁP": t ? (t.solutionName || t.description || "") : "",
+              "NGÀY": n.date,
+              "GIỜ": n.time || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : ""),
+              "SOLUTION": n.fields?.solution || "",
+              "TYPE": n.fields?.type || "",
+              "NHÀ PHÂN PHỐI": n.fields?.npp || "",
+              "MÃ NVBH": n.fields?.nvbh || "",
+              "SUP/HQ/ADMIN": n.fields?.role || "",
+              "HOTLINE": n.fields?.hotline || ""
+            };
+          });
 
           const wb = XLSX.utils.book_new();
           const wsRank = XLSX.utils.json_to_sheet(rankRows);
@@ -8314,9 +9121,10 @@
       // Nút đồng bộ R2 ở tab Temp (Soạn Issue): Đẩy ghi chú tạm vào Issue & Call Log
       btnSyncR2Temp?.addEventListener("click", pushAllTempToR2);
 
-      // Nút Đồng bộ R2 ở Stats page: Nạp lại toàn bộ thống kê mới nhất từ R2
+      // Nút Đồng bộ R2 ở Stats page: Nạp lại toàn bộ thống kê mới nhất từ R2 và Chatbox AI
       document.getElementById("btnSyncStatsR2")?.addEventListener("click", () => {
         fetchIssuesFromR2(false);
+        fetchHelpdeskTickets(false, true);
       });
 
       document.getElementById("btnExportStatsExcel")?.addEventListener("click", exportStatsExcel);
@@ -10845,6 +11653,7 @@
         initDateInputs();
         if (typeof updateExcludedPhonesBadge === "function") updateExcludedPhonesBadge();
         if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
+        if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
         if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
         if (typeof updateVoipSyncStatusDisplay === "function") updateVoipSyncStatusDisplay();
         await checkMemberRequirement();
@@ -10853,6 +11662,7 @@
         fetchIssuesFromR2(true);
         fetchAllTempNotesFromR2(true);
         if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
+        if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
         await loadSolutions();
         await loadDtList();
         // Tự động tải cuộc gọi mới nhất từ R2 (chạy ngầm, không block giao diện)
@@ -10865,12 +11675,14 @@
         fetchIssuesFromR2(true);
         fetchTempNotesFromR2(true);
         if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
+        if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
       });
       window.addEventListener("message", (e) => {
         if (e.data === "tab-activated") {
           fetchIssuesFromR2(true);
           fetchTempNotesFromR2(true);
           if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
+          if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
         }
       });
 

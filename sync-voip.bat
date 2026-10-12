@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 > nul
-title DMS - Đồng Bộ Cuộc Gọi VoIP24h Sang Cloudflare R2 (1 Lần)
+title DMS - Đồng Bộ Cuộc Gọi & Ticket Chatbox AI Sang Cloudflare R2 (1 Lần)
 color 0B
 
 echo =======================================================
-echo    DMS HUB - ĐỒNG BỘ CUỘC GỌI VOIP24H LÊN R2 (1 LẦN)
+echo   DMS HUB - ĐỒNG BỘ CUỘC GỌI & TICKET CHATBOX AI (1 LẦN)
 echo =======================================================
 echo.
 

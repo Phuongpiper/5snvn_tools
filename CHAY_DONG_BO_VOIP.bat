@@ -1,11 +1,11 @@
 @echo off
 setlocal
 chcp 65001 > nul
-title DMS - Dong Bo Cuoc Goi Tu Dong
+title DMS - Dong Bo Cuoc Goi & Ticket Chatbox AI Tu Dong
 color 0A
 
 echo =======================================================
-echo    DMS HUB - DICH VU TU DONG DONG BO CUOC GOI
+echo    DMS HUB - TU DONG DONG BO CUOC GOI & TICKET AI
 echo =======================================================
 echo.
 
@@ -37,7 +37,7 @@ if "%NODE_CMD%"=="" (
     )
 )
 
-echo [*] Dang khoi dong tien trinh dong bo cuoc goi - Moi 60 phut 1 lan...
+echo [*] Dang khoi dong tien trinh dong bo (VoIP & Chatbox AI) - Moi 60 phut 1 lan...
 echo [*] KHONG TAT cua so nay de chuong trinh tiep tuc chay trong nen.
 echo.
 
