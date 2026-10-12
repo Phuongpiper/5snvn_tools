@@ -263,13 +263,13 @@ let lastLiveSyncTime = 0;
 let ongoingLiveSyncPromise = null;
 
 async function syncHelpdeskTickets(force = false, options = {}) {
-  // 1. Nếu không ép buộc, kiểm tra cache R2 xem còn hạn (< 60 phút) không
+  // 1. Nếu không ép buộc, kiểm tra cache R2 xem còn hạn (< 3 phút) không
   if (!force) {
     const cached = await getCacheFromR2();
     if (cached && Array.isArray(cached.tickets)) {
       const syncedMs = cached.syncedAt ? new Date(cached.syncedAt).getTime() : 0;
       const ageMinutes = (Date.now() - syncedMs) / (60 * 1000);
-      if (ageMinutes < 60) {
+      if (ageMinutes < 3) {
         return {
           ...cached,
           source: "r2_cache",
@@ -316,6 +316,9 @@ module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Pragma, Cache-Control, X-Requested-With");
   res.setHeader("Access-Control-Allow-Private-Network", "true");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
 
   if (req.method === "OPTIONS") {
     return res.status(204).end();
@@ -334,8 +337,8 @@ module.exports = async function handler(req, res) {
       const syncedMs = cached.syncedAt ? new Date(cached.syncedAt).getTime() : 0;
       const ageMinutes = (Date.now() - syncedMs) / (60 * 1000);
 
-      // Nếu cache còn mới (< 60 phút / 1 tiếng), trả về ngay tức khắc để tránh spam
-      if (ageMinutes < 60) {
+      // Nếu cache còn mới (< 3 phút), trả về ngay tức khắc để tránh spam
+      if (ageMinutes < 3) {
         return res.status(200).json({
           ...cached,
           source: "r2_cache",
@@ -346,7 +349,7 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2. Cần đồng bộ mới hoặc cache đã quá 1 tiếng
+  // 2. Cần đồng bộ mới hoặc cache đã quá 3 phút (hoặc forceSync = true)
   try {
     const payload = await syncHelpdeskTickets(forceSync, { from_date, to_date, username });
     return res.status(200).json({

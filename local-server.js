@@ -478,10 +478,14 @@ const server = http.createServer(function(req, res) {
         res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Pragma, Cache-Control");
         res.setHeader("Access-Control-Allow-Private-Network", "true");
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
         res.status = function(code) { res.statusCode = code; return this; };
         res.json = function(data) {
           res.setHeader("Access-Control-Allow-Origin", "*");
           res.setHeader("Access-Control-Allow-Private-Network", "true");
+          res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
           res.setHeader("Content-Type", "application/json; charset=utf-8");
           res.end(JSON.stringify(data));
           return this;

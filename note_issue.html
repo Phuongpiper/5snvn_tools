@@ -5453,18 +5453,19 @@
         const iconSync = document.getElementById("iconSyncStats");
         const badgeText = document.getElementById("helpdeskLastSyncText");
         if (iconSync && force) iconSync.classList.add("fa-spin");
-        if (badgeText && force) badgeText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đồng bộ...`;
+        if (badgeText && force) badgeText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang đồng bộ Chatbox AI...`;
 
         try {
           const endpoint = getHelpdeskApiEndpoint();
-          const url = `${endpoint}?_t=${Date.now()}${force ? "&sync=1" : ""}`;
+          const syncQuery = force ? "&sync=1&force=1" : "";
+          const url = `${endpoint}?_t=${Date.now()}${syncQuery}`;
           let res = null;
           try {
-            res = await fetch(url, { cache: "no-cache" });
+            res = await fetch(url, { cache: "no-store" });
           } catch (netErr) {
             if (window.location.protocol === "file:" || !window.location.origin.includes("vercel.app")) {
               try {
-                res = await fetch(`https://5snvn-tools.vercel.app/api/helpdesk-tickets?_t=${Date.now()}${force ? "&sync=1" : ""}`, { cache: "no-cache" });
+                res = await fetch(`https://5snvn-tools.vercel.app/api/helpdesk-tickets?_t=${Date.now()}${syncQuery}`, { cache: "no-store" });
               } catch (_) {}
             }
           }
@@ -8009,7 +8010,9 @@
         if (currentStudioView === "stats") {
           if (!helpdeskTickets || helpdeskTickets.length === 0) {
             if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
-            if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
+          }
+          if (typeof fetchHelpdeskTickets === "function") {
+            fetchHelpdeskTickets(true, true);
           }
           renderStatsPage();
         } else if (currentStudioView === "voip") {
@@ -9243,6 +9246,9 @@
         loadSolutions(true);
         loadDtList(true);
         fetchIssuesFromR2(false);
+        if (typeof fetchHelpdeskTickets === "function") {
+          fetchHelpdeskTickets(true, true);
+        }
         if (currentStudioView === "report" && typeof fetchReportData === "function") {
           fetchReportData(true);
         }
@@ -9252,9 +9258,23 @@
       btnSyncR2Temp?.addEventListener("click", pushAllTempToR2);
 
       // Nút Đồng bộ R2 ở Stats page: Nạp lại toàn bộ thống kê mới nhất từ R2 và Chatbox AI
-      document.getElementById("btnSyncStatsR2")?.addEventListener("click", () => {
-        fetchIssuesFromR2(false);
-        fetchHelpdeskTickets(false, true);
+      document.getElementById("btnSyncStatsR2")?.addEventListener("click", async () => {
+        const iconSync = document.getElementById("iconSyncStats");
+        if (iconSync) iconSync.classList.add("fa-spin");
+        showToast("Đang đồng bộ Issue & kiểm tra Chatbox AI...", "fa-arrows-rotate");
+        try {
+          await Promise.all([
+            fetchIssuesFromR2(true),
+            fetchHelpdeskTickets(true, true)
+          ]);
+          if (currentStudioView === "stats") renderStatsPage();
+          showToast(`Đã đồng bộ xong! Chatbox AI: ${helpdeskTickets.length} ticket.`, "fa-robot");
+        } catch (err) {
+          console.warn("Lỗi đồng bộ:", err);
+          showToast("Lỗi đồng bộ dữ liệu", "fa-triangle-exclamation");
+        } finally {
+          if (iconSync) iconSync.classList.remove("fa-spin");
+        }
       });
 
       document.getElementById("btnExportStatsExcel")?.addEventListener("click", exportStatsExcel);
