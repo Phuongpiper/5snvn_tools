@@ -391,7 +391,7 @@ module.exports = async function handler(req, res) {
   const shouldSyncLive = Boolean(payload.sync === "1" || payload.sync === true || payload.force_live || action === "sync");
 
   // Nếu không có yêu cầu đồng bộ mới (hoặc đang chạy trên Vercel không có IP VN):
-  // Ưu tiên đọc trực tiếp từ cache Cloudflare R2
+  // BẮT BUỘC chỉ đọc trực tiếp từ cache Cloudflare R2, tuyệt đối không tự động cào live tổng đài
   if (!shouldSyncLive || isVercel) {
     const cachedData = await getCacheFromR2();
     if (cachedData && cachedData.calls) {
@@ -418,8 +418,21 @@ module.exports = async function handler(req, res) {
         source: "r2_cloud",
         server: isVercel ? "vercel" : "local",
         note: isVercel
-          ? "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Được đồng bộ từ máy nội bộ)"
-          : "Dữ liệu từ bộ nhớ đệm đám mây R2 (Nhấn nút 'Đồng bộ cuộc gọi' để cập nhật mới nhất từ tổng đài)"
+          ? "Dữ liệu được tải từ Cloud nội bộ R2"
+          : "Dữ liệu được tải từ Cloud nội bộ R2 (Nhấn nút 'Đồng bộ cuộc gọi' để cập nhật mới nhất từ tổng đài)"
+      });
+    }
+
+    // Nếu không có yêu cầu sync live mà R2 chưa có cache: Tuyệt đối không tự động cào live để tránh spam
+    if (!shouldSyncLive) {
+      return res.status(200).json({
+        status: "success",
+        calls: [],
+        total: 0,
+        stats: { total: 0, answered: 0, missed: 0, busy: 0, noAnswer: 0, failed: 0, inbound: 0, outbound: 0 },
+        source: "r2_cloud",
+        server: isVercel ? "vercel" : "local",
+        note: "Chưa có dữ liệu trên Cloud nội bộ. Vui lòng bấm nút 'Đồng bộ cuộc gọi' để cập nhật từ tổng đài."
       });
     }
   }

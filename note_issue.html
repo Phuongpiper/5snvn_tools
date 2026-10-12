@@ -3844,9 +3844,9 @@
               </span>
             </button>
             <!-- Nút Đồng bộ cuộc gọi (Tự động) -->
-            <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi (Tự động)">
-              <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto')"
-                title="Đồng bộ: Ưu tiên máy chủ nội bộ ➔ Tự động chuyển sang Đám mây nếu nội bộ tắt" style="padding:5px 12px; font-size:12px;">
+            <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi từ tổng đài">
+              <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto', true)"
+                title="Đồng bộ trực tiếp: Lấy dữ liệu mới nhất từ tổng đài Voip24h và lưu vào Cloud" style="padding:5px 12px; font-size:12px;">
                 <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
               </button>
               <button type="button" class="btn-stats-tool primary voip-sync-split-caret" id="btnVoipSyncDropdown" onclick="toggleVoipSyncMenu(event)"
@@ -8231,16 +8231,16 @@
             if (typeof renderVoipTable === "function") renderVoipTable();
             if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
           } else {
-            // Nếu chưa có dữ liệu cuộc gọi, tự động tải ngay lập tức từ server/R2
+            // Nếu chưa có dữ liệu cuộc gọi, tự động tải từ Cloud nội bộ (R2)
             if (typeof fetchVoipCalls === "function") {
-              fetchVoipCalls(true);
+              fetchVoipCalls(false, true, "auto", false);
             }
           }
           // Cập nhật trạng thái và thời gian đồng bộ gần nhất
           if (typeof updateVoipSyncStatusDisplay === "function") {
             updateVoipSyncStatusDisplay();
           }
-          // Luôn làm mới ngầm để nhận thao tác từ đồng nghiệp
+          // Luôn làm mới ngầm từ Cloud nội bộ để nhận thao tác từ đồng nghiệp
           if (typeof window.reloadVoipData === "function") {
             window.reloadVoipData(false);
           }
@@ -9484,7 +9484,7 @@
         const btnReload = document.getElementById("btnVoipReloadAll");
         if (iconReload) iconReload.classList.add("fa-spin");
         if (btnReload) btnReload.disabled = true;
-        if (showToastMsg) showToast("Đang tải dữ liệu cuộc gọi & ghi chú mới nhất...", "fa-arrows-rotate");
+        if (showToastMsg) showToast("Đang tải dữ liệu ghi chú & cuộc gọi từ Cloud nội bộ...", "fa-arrows-rotate");
         try {
           // Tải mới danh sách Issue R2 và Temp notes R2 (ghi chú của đồng nghiệp)
           await Promise.allSettled([
@@ -9494,10 +9494,10 @@
             fetchSystemMembers()
           ]);
           if (typeof fetchVoipCalls === "function") {
-            await fetchVoipCalls(true, false, "auto");
+            await fetchVoipCalls(false, !showToastMsg, "auto", false);
           }
           if (showToastMsg) {
-            showToast(`Đã làm mới! Tổng ${voipCalls.length} cuộc gọi & trạng thái ghi chú mới nhất.`, "fa-check");
+            showToast(`Đã làm mới! Tổng ${voipCalls.length} cuộc gọi từ Cloud nội bộ.`, "fa-check");
           }
         } catch (err) {
           console.warn("Lỗi làm mới VoIP:", err);
@@ -10855,7 +10855,7 @@
         else if (flow === "local") document.getElementById("optVoipSyncLocal")?.classList.add("active");
         else if (flow === "vercel") document.getElementById("optVoipSyncVercel")?.classList.add("active");
 
-        fetchVoipCalls(true, false, flow);
+        fetchVoipCalls(true, false, flow, true);
       };
 
       document.addEventListener("click", function (e) {
@@ -11239,7 +11239,7 @@
         window.onVoipRangeChange(range);
       };
 
-      window.fetchVoipCalls = async function (showLoading = false, isSilent = false, preferredFlow = "auto") {
+      window.fetchVoipCalls = async function (showLoading = false, isSilent = false, preferredFlow = "auto", forceLiveSync = false) {
         if (voipLoading) return;
         voipLoading = true;
 
@@ -11262,7 +11262,7 @@
         };
 
         if (displayAsBlocking) {
-          updateProgress("Đang đồng bộ...");
+          updateProgress(forceLiveSync ? "Đang đồng bộ từ tổng đài..." : "Đang nạp từ Cloud nội bộ...");
         }
 
         try {
@@ -11281,7 +11281,7 @@
           let usedFlow = null;
           let localError = null;
 
-          // ── LUỒNG 1: LOCAL (Ưu tiên gọi server nội bộ để lấy Live Voip24h & sync lên Cloud R2) ──
+          // ── LUỒNG 1: LOCAL (Ưu tiên gọi server nội bộ để lấy dữ liệu) ──
           if (preferredFlow === "auto" || preferredFlow === "local") {
             const isLocalHost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
             const localCandidates = isLocalHost
@@ -11314,13 +11314,20 @@
             }
 
             if (activeLocalEndpoint) {
-              if (displayAsBlocking) updateProgress("Đang kết nối lấy dữ liệu trực tiếp...", "fa-arrows-rotate fa-spin", "#059669");
+              if (displayAsBlocking) {
+                updateProgress(forceLiveSync ? "Đang đồng bộ trực tiếp từ tổng đài..." : "Đang tải dữ liệu từ Cloud nội bộ...", "fa-arrows-rotate fa-spin", "#059669");
+              }
               const baseOrigin = activeLocalEndpoint.startsWith("http") ? undefined : (window.location.origin || "http://localhost:3000");
               const localUrl = baseOrigin ? new URL(activeLocalEndpoint, baseOrigin) : new URL(activeLocalEndpoint);
               localUrl.searchParams.set("date_start", date_start);
               localUrl.searchParams.set("date_end", date_end);
               if (did && did !== "all") localUrl.searchParams.set("did", did);
-              if (showLoading) localUrl.searchParams.set("sync", "1");
+              // CHỈ gửi sync=1 & force_live=1 khi người dùng CHỦ ĐỘNG NHẤN NÚT Đồng bộ cuộc gọi
+              // Mọi thao tác tự động/làm mới ngầm CHỈ ĐƯỢC PHÉP lấy từ Cloud nội bộ R2
+              if (forceLiveSync) {
+                localUrl.searchParams.set("sync", "1");
+                localUrl.searchParams.set("force_live", "1");
+              }
               localUrl.searchParams.set("_t", Date.now());
 
               try {
@@ -11362,7 +11369,7 @@
               updateProgress("Chuyển kết nối sang máy chủ đám mây...", "fa-cloud-arrow-down fa-bounce", "#0284c7");
               await new Promise(r => setTimeout(r, 350));
             }
-            if (displayAsBlocking) updateProgress("Đang tải dữ liệu từ máy chủ đám mây...", "fa-cloud fa-spin", "#0284c7");
+            if (displayAsBlocking) updateProgress("Đang tải dữ liệu từ Cloud nội bộ...", "fa-cloud fa-spin", "#0284c7");
 
             const vercelEndpoint = (window.location.origin && window.location.origin.includes("vercel.app"))
               ? "/api/voip24h-calls"
@@ -11373,7 +11380,9 @@
             vercelUrl.searchParams.set("date_start", date_start);
             vercelUrl.searchParams.set("date_end", date_end);
             if (did && did !== "all") vercelUrl.searchParams.set("did", did);
-            if (showLoading) vercelUrl.searchParams.set("sync", "1");
+            if (forceLiveSync) {
+              vercelUrl.searchParams.set("sync", "1");
+            }
             vercelUrl.searchParams.set("_t", Date.now());
 
             const vercelCtrl = new AbortController();
@@ -11435,13 +11444,13 @@
 
             // Thông báo Toast tương ứng với luồng đã lấy
             if (usedFlow === "local") {
-              showToast(`Đã đồng bộ trực tiếp ${voipCalls.length} cuộc gọi!`, "fa-circle-check");
-            } else if (usedFlow === "vercel") {
-              if (preferredFlow === "auto") {
-                showToast(`Đã đồng bộ ${voipCalls.length} cuộc gọi từ đám mây! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
+              if (forceLiveSync) {
+                showToast(`Đã đồng bộ trực tiếp ${voipCalls.length} cuộc gọi từ tổng đài!`, "fa-circle-check");
               } else {
-                showToast(`Đã tải ${voipCalls.length} cuộc gọi từ đám mây! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
+                if (!isSilent) showToast(`Đã tải ${voipCalls.length} cuộc gọi từ Cloud nội bộ!`, "fa-cloud-arrow-down");
               }
+            } else if (usedFlow === "vercel") {
+              if (!isSilent) showToast(`Đã tải ${voipCalls.length} cuộc gọi từ Cloud nội bộ! (${formatSyncTime(syncTime)})`, "fa-cloud-arrow-down");
             } else if (usedFlow === "offline_cache") {
               showToast(`Đang hiển thị ${voipCalls.length} cuộc gọi từ bộ nhớ ngoại tuyến`, "fa-database");
             }
