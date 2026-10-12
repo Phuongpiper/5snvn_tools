@@ -1491,6 +1491,68 @@
       font-size: 12px;
     }
 
+    .td-status {
+      width: 145px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .temp-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 12px;
+      white-space: nowrap;
+      line-height: 1.25;
+      font-family: var(--font-sans);
+    }
+
+    .temp-status-badge.synced {
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+    }
+
+    .temp-status-badge.unsynced {
+      background: #fff7ed;
+      color: #ea580c;
+      border: 1px solid #fed7aa;
+      box-shadow: 0 1px 2px rgba(234, 88, 12, 0.08);
+    }
+
+    .temp-status-badge.chatbox {
+      background: #f0f9ff;
+      color: #0284c7;
+      border: 1px solid #bae6fd;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .temp-status-badge.chatbox:hover {
+      background: #e0f2fe;
+      border-color: #7dd3fc;
+    }
+
+    .temp-status-badge.chatbox-empty {
+      background: #f8fafc;
+      color: #94a3b8;
+      border: 1px dashed #cbd5e1;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .table-stitch-temp tbody tr.tr-temp-unsynced {
+      background-color: #fffdf5;
+      border-left: 3px solid #f59e0b;
+    }
+
+    .table-stitch-temp tbody tr.tr-temp-unsynced:hover {
+      background-color: #fef3c7;
+    }
+
     .td-actions {
       width: 120px;
       text-align: center;
@@ -3456,6 +3518,13 @@
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                 <h2 style="margin:0; font-size:15px; font-weight:800; white-space:nowrap;">Danh sách tạm</h2>
                 <span class="temp-counter-pill" id="badgeTempCount">0 note</span>
+                <span id="badgeTempUnsynced"
+                  style="display:none; font-size:11.5px; font-weight:700; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:2px 8px; border-radius:12px; align-items:center; gap:5px; cursor:pointer;"
+                  onclick="toggleFilterUnsyncedTemp()"
+                  title="Bấm để lọc các Issue chưa được Đồng bộ">
+                  <i class="fa-solid fa-cloud-arrow-up" style="color:#d97706; font-size:10.5px;"></i>
+                  <span id="textTempUnsyncedCount">0</span> chưa đồng bộ
+                </span>
                 <span id="tempStaffBadge"
                   style="font-size:11.5px; font-weight:700; color:var(--primary); background:#eef2ff; border:1px solid #c7d2fe; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); white-space:nowrap;"
                   title="Danh sách tạm của nhân viên này">
@@ -3464,8 +3533,8 @@
                 </span>
                 <span id="tempCloudStatus"
                   style="font-size:11px; color:#10b981; display:inline-flex; align-items:center; gap:4px; font-weight:600; white-space:nowrap;"
-                  title="Trạng thái đồng bộ">
-                  <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Đã đồng bộ</span>
+                  title="Trạng thái lưu trữ đám mây">
+                  <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Đã lưu Cloud</span>
                 </span>
               </div>
               <p style="font-size:11.5px; color:var(--text-muted); margin:2px 0 0 0; white-space:nowrap;"
@@ -3491,8 +3560,10 @@
               <i class="fa-solid fa-trash-can"></i> Xoá hết
             </button>
             <button type="button" class="btn-temp-action" id="btnSyncR2Temp"
-              title="Đồng bộ danh sách Issue">
-              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary);"></i> Đồng bộ
+              title="Đồng bộ danh sách Issue vào Call Log & Issue">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary);"></i>
+              <span>Đồng bộ</span>
+              <span id="badgeBtnSyncCount" style="display:none; margin-left:4px; font-size:10px; font-weight:800; background:#ea580c; color:#fff; padding:1px 6px; border-radius:10px;">0</span>
             </button>
             <button type="button" class="btn-temp-action" id="btnOpenStatsFromTemp" onclick="switchStudioView('stats')"
               title="Xem thống kê số lượng Issue theo nhân viên">
@@ -3521,6 +3592,7 @@
               <tr>
                 <th class="td-stt">STT</th>
                 <th>ISSUE</th>
+                <th class="td-status" style="width:145px; text-align:center;">ĐỒNG BỘ</th>
                 <th class="td-date">NGÀY</th>
                 <th class="td-actions">THAO TÁC</th>
               </tr>
@@ -5382,6 +5454,7 @@
             const data = await res.json();
             r2Issues = Array.isArray(data.issues) ? data.issues : [];
             updateR2Badge();
+            if (typeof renderTempTable === "function") renderTempTable();
             if (currentStudioView === "stats") renderStatsPage();
 
             if (!silent) {
@@ -5482,6 +5555,7 @@
               lastHelpdeskSyncTime = data.syncedAt || new Date().toISOString();
               saveHelpdeskCacheToLocal(data);
               updateHelpdeskSyncUI();
+              if (typeof renderTempTable === "function") renderTempTable();
               if (currentStudioView === "stats") renderStatsPage();
 
               if (!silent) {
@@ -6040,6 +6114,21 @@
             r2Issues = Array.isArray(json.issues) ? json.issues : tempNotes;
             updateR2Badge();
 
+            // Đánh dấu các note này đã được đồng bộ
+            tempNotes.forEach(n => {
+              n.synced = true;
+              n.syncedAt = Date.now();
+            });
+            const memberCode = currentSelectedMember?.code || "";
+            if (memberCode) {
+              try {
+                localStorage.setItem(getMemberTempLsKey(memberCode), JSON.stringify(tempNotes));
+              } catch (_) { }
+              saveMemberTempToR2(memberCode, tempNotes, true);
+            }
+
+            renderTempTable();
+
             // Phát tín hiệu cho Call Log cập nhật
             if (typeof BroadcastChannel !== "undefined") {
               try {
@@ -6050,6 +6139,12 @@
 
             if (currentStudioView === "stats") renderStatsPage();
             showToast(`Đã đồng bộ ${tempNotes.length} issue vào Issue & Call Log!`, "fa-circle-check");
+
+            // Tự động kiểm tra lại R2 và Chatbox AI
+            fetchIssuesFromR2(true);
+            if (typeof fetchHelpdeskTickets === "function") {
+              fetchHelpdeskTickets(true, true);
+            }
 
             // Tự động đồng bộ các OTRS Ticket vào Google Sheet báo cáo nếu có
             try {
@@ -7452,12 +7547,91 @@
         showToast("Đã xoá trắng tất cả các ô nhập!", "fa-trash-can");
       }
 
+      function cleanResultStr(str) {
+        if (!str) return "";
+        return String(str).trim().toLowerCase().replace(/\s+/g, " ");
+      }
+
+      function isTempNoteSynced(n) {
+        if (!n) return false;
+        if (n.synced === true) return true;
+        if (!Array.isArray(r2Issues) || r2Issues.length === 0) return false;
+
+        const nId = String(n.id || "");
+        const nKey = typeof getIssueUniqueKey === "function" ? getIssueUniqueKey(n) : "";
+        const nClean = cleanResultStr(n.result);
+        const nDate = String(n.date || "").trim();
+        const nMember = String(n.memberCode || "").trim().toUpperCase();
+
+        return r2Issues.some(r => {
+          if (!r) return false;
+          if (nId && String(r.id) === nId) return true;
+          if (nKey && typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === nKey) return true;
+          if (nClean) {
+            const rClean = cleanResultStr(r.result);
+            if (rClean === nClean) {
+              if (nDate && r.date && String(r.date).trim() !== nDate) return false;
+              if (nMember && r.memberCode && String(r.memberCode).trim().toUpperCase() !== nMember) return false;
+              return true;
+            }
+          }
+          return false;
+        });
+      }
+
+      let isFilterUnsyncedOnly = false;
+      function toggleFilterUnsyncedTemp() {
+        isFilterUnsyncedOnly = !isFilterUnsyncedOnly;
+        const badge = document.getElementById("badgeTempUnsynced");
+        if (badge) {
+          if (isFilterUnsyncedOnly) {
+            badge.style.background = "#ea580c";
+            badge.style.color = "#ffffff";
+            badge.style.borderColor = "#c2410c";
+          } else {
+            badge.style.background = "#fffbeb";
+            badge.style.color = "#b45309";
+            badge.style.borderColor = "#fde68a";
+          }
+        }
+        renderTempTable();
+      }
+      window.toggleFilterUnsyncedTemp = toggleFilterUnsyncedTemp;
+
       /* ── RENDER TEMP TABLE ── */
       function renderTempTable() {
         const q = normalizeStr(searchTempInput.value);
+        const unsyncedCount = tempNotes.filter(n => !isTempNoteSynced(n)).length;
+
+        // Cập nhật badge cảnh báo số lượng chưa đồng bộ
+        const badgeUnsynced = document.getElementById("badgeTempUnsynced");
+        const textUnsynced = document.getElementById("textTempUnsyncedCount");
+        const badgeBtnSync = document.getElementById("badgeBtnSyncCount");
+        if (badgeUnsynced && textUnsynced) {
+          if (unsyncedCount > 0) {
+            badgeUnsynced.style.display = "inline-flex";
+            textUnsynced.textContent = unsyncedCount;
+          } else {
+            badgeUnsynced.style.display = "none";
+            isFilterUnsyncedOnly = false;
+          }
+        }
+        if (badgeBtnSync) {
+          if (unsyncedCount > 0) {
+            badgeBtnSync.style.display = "inline-block";
+            badgeBtnSync.textContent = unsyncedCount;
+          } else {
+            badgeBtnSync.style.display = "none";
+          }
+        }
+
         const filtered = tempNotes.filter(n => {
+          if (isFilterUnsyncedOnly && isTempNoteSynced(n)) return false;
           if (!q) return true;
-          return normalizeStr(n.result).includes(q) || normalizeStr(n.date).includes(q);
+          const syncText = isTempNoteSynced(n) ? "da dong bo đã đồng bộ" : "chua dong bo chưa đồng bộ";
+          return normalizeStr(n.result).includes(q) ||
+                 normalizeStr(n.date).includes(q) ||
+                 normalizeStr(syncText).includes(q);
         });
 
         badgeTempCount.textContent = `${tempNotes.length} note`;
@@ -7465,9 +7639,9 @@
         if (filtered.length === 0) {
           tempTbody.innerHTML = `
           <tr>
-            <td colspan="4" class="temp-empty-view">
+            <td colspan="5" class="temp-empty-view">
               <i class="fa-regular fa-clipboard"></i>
-              Chưa có ghi chú nào trong danh sách tạm. Nhập thông tin ở trên và bấm <strong>Lưu vào TEMP</strong>.
+              ${isFilterUnsyncedOnly ? 'Tất cả các Issue trong danh sách đều đã được Đồng bộ!' : 'Chưa có ghi chú nào trong danh sách tạm. Nhập thông tin ở trên và bấm <strong>Lưu vào TEMP</strong>.'}
             </td>
           </tr>
         `;
@@ -7475,19 +7649,44 @@
         }
 
         const todayStr = typeof getTodayString === "function" ? getTodayString() : "";
+        const usedTicketIds = new Set();
 
         tempTbody.innerHTML = filtered
           .map(
             (n, idx) => {
               const isPastDate = n.date && todayStr && n.date !== todayStr;
               const isOtrs = isOtrsRaiseCloseTicket(n);
+              const isSynced = isTempNoteSynced(n);
+              const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(n, helpdeskTickets, usedTicketIds) : null;
               const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép Prompt AI (Hotline Ticket)";
               return `
-          <tr data-id="${n.id}">
+          <tr data-id="${n.id}" class="${!isSynced ? 'tr-temp-unsynced' : ''}">
             <td class="td-stt">${idx + 1}</td>
             <td class="td-result-code">
               <div>${escapeHTML(n.result)}</div>
               ${n.memberCode ? `<div style="margin-top:4px;"><span style="font-size:11px; font-weight:700; color:var(--primary); font-family:var(--font-mono); background:#eef2ff; border:1px solid #c7d2fe; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:5px;"><i class="fa-solid fa-user-tag" style="font-size:10px;"></i> ${escapeHTML(n.memberCode)} ${n.memberName ? `· ${escapeHTML(n.memberName)}` : ''}</span></div>` : ''}
+            </td>
+            <td class="td-status">
+              <div style="display:flex; flex-direction:column; gap:4px; align-items:center; justify-content:center;">
+                ${isSynced ? `
+                  <span class="temp-status-badge synced" title="Đã đồng bộ vào Call Log &amp; Issue trên hệ thống">
+                    <i class="fa-solid fa-circle-check"></i> Đã đồng bộ
+                  </span>
+                ` : `
+                  <span class="temp-status-badge unsynced" title="Issue này chưa được Đồng bộ! Nhấn nút 'Đồng bộ' ở trên để chuyển vào Call Log &amp; Issue" onclick="pushAllTempToR2()" style="cursor:pointer;">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Chưa đồng bộ
+                  </span>
+                `}
+                ${matchedTicket ? `
+                  <span class="temp-status-badge chatbox" onclick="window.openTicketDetailModal('${escapeHTML(String(matchedTicket.id))}')" title="Bấm để xem chi tiết Ticket Chatbox AI #${escapeHTML(String(matchedTicket.id))}">
+                    <i class="fa-solid fa-robot"></i> #${escapeHTML(String(matchedTicket.id))}
+                  </span>
+                ` : `
+                  <span class="temp-status-badge chatbox-empty" title="Chưa ghi nhận ticket trên Chatbox AI">
+                    <i class="fa-solid fa-robot" style="font-size:9.5px; opacity:0.6;"></i> Chưa note
+                  </span>
+                `}
+              </div>
             </td>
             <td class="td-date">
               <div style="display:inline-flex; align-items:center; gap:5px; font-weight:700;">
@@ -9389,6 +9588,7 @@
         try {
           const rows = tempNotes.map((n, idx) => ({
             "STT": idx + 1,
+            "TRẠNG THÁI ĐỒNG BỘ": (typeof isTempNoteSynced === "function" && isTempNoteSynced(n)) ? "Đã đồng bộ" : "Chưa đồng bộ",
             "MÃ NHÂN VIÊN": n.memberCode || currentSelectedMember?.code || "",
             "TÊN NHÂN VIÊN": n.memberName || currentSelectedMember?.name || "",
             "KẾT QUẢ NOTE ISSUE": n.result,
