@@ -5939,7 +5939,15 @@
           const colWidths = headers.map(h => Math.max(8, String(h).length + 4));
           colWidths[0] = 7; // STT width
 
-          sheet.rows.forEach((r, rIdx) => {
+          const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
+          const exportRows = allRows.filter(r => !r.locked);
+
+          if (exportRows.length === 0) {
+            toast("Không có dữ liệu để xuất (Tất cả các dòng đều đã bị khoá 🔒)", "warning");
+            return;
+          }
+
+          exportRows.forEach((r, rIdx) => {
             const rowArr = [rIdx + 1]; // STT
 
             columns.forEach((c, cIdx) => {
@@ -6036,7 +6044,7 @@
           }
 
           // Style Data Cells
-          sheet.rows.forEach((r, rIdx) => {
+          exportRows.forEach((r, rIdx) => {
             const excelRowIdx = rIdx + 1;
             const rowHighlightRgb = toRgb(r.highlight);
             const isEven = rIdx % 2 === 1;
@@ -6134,7 +6142,13 @@
             .replace(/\s+/g, "_");
           const fileName = `${safeSheetName}_${getTodayIso()}.xlsx`;
           XLSX.writeFile(wb, fileName);
-          toast("Đã xuất file thành công", "success");
+          const totalOriginal = allRows.length;
+          const lockedExcluded = totalOriginal - exportRows.length;
+          if (lockedExcluded > 0) {
+            toast(`Đã xuất ${exportRows.length} dòng thành công (Đã bỏ qua ${lockedExcluded} dòng bị khoá 🔒)`, "success");
+          } else {
+            toast("Đã xuất file thành công", "success");
+          }
           return;
         }
       } catch (err) {
@@ -6146,10 +6160,18 @@
     }
 
     function exportToCsvFallback(sheet) {
+      const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
+      const exportRows = allRows.filter(r => !r.locked);
+
+      if (exportRows.length === 0) {
+        toast("Không có dữ liệu để xuất (Tất cả các dòng đều đã bị khoá 🔒)", "warning");
+        return;
+      }
+
       const headers = ["STT", ...sheet.columns.map(c => `"${c.name.replace(/"/g, '""')}"`)];
       const lines = [headers.join(",")];
 
-      sheet.rows.forEach((r, rIdx) => {
+      exportRows.forEach((r, rIdx) => {
         const rowArr = [rIdx + 1];
         sheet.columns.forEach(c => {
           let val = r[c.id];
@@ -6176,7 +6198,13 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      toast("Đã xuất file thành công", "success");
+      const totalOriginal = allRows.length;
+      const lockedExcluded = totalOriginal - exportRows.length;
+      if (lockedExcluded > 0) {
+        toast(`Đã xuất ${exportRows.length} dòng thành công (Đã bỏ qua ${lockedExcluded} dòng bị khoá 🔒)`, "success");
+      } else {
+        toast("Đã xuất file thành công", "success");
+      }
     }
 
     function triggerImportExcel() {

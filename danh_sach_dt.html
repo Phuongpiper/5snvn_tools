@@ -2337,8 +2337,16 @@
       }
 
       try {
+        const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (dtData.rows || []);
+        const exportRows = allRows.filter(r => !r.locked);
+
+        if (exportRows.length === 0) {
+          toast("Không có dữ liệu để xuất (Tất cả các dòng đều đã bị khoá 🔒)", "warning");
+          return;
+        }
+
         const headerRow = ["STT", ...dtData.columns.map(c => c.name)];
-        const dataRows = dtData.rows.map((r, rIdx) => {
+        const dataRows = exportRows.map((r, rIdx) => {
           return [
             rIdx + 1,
             ...dtData.columns.map(c => r[c.id] || "")
@@ -2368,7 +2376,7 @@
         const colWidths = [{ wch: 7 }]; // STT
         dtData.columns.forEach((col, cIdx) => {
           let maxLen = col.name.length;
-          dtData.rows.forEach(r => {
+          exportRows.forEach(r => {
             const val = String(r[col.id] || "");
             if (val.length > maxLen) maxLen = val.length;
           });
@@ -2394,7 +2402,7 @@
               };
             } else {
               // Data row
-              const rowObj = dtData.rows[R - 1];
+              const rowObj = exportRows[R - 1];
               let rowBg = null;
               if (rowObj && rowObj.highlight) {
                 const hex = rowObj.highlight.replace("#", "").toUpperCase();
@@ -2415,7 +2423,13 @@
         XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_DT");
         const todayIso = new Date().toISOString().slice(0, 10);
         XLSX.writeFile(wb, `Danh_Sach_DT_${todayIso}.xlsx`);
-        toast("Đã xuất file thành công", "success");
+        const totalOriginal = allRows.length;
+        const lockedExcluded = totalOriginal - exportRows.length;
+        if (lockedExcluded > 0) {
+          toast(`Đã xuất ${exportRows.length} dòng thành công (Đã bỏ qua ${lockedExcluded} dòng bị khoá 🔒)`, "success");
+        } else {
+          toast("Đã xuất file thành công", "success");
+        }
       } catch (err) {
         console.error("Lỗi xuất Excel:", err);
         toast("Lỗi khi xuất file Excel!", "danger");
