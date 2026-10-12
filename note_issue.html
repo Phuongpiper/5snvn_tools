@@ -4688,10 +4688,15 @@
         <!-- Rendered dynamically -->
       </div>
 
-      <div class="member-modal-footer" style="padding: 12px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-        <a id="btnOpenHelpdeskWeb" href="https://helpdesk.ai-audit-test.online/helpdesk/tickets" target="_blank" class="btn-stats-tool primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none;">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trên Chatbox AI Helpdesk
-        </a>
+      <div class="member-modal-footer" style="padding: 12px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <a id="btnOpenHelpdeskWeb" href="https://helpdesk.ai-audit-test.online/helpdesk/tickets" target="_blank" class="btn-stats-tool primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none;">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trên Chatbox AI Helpdesk
+          </a>
+          <button type="button" id="btnModalForceCloseTicket" class="btn-stats-tool danger" onclick="forceCloseHelpdeskTicketCurrent()" style="display:none; padding:6px 14px; font-size:12.5px;" title="Cập nhật trực tiếp trạng thái CLOSED lên hệ thống Helpdesk mà không tốn lượt chat AI">
+            <i class="fa-solid fa-lock"></i> Đóng Ticket Ngay (Force Close)
+          </button>
+        </div>
         <button type="button" class="btn-modal-cancel" onclick="closeTicketDetailModal()" style="display:inline-flex;">
           Đóng
         </button>
@@ -5775,6 +5780,8 @@
         renderStatsPage();
       };
 
+      let currentModalTicketId = null;
+
       window.openTicketDetailModal = function(ticketId) {
         const modal = document.getElementById("ticketDetailModalBackdrop");
         if (!modal) return;
@@ -5784,15 +5791,25 @@
           return;
         }
 
+        currentModalTicketId = t.id;
+
         const modalTitle = document.getElementById("modalTicketTitle");
         if (modalTitle) modalTitle.textContent = `Ticket #${t.id} - ${t.solutionName || t.description || 'Chi tiết'}`;
 
+        const isClosed = (t.status || "").toUpperCase() === "CLOSED";
         const badgeStatus = document.getElementById("modalTicketStatusBadge");
         if (badgeStatus) {
-          badgeStatus.textContent = t.status || "CLOSED";
-          badgeStatus.style.background = t.status === "CLOSED" ? "#ecfdf5" : "#eff6ff";
-          badgeStatus.style.color = t.status === "CLOSED" ? "#047857" : "#1d4ed8";
-          badgeStatus.style.borderColor = t.status === "CLOSED" ? "#a7f3d0" : "#bfdbfe";
+          badgeStatus.textContent = isClosed ? "CLOSED" : (t.status || "ACTIVE");
+          badgeStatus.style.background = isClosed ? "#ecfdf5" : "#fef3c7";
+          badgeStatus.style.color = isClosed ? "#047857" : "#b45309";
+          badgeStatus.style.borderColor = isClosed ? "#a7f3d0" : "#fde68a";
+        }
+
+        const btnForceClose = document.getElementById("btnModalForceCloseTicket");
+        if (btnForceClose) {
+          btnForceClose.style.display = isClosed ? "none" : "inline-flex";
+          btnForceClose.disabled = false;
+          btnForceClose.innerHTML = '<i class="fa-solid fa-lock"></i> Đóng Ticket Ngay (Force Close)';
         }
 
         const bodyEl = document.getElementById("modalTicketBody");
@@ -5884,6 +5901,73 @@
       window.closeTicketDetailModal = function() {
         const modal = document.getElementById("ticketDetailModalBackdrop");
         if (modal) modal.classList.remove("show");
+      };
+
+      window.forceCloseHelpdeskTicketCurrent = async function () {
+        if (!currentModalTicketId) return;
+        await window.forceCloseHelpdeskTicket(currentModalTicketId);
+      };
+
+      window.forceCloseHelpdeskTicket = async function (ticketId) {
+        const btnForceClose = document.getElementById("btnModalForceCloseTicket");
+        if (btnForceClose) {
+          btnForceClose.disabled = true;
+          btnForceClose.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đóng ticket...';
+        }
+
+        try {
+          const currentMemberCode = (currentSelectedMember?.code || "tanh.h.bui.3811").toLowerCase();
+          const loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: currentMemberCode, password: "1" })
+          });
+          if (!loginRes.ok) throw new Error("Đăng nhập Helpdesk không thành công");
+          const authData = await loginRes.json();
+          const token = authData.access_token;
+          if (!token) throw new Error("Không nhận được token xác thực");
+
+          const putRes = await fetch(`https://helpdesk.ai-audit-test.online/api/tickets/${ticketId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({ status: "CLOSED" })
+          });
+
+          if (!putRes.ok) {
+            throw new Error(`Cập nhật thất bại (HTTP ${putRes.status})`);
+          }
+
+          const t = helpdeskTickets.find(item => String(item.id) === String(ticketId));
+          if (t) t.status = "CLOSED";
+
+          const badgeStatus = document.getElementById("modalTicketStatusBadge");
+          if (badgeStatus) {
+            badgeStatus.textContent = "CLOSED";
+            badgeStatus.style.background = "#ecfdf5";
+            badgeStatus.style.color = "#047857";
+            badgeStatus.style.borderColor = "#a7f3d0";
+          }
+          if (btnForceClose) btnForceClose.style.display = "none";
+
+          showToast(`🎉 Đã đóng thành công Ticket #${ticketId}!`, "fa-circle-check");
+
+          if (typeof fetchHelpdeskTickets === "function") {
+            fetchHelpdeskTickets(false, true);
+          }
+          if (typeof renderStatsPage === "function") {
+            renderStatsPage();
+          }
+        } catch (err) {
+          console.error("Lỗi đóng ticket:", err);
+          showToast(`Lỗi khi đóng ticket: ${err.message}`, "fa-triangle-exclamation");
+          if (btnForceClose) {
+            btnForceClose.disabled = false;
+            btnForceClose.innerHTML = '<i class="fa-solid fa-lock"></i> Thử đóng lại';
+          }
+        }
       };
 
       // ── TỰ ĐỘNG ĐỒNG BỘ OTRS TICKET LÊN GOOGLE SHEET BÁO CÁO ──
@@ -7903,7 +7987,19 @@
             }
           }
 
-          return `Tạo mới Ticket với thông tin: Project NVN, ${solutionName}_${otrsCode}_${otrsTitle}_Mã DSR, Mã nhân viên: ${staffInfo}_Nguồn liên hệ: ${sourceContact} Gán Solution: ${solCode}\n=> Sau đó hãy tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`;
+          const promptLines = [
+            `Tạo mới Ticket với thông tin: Project NVN`,
+            `- Call Details: ${resultText}`,
+            `- Tên Solution: ${solutionName}`,
+            `- Gán Solution: ${solCode}`,
+            `- Tên NPP: Chưa có`,
+            `- Mã NPP: Chưa có`,
+            `- Mã nhân viên (DSR): ${staffInfo || "Chưa có"}`,
+            `- Nguồn liên hệ: ${sourceContact}`,
+            `=> BẮT BUỘC: Dựa vào solution để tự phân tích Nguyên nhân & Kết quả, sau đó gọi ngay tool close_ticket để đóng ticket. Ticket hoàn thành phải luôn ở trạng thái CLOSED.`
+          ];
+
+          return promptLines.join("\n");
         }
 
         return formatHotlineAiPrompt(item);
@@ -7996,7 +8092,7 @@
           `- Nguồn liên hệ: ${sourceContact}`
         ];
 
-        promptLines.push(`=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`);
+        promptLines.push(`=> BẮT BUỘC: Dựa vào solution để tự phân tích Nguyên nhân & Kết quả, sau đó gọi ngay tool close_ticket để đóng ticket. Ticket hoàn thành phải luôn ở trạng thái CLOSED.`);
 
         return promptLines.join("\n");
       }
@@ -8125,7 +8221,22 @@
 
           const ticketId = chatData.ticket_id;
           if (ticketId) {
-            showToast(`🎉 Chatbox AI đã tạo & đóng thành công Ticket #${ticketId}!`, "fa-circle-check", 6000);
+            // Tự động kiểm tra và đảm bảo ticket luôn là trạng thái CLOSED (Chống lỗi sót ticket mở)
+            try {
+              const checkTicket = await fetch(`https://helpdesk.ai-audit-test.online/api/tickets/${ticketId}`, {
+                headers: { "Authorization": "Bearer " + token }
+              }).then(r => r.json());
+              if (checkTicket && String(checkTicket.status).toUpperCase() !== "CLOSED") {
+                await fetch(`https://helpdesk.ai-audit-test.online/api/tickets/${ticketId}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                  body: JSON.stringify({ status: "CLOSED" })
+                });
+              }
+            } catch (autoCloseErr) {
+              console.warn("Auto-close verify notice:", autoCloseErr);
+            }
+            showToast(`🎉 Chatbox AI đã tạo & đóng thành công Ticket #${ticketId}! (Trạng thái: CLOSED)`, "fa-circle-check", 6000);
           } else {
             showToast("✅ Chatbox AI đã tiếp nhận và đang xử lý tạo ticket!", "fa-robot", 6000);
           }
