@@ -5520,7 +5520,7 @@
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = normalizeDateStr(issue.date);
         const issueAgent = String(issue.memberCode || "").trim().toLowerCase();
-        const issueOtrs = extractOtrsNum(issue.result || issue.fields?.npp);
+        const issueOtrs = extractOtrsNum(issue.result) || extractOtrsNum(issue.fields?.npp) || extractOtrsNum(issue.fields?.hotline);
 
         let issuePhone = cleanDigits(issue.fields?.hotline);
         if (!issuePhone && issue.result) {
@@ -5757,6 +5757,12 @@
         if (solCode === "NVN-665" || /raise\s+otrs\s+ticket/i.test(solName) || /_raise\s+otrs\s+ticket_/i.test(resultText) || /\braise\s+otrs\s+ticket\b/i.test(resultText)) {
           return "Raise OTRS Ticket";
         }
+        if (solCode === "NVN-664" || /update\s+otrs\s+ticket/i.test(solName) || /_update\s+otrs\s+ticket_/i.test(resultText) || /\bupdate\s+otrs\s+ticket\b/i.test(resultText)) {
+          return "Update OTRS Ticket";
+        }
+        if (solCode === "NVN-603" || /phản\s*hồi\s*mail/i.test(solName) || /phản\s*hồi\s*mail/i.test(resultText)) {
+          return "Phản hồi mail ticket cho HQ";
+        }
         if (solCode === "NVN-399" || /raise\s+ticket\s+theo\s+yêu\s+cầu/i.test(solName) || /_raise\s+ticket\s+theo\s+yêu\s+cầu/i.test(resultText) || /\braise\s+ticket\s+theo\s+yêu\s+cầu/i.test(resultText)) {
           return "Raise ticket theo yêu cầu của HQ user";
         }
@@ -5865,12 +5871,14 @@
 
         const memberCode = String(item.memberCode || (typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) || "").trim().toLowerCase();
 
+        const isMail = tenCV.toLowerCase().includes("mail") || (item.fields && String(item.fields.solutionCode).toUpperCase() === "NVN-603");
+
         return {
           colA: dateStr,
           colB: dateStr,
           colC: "NVN",
           colD: "Cố định",
-          colE: "OTRS",
+          colE: isMail ? "Mail" : "OTRS",
           colF: tenCV,
           colG: chiTiet,
           colH: dateStr,
@@ -7467,7 +7475,7 @@
             (n, idx) => {
               const isPastDate = n.date && todayStr && n.date !== todayStr;
               const isOtrs = isOtrsRaiseCloseTicket(n);
-              const copyTitle = isOtrs ? "Sao chép Prompt OTRS (Raise & Close ticket)" : "Sao chép kết quả này";
+              const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép kết quả này";
               return `
           <tr data-id="${n.id}">
             <td class="td-stt">${idx + 1}</td>
@@ -7511,9 +7519,10 @@
         const resultText = String(item.result || item.issue || "").toLowerCase();
         const solName = String((item.fields && item.fields.solution) || "").toLowerCase();
         const solCode = String((item.fields && item.fields.solutionCode) || "").toUpperCase();
-        if (["NVN-665", "NVN-663", "NVN-664", "NVN-399"].includes(solCode)) return true;
-        if (resultText.includes("otrs") && (resultText.includes("raise") || resultText.includes("close"))) return true;
-        if (solName.includes("otrs") && (solName.includes("raise") || solName.includes("close"))) return true;
+        if (["NVN-665", "NVN-663", "NVN-664", "NVN-603", "NVN-399"].includes(solCode)) return true;
+        if (resultText.includes("otrs") && (resultText.includes("raise") || resultText.includes("close") || resultText.includes("update"))) return true;
+        if (solName.includes("otrs") && (solName.includes("raise") || solName.includes("close") || solName.includes("update"))) return true;
+        if (resultText.includes("phản hồi mail") || solName.includes("phản hồi mail")) return true;
         return false;
       }
 
@@ -7529,6 +7538,7 @@
         if (/raise\s+otrs/i.test(clean)) return "NVN-665";
         if (/close\s+otrs/i.test(clean)) return "NVN-663";
         if (/update\s+otrs/i.test(clean)) return "NVN-664";
+        if (/phản\s*hồi\s*mail/i.test(clean)) return "NVN-603";
         if (/raise\s+ticket/i.test(clean)) return "NVN-399";
         return "NVN-665";
       }
@@ -7556,45 +7566,71 @@
             solCode = "NVN-665";
           }
 
-          let rawOtrs = "";
-          if (item.fields && item.fields.npp) rawOtrs = item.fields.npp.trim();
-          if (!rawOtrs && parts.length >= 3) rawOtrs = parts[2].trim();
-          rawOtrs = rawOtrs.replace(/^NPP\s+/i, "").trim();
-
+          // Parse OTRS Number
           let otrsCode = "";
-          let otrsTitle = "";
-          const matchNum = rawOtrs.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i) ||
-            resultText.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i);
-
+          const matchNum = (item.fields && item.fields.npp ? String(item.fields.npp).match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i) : null) ||
+                           resultText.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i);
           if (matchNum) {
             otrsCode = matchNum[1];
-            const idx = rawOtrs.indexOf(otrsCode);
-            if (idx !== -1) {
-              otrsTitle = rawOtrs.slice(idx + otrsCode.length).trim();
-            } else {
-              const resIdx = resultText.indexOf(otrsCode);
-              if (resIdx !== -1) {
-                otrsTitle = resultText.slice(resIdx + otrsCode.length).split("_")[0].trim();
-              }
-            }
-            otrsTitle = otrsTitle.replace(/^[\t\s\-_:]+/, "").trim();
-          } else {
-            otrsTitle = rawOtrs;
           }
 
+          // Extract staff
           let staffInfo = "";
           if (item.fields && item.fields.role) {
             staffInfo = item.fields.role.trim();
           } else if (item.fields && (item.fields.nvbhFormatted || item.fields.nvbh)) {
             staffInfo = (item.fields.nvbhFormatted || item.fields.nvbh).trim();
-          } else if (parts.length >= 4) {
-            staffInfo = parts[3].trim();
+          } else {
+            const staffMatch = resultText.match(/_(HQ\s+[^_]+|ADMIN|DSR\s+[^_]+)(?:_|$)/i);
+            if (staffMatch) {
+              staffInfo = staffMatch[1].trim();
+            } else if (parts.length >= 4) {
+              staffInfo = parts[parts.length - 2]?.trim() || "";
+            }
           }
 
-          let sourceContact = "OTRS";
-          let rawHotline = String((item.fields && item.fields.hotline) || (parts.length >= 5 ? parts[4] : "")).trim();
+          // Extract title
+          let otrsTitle = "";
+          if (otrsCode) {
+            const codeIdx = resultText.indexOf(otrsCode);
+            const afterCode = resultText.slice(codeIdx + otrsCode.length);
+            let titlePortion = afterCode;
+            if (staffInfo) {
+              const staffIdx = titlePortion.indexOf(staffInfo);
+              if (staffIdx !== -1) {
+                titlePortion = titlePortion.slice(0, staffIdx);
+              }
+            } else {
+              const pIdx = titlePortion.indexOf("_");
+              if (pIdx !== -1) titlePortion = titlePortion.slice(0, pIdx);
+            }
+            otrsTitle = titlePortion.replace(/^[-_\s:]+/, "").replace(/[-_\s:]+$/, "").trim();
+          }
+
+          // Fallback title from NPP
+          if (!otrsTitle && item.fields && item.fields.npp) {
+            let raw = item.fields.npp.replace(/^NPP\s+/i, "").trim();
+            if (otrsCode && raw.includes(otrsCode)) {
+              otrsTitle = raw.slice(raw.indexOf(otrsCode) + otrsCode.length).replace(/^[-_\s:]+/, "").trim();
+            } else {
+              otrsTitle = raw;
+            }
+          }
+
+          // Source contact
+          let sourceContact = (solCode === "NVN-603" || /mail/i.test(solutionName)) ? "Mail" : "OTRS";
+          let rawHotline = String((item.fields && item.fields.hotline) || "").trim();
+          if (!rawHotline && staffInfo) {
+            const afterStaff = resultText.slice(resultText.indexOf(staffInfo) + staffInfo.length);
+            rawHotline = afterStaff.replace(/^[_]+/, "").trim();
+          }
           if (rawHotline) {
-            sourceContact = rawHotline.replace(/^Hotline\s+/i, "").trim() || "OTRS";
+            let clean = rawHotline.replace(/^Hotline[\s_]*/i, "").trim();
+            if (clean.toUpperCase() === "OTRS") {
+              sourceContact = (solCode === "NVN-603" || /mail/i.test(solutionName)) ? "Mail" : "OTRS";
+            } else if (clean) {
+              sourceContact = clean;
+            }
           }
 
           return `Tạo mới Ticket với thông tin: Project NVN, ${solutionName}_${otrsCode}_${otrsTitle}_Mã DSR, Mã nhân viên: ${staffInfo}_Nguồn liên hệ: ${sourceContact} Gán Solution: ${solCode}\n=> Sau đó hãy tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`;
@@ -7760,7 +7796,7 @@
           const textToCopy = formatIssueCopyText(found);
           navigator.clipboard.writeText(textToCopy);
           if (isOtrsRaiseCloseTicket(found)) {
-            showToast("Đã sao chép Prompt OTRS (Raise & Close ticket)!", "fa-robot");
+            showToast("Đã sao chép Prompt AI (OTRS / Mail Ticket)!", "fa-robot");
           } else {
             showToast("Đã sao chép: " + found.result.substring(0, 36) + "...");
           }
@@ -7830,7 +7866,7 @@
           const textToCopy = formatIssueCopyText(found);
           navigator.clipboard.writeText(textToCopy);
           if (isOtrsRaiseCloseTicket(found)) {
-            showToast("Đã sao chép Prompt OTRS (Raise & Close ticket)!", "fa-robot");
+            showToast("Đã sao chép Prompt AI (OTRS / Mail Ticket)!", "fa-robot");
           } else {
             showToast("Đã sao chép: " + (found.result || "").substring(0, 36) + "...", "fa-copy");
           }
@@ -8684,7 +8720,7 @@
                     ${escapeHTML(timeDisplay)}
                   </td>
                   <td class="text-center">
-                    <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="${isOtrsRaiseCloseTicket(n) ? 'Sao chép Prompt OTRS (Raise & Close ticket)' : 'Sao chép cú pháp issue'}">
+                    <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="${isOtrsRaiseCloseTicket(n) ? 'Sao chép Prompt AI (OTRS / Mail Ticket)' : 'Sao chép cú pháp issue'}">
                       <i class="fa-regular fa-copy"></i>
                     </button>
                     <button type="button" class="btn-row-circle danger" data-delete-id="${n.id}" onclick="window.deleteDetailIssue('${n.id}')" title="Xoá issue này">
