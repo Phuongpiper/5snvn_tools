@@ -5596,6 +5596,15 @@
         return m ? m[1] : "";
       }
 
+      function getOtrsActionType(code, name, text) {
+        const combined = `${code || ""} ${name || ""} ${text || ""}`.toLowerCase();
+        if (combined.includes("nvn-603") || combined.includes("phản hồi mail") || combined.includes("phan hoi mail")) return "mail_reply";
+        if (combined.includes("nvn-663") || combined.includes("close") || combined.includes("đóng")) return "close";
+        if (combined.includes("nvn-664") || combined.includes("update") || combined.includes("cập nhật")) return "update";
+        if (combined.includes("nvn-399") || combined.includes("nvn-665") || combined.includes("raise")) return "raise";
+        return "";
+      }
+
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = normalizeDateStr(issue.date);
@@ -5608,9 +5617,17 @@
           if (pm) issuePhone = cleanDigits(pm[1] || pm[0]);
         }
 
-        const issueSolCode = String(issue.fields?.solutionCode || "").trim().toUpperCase();
+        let issueSolCode = String(issue.fields?.solutionCode || "").trim().toUpperCase();
+        let issueSolName = String(issue.fields?.solution || "").trim().toLowerCase();
         const issueDsr = String(issue.fields?.nvbhFormatted || issue.fields?.nvbh || "").trim().toUpperCase();
-        const issueSolName = String(issue.fields?.solution || "").trim().toLowerCase();
+
+        if (!issueSolName && issue.result) {
+          const sm = issue.result.match(/\[NVN-DMS\]-\[[A-Z]+\]_([^_]+)/i);
+          if (sm) issueSolName = sm[1].trim().toLowerCase();
+        }
+        if (!issueSolCode && issueSolName && typeof getSolutionCodeByName === "function") {
+          issueSolCode = getSolutionCodeByName(issueSolName);
+        }
 
         // Chỉ tìm trong các ticket chưa được ghép cho issue khác
         const availableTickets = usedTicketIds
@@ -5623,29 +5640,77 @@
           return tAgent === issueAgent && tDate === issueDate;
         });
 
-        // 1. Nếu là OTRS Ticket (có mã 14-18 số), BẮT BUỘC phải khớp đúng mã OTRS
+        // 1. Nếu là OTRS Ticket (có mã 14-18 số), BẮT BUỘC phải khớp đúng mã OTRS VÀ ĐÚNG LOẠI GIẢI PHÁP (Solution)
         if (issueOtrs) {
-          const m = agentDateCandidates.find(t => {
+          const otrsCandidates = agentDateCandidates.filter(t => {
             const tOtrs = extractOtrsNum(t.description || "") ||
                           extractOtrsNum(t.rootCause || "") ||
                           extractOtrsNum(t.result || "") ||
                           extractOtrsNum(t.callDetails || "");
             return tOtrs === issueOtrs;
           });
-          if (m) {
-            if (usedTicketIds) usedTicketIds.add(m.id);
-            return m;
+
+          if (otrsCandidates.length > 0) {
+            const issueAction = getOtrsActionType(issueSolCode, issueSolName, issue.result);
+
+            // Ưu tiên 1: Khớp chính xác Solution Code (NVN-399 với NVN-399, NVN-603 với NVN-603...)
+            let m = issueSolCode
+              ? otrsCandidates.find(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode)
+              : null;
+
+            // Ưu tiên 2: Khớp Tên Solution
+            if (!m && issueSolName && issueSolName.length > 3) {
+              m = otrsCandidates.find(t => {
+                const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
+                return tName.includes(issueSolName) || issueSolName.includes(tName);
+              });
+            }
+
+            // Ưu tiên 3: Khớp loại hành động OTRS (Raise với Raise, Mail Reply với Mail Reply, Close với Close...)
+            if (!m && issueAction) {
+              m = otrsCandidates.find(t => {
+                const tAction = getOtrsActionType(t.solutionCode, t.solutionName, t.description);
+                return tAction === issueAction;
+              });
+            }
+
+            // Nếu không khớp và không xung đột hành động
+            if (!m && otrsCandidates.length === 1 && !issueAction) {
+              const tAction = getOtrsActionType(otrsCandidates[0].solutionCode, otrsCandidates[0].solutionName, otrsCandidates[0].description);
+              if (!tAction) {
+                m = otrsCandidates[0];
+              }
+            }
+
+            if (m) {
+              if (usedTicketIds) usedTicketIds.add(m.id);
+              return m;
+            }
           }
-          // Nếu issue này là OTRS nhưng không có ticket nào trên Helpdesk chứa đúng mã OTRS này -> Chưa note!
+          // Nếu issue này là OTRS nhưng không có ticket nào trên Helpdesk khớp đúng mã OTRS & solution này -> Chưa note!
           return null;
         }
 
         // 2. Với các issue Hotline: Cùng Agent + Cùng Ngày + Trùng Số Điện Thoại
         if (issuePhone && issuePhone.length >= 7) {
-          const m = agentDateCandidates.find(t => cleanDigits(t.phone) === issuePhone);
-          if (m) {
-            if (usedTicketIds) usedTicketIds.add(m.id);
-            return m;
+          const phoneCandidates = agentDateCandidates.filter(t => cleanDigits(t.phone) === issuePhone);
+          if (phoneCandidates.length > 0) {
+            let m = issueSolCode
+              ? phoneCandidates.find(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode)
+              : null;
+            if (!m && issueSolName && issueSolName.length > 3) {
+              m = phoneCandidates.find(t => {
+                const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
+                return tName.includes(issueSolName) || issueSolName.includes(tName);
+              });
+            }
+            if (!m) {
+              m = phoneCandidates[0];
+            }
+            if (m) {
+              if (usedTicketIds) usedTicketIds.add(m.id);
+              return m;
+            }
           }
         }
 
