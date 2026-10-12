@@ -7711,13 +7711,9 @@
           }
         }
 
-        // 4. Hotline
-        let hotline = (item.fields && item.fields.hotline) ? String(item.fields.hotline).trim() : "";
-        if (!hotline) {
-          const hlMatch = callDetail.match(/Hotline\s*([0-9\s]+)/i) || callDetail.match(/0\d{8,10}/);
-          if (hlMatch) hotline = hlMatch[1].replace(/\s+/g, "");
-        }
-        hotline = hotline.replace(/^Hotline\s*/i, "").trim();
+        // 4. Nguồn liên hệ
+        let sourceContact = (item.fields && item.fields.source) ? String(item.fields.source).trim() : "Hotline";
+        if (!sourceContact) sourceContact = "Hotline";
 
         // 5. Tạo prompt hoàn chỉnh
         let promptLines = [
@@ -7728,14 +7724,8 @@
           `- Tên NPP: ${nppName || "Chưa có"}`,
           `- Mã NPP: ${nppCode || "Chưa có"}`,
           `- Mã nhân viên (DSR): ${staffInfo || "Chưa có"}`,
-          `- Nguồn liên hệ: Hotline ${hotline || "Hotline"}`
+          `- Nguồn liên hệ: ${sourceContact}`
         ];
-
-        if (solutionSteps) {
-          promptLines.push(`- Hướng xử lý: ${solutionSteps}`);
-        }
-
-        promptLines.push(`=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`);
 
         return promptLines.join("\n");
       }
