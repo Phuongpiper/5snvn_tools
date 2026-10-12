@@ -7475,7 +7475,7 @@
             (n, idx) => {
               const isPastDate = n.date && todayStr && n.date !== todayStr;
               const isOtrs = isOtrsRaiseCloseTicket(n);
-              const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép kết quả này";
+              const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép Prompt AI (Hotline Ticket)";
               return `
           <tr data-id="${n.id}">
             <td class="td-stt">${idx + 1}</td>
@@ -7636,18 +7636,112 @@
           return `Tạo mới Ticket với thông tin: Project NVN, ${solutionName}_${otrsCode}_${otrsTitle}_Mã DSR, Mã nhân viên: ${staffInfo}_Nguồn liên hệ: ${sourceContact} Gán Solution: ${solCode}\n=> Sau đó hãy tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`;
         }
 
-        const suffix = "     Tự gán solution và phân tích rồi close ticket";
-        return resultText + suffix;
+        return formatHotlineAiPrompt(item);
+      }
+
+      function formatHotlineAiPrompt(item) {
+        if (!item) return "";
+        const callDetail = String(item.result || item.issue || "").trim();
+        const parts = callDetail.split("_");
+
+        // 1. Solution
+        let solutionName = (item.fields && item.fields.solution) ? item.fields.solution.trim() : "";
+        if (!solutionName && parts.length >= 2) {
+          solutionName = parts[1].trim();
+        }
+        if (!solutionName) solutionName = "Hỗ trợ sự cố DMS";
+
+        let solObj = null;
+        if (Array.isArray(solutionsList)) {
+          const cleanSol = solutionName.toLowerCase();
+          solObj = solutionsList.find(s => s && s.name && s.name.trim().toLowerCase() === cleanSol) ||
+                   solutionsList.find(s => s && s.code && s.code.toUpperCase() === (item.fields?.solutionCode || "").toUpperCase()) ||
+                   solutionsList.find(s => s && s.name && (s.name.toLowerCase().includes(cleanSol) || cleanSol.includes(s.name.toLowerCase())));
+        }
+
+        let solCode = (item.fields && item.fields.solutionCode) ? item.fields.solutionCode.trim().toUpperCase() : (solObj?.code || "");
+        if (!solCode || !solCode.startsWith("NVN-")) {
+          solCode = (typeof getSolutionCodeByName === "function") ? getSolutionCodeByName(solutionName) : "";
+        }
+
+        let solutionSteps = solObj?.solution || "";
+
+        // 2. NPP (Tên & Mã)
+        let nppName = (item.fields && item.fields.npp) ? item.fields.npp.trim() : "";
+        if (!nppName) {
+          const foundNppPart = parts.find(p => /^NPP\s/i.test(p.trim()));
+          if (foundNppPart) nppName = foundNppPart.trim();
+        }
+
+        let nppCode = (item.distCode || (item.fields && (item.fields.distCode || item.fields.nppCode)) || "").trim();
+        if (!nppCode && nppName && Array.isArray(dtList)) {
+          const cleanNpp = nppName.replace(/^NPP\s+/i, "").trim().toLowerCase();
+          const dtObj = dtList.find(d => {
+            const iss = String(d.issueName || "").replace(/^NPP\s+/i, "").trim().toLowerCase();
+            const full = String(d.name || "").trim().toLowerCase();
+            return iss === cleanNpp || full.includes(cleanNpp) || cleanNpp.includes(iss);
+          });
+          if (dtObj && dtObj.code) nppCode = String(dtObj.code).trim();
+        }
+
+        // 3. Nhân viên / DSR / Role
+        let staffInfo = "";
+        if (item.fields && item.fields.role) {
+          staffInfo = item.fields.role.trim();
+        } else if (item.fields && (item.fields.nvbhFormatted || item.fields.nvbh)) {
+          staffInfo = (item.fields.nvbhFormatted || item.fields.nvbh).trim();
+        } else {
+          const staffMatch = callDetail.match(/_(HQ\s+[^_]+|ADMIN|DSR\s+[^_]+|\d+[A-Z]\d+)(?:_|$)/i);
+          if (staffMatch) {
+            staffInfo = staffMatch[1].trim();
+          } else {
+            const hlIdx = parts.findIndex(p => /hotline/i.test(p));
+            if (hlIdx > 1) staffInfo = parts[hlIdx - 1].trim();
+          }
+        }
+
+        // Fallback tra NPP code theo prefix của staffInfo (VD: 086G0003 -> prefix 086G -> mã 5130548)
+        if (!nppCode && staffInfo && Array.isArray(dtList)) {
+          const pfxM = staffInfo.match(/^(\d+[A-Z])/i);
+          if (pfxM) {
+            const pfx = pfxM[1].toUpperCase();
+            const dtObj = dtList.find(d => String(d.prefix || "").toUpperCase() === pfx);
+            if (dtObj && dtObj.code) nppCode = String(dtObj.code).trim();
+          }
+        }
+
+        // 4. Hotline
+        let hotline = (item.fields && item.fields.hotline) ? String(item.fields.hotline).trim() : "";
+        if (!hotline) {
+          const hlMatch = callDetail.match(/Hotline\s*([0-9\s]+)/i) || callDetail.match(/0\d{8,10}/);
+          if (hlMatch) hotline = hlMatch[1].replace(/\s+/g, "");
+        }
+        hotline = hotline.replace(/^Hotline\s*/i, "").trim();
+
+        // 5. Tạo prompt hoàn chỉnh
+        let promptLines = [
+          `Tạo mới Ticket với thông tin: Project NVN`,
+          `- Call Details: ${callDetail}`,
+          `- Tên Solution: ${solutionName}`,
+          `- Gán Solution: ${solCode || "NVN-..."}`,
+          `- Tên NPP: ${nppName || "Chưa có"}`,
+          `- Mã NPP: ${nppCode || "Chưa có"}`,
+          `- Mã nhân viên (DSR): ${staffInfo || "Chưa có"}`,
+          `- Nguồn liên hệ: Hotline ${hotline || "Hotline"}`
+        ];
+
+        if (solutionSteps) {
+          promptLines.push(`- Hướng xử lý: ${solutionSteps}`);
+        }
+
+        promptLines.push(`=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`);
+
+        return promptLines.join("\n");
       }
 
       function formatChatboxAiPrompt(item) {
         if (!item) return "";
-        if (isOtrsRaiseCloseTicket(item)) {
-          return formatIssueCopyText(item);
-        }
-        const resultText = String(item.result || item.issue || "").trim();
-        if (resultText.startsWith("Tạo mới Ticket")) return resultText;
-        return `Tạo mới Ticket với thông tin: Project NVN, ${resultText}\n=> Sau đó hãy tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`;
+        return formatIssueCopyText(item);
       }
 
       let currentUnnotedIssue = null;
@@ -7798,7 +7892,7 @@
           if (isOtrsRaiseCloseTicket(found)) {
             showToast("Đã sao chép Prompt AI (OTRS / Mail Ticket)!", "fa-robot");
           } else {
-            showToast("Đã sao chép: " + found.result.substring(0, 36) + "...");
+            showToast("Đã sao chép Prompt AI (Hotline Ticket)!", "fa-robot");
           }
         }
       };
@@ -7868,7 +7962,7 @@
           if (isOtrsRaiseCloseTicket(found)) {
             showToast("Đã sao chép Prompt AI (OTRS / Mail Ticket)!", "fa-robot");
           } else {
-            showToast("Đã sao chép: " + (found.result || "").substring(0, 36) + "...", "fa-copy");
+            showToast("Đã sao chép Prompt AI (Hotline Ticket)!", "fa-robot");
           }
         }
       };
@@ -8720,7 +8814,7 @@
                     ${escapeHTML(timeDisplay)}
                   </td>
                   <td class="text-center">
-                    <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="${isOtrsRaiseCloseTicket(n) ? 'Sao chép Prompt AI (OTRS / Mail Ticket)' : 'Sao chép cú pháp issue'}">
+                    <button type="button" class="btn-row-circle" onclick="window.copyDetailIssue('${n.id}')" title="${isOtrsRaiseCloseTicket(n) ? 'Sao chép Prompt AI (OTRS / Mail Ticket)' : 'Sao chép Prompt AI (Hotline Ticket)'}">
                       <i class="fa-regular fa-copy"></i>
                     </button>
                     <button type="button" class="btn-row-circle danger" data-delete-id="${n.id}" onclick="window.deleteDetailIssue('${n.id}')" title="Xoá issue này">
