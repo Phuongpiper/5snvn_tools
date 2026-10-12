@@ -2636,6 +2636,19 @@
       transform: translateY(-1px);
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
     }
+    .btn-ticket-pill.pending {
+      background: #fff7ed;
+      color: #c2410c;
+      border-color: #ffedd5;
+      cursor: pointer;
+    }
+    .btn-ticket-pill.pending:hover {
+      background: #ffedd5;
+      color: #9a3412;
+      border-color: #fed7aa;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+    }
     .staff-chatbox-stat-pill {
       font-size: 11px;
       margin-top: 4px;
@@ -4689,12 +4702,15 @@
       </div>
 
       <div class="member-modal-footer" style="padding: 12px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <a id="btnOpenHelpdeskWeb" href="https://helpdesk.ai-audit-test.online/helpdesk/tickets" target="_blank" class="btn-stats-tool primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none;">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trên Chatbox AI Helpdesk
           </a>
           <button type="button" id="btnModalForceCloseTicket" class="btn-stats-tool danger" onclick="forceCloseHelpdeskTicketCurrent()" style="display:none; padding:6px 14px; font-size:12.5px;" title="Cập nhật trực tiếp trạng thái CLOSED lên hệ thống Helpdesk mà không tốn lượt chat AI">
             <i class="fa-solid fa-lock"></i> Đóng Ticket Ngay (Force Close)
+          </button>
+          <button type="button" id="btnModalCopyPromptNewChat" class="btn-stats-tool" onclick="copyPromptForNewChat()" style="display:none; padding:6px 14px; font-size:12.5px; background:#fff7ed; color:#c2410c; border:1px solid #ffedd5;" title="Sao chép lại prompt để gửi trong đoạn chat mới trên Chatbox AI">
+            <i class="fa-regular fa-copy"></i> Sao chép gửi Chat mới
           </button>
         </div>
         <button type="button" class="btn-modal-cancel" onclick="closeTicketDetailModal()" style="display:inline-flex;">
@@ -5812,6 +5828,11 @@
           btnForceClose.innerHTML = '<i class="fa-solid fa-lock"></i> Đóng Ticket Ngay (Force Close)';
         }
 
+        const btnCopyNewChat = document.getElementById("btnModalCopyPromptNewChat");
+        if (btnCopyNewChat) {
+          btnCopyNewChat.style.display = isClosed ? "none" : "inline-flex";
+        }
+
         const bodyEl = document.getElementById("modalTicketBody");
         if (bodyEl) {
           bodyEl.innerHTML = `
@@ -5952,6 +5973,9 @@
           }
           if (btnForceClose) btnForceClose.style.display = "none";
 
+          const btnCopyNewChat = document.getElementById("btnModalCopyPromptNewChat");
+          if (btnCopyNewChat) btnCopyNewChat.style.display = "none";
+
           showToast(`🎉 Đã đóng thành công Ticket #${ticketId}!`, "fa-circle-check");
 
           if (typeof fetchHelpdeskTickets === "function") {
@@ -5968,6 +5992,32 @@
             btnForceClose.innerHTML = '<i class="fa-solid fa-lock"></i> Thử đóng lại';
           }
         }
+      };
+
+      window.copyPromptForNewChat = function () {
+        if (!currentModalTicketId) return;
+        const t = helpdeskTickets.find(item => String(item.id) === String(currentModalTicketId));
+        if (!t) return;
+        let matchedIssue = (Array.isArray(r2Issues) ? r2Issues.find(iss => iss.matchedTicket?.id === t.id) : null) ||
+                          (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
+        let promptText = "";
+        if (matchedIssue) {
+          promptText = formatIssueCopyText(matchedIssue);
+        } else {
+          promptText = [
+            `Tạo mới Ticket với thông tin: Project NVN`,
+            `- Call Details: ${t.description || t.solutionName || 'Hỗ trợ DMS'}`,
+            `- Tên Solution: ${t.solutionName || 'Hỗ trợ DMS'}`,
+            `- Gán Solution: ${t.solutionCode || 'NVN-074'}`,
+            `- Tên NPP: ${t.distName || 'Chưa có'}`,
+            `- Mã NPP: ${t.distCode || 'Chưa có'}`,
+            `- Mã nhân viên (DSR): ${t.dsrCode || 'Chưa có'}`,
+            `- Nguồn liên hệ: ${t.contact_source || t.phone || 'Hotline'}`,
+            `=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`
+          ].join("\n");
+        }
+        navigator.clipboard.writeText(promptText);
+        showToast(`Đã sao chép prompt cho Ticket #${t.id}! Mở Chat mới dán Ctrl + V.`, "fa-copy");
       };
 
       // ── TỰ ĐỘNG ĐỒNG BỘ OTRS TICKET LÊN GOOGLE SHEET BÁO CÁO ──
@@ -7826,11 +7876,17 @@
                     <i class="fa-solid fa-cloud-arrow-up"></i> Chưa đồng bộ
                   </span>
                 `}
-                ${matchedTicket ? `
-                  <span class="temp-status-badge chatbox" onclick="window.openTicketDetailModal('${escapeHTML(String(matchedTicket.id))}')" title="Bấm để xem chi tiết Ticket Chatbox AI #${escapeHTML(String(matchedTicket.id))}">
-                    <i class="fa-solid fa-robot"></i> #${escapeHTML(String(matchedTicket.id))}
-                  </span>
-                ` : `
+                ${matchedTicket ? (
+                  (matchedTicket.status || "").toUpperCase() === "CLOSED" ? `
+                    <span class="temp-status-badge chatbox" onclick="window.openTicketDetailModal('${escapeHTML(String(matchedTicket.id))}')" title="Đã đóng - Bấm để xem chi tiết Ticket Chatbox AI #${escapeHTML(String(matchedTicket.id))}">
+                      <i class="fa-solid fa-robot"></i> #${escapeHTML(String(matchedTicket.id))}
+                    </span>
+                  ` : `
+                    <span class="temp-status-badge" style="background:#fff7ed; color:#c2410c; border:1px solid #ffedd5; cursor:pointer;" onclick="window.openTicketDetailModal('${escapeHTML(String(matchedTicket.id))}')" title="Ticket #${escapeHTML(String(matchedTicket.id))} đang Pending (chưa đóng) - Bấm để xử lý hoặc gửi chat mới!">
+                      <i class="fa-solid fa-clock-rotate-left" style="font-size:10px;"></i> #${escapeHTML(String(matchedTicket.id))} (Pending)
+                    </span>
+                  `
+                ) : `
                   <span class="temp-status-badge chatbox-empty" title="Chưa ghi nhận ticket trên Chatbox AI">
                     <i class="fa-solid fa-robot" style="font-size:9.5px; opacity:0.6;"></i> Chưa note
                   </span>
@@ -7996,7 +8052,7 @@
             `- Mã NPP: Chưa có`,
             `- Mã nhân viên (DSR): ${staffInfo || "Chưa có"}`,
             `- Nguồn liên hệ: ${sourceContact}`,
-            `=> BẮT BUỘC: Dựa vào solution để tự phân tích Nguyên nhân & Kết quả, sau đó gọi ngay tool close_ticket để đóng ticket. Ticket hoàn thành phải luôn ở trạng thái CLOSED.`
+            `=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`
           ];
 
           return promptLines.join("\n");
@@ -8092,7 +8148,7 @@
           `- Nguồn liên hệ: ${sourceContact}`
         ];
 
-        promptLines.push(`=> BẮT BUỘC: Dựa vào solution để tự phân tích Nguyên nhân & Kết quả, sau đó gọi ngay tool close_ticket để đóng ticket. Ticket hoàn thành phải luôn ở trạng thái CLOSED.`);
+        promptLines.push(`=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`);
 
         return promptLines.join("\n");
       }
@@ -9185,11 +9241,17 @@
                     <div>${escapeHTML(n.result)}</div>
                   </td>
                   <td class="text-center">
-                    ${n.matchedTicket ? `
-                      <button type="button" class="btn-ticket-pill noted" onclick="window.openTicketDetailModal('${escapeHTML(String(n.matchedTicket.id))}')" title="Bấm để xem chi tiết Ticket #${escapeHTML(String(n.matchedTicket.id))}">
-                        <i class="fa-solid fa-circle-check"></i> #${escapeHTML(String(n.matchedTicket.id))}
-                      </button>
-                    ` : `
+                    ${n.matchedTicket ? (
+                      (n.matchedTicket.status || "").toUpperCase() === "CLOSED" ? `
+                        <button type="button" class="btn-ticket-pill noted" onclick="window.openTicketDetailModal('${escapeHTML(String(n.matchedTicket.id))}')" title="Đã đóng - Bấm để xem chi tiết Ticket #${escapeHTML(String(n.matchedTicket.id))}">
+                          <i class="fa-solid fa-circle-check"></i> #${escapeHTML(String(n.matchedTicket.id))}
+                        </button>
+                      ` : `
+                        <button type="button" class="btn-ticket-pill pending" onclick="window.openTicketDetailModal('${escapeHTML(String(n.matchedTicket.id))}')" title="Ticket #${escapeHTML(String(n.matchedTicket.id))} đang Pending (chưa đóng) - Bấm để đóng hoặc sao chép gửi chat mới!">
+                          <i class="fa-solid fa-clock-rotate-left"></i> #${escapeHTML(String(n.matchedTicket.id))} (Pending)
+                        </button>
+                      `
+                    ) : `
                       <button type="button" class="btn-ticket-pill unnoted" onclick="window.openChatboxForUnnotedIssue('${escapeHTML(String(n.id))}')" title="Bấm để sao chép prompt và mở Chatbox AI tạo ticket">
                         <i class="fa-solid fa-circle-exclamation"></i> Chưa note
                       </button>
