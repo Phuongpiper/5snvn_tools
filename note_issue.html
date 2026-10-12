@@ -3553,8 +3553,8 @@
             <span id="helpdeskSyncTimeBadge" onclick="fetchHelpdeskTickets(false, true)" style="font-size:11px; font-weight:600; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Thời điểm đồng bộ Chatbox AI gần nhất (Tự động cập nhật 1 tiếng / lần). Bấm vào đây để đồng bộ ngay!">
               <i class="fa-solid fa-robot" style="color:#0284c7;"></i> Chatbox AI: <span id="helpdeskLastSyncText" style="color:#0369a1; font-weight:700;">Đang nạp...</span>
             </span>
-            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Lấy dữ liệu mới nhất từ hệ thống (Đồng bộ Issue & Ticket Chatbox AI)">
-              <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Đồng bộ
+            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Tải lại toàn bộ dữ liệu mới nhất (Cập nhật Issue của nhân viên khác & Ticket Chatbox AI)">
+              <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Làm mới dữ liệu
             </button>
             <button type="button" class="btn-stats-tool" id="btnExportStatsExcel"
               title="Xuất báo cáo thống kê ra Excel (kèm dữ liệu Chatbox AI)">
@@ -3757,6 +3757,11 @@
             </div>
           </div>
           <div class="stats-quick-actions" style="gap:6px;">
+            <button type="button" class="btn-stats-tool primary" id="btnVoipReloadAll" onclick="reloadVoipData(true)"
+              style="padding:5px 12px; font-size:12px; background:#0284c7; color:#ffffff; border-color:#0369a1; font-weight:700;"
+              title="Tải lại toàn bộ dữ liệu mới nhất (Cập nhật ghi chú của nhân viên khác, số miễn note & cuộc gọi mới)">
+              <i class="fa-solid fa-arrows-rotate" id="iconVoipReload"></i> Làm mới dữ liệu
+            </button>
             <button type="button" class="btn-stats-tool" id="btnOpenExcludedPhonesModal" onclick="openExcludedPhonesModal()"
               style="background:#ffffff; color:#dc2626; border-color:#fca5a5; font-weight:700; padding:5px 11px; font-size:12px;"
               title="Quản lý danh sách các số điện thoại không cần Note Issue">
@@ -7979,6 +7984,7 @@
       const REPORT_CACHE_KEY = "dms_report_cached_data_v1";
 
       window.switchStudioView = function (view) {
+        const isSameView = currentStudioView === view;
         currentStudioView = ["stats", "voip", "report"].includes(view) ? view : "editor";
         const viewEditor = document.getElementById("viewEditor");
         const viewStats = document.getElementById("viewStats");
@@ -8000,6 +8006,10 @@
         if (btnNavReport) btnNavReport.classList.toggle("active", currentStudioView === "report");
 
         if (currentStudioView === "stats") {
+          if (isSameView && typeof window.reloadStatsData === "function") {
+            window.reloadStatsData(true);
+            return;
+          }
           if (!helpdeskTickets || helpdeskTickets.length === 0) {
             if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
           }
@@ -8008,6 +8018,10 @@
           }
           renderStatsPage();
         } else if (currentStudioView === "voip") {
+          if (isSameView && typeof window.reloadVoipData === "function") {
+            window.reloadVoipData(true);
+            return;
+          }
           // 1. Hiển thị data đang có trước ngay lập tức (từ RAM hoặc Cache LocalStorage)
           if (!voipCalls || voipCalls.length === 0) {
             if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
@@ -8026,6 +8040,10 @@
           // Cập nhật trạng thái và thời gian đồng bộ gần nhất
           if (typeof updateVoipSyncStatusDisplay === "function") {
             updateVoipSyncStatusDisplay();
+          }
+          // Luôn làm mới ngầm để nhận thao tác từ đồng nghiệp
+          if (typeof window.reloadVoipData === "function") {
+            window.reloadVoipData(false);
           }
         } else if (currentStudioView === "report") {
           openReportPage();
@@ -9234,39 +9252,100 @@
       });
       syncInputClearButtons();
       initIssueDatePicker(); // Khởi tạo date picker với ngày hôm nay
-      btnRefreshData.addEventListener("click", () => {
-        loadSolutions(true);
-        loadDtList(true);
-        fetchIssuesFromR2(false);
-        if (typeof fetchHelpdeskTickets === "function") {
-          fetchHelpdeskTickets(true, true);
+      window.reloadStatsData = async function(showToastMsg = true) {
+        const iconSync = document.getElementById("iconSyncStats");
+        const btnSync = document.getElementById("btnSyncStatsR2");
+        if (iconSync) iconSync.classList.add("fa-spin");
+        if (btnSync) btnSync.disabled = true;
+        if (showToastMsg) showToast("Đang tải dữ liệu Issue & Chatbox AI mới nhất...", "fa-arrows-rotate");
+        try {
+          await Promise.all([
+            fetchIssuesFromR2(true),
+            fetchHelpdeskTickets(true, true),
+            loadSolutions(true),
+            loadDtList(true),
+            fetchSystemMembers()
+          ]);
+          updateR2Badge();
+          renderStatsPage();
+          if (showToastMsg) {
+            showToast(`Đã làm mới! Có ${r2Issues.length} issue & ${helpdeskTickets.length} ticket Chatbox AI.`, "fa-check");
+          }
+        } catch (err) {
+          console.warn("Lỗi làm mới Thống kê:", err);
+          if (showToastMsg) showToast("Lỗi khi tải lại dữ liệu thống kê", "fa-triangle-exclamation");
+        } finally {
+          if (iconSync) iconSync.classList.remove("fa-spin");
+          if (btnSync) btnSync.disabled = false;
         }
-        if (currentStudioView === "report" && typeof fetchReportData === "function") {
-          fetchReportData(true);
+      };
+
+      window.reloadVoipData = async function(showToastMsg = true) {
+        const iconReload = document.getElementById("iconVoipReload");
+        const btnReload = document.getElementById("btnVoipReloadAll");
+        if (iconReload) iconReload.classList.add("fa-spin");
+        if (btnReload) btnReload.disabled = true;
+        if (showToastMsg) showToast("Đang tải dữ liệu cuộc gọi & ghi chú mới nhất...", "fa-arrows-rotate");
+        try {
+          // Tải mới danh sách Issue R2 và Temp notes R2 (ghi chú của đồng nghiệp)
+          await Promise.allSettled([
+            fetchIssuesFromR2(true),
+            fetchAllTempNotesFromR2(true),
+            fetchExcludedPhonesFromR2(true),
+            fetchSystemMembers()
+          ]);
+          if (typeof fetchVoipCalls === "function") {
+            await fetchVoipCalls(true, false, "auto");
+          }
+          if (showToastMsg) {
+            showToast(`Đã làm mới! Tổng ${voipCalls.length} cuộc gọi & trạng thái ghi chú mới nhất.`, "fa-check");
+          }
+        } catch (err) {
+          console.warn("Lỗi làm mới VoIP:", err);
+          if (showToastMsg) showToast("Lỗi khi tải lại dữ liệu cuộc gọi", "fa-triangle-exclamation");
+        } finally {
+          if (iconReload) iconReload.classList.remove("fa-spin");
+          if (btnReload) btnReload.disabled = false;
+        }
+      };
+
+      btnRefreshData.addEventListener("click", async () => {
+        const icon = btnRefreshData.querySelector("i");
+        if (icon) icon.classList.add("fa-spin");
+        btnRefreshData.disabled = true;
+        try {
+          if (currentStudioView === "stats") {
+            await window.reloadStatsData(true);
+          } else if (currentStudioView === "voip") {
+            await window.reloadVoipData(true);
+          } else if (currentStudioView === "report" && typeof fetchReportData === "function") {
+            await fetchReportData(true);
+          } else {
+            await Promise.all([
+              loadSolutions(true),
+              loadDtList(true),
+              fetchIssuesFromR2(true),
+              fetchHelpdeskTickets(true, true)
+            ]);
+            showToast("Đã làm mới dữ liệu hệ thống!", "fa-check");
+          }
+        } finally {
+          if (icon) icon.classList.remove("fa-spin");
+          btnRefreshData.disabled = false;
         }
       });
 
       // Nút đồng bộ R2 ở tab Temp (Soạn Issue): Đẩy ghi chú tạm vào Issue & Call Log
       btnSyncR2Temp?.addEventListener("click", pushAllTempToR2);
 
-      // Nút Đồng bộ R2 ở Stats page: Nạp lại toàn bộ thống kê mới nhất từ R2 và Chatbox AI
-      document.getElementById("btnSyncStatsR2")?.addEventListener("click", async () => {
-        const iconSync = document.getElementById("iconSyncStats");
-        if (iconSync) iconSync.classList.add("fa-spin");
-        showToast("Đang đồng bộ Issue & kiểm tra Chatbox AI...", "fa-arrows-rotate");
-        try {
-          await Promise.all([
-            fetchIssuesFromR2(true),
-            fetchHelpdeskTickets(true, true)
-          ]);
-          if (currentStudioView === "stats") renderStatsPage();
-          showToast(`Đã đồng bộ xong! Chatbox AI: ${helpdeskTickets.length} ticket.`, "fa-robot");
-        } catch (err) {
-          console.warn("Lỗi đồng bộ:", err);
-          showToast("Lỗi đồng bộ dữ liệu", "fa-triangle-exclamation");
-        } finally {
-          if (iconSync) iconSync.classList.remove("fa-spin");
-        }
+      // Nút Làm mới dữ liệu ở Stats page
+      document.getElementById("btnSyncStatsR2")?.addEventListener("click", () => {
+        window.reloadStatsData(true);
+      });
+
+      // Nút Làm mới dữ liệu ở VoIP page
+      document.getElementById("btnVoipReloadAll")?.addEventListener("click", () => {
+        window.reloadVoipData(true);
       });
 
       document.getElementById("btnExportStatsExcel")?.addEventListener("click", exportStatsExcel);
