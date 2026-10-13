@@ -1,12 +1,3 @@
-/**
- * GOOGLE APPS SCRIPT KẾT HỢP CẢ 2 TÍNH NĂNG:
- * 1. doGet: Lấy số liệu Email nhận/gửi từ Sheet GID 1060225183 (Giữ nguyên 100% logic cũ)
- *    - Hỗ trợ thêm tham số ?action=fix_dates để tự động quét & sửa toàn bộ ngày cũ về dd/MM/yyyy
- * 2. doPost: Thêm dòng Issue OTRS vào cuối Sheet GID 114516057 (Đầy đủ 12 cột từ A -> L theo Template.xlsx)
- *    - ĐẢM BẢO CHUẨN ĐỊNH DẠNG NGÀY dd/MM/yyyy (Không bao giờ bị Google Sheets đảo thành mm/dd/yyyy)
- * 
- * ID File Spreadsheet: 1Lzwt5z9xiw1C3PI7ZHQbjG23TV1zFf6kb8jYBvQvdGQ
- */
 
 const SPREADSHEET_ID = "1Lzwt5z9xiw1C3PI7ZHQbjG23TV1zFf6kb8jYBvQvdGQ";
 const EMAIL_SHEET_GID = 1060225183; // GID Sheet báo cáo Email
@@ -113,43 +104,63 @@ function doPost(e) {
       });
     }
 
-    // 1. Quét danh sách các Ticket / Chi tiết đã có sẵn trên Sheet để chống trùng lặp tuyệt đối
+    // 1. Quét danh sách các Ticket / Chi tiết đã có sẵn trên Sheet theo từng ngày
+    // QUY TẮC: Chỉ chặn trùng khi CÙNG NGÀY đã có ticket này. 
+    // Tuyệt đối không chặn các ticket lặp lại (Recurring) hoặc ticket từ các tháng/ngày trước được nhân viên xử lý lại hôm nay!
     const lastRow = otrsSheet.getLastRow();
     const existingMap = {};
     if (lastRow > 1) {
-      // Đọc từ cột F (Tên CV) và G (Chi tiết) từ dòng 2
-      const existingData = otrsSheet.getRange(2, 6, lastRow - 1, 2).getValues();
+      // Đọc từ cột A (Date: col 1) đến cột G (Chi tiết: col 7)
+      const existingData = otrsSheet.getRange(2, 1, lastRow - 1, 7).getValues();
       for (let i = 0; i < existingData.length; i++) {
-        const cv = String(existingData[i][0] || "").trim().toLowerCase();
-        const detail = String(existingData[i][1] || "").trim().toLowerCase();
-        if (detail) existingMap[detail] = true;
+        const rawDate = existingData[i][0];
+        let dateStr = "";
+        if (rawDate instanceof Date && !isNaN(rawDate)) {
+          dateStr = Utilities.formatDate(rawDate, ss.getSpreadsheetTimeZone() || "GMT+7", "dd/MM/yyyy");
+        } else if (rawDate) {
+          dateStr = String(rawDate).trim().split(" ")[0];
+        }
+
+        const cv = String(existingData[i][5] || "").trim().toLowerCase(); // Cột F: Tên CV
+        const detail = String(existingData[i][6] || "").trim().toLowerCase(); // Cột G: Chi tiết
         const m = detail.match(/\b\d{14,18}\b/);
-        if (m) {
-          existingMap[cv + "__" + m[0]] = true;
-          existingMap[m[0]] = true; // Lưu mã số ticket thuần
+        const tNum = m ? m[0] : "";
+
+        if (dateStr && detail) {
+          existingMap[dateStr + "__" + detail] = true;
+        }
+        if (dateStr && tNum) {
+          existingMap[dateStr + "__" + tNum] = true;
+          existingMap[dateStr + "__" + cv + "__" + tNum] = true;
         }
       }
     }
 
     // Hỗ trợ cả mảng rows hoặc 1 dòng đơn lẻ (data / postData)
-    const rowsToAdd = Array.isArray(postData.rows) && postData.rows.length > 0 
-      ? postData.rows 
+    const rowsToAdd = Array.isArray(postData.rows) && postData.rows.length > 0
+      ? postData.rows
       : (postData.data ? [postData.data] : [postData]);
 
     let insertedCount = 0;
     let skippedCount = 0;
 
-    rowsToAdd.forEach(function(row) {
+    rowsToAdd.forEach(function (row) {
       const gVal = String(row.colG || "").trim().toLowerCase();
       const fVal = String(row.colF || "").trim().toLowerCase();
       const m = gVal.match(/\b\d{14,18}\b/);
       const ticketNum = m ? m[0] : (row.ticketNum || "");
+      const dateAStr = String(row.colA || "").trim();
 
-      // Kiểm tra xem ticket này đã tồn tại trên Sheet chưa
-      const isDuplicate = existingMap[gVal] || (ticketNum && (existingMap[fVal + "__" + ticketNum] || existingMap[ticketNum]));
-      if (isDuplicate) {
+      // Kiểm tra xem ticket này đã tồn tại trên Sheet trong CÙNG NGÀY chưa
+      const isDuplicateToday = Boolean(dateAStr && (
+        existingMap[dateAStr + "__" + gVal] ||
+        (ticketNum && existingMap[dateAStr + "__" + ticketNum]) ||
+        (ticketNum && existingMap[dateAStr + "__" + fVal + "__" + ticketNum])
+      ));
+
+      if (isDuplicateToday && !postData.force) {
         skippedCount++;
-        return; // ĐÃ CÓ TRÊN SHEET -> BỎ QUA KHÔNG CHÈN TRÙNG!
+        return; // ĐÃ CÓ TRÊN SHEET TRONG CÙNG NGÀY -> BỎ QUA KHÔNG CHÈN TRÙNG!
       }
 
       // 2. Chuyển đổi chính xác sang Date Object chuẩn (Ngày/Tháng/Năm không bị tráo đổi)
@@ -186,13 +197,13 @@ function doPost(e) {
         otrsSheet.getRange(newRowIdx, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
         otrsSheet.getRange(newRowIdx, 2).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
         otrsSheet.getRange(newRowIdx, 8).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
-      } catch (_) {}
+      } catch (_) { }
 
       // Ghi nhớ ngay để tránh trùng nếu trong cùng batch có dòng lặp lại
-      if (gVal) existingMap[gVal] = true;
-      if (ticketNum) {
-        existingMap[fVal + "__" + ticketNum] = true;
-        existingMap[ticketNum] = true;
+      if (dateAStr && gVal) existingMap[dateAStr + "__" + gVal] = true;
+      if (dateAStr && ticketNum) {
+        existingMap[dateAStr + "__" + ticketNum] = true;
+        existingMap[dateAStr + "__" + fVal + "__" + ticketNum] = true;
       }
     });
 
@@ -200,7 +211,7 @@ function doPost(e) {
     if (insertedCount > 0) {
       try {
         fixDatesOnSheet(otrsSheet);
-      } catch (_) {}
+      } catch (_) { }
     }
 
     return jsonResponse({
@@ -281,7 +292,7 @@ function fixDatesOnSheet(otrsSheet) {
     otrsSheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
     otrsSheet.getRange(2, 2, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
     otrsSheet.getRange(2, 8, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
-  } catch (_) {}
+  } catch (_) { }
 
   return 0;
 }
