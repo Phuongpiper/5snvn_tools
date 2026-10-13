@@ -6076,25 +6076,10 @@
         return null;
       }
 
-      function formatOtrsDate(rawDate, ticketNum) {
-        // 1. Ưu tiên số ticket OTRS nếu có (dạng YYYYMMDD... ví dụ 2026100855000208)
-        if (ticketNum && /^\d{14,18}$/.test(ticketNum)) {
-          const y = ticketNum.slice(0, 4);
-          const m = ticketNum.slice(4, 6);
-          const d = ticketNum.slice(6, 8);
-          const yNum = parseInt(y, 10);
-          const mNum = parseInt(m, 10);
-          const dNum = parseInt(d, 10);
-          if (yNum >= 2020 && yNum <= 2040 && mNum >= 1 && mNum <= 12 && dNum >= 1 && dNum <= 31) {
-            return {
-              dateStr: `${d}/${m}/${y}`,
-              isoDate: `${y}-${m}-${d}`,
-              parts: { day: dNum, month: mNum, year: yNum }
-            };
-          }
-        }
-
-        // 2. Kiểm tra chuỗi ngày truyền vào (dạng DD/MM/YYYY hoặc D/M/YYYY)
+      function formatOtrsDate(rawDate) {
+        // 1. Kiểm tra chuỗi ngày của Issue truyền vào (dạng DD/MM/YYYY hoặc D/M/YYYY)
+        // BẮT BUỘC: Lấy ngày thực tế nhân viên ghi nhận Issue (ví dụ hôm nay 13/10/2026),
+        // Tuyệt đối không lấy 8 số đầu của mã ticket OTRS (vì mã OTRS chỉ thể hiện lúc ticket được tạo trên OTRS từ quá khứ).
         const str = String(rawDate || "").trim();
         const dmy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (dmy) {
@@ -6108,7 +6093,7 @@
           };
         }
 
-        // 3. Dạng YYYY-MM-DD hoặc YYYY/MM/DD
+        // 2. Dạng YYYY-MM-DD hoặc YYYY/MM/DD
         const ymd = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
         if (ymd) {
           const y = ymd[1];
@@ -6121,7 +6106,7 @@
           };
         }
 
-        // 4. Mặc định là ngày hôm nay
+        // 3. Mặc định là ngày hôm nay (ngày làm việc của nhân viên)
         const now = new Date();
         const d = String(now.getDate()).padStart(2, "0");
         const m = String(now.getMonth() + 1).padStart(2, "0");
@@ -6173,7 +6158,7 @@
           chiTiet = tenCV;
         }
 
-        const dateInfo = formatOtrsDate(item.date, ticketNum);
+        const dateInfo = formatOtrsDate(item.date);
         const dateStr = dateInfo.dateStr;
 
         const memberCode = String(item.memberCode || (typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) || "").trim().toLowerCase();

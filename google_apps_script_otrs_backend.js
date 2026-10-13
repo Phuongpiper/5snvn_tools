@@ -153,9 +153,9 @@ function doPost(e) {
       }
 
       // 2. Chuyển đổi chính xác sang Date Object chuẩn (Ngày/Tháng/Năm không bị tráo đổi)
-      const dateCellA = parseDateForCell(row.colA, row.dateParts, row.isoDate, ticketNum);
-      const dateCellB = parseDateForCell(row.colB, row.dateParts, row.isoDate, ticketNum);
-      const dateCellH = parseDateForCell(row.colH, row.dateParts, row.isoDate, ticketNum);
+      const dateCellA = parseDateForCell(row.colA, row.dateParts, row.isoDate);
+      const dateCellB = parseDateForCell(row.colB, row.dateParts, row.isoDate);
+      const dateCellH = parseDateForCell(row.colH, row.dateParts, row.isoDate);
 
       // 12 cột từ A đến L theo chuẩn Template.xlsx
       const rowValues = [
@@ -196,7 +196,7 @@ function doPost(e) {
       }
     });
 
-    // Tự động kiểm tra & chuẩn hóa lại các dòng cũ bị lỗi format nếu có
+    // Tự động kiểm tra & chuẩn hóa lại format dd/MM/yyyy cho các cột ngày nếu có
     if (insertedCount > 0) {
       try {
         fixDatesOnSheet(otrsSheet);
@@ -221,27 +221,18 @@ function doPost(e) {
 // ==============================
 // 3. HÀM CHUYỂN ĐỔI NGÀY SANG DATE OBJECT CHUẨN (ĐẢM BẢO ĐÚNG dd/MM/yyyy)
 // ==============================
-function parseDateForCell(val, dateParts, isoDate, ticketNum) {
-  // 1. Ưu tiên lấy từ mã Ticket OTRS (14-18 số dạng YYYYMMDD... ví dụ 2026100855000208)
-  // Đây là nguồn chính xác 100% từ chính hệ thống OTRS
-  if (ticketNum && /^\d{14,18}$/.test(ticketNum)) {
-    const y = parseInt(ticketNum.slice(0, 4), 10);
-    const m = parseInt(ticketNum.slice(4, 6), 10);
-    const d = parseInt(ticketNum.slice(6, 8), 10);
-    if (y >= 2020 && y <= 2040 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-      return new Date(y, m - 1, d, 12, 0, 0); // 12:00 trưa để không bị lệch múi giờ
-    }
-  }
-
-  // 2. Nếu có dateParts { day, month, year } từ client
+function parseDateForCell(val, dateParts, isoDate) {
+  // 1. Ưu tiên dateParts { day, month, year } từ client (ngày thực tế nhân viên ghi nhận Issue)
   if (dateParts && dateParts.year && dateParts.month && dateParts.day) {
     const y = parseInt(dateParts.year, 10);
     const m = parseInt(dateParts.month, 10) - 1;
     const d = parseInt(dateParts.day, 10);
-    return new Date(y, m, d, 12, 0, 0);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      return new Date(y, m, d, 12, 0, 0); // 12:00 trưa để không bị lệch múi giờ
+    }
   }
 
-  // 3. Nếu có isoDate (YYYY-MM-DD)
+  // 2. Nếu có isoDate (YYYY-MM-DD)
   if (isoDate && /^\d{4}-\d{2}-\d{2}$/.test(String(isoDate).trim())) {
     const p = String(isoDate).trim().split("-");
     const y = parseInt(p[0], 10);
@@ -256,7 +247,7 @@ function parseDateForCell(val, dateParts, isoDate, ticketNum) {
   const str = String(val).trim();
   if (!str) return "";
 
-  // 4. Chuỗi dạng dd/MM/yyyy hoặc d/M/yyyy (Ngày đứng trước, tháng đứng sau theo chuẩn Việt Nam)
+  // 3. Chuỗi dạng dd/MM/yyyy hoặc d/M/yyyy (Ngày đứng trước, tháng đứng sau theo chuẩn Việt Nam)
   const dmyMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmyMatch) {
     const d = parseInt(dmyMatch[1], 10);
@@ -265,7 +256,7 @@ function parseDateForCell(val, dateParts, isoDate, ticketNum) {
     return new Date(y, m, d, 12, 0, 0);
   }
 
-  // 5. Chuỗi dạng YYYY-MM-DD hoặc YYYY/MM/DD
+  // 4. Chuỗi dạng YYYY-MM-DD hoặc YYYY/MM/DD
   const ymdMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
   if (ymdMatch) {
     const y = parseInt(ymdMatch[1], 10);
@@ -278,49 +269,21 @@ function parseDateForCell(val, dateParts, isoDate, ticketNum) {
 }
 
 // ==============================
-// 4. HÀM QUÉT & SỬA TOÀN BỘ CÁC DÒNG CŨ BỊ LỖI NGÀY / FORMAT TRÊN SHEET
+// 4. HÀM CHUẨN HÓA ĐỊNH DẠNG NGÀY CHO CÁC CỘT TRÊN SHEET (KHÔNG GHI ĐÈ GIÁ TRỊ)
 // ==============================
 function fixDatesOnSheet(otrsSheet) {
   const lastRow = otrsSheet.getLastRow();
   if (lastRow < 2) return 0;
 
-  // Đọc từ dòng 2: cột A đến H (8 cột)
-  const range = otrsSheet.getRange(2, 1, lastRow - 1, 8);
-  const values = range.getValues();
-  let fixedCount = 0;
-
-  for (let i = 0; i < values.length; i++) {
-    const rowIdx = i + 2;
-    const detail = String(values[i][6] || "").trim(); // Cột G (Chi tiết)
-    
-    // Tìm mã ticket OTRS (14 - 18 chữ số dạng YYYYMMDD...)
-    const m = detail.match(/\b\d{14,18}\b/);
-    if (m) {
-      const ticketNum = m[0];
-      const y = parseInt(ticketNum.slice(0, 4), 10);
-      const mNum = parseInt(ticketNum.slice(4, 6), 10);
-      const d = parseInt(ticketNum.slice(6, 8), 10);
-
-      if (y >= 2020 && y <= 2040 && mNum >= 1 && mNum <= 12 && d >= 1 && d <= 31) {
-        const correctDate = new Date(y, mNum - 1, d, 12, 0, 0);
-
-        // Ghi lại Date object đúng và set format dd/MM/yyyy
-        otrsSheet.getRange(rowIdx, 1).setValue(correctDate).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
-        otrsSheet.getRange(rowIdx, 2).setValue(correctDate).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
-        otrsSheet.getRange(rowIdx, 8).setValue(correctDate).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
-        fixedCount++;
-      }
-    }
-  }
-
-  // Đảm bảo toàn bộ cột A, B, H từ dòng 2 đều có format dd/MM/yyyy
+  // Đảm bảo toàn bộ cột A, B, H từ dòng 2 đều có format dd/MM/yyyy và căn giữa
+  // TUYỆT ĐỐI KHÔNG dùng mã ticket OTRS ghi đè ngày công việc của nhân viên
   try {
-    otrsSheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy");
-    otrsSheet.getRange(2, 2, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy");
-    otrsSheet.getRange(2, 8, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy");
+    otrsSheet.getRange(2, 1, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
+    otrsSheet.getRange(2, 2, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
+    otrsSheet.getRange(2, 8, lastRow - 1, 1).setNumberFormat("dd/MM/yyyy").setHorizontalAlignment("center");
   } catch (_) {}
 
-  return fixedCount;
+  return 0;
 }
 
 // ==============================
