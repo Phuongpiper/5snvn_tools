@@ -5606,6 +5606,34 @@
         return s;
       }
 
+      function getIssueDateNormalized(issue) {
+        if (!issue) return "";
+        if (issue.date) {
+          const n = normalizeDateStr(issue.date);
+          if (n) return n;
+        }
+        if (issue.createdAt) {
+          const d = new Date(issue.createdAt);
+          if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+          }
+        }
+        return "";
+      }
+
+      function getTicketDateNormalized(ticket) {
+        if (!ticket) return "";
+        const raw = ticket.createdDate || ticket.date || ticket.createdAt || "";
+        if (raw) {
+          const n = normalizeDateStr(raw);
+          if (n) return n;
+        }
+        return "";
+      }
+
       function cleanDigits(val) {
         if (!val) return "";
         return String(val).replace(/\D/g, "").replace(/^84/, "0");
@@ -5628,7 +5656,7 @@
 
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
-        const issueDate = normalizeDateStr(issue.date);
+        const issueDate = getIssueDateNormalized(issue);
         const issueAgent = String(issue.memberCode || "").trim().toLowerCase();
         const issueOtrs = extractOtrsNum(issue.result) || extractOtrsNum(issue.fields?.npp) || extractOtrsNum(issue.fields?.hotline);
 
@@ -5655,11 +5683,17 @@
           ? tickets.filter(t => !usedTicketIds.has(t.id))
           : tickets;
 
+        // BẮT BUỘC: Ticket phải cùng Agent VÀ cùng Ngày tạo với Issue.
+        // Tuyệt đối không lấy ticket của ngày cũ trong quá khứ gán vào issue của ngày hôm nay!
         const agentDateCandidates = availableTickets.filter(t => {
           const tAgent = String(t.agentId || "").trim().toLowerCase();
-          const tDate = normalizeDateStr(t.createdDate || t.date || (t.createdAt ? t.createdAt.slice(0, 10) : ""));
+          const tDate = getTicketDateNormalized(t);
           return tAgent === issueAgent && tDate === issueDate;
         });
+
+        if (agentDateCandidates.length === 0) {
+          return null;
+        }
 
         // 1. Nếu là OTRS Ticket (có mã 14-18 số), BẮT BUỘC phải khớp đúng mã OTRS VÀ ĐÚNG LOẠI GIẢI PHÁP (Solution)
         if (issueOtrs) {
@@ -5738,6 +5772,8 @@
         // 3. Cùng Agent + Cùng Ngày + Trùng Solution Code + Trùng DSR Code
         if (issueSolCode && issueDsr) {
           const m = agentDateCandidates.find(t => {
+            const tPhone = cleanDigits(t.phone);
+            if (issuePhone && tPhone && issuePhone !== tPhone) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             const tDsr = String(t.dsrCode || "").trim().toUpperCase();
             return tSol === issueSolCode && tDsr === issueDsr;
@@ -5748,9 +5784,11 @@
           }
         }
 
-        // 4. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi không phải OTRS)
+        // 4. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi không phải OTRS và không xung đột SĐT)
         if (issueSolCode && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
+            const tPhone = cleanDigits(t.phone);
+            if (issuePhone && tPhone && issuePhone !== tPhone) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             return tSol === issueSolCode;
           });
@@ -5760,23 +5798,13 @@
           }
         }
 
-        // 5. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi không phải OTRS)
+        // 5. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi không phải OTRS và không xung đột SĐT)
         if (issueSolName && issueSolName.length > 5 && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
+            const tPhone = cleanDigits(t.phone);
+            if (issuePhone && tPhone && issuePhone !== tPhone) return false;
             const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
             return tName.includes(issueSolName) || issueSolName.includes(tName);
-          });
-          if (m) {
-            if (usedTicketIds) usedTicketIds.add(m.id);
-            return m;
-          }
-        }
-
-        // Fallback: Khớp qua SĐT + Agent nếu lệch ngày
-        if (issuePhone && issuePhone.length >= 7) {
-          const m = availableTickets.find(t => {
-            const tAgent = String(t.agentId || "").trim().toLowerCase();
-            return tAgent === issueAgent && cleanDigits(t.phone) === issuePhone;
           });
           if (m) {
             if (usedTicketIds) usedTicketIds.add(m.id);
