@@ -5654,11 +5654,51 @@
         return "";
       }
 
+      function cleanNppName(str) {
+        if (!str) return "";
+        let s = String(str).toLowerCase().trim();
+        s = s.replace(/^npp\s*[-_:]*\s*/i, "").trim();
+        s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+        return s.replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
+      }
+
+      function extractNppFromIssue(issue) {
+        if (!issue) return "";
+        let raw = "";
+        if (issue.fields && issue.fields.npp) raw = String(issue.fields.npp).trim();
+        if (!raw && issue.result) {
+          const m = String(issue.result).match(/_NPP\s+([^_]+)/i);
+          if (m) raw = m[1].trim();
+        }
+        return cleanNppName(raw);
+      }
+
+      function extractNppFromTicket(ticket) {
+        if (!ticket) return "";
+        let raw = String(ticket.distName || "").trim();
+        if (!raw && ticket.description) {
+          const m = String(ticket.description).match(/NPP\s+([^-_\n\t]+)/i);
+          if (m) raw = m[1].trim();
+        }
+        return cleanNppName(raw);
+      }
+
+      function isNppMatch(nppA, nppB) {
+        if (!nppA || !nppB) return false;
+        return nppA === nppB || nppA.includes(nppB) || nppB.includes(nppA);
+      }
+
+      function isNppConflict(nppA, nppB) {
+        if (!nppA || !nppB) return false;
+        return !isNppMatch(nppA, nppB);
+      }
+
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = getIssueDateNormalized(issue);
         const issueAgent = String(issue.memberCode || "").trim().toLowerCase();
         const issueOtrs = extractOtrsNum(issue.result) || extractOtrsNum(issue.fields?.npp) || extractOtrsNum(issue.fields?.hotline);
+        const issueNpp = extractNppFromIssue(issue);
 
         let issuePhone = cleanDigits(issue.fields?.hotline);
         if (!issuePhone && issue.result) {
@@ -5746,9 +5786,12 @@
           return null;
         }
 
-        // 2. Với các issue Hotline: Cùng Agent + Cùng Ngày + Trùng Số Điện Thoại
-        if (issuePhone && issuePhone.length >= 7) {
-          const phoneCandidates = agentDateCandidates.filter(t => cleanDigits(t.phone) === issuePhone);
+        // 2. Với các issue Hotline: Cùng Agent + Cùng Ngày + Trùng Số Điện Thoại (chỉ áp dụng nếu ticket có SĐT thực sự >= 8 số)
+        if (issuePhone && issuePhone.length >= 8) {
+          const phoneCandidates = agentDateCandidates.filter(t => {
+            const tPhone = cleanDigits(t.phone);
+            return tPhone && tPhone.length >= 8 && tPhone === issuePhone;
+          });
           if (phoneCandidates.length > 0) {
             let m = issueSolCode
               ? phoneCandidates.find(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode)
@@ -5769,11 +5812,28 @@
           }
         }
 
-        // 3. Cùng Agent + Cùng Ngày + Trùng Solution Code + Trùng DSR Code
-        if (issueSolCode && issueDsr) {
+        // 3. Cùng Agent + Cùng Ngày + Trùng Solution Code + Trùng NPP (Độ chính xác cao nhất cho cuộc gọi Hotline)
+        if (issueSolCode && issueNpp && !isOtrsRaiseCloseTicket(issue)) {
+          const m = agentDateCandidates.find(t => {
+            const tSol = String(t.solutionCode || "").trim().toUpperCase();
+            if (tSol !== issueSolCode) return false;
+            const tNpp = extractNppFromTicket(t);
+            if (isNppConflict(issueNpp, tNpp)) return false;
+            return isNppMatch(issueNpp, tNpp);
+          });
+          if (m) {
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          }
+        }
+
+        // 4. Cùng Agent + Cùng Ngày + Trùng Solution Code + Trùng DSR Code (và tuyệt đối không xung đột NPP hay SĐT)
+        if (issueSolCode && issueDsr && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tPhone = cleanDigits(t.phone);
-            if (issuePhone && tPhone && issuePhone !== tPhone) return false;
+            if (issuePhone && tPhone && tPhone.length >= 8 && issuePhone !== tPhone) return false;
+            const tNpp = extractNppFromTicket(t);
+            if (issueNpp && tNpp && isNppConflict(issueNpp, tNpp)) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             const tDsr = String(t.dsrCode || "").trim().toUpperCase();
             return tSol === issueSolCode && tDsr === issueDsr;
@@ -5784,11 +5844,14 @@
           }
         }
 
-        // 4. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi không phải OTRS và không xung đột SĐT)
+        // 5. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi KHÔNG XUNG ĐỘT NPP và KHÔNG XUNG ĐỘT SĐT)
+        // LƯU Ý: Nếu cả 2 bên đều có NPP mà khác nhau (ví dụ Bao Ngoc vs Nam Oanh) -> BẮT BUỘC LOẠI BỎ!
         if (issueSolCode && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tPhone = cleanDigits(t.phone);
-            if (issuePhone && tPhone && issuePhone !== tPhone) return false;
+            if (issuePhone && tPhone && tPhone.length >= 8 && issuePhone !== tPhone) return false;
+            const tNpp = extractNppFromTicket(t);
+            if (issueNpp && tNpp && isNppConflict(issueNpp, tNpp)) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             return tSol === issueSolCode;
           });
@@ -5798,11 +5861,13 @@
           }
         }
 
-        // 5. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi không phải OTRS và không xung đột SĐT)
+        // 6. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi KHÔNG XUNG ĐỘT NPP và KHÔNG XUNG ĐỘT SĐT)
         if (issueSolName && issueSolName.length > 5 && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tPhone = cleanDigits(t.phone);
-            if (issuePhone && tPhone && issuePhone !== tPhone) return false;
+            if (issuePhone && tPhone && tPhone.length >= 8 && issuePhone !== tPhone) return false;
+            const tNpp = extractNppFromTicket(t);
+            if (issueNpp && tNpp && isNppConflict(issueNpp, tNpp)) return false;
             const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
             return tName.includes(issueSolName) || issueSolName.includes(tName);
           });
