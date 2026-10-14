@@ -4444,7 +4444,7 @@
       sheet.columns.forEach(col => {
         if (col.type === "date") newRow[col.id] = getTodayIso();
         else if (col.type === "project") newRow[col.id] = currentProjectFilter || (getAvailableProjects()[0] || "NVN");
-        else if (col.type === "member") newRow[col.id] = currentMemberFilter || (getAvailableMembers()[0] || "Team NVN");
+        else if (col.type === "member") newRow[col.id] = currentMemberFilter || "";
         else if (col.type === "status") newRow[col.id] = currentStatusFilter || ((col.options && col.options[0]) || "Pending");
         else if (col.type === "checkbox") newRow[col.id] = false;
         else if (col.type === "number") newRow[col.id] = 0;
@@ -4926,7 +4926,7 @@
       sheet.columns.forEach(col => {
         if (col.type === "date") newRow[col.id] = getTodayIso();
         else if (col.type === "project") newRow[col.id] = (getAvailableProjects()[0] || "NVN");
-        else if (col.type === "member") newRow[col.id] = (getAvailableMembers()[0] || "Team NVN");
+        else if (col.type === "member") newRow[col.id] = "";
         else if (col.type === "status") newRow[col.id] = (col.options && col.options[0]) || "Pending";
         else if (col.type === "checkbox") newRow[col.id] = false;
         else if (col.type === "number") newRow[col.id] = 0;
