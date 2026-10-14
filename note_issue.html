@@ -8688,6 +8688,128 @@
         }
       };
 
+      // Đẩy dữ liệu cuộc gọi (Call Log) vào form Soạn Issue
+      window.loadIssueIntoForm = function (data) {
+        if (!data) return;
+
+        // 1. Chuyển sang view Soạn Issue nếu đang ở view khác
+        if (typeof switchStudioView === "function") {
+          switchStudioView("editor");
+        }
+
+        // 2. Set Type (HH / DC)
+        const type = data.type === "DC" ? "DC" : "HH";
+        if (typeof setType === "function") {
+          setType(type);
+        }
+
+        // 3. Solution
+        if (inputSolution) {
+          inputSolution.value = data.solution || "";
+          if (typeof handleSolutionInput === "function") {
+            handleSolutionInput();
+          }
+          // Đảm bảo type không bị solution mặc định ghi đè nếu call log là DC
+          if (typeof setType === "function") {
+            setType(type);
+          }
+        }
+
+        // 4. NPP & Dist Code
+        if (inputNpp) {
+          let matchedNpp = null;
+          const cleanDist = String(data.distCode || "").trim();
+          const cleanNpp = String(data.npp || "").trim();
+
+          // Đảm bảo dtList đã nạp
+          if (!dtList || dtList.length === 0) {
+            try {
+              const raw = localStorage.getItem("DMS_DT_LIST_DATA_V1");
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && Array.isArray(parsed.rows)) {
+                  dtList = parsed.rows.map(r => ({
+                    code: String(r.col_dt_code || "").trim(),
+                    name: String(r.col_npp_name || "").trim(),
+                    issueName: String(r.col_issue_name || "").trim(),
+                    prefix: String(r.col_prefix || "").trim().toUpperCase()
+                  }));
+                }
+              }
+            } catch (_) {}
+          }
+
+          if (Array.isArray(dtList) && dtList.length > 0) {
+            if (cleanDist) {
+              matchedNpp = dtList.find(d => String(d.code).trim() === cleanDist);
+            }
+            if (!matchedNpp && cleanNpp) {
+              const qNorm = typeof normalizeStr === "function" ? normalizeStr(cleanNpp) : cleanNpp.toLowerCase();
+              matchedNpp = dtList.find(d => {
+                const core = typeof normalizeStr === "function" ? normalizeStr((d.issueName || "").replace(/^npp\s+/i, "")) : (d.issueName || "").toLowerCase();
+                const iname = typeof normalizeStr === "function" ? normalizeStr(d.issueName || "") : (d.issueName || "").toLowerCase();
+                const dname = typeof normalizeStr === "function" ? normalizeStr(d.name || "") : (d.name || "").toLowerCase();
+                return core === qNorm || iname === qNorm || dname.includes(qNorm) || core.includes(qNorm);
+              });
+            }
+          }
+
+          if (matchedNpp && typeof applyNpp === "function") {
+            applyNpp(matchedNpp, true);
+          } else {
+            inputNpp.value = cleanNpp;
+            if (typeof handleNppInput === "function") {
+              handleNppInput();
+            }
+          }
+        }
+
+        // 5. NVBH và SUP/HQ/Admin
+        if (data.role) {
+          if (inputRole) inputRole.value = data.role;
+          if (inputNvbh) inputNvbh.value = "";
+        } else if (data.nvbh) {
+          if (inputNvbh) inputNvbh.value = data.nvbh;
+          if (inputRole) inputRole.value = "";
+        } else {
+          if (inputNvbh) inputNvbh.value = "";
+          if (inputRole) inputRole.value = "";
+        }
+
+        if (typeof validateNvbh === "function") validateNvbh();
+        if (typeof validateRole === "function") validateRole();
+
+        // 6. Hotline
+        if (inputHotline) {
+          inputHotline.value = data.hotline || "";
+          if (typeof validateHotline === "function") validateHotline();
+        }
+
+        // 7. Ngày ghi nhận
+        if (data.date) {
+          const issueDateInput = document.getElementById("inputIssueDate");
+          if (issueDateInput) {
+            const match = String(data.date).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (match) {
+              const iso = `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+              issueDateInput.value = iso;
+              issueDateInput.dispatchEvent(new Event("change"));
+            }
+          }
+        }
+
+        // 8. Cập nhật preview kết quả
+        if (typeof updateResultDisplay === "function") {
+          updateResultDisplay();
+        }
+
+        // 9. Scroll to top và Toast
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (typeof showToast === "function") {
+          showToast("Đã nạp dữ liệu cuộc gọi vào Soạn Issue thành công!", "fa-pen-to-square");
+        }
+      };
+
       // Xoá khỏi Temp local (tab Soạn Issue)
       window.deleteTempItem = function (id) {
         tempNotes = tempNotes.filter(n => n.id !== id);
@@ -12673,24 +12795,60 @@
         if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
         await loadSolutions();
         await loadDtList();
+        // Kiểm tra xem có dữ liệu issue chờ nạp từ Call Log không
+        checkPendingPrefillIssue();
         // Tự động tải cuộc gọi mới nhất từ R2 (chạy ngầm, không block giao diện)
         if (typeof fetchVoipCalls === "function") {
           fetchVoipCalls(false, true);
         }
       }
 
+      function checkPendingPrefillIssue() {
+        try {
+          const prefillRaw = localStorage.getItem("DMS_PREFILL_ISSUE");
+          if (prefillRaw) {
+            const prefill = JSON.parse(prefillRaw);
+            localStorage.removeItem("DMS_PREFILL_ISSUE");
+            if (prefill && typeof window.loadIssueIntoForm === "function") {
+              setTimeout(() => {
+                window.loadIssueIntoForm(prefill);
+              }, 120);
+            }
+          }
+        } catch (e) {
+          console.warn("Lỗi đọc DMS_PREFILL_ISSUE:", e);
+        }
+      }
+
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const issueChannel = new BroadcastChannel("DMS_LOAD_ISSUE");
+          issueChannel.onmessage = (e) => {
+            if (e.data && typeof window.loadIssueIntoForm === "function") {
+              window.loadIssueIntoForm(e.data);
+            }
+          };
+        } catch (_) {}
+      }
+
       window.addEventListener("pageshow", () => {
+        checkPendingPrefillIssue();
         fetchIssuesFromR2(true);
         fetchTempNotesFromR2(true);
         if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
         if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
       });
       window.addEventListener("message", (e) => {
-        if (e.data === "tab-activated") {
+        if (e.data === "tab-activated" || (e.data && e.data.type === "TAB_ACTIVATED")) {
+          checkPendingPrefillIssue();
           fetchIssuesFromR2(true);
           fetchTempNotesFromR2(true);
           if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
           if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
+        } else if (e.data && e.data.type === "DMS_LOAD_ISSUE" && e.data.data) {
+          if (typeof window.loadIssueIntoForm === "function") {
+            window.loadIssueIntoForm(e.data.data);
+          }
         }
       });
 

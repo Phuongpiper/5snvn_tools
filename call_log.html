@@ -422,7 +422,7 @@
       }
       td.col-details.copyable-cell {
         position: relative;
-        padding-right: 78px !important;
+        padding-right: 110px !important;
         white-space: pre-wrap;
         word-break: break-word;
       }
@@ -447,6 +447,30 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
+      }
+      .push-issue-btn {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #16a34a;
+        opacity: 0.75;
+        width: 28px;
+        height: 28px;
+        font-size: 13px;
+        padding: 0;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        flex-shrink: 0;
+      }
+      .push-issue-btn:hover {
+        background: #16a34a !important;
+        color: #ffffff !important;
+        border-color: #16a34a !important;
+        transform: scale(1.15);
+        box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35);
       }
       .copy-btn {
         background: #f1f5f9;
@@ -489,7 +513,8 @@
         flex-shrink: 0;
       }
       .copyable-cell:hover .copy-btn,
-      .copyable-cell:hover .del-row-btn {
+      .copyable-cell:hover .del-row-btn,
+      .copyable-cell:hover .push-issue-btn {
         opacity: 1;
       }
       .copyable-cell:hover .copy-btn {
@@ -1933,8 +1958,14 @@
           const content = highlightCallDetails(value, row);
           const rawEscaped = escapeHTML(value);
           const dateCol = findColumn("date");
+          const distCol = findColumn("dist code");
+          const userCol = findColumn("user code");
+          const hotCol = findColumn("hotline");
           const rowDateEscaped = escapeHTML(row[dateCol] || row["Date"] || row["date"] || "");
-          return `<span class="details-content">${content}</span><div class="row-actions"><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button><button type="button" class="del-row-btn" title="Xóa dòng này khỏi hệ thống" data-call-details="${rawEscaped}" data-date="${rowDateEscaped}" onclick="confirmDeleteCallLogRow(event, this)"><i class="fa-regular fa-trash-can"></i></button></div>`;
+          const rowDistEscaped = escapeHTML(row[distCol] || row["Dist code"] || row["Dist Code"] || "");
+          const rowUserEscaped = escapeHTML(row[userCol] || row["User code"] || row["User Code"] || "");
+          const rowHotEscaped = escapeHTML(row[hotCol] || row["Hotline"] || row["hotline"] || "");
+          return `<span class="details-content">${content}</span><div class="row-actions"><button type="button" class="push-issue-btn" title="Đẩy cuộc gọi này vào Soạn Issue" data-call-details="${rawEscaped}" data-dist-code="${rowDistEscaped}" data-user-code="${rowUserEscaped}" data-hotline="${rowHotEscaped}" data-date="${rowDateEscaped}" onclick="pushCallLogToNoteIssue(event, this)"><i class="fa-solid fa-pen-to-square"></i></button><button type="button" class="copy-btn" title="Click để copy" data-copy="${rawEscaped}" data-label="Call Details" onclick="copyCallDetailText(event, this)"><i class="fa-regular fa-copy"></i></button><button type="button" class="del-row-btn" title="Xóa dòng này khỏi hệ thống" data-call-details="${rawEscaped}" data-date="${rowDateEscaped}" onclick="confirmDeleteCallLogRow(event, this)"><i class="fa-regular fa-trash-can"></i></button></div>`;
         }
         return escapeHTML(value);
       }
@@ -2214,6 +2245,164 @@
         setTimeout(() => {
           toast.remove();
         }, 2500);
+      }
+
+      /* ─── Push to Note Issue ─── */
+      function parseCallLogDetails(callDetails, distCode, userCode, hotline, dateStr) {
+        const text = String(callDetails || "").trim();
+
+        // 1. Type
+        let type = "HH";
+        const typeMatch = text.match(/\[NVN-DMS\]-\[(HH|DC)\]/i);
+        if (typeMatch) {
+          type = typeMatch[1].toUpperCase();
+        } else if (/\bDC\b/i.test(text)) {
+          type = "DC";
+        }
+
+        // 2. Solution
+        let solution = typeof extractSolutionFromCallDetails === "function" ? extractSolutionFromCallDetails(text) : "";
+        if (!solution) {
+          const afterPrefix = text.replace(/^\[NVN-DMS\]-\[[^\]]*\][_\s]*/i, "");
+          const seg = afterPrefix.split(/_(?:NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+G\d+|\d{10,})/i)[0];
+          solution = (seg || "").trim();
+        }
+
+        // 3. User / Role / NVBH
+        let rawUser = String(userCode || "").trim();
+        if (!rawUser && typeof extractUserCodeFromCallDetails === "function") {
+          rawUser = extractUserCodeFromCallDetails(text);
+        }
+        if (!rawUser) {
+          const uMatch = text.match(/_([^_]+)_Hotline(?:\s|\d|$)/i);
+          if (uMatch) rawUser = uMatch[1].trim();
+        }
+
+        let role = "";
+        let nvbh = "";
+        const isHQ = /^HQ/i.test(rawUser);
+        const isAdmin = /^ADMIN\b/i.test(rawUser);
+        const isRole = isHQ || isAdmin || /^(SUP|ASM|SS)\b/i.test(rawUser);
+
+        if (isRole) {
+          role = rawUser;
+          nvbh = "";
+        } else if (rawUser) {
+          nvbh = rawUser;
+          role = "";
+        }
+
+        // 4. NPP
+        let npp = "";
+        const nppMatch = text.match(/_NPP\s+([^_]+?)(?=_|$)/i);
+        if (nppMatch) {
+          const candidate = nppMatch[1].trim();
+          const isTicketOrError = /^\d{8,}/.test(candidate) || /OTRS|Ticket|Error|Bug/i.test(candidate);
+          if (!isTicketOrError) {
+            npp = candidate;
+          }
+        }
+
+        // 5. Hotline
+        let cleanHotline = String(hotline || "").trim();
+        if (!cleanHotline) {
+          const hotMatch = text.match(/_Hotline\s*([^_]+?)(?:_|$)/i) || text.match(/Hotline\s*([0-9A-Za-z]+)/i);
+          if (hotMatch) cleanHotline = hotMatch[1].trim();
+        }
+
+        // 6. Date
+        let dateFormatted = String(dateStr || "").trim();
+
+        return {
+          solution,
+          type,
+          npp,
+          distCode: String(distCode || "").trim(),
+          nvbh,
+          role,
+          hotline: cleanHotline,
+          date: dateFormatted,
+          rawCallDetails: text
+        };
+      }
+
+      function pushCallLogToNoteIssue(event, btn) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        if (!btn) return;
+
+        const callDetails = btn.getAttribute("data-call-details") || "";
+        const distCode = btn.getAttribute("data-dist-code") || "";
+        const userCode = btn.getAttribute("data-user-code") || "";
+        const hotline = btn.getAttribute("data-hotline") || "";
+        const dateStr = btn.getAttribute("data-date") || "";
+
+        // Giải mã HTML entities
+        const txtArea = document.createElement("textarea");
+        txtArea.innerHTML = callDetails;
+        const decodedDetails = txtArea.value;
+
+        txtArea.innerHTML = userCode;
+        const decodedUser = txtArea.value;
+
+        txtArea.innerHTML = distCode;
+        const decodedDist = txtArea.value;
+
+        txtArea.innerHTML = hotline;
+        const decodedHotline = txtArea.value;
+
+        txtArea.innerHTML = dateStr;
+        const decodedDate = txtArea.value;
+
+        const issueData = parseCallLogDetails(decodedDetails, decodedDist, decodedUser, decodedHotline, decodedDate);
+
+        // 1. Lưu vào localStorage
+        try {
+          localStorage.setItem("DMS_PREFILL_ISSUE", JSON.stringify(issueData));
+        } catch (e) {
+          console.warn("Lỗi lưu localStorage DMS_PREFILL_ISSUE:", e);
+        }
+
+        // 2. BroadcastChannel
+        try {
+          if (typeof BroadcastChannel !== "undefined") {
+            const bc = new BroadcastChannel("DMS_LOAD_ISSUE");
+            bc.postMessage(issueData);
+            setTimeout(() => bc.close(), 1000);
+          }
+        } catch (e) {
+          console.warn("Lỗi BroadcastChannel:", e);
+        }
+
+        // 3. Chuyển tab trong iframe nếu có
+        let switched = false;
+        try {
+          if (window.parent && window.parent !== window && window.parent.document) {
+            const noteIssueTabBtn = window.parent.document.querySelector('[data-frame-target="noteIssueFrame"]');
+            if (noteIssueTabBtn) {
+              noteIssueTabBtn.click();
+              switched = true;
+            }
+            const noteFrame = window.parent.document.getElementById("noteIssueFrame");
+            if (noteFrame && noteFrame.contentWindow) {
+              noteFrame.contentWindow.postMessage({ type: "DMS_LOAD_ISSUE", data: issueData }, "*");
+              if (typeof noteFrame.contentWindow.loadIssueIntoForm === "function") {
+                noteFrame.contentWindow.loadIssueIntoForm(issueData);
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("Lỗi chuyển tab sang Note Issue:", e);
+        }
+
+        // 4. Nếu không trong iframe thì mở trang Note Issue
+        if (!switched && (!window.parent || window.parent === window)) {
+          window.location.href = "note_issue.html";
+        }
+
+        showToast("Đã đẩy dữ liệu cuộc gọi sang tab Soạn Issue!");
       }
 
       // Hỗ trợ click vào bất cứ vị trí nào trong ô copyable để copy
