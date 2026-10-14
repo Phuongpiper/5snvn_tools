@@ -4744,6 +4744,7 @@
       </div>
 
       <div class="member-modal-body" style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
+        <div id="modalUnnotedWarningBox" style="display:none; padding:10px 14px; border-radius:8px; font-size:12px; line-height:1.5;"></div>
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px 14px;">
           <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
             <span><i class="fa-solid fa-terminal" style="color:var(--primary);"></i> Nội dung Prompt tạo ticket</span>
@@ -8232,8 +8233,17 @@
         }
 
         // 4. Nguồn liên hệ
-        let sourceContact = (item.fields && item.fields.source) ? String(item.fields.source).trim() : "Hotline";
-        if (!sourceContact) sourceContact = "Hotline";
+        let rawPhone = cleanDigits(item.fields?.hotline);
+        if (!rawPhone && callDetail) {
+          const pm = callDetail.match(/Hotline\s*(\d+)/i) || callDetail.match(/0\d{8,10}/);
+          if (pm) rawPhone = cleanDigits(pm[1] || pm[0]);
+        }
+        let sourceContact = "Hotline";
+        if (rawPhone) {
+          sourceContact = `Hotline ${rawPhone}`;
+        } else if (item.fields && item.fields.source) {
+          sourceContact = String(item.fields.source).trim() || "Hotline";
+        }
 
         // 5. Tạo prompt hoàn chỉnh
         let promptLines = [
@@ -8247,7 +8257,7 @@
           `- Nguồn liên hệ: ${sourceContact}`
         ];
 
-        promptLines.push(`=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`);
+        promptLines.push(`=> QUY TẮC BẮT BUỘC: CHỈ GỌI TOOL TẠO DUY NHẤT 1 TICKET (TUYỆT ĐỐI KHÔNG TẠO TRÙNG LẶP HOẶC TẠO 2 LẦN). Sau khi tạo ticket xong, hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi gọi tool close_ticket để đóng ticket đó về trạng thái CLOSED.`);
 
         return promptLines.join("\n");
       }
@@ -8258,6 +8268,7 @@
       }
 
       let currentUnnotedIssue = null;
+      const inFlightAiTicketIssues = new Set();
 
       window.openChatboxForUnnotedIssue = function (id) {
         const found = (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null) ||
@@ -8269,6 +8280,7 @@
 
         currentUnnotedIssue = found;
         const promptText = formatChatboxAiPrompt(found);
+        const issueKey = String(found.id || getIssueUniqueKey(found));
 
         // Tự động sao chép vào Clipboard ngay khi mở
         try {
@@ -8282,14 +8294,49 @@
         const elText = document.getElementById("modalUnnotedPromptText");
         const elSub = document.getElementById("modalUnnotedSub");
         const btnAi = document.getElementById("btnRunAiAutoTicket");
+        const warnBox = document.getElementById("modalUnnotedWarningBox");
 
         if (elText) elText.textContent = promptText;
         if (elSub) {
           elSub.textContent = `Nhân viên: ${found.memberCode || 'N/A'} · Ngày: ${found.date || 'Hôm nay'}`;
         }
-        if (btnAi) {
-          btnAi.disabled = false;
-          btnAi.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Bấm để AI tự tạo Ticket ngay';
+
+        // Kiểm tra xem issue này có đang được xử lý trong nền không
+        const isCurrentlyRunning = inFlightAiTicketIssues.has(issueKey);
+
+        // Kiểm tra xem issue này đã có ticket trên Helpdesk chưa
+        const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(found, helpdeskTickets) : null;
+
+        if (isCurrentlyRunning) {
+          if (warnBox) {
+            warnBox.style.display = "block";
+            warnBox.style.background = "#fffbeb";
+            warnBox.style.border = "1px solid #fde68a";
+            warnBox.style.color = "#b45309";
+            warnBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <strong>Đang xử lý trong nền:</strong> Lệnh tạo ticket cho issue này đã được gửi đến Chatbox AI và đang chạy. Vui lòng chờ vài giây để không bị tạo 2 ticket trùng lặp!';
+          }
+          if (btnAi) {
+            btnAi.disabled = true;
+            btnAi.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang chờ AI phản hồi trong nền...';
+          }
+        } else if (matchedTicket) {
+          if (warnBox) {
+            warnBox.style.display = "block";
+            warnBox.style.background = "#ecfdf5";
+            warnBox.style.border = "1px solid #a7f3d0";
+            warnBox.style.color = "#047857";
+            warnBox.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>Đã có Ticket:</strong> Issue này đã được ghi nhận Ticket <strong>#${matchedTicket.id}</strong> (${matchedTicket.status || 'CLOSED'}) trên Chatbox AI. Không cần tạo lại!`;
+          }
+          if (btnAi) {
+            btnAi.disabled = true;
+            btnAi.innerHTML = `<i class="fa-solid fa-check"></i> Đã có Ticket #${matchedTicket.id}`;
+          }
+        } else {
+          if (warnBox) warnBox.style.display = "none";
+          if (btnAi) {
+            btnAi.disabled = false;
+            btnAi.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Bấm để AI tự tạo Ticket ngay';
+          }
         }
 
         if (modal) modal.classList.add("show");
@@ -8327,12 +8374,38 @@
       window.runAiAutoCreateTicketClient = async function () {
         if (!currentUnnotedIssue) return;
         const found = currentUnnotedIssue;
+        const issueKey = String(found.id || getIssueUniqueKey(found));
+
+        // CHỐNG GỬI TRÙNG LẶP: Nếu issue này đang có request chạy trong nền
+        if (inFlightAiTicketIssues.has(issueKey)) {
+          showToast("⏳ Issue này đang được xử lý tạo ticket, vui lòng không gửi lại!", "fa-clock", 5000);
+          return;
+        }
+
+        // Kiểm tra nếu đã có ticket trên Helpdesk rồi thì không tạo nữa
+        const alreadyMatched = typeof findMatchedTicket === "function" ? findMatchedTicket(found, helpdeskTickets) : null;
+        if (alreadyMatched) {
+          showToast(`Issue này đã có Ticket #${alreadyMatched.id} trên Chatbox AI rồi!`, "fa-circle-check");
+          closeUnnotedTicketModal();
+          return;
+        }
+
         const promptText = formatChatboxAiPrompt(found);
         const btnAi = document.getElementById("btnRunAiAutoTicket");
+        const warnBox = document.getElementById("modalUnnotedWarningBox");
+
+        inFlightAiTicketIssues.add(issueKey);
 
         if (btnAi) {
           btnAi.disabled = true;
           btnAi.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi lệnh đến Chatbox AI... Vui lòng chờ 10s...';
+        }
+        if (warnBox) {
+          warnBox.style.display = "block";
+          warnBox.style.background = "#eff6ff";
+          warnBox.style.border = "1px solid #bfdbfe";
+          warnBox.style.color = "#1e40af";
+          warnBox.innerHTML = '<i class="fa-solid fa-robot fa-spin"></i> Đang gửi lệnh tạo ticket... Kể cả khi bạn tắt popup này, hệ thống vẫn đang xử lý trong nền!';
         }
 
         try {
@@ -8409,6 +8482,12 @@
             btnAi.disabled = false;
             btnAi.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Thử lại hoặc Mở tab dán Ctrl + V';
           }
+          if (warnBox) warnBox.style.display = "none";
+        } finally {
+          // Giải phóng khóa sau 15 giây để phòng trường hợp lỗi mạng
+          setTimeout(() => {
+            inFlightAiTicketIssues.delete(issueKey);
+          }, 15000);
         }
       };
 
