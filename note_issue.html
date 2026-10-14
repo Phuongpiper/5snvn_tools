@@ -5694,6 +5694,37 @@
         return !isNppMatch(nppA, nppB);
       }
 
+      function extractDsrFromIssue(issue) {
+        if (!issue) return "";
+        let raw = String(issue.fields?.nvbhFormatted || issue.fields?.nvbh || issue.fields?.role || "").trim();
+        if (!raw && issue.result) {
+          const m = String(issue.result).match(/_([A-Z0-9]{3,20})_Hotline/i);
+          if (m) raw = m[1].trim();
+        }
+        return raw.toUpperCase();
+      }
+
+      function extractDsrFromTicket(ticket) {
+        if (!ticket) return "";
+        let raw = String(ticket.dsrCode || "").trim().toUpperCase();
+        if (!raw && ticket.description) {
+          const m = String(ticket.description).match(/(?:DSR|NVBH|Mã NVBH)[:\s]+([A-Z0-9]+)/i);
+          if (m) raw = m[1].trim().toUpperCase();
+        }
+        return raw;
+      }
+
+      function isDsrConflict(dsrA, dsrB) {
+        if (!dsrA || !dsrB) return false;
+        return dsrA !== dsrB;
+      }
+
+      function isPhoneConflict(pA, pB) {
+        if (!pA || !pB) return false;
+        if (pA.length < 8 || pB.length < 8) return false;
+        return pA !== pB;
+      }
+
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = getIssueDateNormalized(issue);
@@ -5709,7 +5740,7 @@
 
         let issueSolCode = String(issue.fields?.solutionCode || "").trim().toUpperCase();
         let issueSolName = String(issue.fields?.solution || "").trim().toLowerCase();
-        const issueDsr = String(issue.fields?.nvbhFormatted || issue.fields?.nvbh || "").trim().toUpperCase();
+        const issueDsr = extractDsrFromIssue(issue);
 
         if (!issueSolName && issue.result) {
           const sm = issue.result.match(/\[NVN-DMS\]-\[[A-Z]+\]_([^_]+)/i);
@@ -5794,17 +5825,26 @@
             return tPhone && tPhone.length >= 8 && tPhone === issuePhone;
           });
           if (phoneCandidates.length > 0) {
+            // Lọc các ticket không xung đột DSR và NPP
+            const validCandidates = phoneCandidates.filter(t => {
+              const tDsr = extractDsrFromTicket(t);
+              if (isDsrConflict(issueDsr, tDsr)) return false;
+              const tNpp = extractNppFromTicket(t);
+              if (isNppConflict(issueNpp, tNpp)) return false;
+              return true;
+            });
+            const pool = validCandidates.length > 0 ? validCandidates : phoneCandidates;
             let m = issueSolCode
-              ? phoneCandidates.find(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode)
+              ? pool.find(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode)
               : null;
             if (!m && issueSolName && issueSolName.length > 3) {
-              m = phoneCandidates.find(t => {
+              m = pool.find(t => {
                 const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
                 return tName.includes(issueSolName) || issueSolName.includes(tName);
               });
             }
             if (!m) {
-              m = phoneCandidates[0];
+              m = pool[0];
             }
             if (m) {
               if (usedTicketIds) usedTicketIds.add(m.id);
@@ -5814,13 +5854,22 @@
         }
 
         // 3. Cùng Agent + Cùng Ngày + Trùng Solution Code + Trùng NPP (Độ chính xác cao nhất cho cuộc gọi Hotline)
+        // BẮT BUỘC KHÔNG ĐƯỢC XUNG ĐỘT SĐT HOẶC DSR!
         if (issueSolCode && issueNpp && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             if (tSol !== issueSolCode) return false;
             const tNpp = extractNppFromTicket(t);
             if (isNppConflict(issueNpp, tNpp)) return false;
-            return isNppMatch(issueNpp, tNpp);
+            if (!isNppMatch(issueNpp, tNpp)) return false;
+
+            const tPhone = cleanDigits(t.phone);
+            if (isPhoneConflict(issuePhone, tPhone)) return false;
+
+            const tDsr = extractDsrFromTicket(t);
+            if (isDsrConflict(issueDsr, tDsr)) return false;
+
+            return true;
           });
           if (m) {
             if (usedTicketIds) usedTicketIds.add(m.id);
@@ -5832,11 +5881,11 @@
         if (issueSolCode && issueDsr && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tPhone = cleanDigits(t.phone);
-            if (issuePhone && tPhone && tPhone.length >= 8 && issuePhone !== tPhone) return false;
+            if (isPhoneConflict(issuePhone, tPhone)) return false;
             const tNpp = extractNppFromTicket(t);
             if (issueNpp && tNpp && isNppConflict(issueNpp, tNpp)) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
-            const tDsr = String(t.dsrCode || "").trim().toUpperCase();
+            const tDsr = extractDsrFromTicket(t);
             return tSol === issueSolCode && tDsr === issueDsr;
           });
           if (m) {
@@ -5845,14 +5894,16 @@
           }
         }
 
-        // 5. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi KHÔNG XUNG ĐỘT NPP và KHÔNG XUNG ĐỘT SĐT)
+        // 5. Cùng Agent + Cùng Ngày + Trùng Solution Code (chỉ áp dụng khi KHÔNG XUNG ĐỘT NPP, KHÔNG XUNG ĐỘT SĐT, KHÔNG XUNG ĐỘT DSR)
         // LƯU Ý: Nếu cả 2 bên đều có NPP mà khác nhau (ví dụ Bao Ngoc vs Nam Oanh) -> BẮT BUỘC LOẠI BỎ!
         if (issueSolCode && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tPhone = cleanDigits(t.phone);
-            if (issuePhone && tPhone && tPhone.length >= 8 && issuePhone !== tPhone) return false;
+            if (isPhoneConflict(issuePhone, tPhone)) return false;
             const tNpp = extractNppFromTicket(t);
             if (issueNpp && tNpp && isNppConflict(issueNpp, tNpp)) return false;
+            const tDsr = extractDsrFromTicket(t);
+            if (isDsrConflict(issueDsr, tDsr)) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             return tSol === issueSolCode;
           });
@@ -5862,13 +5913,15 @@
           }
         }
 
-        // 6. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi KHÔNG XUNG ĐỘT NPP và KHÔNG XUNG ĐỘT SĐT)
+        // 6. Cùng Agent + Cùng Ngày + Khớp Tên Solution (chỉ áp dụng khi KHÔNG XUNG ĐỘT NPP, KHÔNG XUNG ĐỘT SĐT, KHÔNG XUNG ĐỘT DSR)
         if (issueSolName && issueSolName.length > 5 && !isOtrsRaiseCloseTicket(issue)) {
           const m = agentDateCandidates.find(t => {
             const tPhone = cleanDigits(t.phone);
-            if (issuePhone && tPhone && tPhone.length >= 8 && issuePhone !== tPhone) return false;
+            if (isPhoneConflict(issuePhone, tPhone)) return false;
             const tNpp = extractNppFromTicket(t);
             if (issueNpp && tNpp && isNppConflict(issueNpp, tNpp)) return false;
+            const tDsr = extractDsrFromTicket(t);
+            if (isDsrConflict(issueDsr, tDsr)) return false;
             const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
             return tName.includes(issueSolName) || issueSolName.includes(tName);
           });
@@ -8305,7 +8358,18 @@
         const isCurrentlyRunning = inFlightAiTicketIssues.has(issueKey);
 
         // Kiểm tra xem issue này đã có ticket trên Helpdesk chưa
-        const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(found, helpdeskTickets) : null;
+        let matchedTicket = found.matchedTicket || null;
+        if (!matchedTicket && typeof findMatchedTicket === "function") {
+          const usedTicketIds = new Set();
+          if (Array.isArray(r2Issues)) {
+            r2Issues.forEach(item => {
+              if (item && item.id !== found.id && item.matchedTicket && item.matchedTicket.id) {
+                usedTicketIds.add(item.matchedTicket.id);
+              }
+            });
+          }
+          matchedTicket = findMatchedTicket(found, helpdeskTickets, usedTicketIds);
+        }
 
         if (isCurrentlyRunning) {
           if (warnBox) {
@@ -8383,7 +8447,18 @@
         }
 
         // Kiểm tra nếu đã có ticket trên Helpdesk rồi thì không tạo nữa
-        const alreadyMatched = typeof findMatchedTicket === "function" ? findMatchedTicket(found, helpdeskTickets) : null;
+        let alreadyMatched = found.matchedTicket || null;
+        if (!alreadyMatched && typeof findMatchedTicket === "function") {
+          const usedTicketIds = new Set();
+          if (Array.isArray(r2Issues)) {
+            r2Issues.forEach(item => {
+              if (item && item.id !== found.id && item.matchedTicket && item.matchedTicket.id) {
+                usedTicketIds.add(item.matchedTicket.id);
+              }
+            });
+          }
+          alreadyMatched = findMatchedTicket(found, helpdeskTickets, usedTicketIds);
+        }
         if (alreadyMatched) {
           showToast(`Issue này đã có Ticket #${alreadyMatched.id} trên Chatbox AI rồi!`, "fa-circle-check");
           closeUnnotedTicketModal();
