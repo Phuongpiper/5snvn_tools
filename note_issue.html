@@ -5961,6 +5961,63 @@
         renderStatsPage();
       };
 
+      function formatTicketDateTime(val) {
+        if (!val) return "--";
+        const str = String(val).trim();
+
+        // 1. Dạng ISO: YYYY-MM-DDTHH:mm:ss.sss hoặc YYYY-MM-DD HH:mm:ss
+        const isoMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?(?:\.\d+)?/);
+        if (isoMatch) {
+          const y = isoMatch[1];
+          const m = isoMatch[2].padStart(2, "0");
+          const d = isoMatch[3].padStart(2, "0");
+          const hh = isoMatch[4].padStart(2, "0");
+          const mm = isoMatch[5].padStart(2, "0");
+          const ss = isoMatch[6] ? isoMatch[6].padStart(2, "0") : "00";
+          return `${hh}:${mm}:${ss} - ${d}/${m}/${y}`;
+        }
+
+        // 2. Dạng YYYY-MM-DD
+        const ymdMatch = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+        if (ymdMatch) {
+          const y = ymdMatch[1];
+          const m = ymdMatch[2].padStart(2, "0");
+          const d = ymdMatch[3].padStart(2, "0");
+          return `${d}/${m}/${y}`;
+        }
+
+        // 3. Dạng timestamp số (mili giây hoặc giây)
+        if (/^\d{10,13}$/.test(str)) {
+          const num = parseInt(str, 10);
+          const dateObj = new Date(str.length === 10 ? num * 1000 : num);
+          if (!isNaN(dateObj.getTime())) {
+            const d = String(dateObj.getDate()).padStart(2, "0");
+            const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+            const y = dateObj.getFullYear();
+            const hh = String(dateObj.getHours()).padStart(2, "0");
+            const mm = String(dateObj.getMinutes()).padStart(2, "0");
+            const ss = String(dateObj.getSeconds()).padStart(2, "0");
+            return `${hh}:${mm}:${ss} - ${d}/${m}/${y}`;
+          }
+        }
+
+        // 4. Thử parse Date thông thường
+        try {
+          const d = new Date(str);
+          if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, "0");
+            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const year = d.getFullYear();
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mm = String(d.getMinutes()).padStart(2, "0");
+            const ss = String(d.getSeconds()).padStart(2, "0");
+            return `${hh}:${mm}:${ss} - ${day}/${month}/${year}`;
+          }
+        } catch (_) {}
+
+        return str;
+      }
+
       let currentModalTicketId = null;
 
       window.openTicketDetailModal = function(ticketId) {
@@ -6012,7 +6069,7 @@
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Thời gian tạo ticket</div>
-                <div style="font-size:12.5px; font-weight:700; color:var(--text-main);"><i class="fa-regular fa-clock" style="color:#0284c7;"></i> ${escapeHTML(t.createdAt || t.createdDate || t.date || '--')}</div>
+                <div style="font-size:12.5px; font-weight:700; color:var(--text-main);"><i class="fa-regular fa-clock" style="color:#0284c7;"></i> ${escapeHTML(formatTicketDateTime(t.createdAt || t.createdDate || t.date))}</div>
               </div>
               <div>
                 <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Dự án / Phân loại</div>
@@ -9621,7 +9678,7 @@
               "CÚ PHÁP ISSUE": n.result,
               "TRẠNG THÁI CHATBOX AI": t ? `Đã note (#${t.id})` : "Chưa note",
               "TICKET ID": t ? t.id : "",
-              "TICKET TẠO LÚC": t ? (t.createdAt || t.createdDate || "") : "",
+              "TICKET TẠO LÚC": t ? formatTicketDateTime(t.createdAt || t.createdDate || "") : "",
               "TICKET GIẢI PHÁP": t ? (t.solutionName || t.description || "") : "",
               "NGÀY": n.date,
               "GIỜ": n.time || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : ""),
