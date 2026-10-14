@@ -2296,11 +2296,7 @@
         let npp = "";
         const nppMatch = text.match(/_NPP\s+([^_]+?)(?=_|$)/i);
         if (nppMatch) {
-          const candidate = nppMatch[1].trim();
-          const isTicketOrError = /^\d{8,}/.test(candidate) || /OTRS|Ticket|Error|Bug/i.test(candidate);
-          if (!isTicketOrError) {
-            npp = candidate;
-          }
+          npp = nppMatch[1].trim();
         }
 
         // 5. Hotline

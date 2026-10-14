@@ -1021,6 +1021,12 @@
       animation: shakeInput 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
     }
 
+    .form-control-studio.input-conflict-warn {
+      border-color: #ef4444 !important;
+      background: #fef2f2 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+    }
+
     @keyframes shakeInput {
 
       10%,
@@ -6800,12 +6806,36 @@
         return 0;
       }
 
+      function isOtrsTicketInNpp(val) {
+        if (!val) return false;
+        const s = String(val).trim();
+        // Có chứa chuỗi số ticket OTRS 14-18 chữ số (VD: 2026101455000367...)
+        if (/\b\d{14,18}\b/.test(s)) return true;
+        // Bắt đầu bằng 10+ chữ số (mã ticket OTRS)
+        if (/^\d{10,}/.test(s)) return true;
+        // Chứa từ khóa OTRS ticket (VD: OTRS Ticket, OTRS - Unable to...)
+        if (/\bOTRS\b/i.test(s) && /\b(Ticket|V8|DMS1|SQL|Error|Bug|Unable|Add|Map)\b/i.test(s)) return true;
+        return false;
+      }
+
+      function isPhoneHotline(raw) {
+        if (!raw) return false;
+        const s = String(raw).trim();
+        if (typeof isChannelHotline === "function" && isChannelHotline(s)) return false;
+        const digits = s.replace(/\D/g, "");
+        return digits.length >= 8 && (digits.startsWith("0") || digits.length >= 10);
+      }
+
       function handleNppInput() {
         if (dropdownRole) dropdownRole.style.display = "none";
         const val = inputNpp.value.trim();
         const roleVal = inputRole.value.trim().toUpperCase();
         if (!val) {
           dropdownNpp.style.display = "none";
+          inputNpp.classList.remove("input-conflict-warn");
+          if (!isPhoneHotline(inputHotline.value)) {
+            inputHotline.classList.remove("input-conflict-warn");
+          }
           if (roleVal === "ADMIN" || roleVal === "AD" || roleVal === "ADM" || roleVal === "ADMI") {
             hintNpp.className = "field-hint-chip warning";
             hintNpp.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Đang chọn ADMIN: Bắt buộc phải có NPP!`;
@@ -6815,11 +6845,44 @@
           }
           currentNppObj = null;
           currentNppMatches = [];
+          validateHotline();
           validateNvbh();
           validateRole();
           updateResultDisplay();
           return;
         }
+
+        // Kiểm tra nếu ô NPP là Mã & Tên Ticket OTRS (VD: 2026101455000367 DMS1 V8.7 - Unable to add Channel group due to SQL error)
+        if (isOtrsTicketInNpp(val)) {
+          dropdownNpp.style.display = "none";
+          currentNppObj = null;
+          currentNppMatches = [];
+
+          const hasPhoneHotline = isPhoneHotline(inputHotline.value);
+          if (hasPhoneHotline) {
+            hintNpp.className = "field-hint-chip warning";
+            hintNpp.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> <strong style="color:#ef4444;">Cảnh báo:</strong> Ô NPP là Ticket OTRS thì không được điền SĐT ở ô Hotline!`;
+            inputNpp.classList.add("input-conflict-warn");
+            inputHotline.classList.add("input-conflict-warn");
+          } else {
+            inputNpp.classList.remove("input-conflict-warn");
+            inputHotline.classList.remove("input-conflict-warn");
+            const tNumMatch = val.match(/\b\d{14,18}\b/) || val.match(/\b\d{10,}\b/);
+            const tNum = tNumMatch ? tNumMatch[0] : "";
+            hintNpp.className = "field-hint-chip info";
+            hintNpp.innerHTML = `<i class="fa-solid fa-ticket" style="color:#6366f1;"></i> Mã &amp; Tên Ticket OTRS: <strong>${escapeHTML(tNum || val)}</strong>`;
+          }
+
+          validateHotline();
+          validateNvbh();
+          validateRole();
+          updateResultDisplay();
+          return;
+        }
+
+        inputNpp.classList.remove("input-conflict-warn");
+        inputHotline.classList.remove("input-conflict-warn");
+        validateHotline();
 
         const q = normalizeStr(val);
         const matchesWithScore = dtList
@@ -6873,6 +6936,7 @@
           hintNpp.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Không tìm thấy trong DT List`;
         }
 
+        validateHotline();
         validateNvbh();
         validateRole();
         updateResultDisplay();
@@ -7483,19 +7547,63 @@
 
       function validateHotline() {
         const raw = inputHotline.value.trim();
+        const hasOtrsNpp = isOtrsTicketInNpp(inputNpp.value);
+
         if (!raw) {
+          inputHotline.classList.remove("input-conflict-warn");
           hintHotline.className = "field-hint-chip";
           hintHotline.textContent = "";
+          if (hasOtrsNpp) {
+            inputNpp.classList.remove("input-conflict-warn");
+            const tNumMatch = inputNpp.value.match(/\b\d{14,18}\b/) || inputNpp.value.match(/\b\d{10,}\b/);
+            const tNum = tNumMatch ? tNumMatch[0] : "";
+            hintNpp.className = "field-hint-chip info";
+            hintNpp.innerHTML = `<i class="fa-solid fa-ticket" style="color:#6366f1;"></i> Mã &amp; Tên Ticket OTRS: <strong>${escapeHTML(tNum || inputNpp.value)}</strong>`;
+          } else {
+            inputNpp.classList.remove("input-conflict-warn");
+          }
           return;
         }
 
         // Kiểm tra kênh liên lạc
         const channel = isChannelHotline(raw);
         if (channel) {
+          inputHotline.classList.remove("input-conflict-warn");
+          if (hasOtrsNpp) {
+            inputNpp.classList.remove("input-conflict-warn");
+            const tNumMatch = inputNpp.value.match(/\b\d{14,18}\b/) || inputNpp.value.match(/\b\d{10,}\b/);
+            const tNum = tNumMatch ? tNumMatch[0] : "";
+            hintNpp.className = "field-hint-chip info";
+            hintNpp.innerHTML = `<i class="fa-solid fa-ticket" style="color:#6366f1;"></i> Mã &amp; Tên Ticket OTRS: <strong>${escapeHTML(tNum || inputNpp.value)}</strong>`;
+          }
           const meta = getChannelMeta(channel);
           hintHotline.className = "field-hint-chip success";
           hintHotline.innerHTML = `<i class="fa-solid ${meta.icon}"></i> Kênh: <strong>${escapeHTML(channel)}</strong>`;
           return;
+        }
+
+        // Kiểm tra số điện thoại xung đột với Ticket OTRS
+        const isPhone = isPhoneHotline(raw);
+        if (hasOtrsNpp && isPhone) {
+          inputHotline.classList.add("input-conflict-warn");
+          inputNpp.classList.add("input-conflict-warn");
+          hintHotline.className = "field-hint-chip warning";
+          hintHotline.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> <strong style="color:#ef4444;">Cảnh báo:</strong> Ô NPP là Ticket OTRS thì không được điền SĐT (hãy chọn OTRS/Mail)!`;
+
+          hintNpp.className = "field-hint-chip warning";
+          hintNpp.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> <strong style="color:#ef4444;">Cảnh báo:</strong> Đang là Ticket OTRS thì Hotline không được điền SĐT!`;
+          return;
+        }
+
+        inputHotline.classList.remove("input-conflict-warn");
+        if (!hasOtrsNpp) {
+          inputNpp.classList.remove("input-conflict-warn");
+        } else {
+          inputNpp.classList.remove("input-conflict-warn");
+          const tNumMatch = inputNpp.value.match(/\b\d{14,18}\b/) || inputNpp.value.match(/\b\d{10,}\b/);
+          const tNum = tNumMatch ? tNumMatch[0] : "";
+          hintNpp.className = "field-hint-chip info";
+          hintNpp.innerHTML = `<i class="fa-solid fa-ticket" style="color:#6366f1;"></i> Mã &amp; Tên Ticket OTRS: <strong>${escapeHTML(tNum || inputNpp.value)}</strong>`;
         }
 
         // Kiểm tra số điện thoại (chấp nhận cả 10 số và 11 số)
@@ -7599,10 +7707,16 @@
             pNpp = "NPP " + pNpp;
           }
         } else if (inputNpp.value.trim()) {
-          let custom = inputNpp.value.trim();
-          custom = custom.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-          if (!custom.startsWith("NPP ") && !custom.startsWith("npp ")) {
-            custom = "NPP " + custom;
+          let custom = inputNpp.value.trim().replace(/\t+/g, " ");
+          if (isOtrsTicketInNpp(custom)) {
+            if (!custom.startsWith("NPP ") && !custom.startsWith("npp ")) {
+              custom = "NPP " + custom;
+            }
+          } else {
+            custom = custom.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+            if (!custom.startsWith("NPP ") && !custom.startsWith("npp ")) {
+              custom = "NPP " + custom;
+            }
           }
           pNpp = custom;
         }
@@ -7673,7 +7787,11 @@
         } else if (hasNpp) {
           html += `<span class="t-sep">_</span><span class="t-staff-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Cần nhập 1 trong 2 (NVBH / Role)</span>`;
         }
-        if (p.hotline) html += `<span class="t-sep">_</span><span class="t-hotline">${escapeHTML(p.hotline)}</span>`;
+        if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) {
+          html += `<span class="t-sep">_</span><span class="t-hotline-conflict" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Ticket OTRS không đi cùng SĐT</span>`;
+        } else if (p.hotline) {
+          html += `<span class="t-sep">_</span><span class="t-hotline">${escapeHTML(p.hotline)}</span>`;
+        }
 
         resultSyntaxDisplay.innerHTML = html;
         if (typeof syncInputClearButtons === "function") syncInputClearButtons();
@@ -7715,6 +7833,19 @@
           showToast("Khi có NPP, bắt buộc phải nhập 1 trong 2 (NVBH hoặc SUP/HQ/Admin)!", "fa-triangle-exclamation");
           inputNvbh.focus();
           highlightStaffInputsError();
+          return;
+        }
+
+        // BẮT BUỘC: Khi ô NPP là Ticket OTRS thì không được điền SĐT ở ô Hotline
+        if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) {
+          showToast("Cảnh báo: Ô NPP là Ticket OTRS thì Hotline không được điền SĐT!", "fa-triangle-exclamation");
+          inputHotline.focus();
+          inputHotline.classList.add("input-shake-warn");
+          inputNpp.classList.add("input-shake-warn");
+          setTimeout(() => {
+            inputHotline.classList.remove("input-shake-warn");
+            inputNpp.classList.remove("input-shake-warn");
+          }, 1200);
           return;
         }
 
@@ -7771,6 +7902,19 @@
           showToast("Khi có NPP, bắt buộc phải nhập 1 trong 2 (NVBH hoặc SUP/HQ/Admin)!", "fa-triangle-exclamation");
           inputNvbh.focus();
           highlightStaffInputsError();
+          return;
+        }
+
+        // BẮT BUỘC: Khi ô NPP là Ticket OTRS thì không được điền SĐT ở ô Hotline
+        if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) {
+          showToast("Cảnh báo: Ô NPP là Ticket OTRS thì Hotline không được điền SĐT!", "fa-triangle-exclamation");
+          inputHotline.focus();
+          inputHotline.classList.add("input-shake-warn");
+          inputNpp.classList.add("input-shake-warn");
+          setTimeout(() => {
+            inputHotline.classList.remove("input-shake-warn");
+            inputNpp.classList.remove("input-shake-warn");
+          }, 1200);
           return;
         }
 
@@ -7904,6 +8048,7 @@
         currentNppObj = null;
         currentNppMatches = [];
         if (dropdownNpp) dropdownNpp.style.display = "none";
+        inputNpp.classList.remove("input-conflict-warn");
         const roleVal = inputRole.value.trim().toUpperCase();
         if (roleVal === "ADMIN" || roleVal === "AD" || roleVal === "ADM" || roleVal === "ADMI") {
           hintNpp.className = "field-hint-chip warning";
@@ -7912,6 +8057,7 @@
           hintNpp.className = "field-hint-chip info";
           hintNpp.innerHTML = `<i class="fa-solid fa-info-circle"></i> Đang để trống (Xử lý cho HQ)`;
         }
+        validateHotline();
         validateNvbh();
         validateRole();
         updateResultDisplay();
@@ -7954,6 +8100,8 @@
         inputNvbh.value = "";
         inputRole.value = "";
         inputHotline.value = "";
+        inputNpp.classList.remove("input-conflict-warn");
+        inputHotline.classList.remove("input-conflict-warn");
         currentSolutionObj = null;
         currentNppObj = null;
         setType("HH");
@@ -8739,27 +8887,35 @@
             } catch (_) {}
           }
 
-          if (Array.isArray(dtList) && dtList.length > 0) {
-            if (cleanDist) {
-              matchedNpp = dtList.find(d => String(d.code).trim() === cleanDist);
-            }
-            if (!matchedNpp && cleanNpp) {
-              const qNorm = typeof normalizeStr === "function" ? normalizeStr(cleanNpp) : cleanNpp.toLowerCase();
-              matchedNpp = dtList.find(d => {
-                const core = typeof normalizeStr === "function" ? normalizeStr((d.issueName || "").replace(/^npp\s+/i, "")) : (d.issueName || "").toLowerCase();
-                const iname = typeof normalizeStr === "function" ? normalizeStr(d.issueName || "") : (d.issueName || "").toLowerCase();
-                const dname = typeof normalizeStr === "function" ? normalizeStr(d.name || "") : (d.name || "").toLowerCase();
-                return core === qNorm || iname === qNorm || dname.includes(qNorm) || core.includes(qNorm);
-              });
-            }
-          }
-
-          if (matchedNpp && typeof applyNpp === "function") {
-            applyNpp(matchedNpp, true);
-          } else {
+          if (isOtrsTicketInNpp(cleanNpp)) {
+            currentNppObj = null;
             inputNpp.value = cleanNpp;
             if (typeof handleNppInput === "function") {
               handleNppInput();
+            }
+          } else {
+            if (Array.isArray(dtList) && dtList.length > 0) {
+              if (cleanDist) {
+                matchedNpp = dtList.find(d => String(d.code).trim() === cleanDist);
+              }
+              if (!matchedNpp && cleanNpp) {
+                const qNorm = typeof normalizeStr === "function" ? normalizeStr(cleanNpp) : cleanNpp.toLowerCase();
+                matchedNpp = dtList.find(d => {
+                  const core = typeof normalizeStr === "function" ? normalizeStr((d.issueName || "").replace(/^npp\s+/i, "")) : (d.issueName || "").toLowerCase();
+                  const iname = typeof normalizeStr === "function" ? normalizeStr(d.issueName || "") : (d.issueName || "").toLowerCase();
+                  const dname = typeof normalizeStr === "function" ? normalizeStr(d.name || "") : (d.name || "").toLowerCase();
+                  return core === qNorm || iname === qNorm || dname.includes(qNorm) || core.includes(qNorm);
+                });
+              }
+            }
+
+            if (matchedNpp && typeof applyNpp === "function") {
+              applyNpp(matchedNpp, true);
+            } else {
+              inputNpp.value = cleanNpp;
+              if (typeof handleNppInput === "function") {
+                handleNppInput();
+              }
             }
           }
         }
