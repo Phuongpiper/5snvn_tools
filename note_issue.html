@@ -7754,43 +7754,79 @@
 
       function getResultString() {
         const p = generateResultParts();
-        const parts = [p.prefix];
-        if (p.solution) parts.push(p.solution);
-        if (p.npp) parts.push(p.npp);
-        if (p.staff) parts.push(p.staff);
-        if (p.hotline) parts.push(p.hotline);
+        const hasNpp = Boolean(currentNppObj || inputNpp.value.trim());
+        const roleRaw = inputRole.value.trim().toUpperCase();
+        const isHqRole = roleRaw.startsWith("HQ");
 
-        if (parts.length === 1 && !p.solution) return "";
+        // BẮT BUỘC: Không tạo cú pháp nếu thiếu thông tin bắt buộc hoặc có xung đột
+        if (!p.solution) return "";
+        if (!p.staff) return "";
+        if (!hasNpp && !isHqRole) return "";
+        if (!p.hotline) return "";
+        if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) return "";
+
+        const parts = [p.prefix, p.solution];
+        if (p.npp) parts.push(p.npp);
+        parts.push(p.staff);
+        parts.push(p.hotline);
+
         return parts.join("_");
       }
 
       function updateResultDisplay() {
         const p = generateResultParts();
-        const str = getResultString();
         const hasNpp = Boolean(currentNppObj || inputNpp.value.trim());
+        const roleRaw = inputRole.value.trim().toUpperCase();
+        const isHqRole = roleRaw.startsWith("HQ");
 
-        if (!str) {
+        const hasAnyInput = Boolean(
+          inputSolution.value.trim() ||
+          currentSolutionObj ||
+          inputNpp.value.trim() ||
+          currentNppObj ||
+          inputNvbh.value.trim() ||
+          inputRole.value.trim() ||
+          inputHotline.value.trim()
+        );
+
+        if (!hasAnyInput) {
           resultSyntaxDisplay.innerHTML = `<span style="color:#64748b;">[NVN-DMS]-[HH]_Kiểm tra thông tin KHT_NPP Tuan Viet_ADMIN_Hotline 0909280969</span>`;
           if (typeof syncInputClearButtons === "function") syncInputClearButtons();
           return;
         }
 
         let html = `<span class="t-prefix">${escapeHTML(p.prefix)}</span>`;
-        if (p.solution) html += `<span class="t-sep">_</span><span class="t-solution">${escapeHTML(p.solution)}</span>`;
+
+        // 1. Solution
+        if (p.solution) {
+          html += `<span class="t-sep">_</span><span class="t-solution">${escapeHTML(p.solution)}</span>`;
+        } else {
+          html += `<span class="t-sep">_</span><span class="t-solution-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Thiếu Solution</span>`;
+        }
+
+        // 2. NPP
         if (p.npp) {
           html += `<span class="t-sep">_</span><span class="t-npp">${escapeHTML(p.npp)}</span>`;
-        } else if (p.staff === "ADMIN") {
+        } else if (roleRaw === "ADMIN") {
           html += `<span class="t-sep">_</span><span class="t-npp-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> ADMIN cần có NPP</span>`;
+        } else if (!isHqRole) {
+          html += `<span class="t-sep">_</span><span class="t-npp-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Thiếu NPP</span>`;
         }
+
+        // 3. Mã user (NVBH hoặc SUP/HQ/Admin)
         if (p.staff) {
           html += `<span class="t-sep">_</span><span class="t-staff">${escapeHTML(p.staff)}</span>`;
-        } else if (hasNpp) {
-          html += `<span class="t-sep">_</span><span class="t-staff-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Cần nhập 1 trong 2 (NVBH / Role)</span>`;
+        } else {
+          html += `<span class="t-sep">_</span><span class="t-staff-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Cần nhập mã user (NVBH / Role)</span>`;
         }
+
+        // 4. Hotline
         if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) {
           html += `<span class="t-sep">_</span><span class="t-hotline-conflict" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Ticket OTRS không đi cùng SĐT</span>`;
         } else if (p.hotline) {
           html += `<span class="t-sep">_</span><span class="t-hotline">${escapeHTML(p.hotline)}</span>`;
+        } else {
+          html += `<span class="t-sep">_</span><span class="t-hotline-missing" style="color: #ef4444; border: 1px dashed #ef4444; padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 13px; background: rgba(239, 68, 68, 0.12); display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-triangle-exclamation" style="font-size: 11px;"></i> Thiếu Hotline</span>`;
         }
 
         resultSyntaxDisplay.innerHTML = html;
@@ -7806,37 +7842,74 @@
         }, 1200);
       }
 
-      /* ── COPY RESULT ── */
-      async function copyResult() {
-        const hasNpp = Boolean(currentNppObj || inputNpp.value.trim());
+      function validateIssueForm(isSaving = false) {
         const p = generateResultParts();
-
-        // Kiểm tra hợp lệ Role nếu người dùng có gõ
+        const hasNpp = Boolean(currentNppObj || inputNpp.value.trim());
         const roleRaw = inputRole.value.trim().toUpperCase();
-        if (roleRaw && roleRaw !== "ADMIN" && !roleRaw.startsWith("HQ")) {
-          showToast("Role chỉ nhận ADMIN hoặc bắt đầu bằng HQ!", "fa-triangle-exclamation");
-          inputRole.focus();
-          return;
+        const isHqRole = roleRaw.startsWith("HQ");
+
+        // 1. BẮT BUỘC: Tên Solution
+        if (!p.solution) {
+          showToast("Thiếu thông tin: Vui lòng chọn hoặc nhập Tên solution!", "fa-triangle-exclamation");
+          inputSolution.focus();
+          inputSolution.classList.add("input-shake-warn");
+          setTimeout(() => inputSolution.classList.remove("input-shake-warn"), 1200);
+          return false;
         }
 
-        // BẮT BUỘC: Khi nhập ADMIN thì phải có NPP
-        if (roleRaw === "ADMIN" && !hasNpp) {
-          showToast("Khi nhập ADMIN, bắt buộc phải có NPP!", "fa-triangle-exclamation");
+        // 2. BẮT BUỘC: Nhà phân phối (NPP) - Ngoại trừ khi xử lý issue cho HQ
+        if (!hasNpp && !isHqRole) {
+          if (roleRaw === "ADMIN") {
+            showToast("Thiếu thông tin: Khi chọn ADMIN, bắt buộc phải có NPP!", "fa-triangle-exclamation");
+          } else {
+            showToast("Thiếu thông tin: Vui lòng chọn hoặc nhập Nhà phân phối (NPP)!", "fa-triangle-exclamation");
+          }
           inputNpp.focus();
           inputNpp.classList.add("input-shake-warn");
           setTimeout(() => inputNpp.classList.remove("input-shake-warn"), 1200);
-          return;
+          return false;
         }
 
-        // BẮT BUỘC: Khi có NPP thì phải nhập 1 trong 2 (NVBH hoặc SUP/HQ/Admin)
-        if (hasNpp && !p.staff) {
-          showToast("Khi có NPP, bắt buộc phải nhập 1 trong 2 (NVBH hoặc SUP/HQ/Admin)!", "fa-triangle-exclamation");
+        // 3. BẮT BUỘC: Mã user (1 trong 2: NVBH hoặc SUP/HQ/Admin)
+        if (!p.staff) {
+          showToast("Thiếu thông tin: Vui lòng nhập mã user (NVBH hoặc SUP/HQ/Admin)!", "fa-triangle-exclamation");
           inputNvbh.focus();
           highlightStaffInputsError();
-          return;
+          return false;
         }
 
-        // BẮT BUỘC: Khi ô NPP là Ticket OTRS thì không được điền SĐT ở ô Hotline
+        // 4. Kiểm tra hợp lệ Role nếu người dùng có gõ ở ô Role
+        if (roleRaw && roleRaw !== "ADMIN" && !isHqRole) {
+          showToast("Role không hợp lệ: Chỉ nhận ADMIN hoặc bắt đầu bằng HQ!", "fa-triangle-exclamation");
+          inputRole.focus();
+          inputRole.classList.add("input-shake-warn");
+          setTimeout(() => inputRole.classList.remove("input-shake-warn"), 1200);
+          return false;
+        }
+
+        // 5. BẮT BUỘC: Hotline
+        const rawHl = inputHotline.value.trim();
+        if (!rawHl) {
+          showToast("Thiếu thông tin: Vui lòng nhập Hotline (SĐT hoặc chọn kênh hỗ trợ)!", "fa-triangle-exclamation");
+          inputHotline.focus();
+          inputHotline.classList.add("input-shake-warn");
+          setTimeout(() => inputHotline.classList.remove("input-shake-warn"), 1200);
+          return false;
+        }
+
+        // 6. Kiểm tra hợp lệ Hotline (Kênh hoặc SĐT 10-11 số)
+        const channel = isChannelHotline(rawHl);
+        const formattedPhone = formatHotline(rawHl);
+        const isValidPhone = /^0\d{9,10}$/.test(formattedPhone);
+        if (!channel && !isValidPhone) {
+          showToast("Hotline không hợp lệ: Cần 10-11 số (VD: 0909280969) hoặc chọn kênh hỗ trợ!", "fa-triangle-exclamation");
+          inputHotline.focus();
+          inputHotline.classList.add("input-shake-warn");
+          setTimeout(() => inputHotline.classList.remove("input-shake-warn"), 1200);
+          return false;
+        }
+
+        // 7. BẮT BUỘC: Xung đột giữa Ticket OTRS ở ô NPP và SĐT ở ô Hotline
         if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) {
           showToast("Cảnh báo: Ô NPP là Ticket OTRS thì Hotline không được điền SĐT!", "fa-triangle-exclamation");
           inputHotline.focus();
@@ -7846,12 +7919,28 @@
             inputHotline.classList.remove("input-shake-warn");
             inputNpp.classList.remove("input-shake-warn");
           }, 1200);
+          return false;
+        }
+
+        // 8. Nếu là hành động Lưu: Phải chọn nhân viên thao tác
+        if (isSaving && (!currentSelectedMember || !currentSelectedMember.code)) {
+          showToast("Vui lòng chọn nhân viên trước khi lưu ghi chú!", "fa-triangle-exclamation");
+          openSelectMemberModal(false);
+          return false;
+        }
+
+        return true;
+      }
+
+      /* ── COPY RESULT ── */
+      async function copyResult() {
+        if (!validateIssueForm(false)) {
           return;
         }
 
         const text = getResultString();
         if (!text) {
-          showToast("Vui lòng nhập thông tin sự cố!", "fa-triangle-exclamation");
+          showToast("Vui lòng hoàn thiện đầy đủ thông tin sự cố!", "fa-triangle-exclamation");
           return;
         }
 
@@ -7877,57 +7966,13 @@
 
       /* ── SAVE TO TEMP ── */
       function saveCurrentToTemp() {
-        const hasNpp = Boolean(currentNppObj || inputNpp.value.trim());
-        const p = generateResultParts();
-
-        // Kiểm tra hợp lệ Role nếu người dùng có gõ
-        const roleRaw = inputRole.value.trim().toUpperCase();
-        if (roleRaw && roleRaw !== "ADMIN" && !roleRaw.startsWith("HQ")) {
-          showToast("Role chỉ nhận ADMIN hoặc bắt đầu bằng HQ!", "fa-triangle-exclamation");
-          inputRole.focus();
-          return;
-        }
-
-        // BẮT BUỘC: Khi nhập ADMIN thì phải có NPP
-        if (roleRaw === "ADMIN" && !hasNpp) {
-          showToast("Khi nhập ADMIN, bắt buộc phải có NPP!", "fa-triangle-exclamation");
-          inputNpp.focus();
-          inputNpp.classList.add("input-shake-warn");
-          setTimeout(() => inputNpp.classList.remove("input-shake-warn"), 1200);
-          return;
-        }
-
-        // BẮT BUỘC: Khi có NPP thì phải nhập 1 trong 2 (NVBH hoặc SUP/HQ/Admin)
-        if (hasNpp && !p.staff) {
-          showToast("Khi có NPP, bắt buộc phải nhập 1 trong 2 (NVBH hoặc SUP/HQ/Admin)!", "fa-triangle-exclamation");
-          inputNvbh.focus();
-          highlightStaffInputsError();
-          return;
-        }
-
-        // BẮT BUỘC: Khi ô NPP là Ticket OTRS thì không được điền SĐT ở ô Hotline
-        if (isOtrsTicketInNpp(inputNpp.value) && isPhoneHotline(inputHotline.value)) {
-          showToast("Cảnh báo: Ô NPP là Ticket OTRS thì Hotline không được điền SĐT!", "fa-triangle-exclamation");
-          inputHotline.focus();
-          inputHotline.classList.add("input-shake-warn");
-          inputNpp.classList.add("input-shake-warn");
-          setTimeout(() => {
-            inputHotline.classList.remove("input-shake-warn");
-            inputNpp.classList.remove("input-shake-warn");
-          }, 1200);
-          return;
-        }
-
-        // BẮT BUỘC: Phải có thông tin nhân viên thao tác
-        if (!currentSelectedMember || !currentSelectedMember.code) {
-          showToast("Vui lòng chọn nhân viên trước khi lưu ghi chú!", "fa-triangle-exclamation");
-          openSelectMemberModal(false);
+        if (!validateIssueForm(true)) {
           return;
         }
 
         const text = getResultString();
         if (!text) {
-          showToast("Chưa có nội dung note để lưu!", "fa-triangle-exclamation");
+          showToast("Vui lòng hoàn thiện đầy đủ thông tin sự cố!", "fa-triangle-exclamation");
           inputSolution.focus();
           return;
         }
