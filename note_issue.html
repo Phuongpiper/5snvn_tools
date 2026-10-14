@@ -5538,6 +5538,7 @@
           if (res.ok) {
             const data = await res.json();
             r2Issues = Array.isArray(data.issues) ? data.issues : [];
+            if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
             updateR2Badge();
             if (typeof renderTempTable === "function") renderTempTable();
             if (currentStudioView === "stats") renderStatsPage();
@@ -9116,6 +9117,11 @@
       const REPORT_OTRS_API_URL = "https://script.google.com/macros/s/AKfycbwJJxwDVjqx-AQtaLg3TKXtUS2RWOi2JiqNb0BNTpWK-GKOyTrd9zL9uk5Rfdj68n0oRg/exec";
       const REPORT_CACHE_KEY = "dms_report_cached_data_v1";
 
+      let isVoipViewRendered = false;
+      let isStatsViewRendered = false;
+      let isReportViewRendered = false;
+      let lastVoipAutoSyncTime = 0;
+
       window.switchStudioView = function (view) {
         const isSameView = currentStudioView === view;
         currentStudioView = ["stats", "voip", "report"].includes(view) ? view : "editor";
@@ -9128,60 +9134,83 @@
         const btnNavVoip = document.getElementById("btnNavVoip");
         const btnNavReport = document.getElementById("btnNavReport");
 
+        // 1. Phản hồi chuyển nút active và hiển thị view ngay lập tức (0ms - không chờ)
+        if (btnNavEditor) btnNavEditor.classList.toggle("active", currentStudioView === "editor");
+        if (btnNavStats) btnNavStats.classList.toggle("active", currentStudioView === "stats");
+        if (btnNavVoip) btnNavVoip.classList.toggle("active", currentStudioView === "voip");
+        if (btnNavReport) btnNavReport.classList.toggle("active", currentStudioView === "report");
+
         if (viewEditor) viewEditor.style.display = currentStudioView === "editor" ? "block" : "none";
         if (viewStats) viewStats.style.display = currentStudioView === "stats" ? "block" : "none";
         if (viewVoip) viewVoip.style.display = currentStudioView === "voip" ? "block" : "none";
         if (viewReport) viewReport.style.display = currentStudioView === "report" ? "block" : "none";
 
-        if (btnNavEditor) btnNavEditor.classList.toggle("active", currentStudioView === "editor");
-        if (btnNavStats) btnNavStats.classList.toggle("active", currentStudioView === "stats");
-        if (btnNavVoip) btnNavVoip.classList.toggle("active", currentStudioView === "voip");
-        if (btnNavReport) btnNavReport.classList.toggle("active", currentStudioView === "report");
+        window.scrollTo(0, 0); // Nhảy lên đầu trang ngay lập tức, không dùng smooth scroll gây giật
 
         if (currentStudioView === "stats") {
           if (isSameView && typeof window.reloadStatsData === "function") {
             window.reloadStatsData(true);
             return;
           }
-          if (!helpdeskTickets || helpdeskTickets.length === 0) {
-            if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
+          if (!isStatsViewRendered) {
+            isStatsViewRendered = true;
+            if (!helpdeskTickets || helpdeskTickets.length === 0) {
+              if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
+            }
+            if (typeof fetchHelpdeskTickets === "function") {
+              fetchHelpdeskTickets(true, true);
+            }
+            requestAnimationFrame(() => {
+              if (typeof renderStatsPage === "function") renderStatsPage();
+            });
           }
-          if (typeof fetchHelpdeskTickets === "function") {
-            fetchHelpdeskTickets(true, true);
-          }
-          renderStatsPage();
         } else if (currentStudioView === "voip") {
           if (isSameView && typeof window.reloadVoipData === "function") {
             window.reloadVoipData(true);
             return;
           }
-          // 1. Hiển thị data đang có trước ngay lập tức (từ RAM hoặc Cache LocalStorage)
-          if (!voipCalls || voipCalls.length === 0) {
-            if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
-          }
-          if (voipCalls && voipCalls.length > 0) {
-            const { date_start, date_end } = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : { date_start: "", date_end: "" };
-            if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges(date_start, date_end);
-            if (typeof renderVoipTable === "function") renderVoipTable();
-            if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
-          } else {
-            // Nếu chưa có dữ liệu cuộc gọi, tự động tải từ Cloud nội bộ (R2)
-            if (typeof fetchVoipCalls === "function") {
-              fetchVoipCalls(false, true, "auto", false);
+          const tbody = document.getElementById("tbodyVoipCalls");
+          const alreadyHasRows = tbody && tbody.children.length > 0;
+
+          // Nếu view VoIP chưa từng được render hoặc bảng đang rỗng thì mới render lần đầu
+          if (!isVoipViewRendered || !alreadyHasRows) {
+            isVoipViewRendered = true;
+            if (!voipCalls || voipCalls.length === 0) {
+              if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
+            }
+            if (voipCalls && voipCalls.length > 0) {
+              const { date_start, date_end } = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : { date_start: "", date_end: "" };
+              requestAnimationFrame(() => {
+                if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges(date_start, date_end);
+                if (typeof renderVoipTable === "function") renderVoipTable();
+                if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
+              });
+            } else {
+              if (typeof fetchVoipCalls === "function") {
+                fetchVoipCalls(false, true, "auto", false);
+              }
             }
           }
-          // Cập nhật trạng thái và thời gian đồng bộ gần nhất
+
           if (typeof updateVoipSyncStatusDisplay === "function") {
             updateVoipSyncStatusDisplay();
           }
-          // Luôn làm mới ngầm từ Cloud nội bộ để nhận thao tác từ đồng nghiệp
-          if (typeof window.reloadVoipData === "function") {
-            window.reloadVoipData(false);
+
+          // Chỉ tự động đồng bộ ngầm nếu quá 3 phút kể từ lần sync trước, tránh spam mỗi lần bấm tab
+          if (Date.now() - lastVoipAutoSyncTime > 180000) {
+            lastVoipAutoSyncTime = Date.now();
+            if (typeof window.reloadVoipData === "function") {
+              setTimeout(() => window.reloadVoipData(false), 400);
+            }
           }
         } else if (currentStudioView === "report") {
-          openReportPage();
+          if (!isReportViewRendered) {
+            isReportViewRendered = true;
+            requestAnimationFrame(() => {
+              if (typeof openReportPage === "function") openReportPage();
+            });
+          }
         }
-        window.scrollTo({ top: 0, behavior: "smooth" });
       };
 
       /* ──────────────────────────────────────────────────────────────────────────
@@ -11913,6 +11942,7 @@
                 }
               });
               allR2TempIssues = combined;
+              if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
             }
           }
         } catch (e) {
@@ -11920,7 +11950,12 @@
         }
       }
 
-      function checkCallNoteStatus(call) {
+      function checkCallNoteStatus(call, forceRefresh = false) {
+        if (!call) return { status: "unknown" };
+        if (!forceRefresh && call._noteStatusCache && (Date.now() - (call._noteStatusCacheTime || 0) < 60000)) {
+          return call._noteStatusCache;
+        }
+
         const isInbound = (call.type_origin || "").toLowerCase() === "inbound" || (call.typeText || "").toLowerCase().includes("vào");
         const hotline = isInbound ? (call.src || "") : (call.dst || "");
         const ext = isInbound ? (call.dst || "") : (call.src || "");
@@ -11931,9 +11966,11 @@
 
         const isAnswered = callIsAnswered(call);
 
+        let result = null;
+
         // QUY TẮC: Số điện thoại thuộc danh sách MIỄN NOTE ISSUE (Bỏ qua hoàn toàn)
         if (typeof isCallExcluded === "function" && isCallExcluded(call)) {
-          return {
+          result = {
             status: "excluded",
             badgeText: "Miễn note",
             hotline,
@@ -11943,11 +11980,9 @@
             isAnswered,
             isExcluded: true
           };
-        }
-
-        // QUY TẮC: Cuộc gọi nhỡ / đàm thoại <= 0 KHÔNG CẦN note issue!
-        if (!isAnswered) {
-          return {
+        } else if (!isAnswered) {
+          // QUY TẮC: Cuộc gọi nhỡ / đàm thoại <= 0 KHÔNG CẦN note issue!
+          result = {
             status: "not_needed",
             badgeText: "Không cần note",
             hotline,
@@ -11956,100 +11991,112 @@
             isInbound,
             isAnswered: false
           };
-        }
-
-        if (!cleanCallPhone) {
-          return { status: "unknown", hotline, ext, staff, isInbound, isAnswered: true };
-        }
-
-        // Lấy ngày gọi chuẩn để so khớp: BẮT BUỘC NGÀY NÀO NOTE NGÀY ĐÓ
-        let callDateFormatted = "";
-        if (call.calldate && call.calldate.length >= 10) {
-          const cp = call.calldate.slice(0, 10).split("-");
-          if (cp.length === 3) callDateFormatted = `${cp[2]}/${cp[1]}/${cp[0]}`;
-        }
-
-        function isIssueDateMatched(callDate, issueDate) {
-          if (!callDate || !issueDate) return false;
-          const s1 = String(callDate).trim();
-          const s2 = String(issueDate).trim();
-          if (s1 === s2) return true;
-          // Chuẩn hóa so sánh dd/mm/yyyy
-          const p1 = s1.includes("/") ? s1.split("/") : s1.split("-");
-          const p2 = s2.includes("/") ? s2.split("/") : s2.split("-");
-          let d1, m1, y1, d2, m2, y2;
-          if (p1.length === 3) {
-            if (p1[0].length === 4) { y1 = p1[0]; m1 = p1[1]; d1 = p1[2]; }
-            else { d1 = p1[0]; m1 = p1[1]; y1 = p1[2]; }
+        } else if (!cleanCallPhone) {
+          result = { status: "unknown", hotline, ext, staff, isInbound, isAnswered: true };
+        } else {
+          // Lấy ngày gọi chuẩn để so khớp: BẮT BUỘC NGÀY NÀO NOTE NGÀY ĐÓ
+          let callDateFormatted = "";
+          if (call.calldate && call.calldate.length >= 10) {
+            const cp = call.calldate.slice(0, 10).split("-");
+            if (cp.length === 3) callDateFormatted = `${cp[2]}/${cp[1]}/${cp[0]}`;
           }
-          if (p2.length === 3) {
-            if (p2[0].length === 4) { y2 = p2[0]; m2 = p2[1]; d2 = p2[2]; }
-            else { d2 = p2[0]; m2 = p2[1]; y2 = p2[2]; }
+
+          function isIssueDateMatched(callDate, issueDate) {
+            if (!callDate || !issueDate) return false;
+            const s1 = String(callDate).trim();
+            const s2 = String(issueDate).trim();
+            if (s1 === s2) return true;
+            // Chuẩn hóa so sánh dd/mm/yyyy
+            const p1 = s1.includes("/") ? s1.split("/") : s1.split("-");
+            const p2 = s2.includes("/") ? s2.split("/") : s2.split("-");
+            let d1, m1, y1, d2, m2, y2;
+            if (p1.length === 3) {
+              if (p1[0].length === 4) { y1 = p1[0]; m1 = p1[1]; d1 = p1[2]; }
+              else { d1 = p1[0]; m1 = p1[1]; y1 = p1[2]; }
+            }
+            if (p2.length === 3) {
+              if (p2[0].length === 4) { y2 = p2[0]; m2 = p2[1]; d2 = p2[2]; }
+              else { d2 = p2[0]; m2 = p2[1]; y2 = p2[2]; }
+            }
+            if (d1 && m1 && y1 && d2 && m2 && y2) {
+              return parseInt(d1, 10) === parseInt(d2, 10) &&
+                     parseInt(m1, 10) === parseInt(m2, 10) &&
+                     parseInt(y1, 10) === parseInt(y2, 10);
+            }
+            return false;
           }
-          if (d1 && m1 && y1 && d2 && m2 && y2) {
-            return parseInt(d1, 10) === parseInt(d2, 10) &&
-                   parseInt(m1, 10) === parseInt(m2, 10) &&
-                   parseInt(y1, 10) === parseInt(y2, 10);
+
+          // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
+          // QUY TẮC: Phải trùng số điện thoại VÀ BẮT BUỘC ĐÚNG NGÀY GỌI (Ngày nào note ngày đó, tuyệt đối không lấy ngày khác)
+          const matchedR2Issue = r2Issues.find(iss => {
+            const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+            const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
+              (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
+            if (!phoneOk) return false;
+            return isIssueDateMatched(callDateFormatted, iss.date);
+          });
+
+          if (matchedR2Issue) {
+            result = {
+              status: "noted",
+              badgeText: "Đã note",
+              hotline,
+              ext,
+              staff,
+              isInbound,
+              isAnswered,
+              issue: matchedR2Issue
+            };
+          } else {
+            // 2. Kiểm tra trong Temp Notes (BẮT BUỘC PHẢI ĐÚNG NGÀY GỌI)
+            const poolTemp = [...tempNotes, ...allR2TempIssues];
+            const matchedTemp = poolTemp.find(iss => {
+              const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+              const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
+                (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
+              if (!phoneOk) return false;
+              return isIssueDateMatched(callDateFormatted, iss.date);
+            });
+
+            if (matchedTemp) {
+              result = {
+                status: "in_temp",
+                badgeText: "Đang trong Temp",
+                hotline,
+                ext,
+                staff,
+                isInbound,
+                isAnswered,
+                issue: matchedTemp
+              };
+            } else {
+              // 3. Chưa note issue cho ngày gọi này!
+              result = {
+                status: "unnoted",
+                badgeText: "Chưa note issue",
+                hotline,
+                ext,
+                staff,
+                isInbound,
+                isAnswered
+              };
+            }
           }
-          return false;
         }
 
-        // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
-        // QUY TẮC: Phải trùng số điện thoại VÀ BẮT BUỘC ĐÚNG NGÀY GỌI (Ngày nào note ngày đó, tuyệt đối không lấy ngày khác)
-        const matchedR2Issue = r2Issues.find(iss => {
-          const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-          const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
-            (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
-          if (!phoneOk) return false;
-          return isIssueDateMatched(callDateFormatted, iss.date);
-        });
+        call._noteStatusCache = result;
+        call._noteStatusCacheTime = Date.now();
+        return result;
+      }
 
-        if (matchedR2Issue) {
-          return {
-            status: "noted",
-            badgeText: "Đã note",
-            hotline,
-            ext,
-            staff,
-            isInbound,
-            isAnswered,
-            issue: matchedR2Issue
-          };
+      function invalidateVoipNoteStatusCache() {
+        if (Array.isArray(voipCalls)) {
+          for (let i = 0; i < voipCalls.length; i++) {
+            delete voipCalls[i]._noteStatusCache;
+            delete voipCalls[i]._noteStatusCacheTime;
+          }
         }
-
-        // 2. Kiểm tra trong Temp Notes (BẮT BUỘC PHẢI ĐÚNG NGÀY GỌI)
-        const poolTemp = [...tempNotes, ...allR2TempIssues];
-        const matchedTemp = poolTemp.find(iss => {
-          const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-          const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
-            (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
-          if (!phoneOk) return false;
-          return isIssueDateMatched(callDateFormatted, iss.date);
-        });
-
-        if (matchedTemp) {
-          return {
-            status: "in_temp",
-            badgeText: "Đang trong Temp",
-            hotline,
-            ext,
-            staff,
-            isInbound,
-            isAnswered,
-            issue: matchedTemp
-          };
-        }
-
-        // 3. Chưa note issue cho ngày gọi này!
-        return {
-          status: "unnoted",
-          badgeText: "Chưa note issue",
-          hotline,
-          ext,
-          staff,
-          isInbound,
-          isAnswered
-        };
+        isVoipViewRendered = false;
       }
 
       function parseCallDate(dateStr) {
@@ -12506,7 +12553,7 @@
           return;
         }
 
-        tbody.innerHTML = filtered.map((c, idx) => {
+        function renderCallRowHtml(c, idx) {
           const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
@@ -12626,7 +12673,20 @@
               </div>
             </td>
           </tr>`;
-        }).join("");
+        }
+
+        const CHUNK_SIZE = 80;
+        const firstChunk = filtered.slice(0, CHUNK_SIZE);
+        tbody.innerHTML = firstChunk.map((c, idx) => renderCallRowHtml(c, idx)).join("");
+
+        if (window._voipChunkTimer) clearTimeout(window._voipChunkTimer);
+        if (filtered.length > CHUNK_SIZE) {
+          window._voipChunkTimer = setTimeout(() => {
+            const restChunk = filtered.slice(CHUNK_SIZE);
+            const restHtml = restChunk.map((c, idx) => renderCallRowHtml(c, idx + CHUNK_SIZE)).join("");
+            tbody.insertAdjacentHTML("beforeend", restHtml);
+          }, 30);
+        }
       };
 
       /* ── CẬP NHẬT BANNER CẢNH BÁO CUỘC GỌI CHƯA NOTE TRONG TEMP ── */
