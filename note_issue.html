@@ -1536,6 +1536,24 @@
       border-color: #7dd3fc;
     }
 
+    .temp-status-badge.chatbox-unnoted {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    .temp-status-badge.chatbox-unnoted:hover {
+      background: #fef3c7;
+      color: #92400e;
+      border-color: #fcd34d;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(245, 158, 11, 0.2);
+    }
+
     .temp-status-badge.chatbox-empty {
       background: #f8fafc;
       color: #94a3b8;
@@ -8039,11 +8057,17 @@
                       <i class="fa-solid fa-clock-rotate-left" style="font-size:10px;"></i> #${escapeHTML(String(matchedTicket.id))} (Pending)
                     </span>
                   `
-                ) : `
-                  <span class="temp-status-badge chatbox-empty" title="Chưa ghi nhận ticket trên Chatbox AI">
-                    <i class="fa-solid fa-robot" style="font-size:9.5px; opacity:0.6;"></i> Chưa note
-                  </span>
-                `}
+                ) : (
+                  isSynced ? `
+                    <span class="temp-status-badge chatbox-unnoted" onclick="window.openChatboxForUnnotedIssue('${escapeHTML(String(n.id))}')" title="Đã đồng bộ - Bấm để AI tự tạo Ticket trên Chatbox hoặc sao chép prompt">
+                      <i class="fa-solid fa-circle-exclamation" style="font-size:9.5px; color:#f59e0b;"></i> Chưa note
+                    </span>
+                  ` : `
+                    <span class="temp-status-badge chatbox-empty" title="Chưa ghi nhận ticket trên Chatbox AI (Bấm 'Đồng bộ' trước khi note ticket)" onclick="showToast('Vui lòng bấm Đồng bộ trước khi tạo Ticket trên Chatbox AI!', 'fa-cloud-arrow-up')" style="cursor:pointer;">
+                      <i class="fa-solid fa-robot" style="font-size:9.5px; opacity:0.6;"></i> Chưa note
+                    </span>
+                  `
+                )}
               </div>
             </td>
             <td class="td-date">
@@ -8324,11 +8348,17 @@
       const inFlightAiTicketIssues = new Set();
 
       window.openChatboxForUnnotedIssue = function (id) {
-        const found = (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null) ||
-                      (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null);
+        let found = (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null) ||
+                    (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null);
         if (!found) {
           showToast("Không tìm thấy thông tin issue", "fa-triangle-exclamation");
           return;
+        }
+
+        // Nếu issue từ tempNotes nhưng đã đồng bộ sang r2Issues, ghép thêm thông tin từ r2Issues
+        if (found && Array.isArray(r2Issues)) {
+          const r2Found = r2Issues.find(r => r && (String(r.id) === String(found.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(found))));
+          if (r2Found) found = Object.assign({}, r2Found, found);
         }
 
         currentUnnotedIssue = found;
