@@ -43,6 +43,7 @@
       /* Vibrant Palettes */
       --primary: #4f46e5;
       --primary-hover: #4338ca;
+      --primary-dark: #3730a3;
       --primary-light: #eef2ff;
       --primary-border: #c7d2fe;
 
@@ -2197,14 +2198,43 @@
     }
 
     .btn-stats-tool.primary {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #ffffff;
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+      border: 1px solid #4338ca !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
     }
 
     .btn-stats-tool.primary:hover {
-      background: var(--primary-dark);
-      border-color: var(--primary-dark);
+      background: linear-gradient(135deg, #3730a3 0%, #4338ca 100%) !important;
+      border-color: #312e81 !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-stats-tool.primary:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-stats-tool.primary i {
+      color: #ffffff !important;
+    }
+
+    .voip-sync-split-wrap .btn-stats-tool.primary:hover {
+      transform: none;
+    }
+
+    .btn-stats-tool.danger {
+      background: #ef4444;
+      border-color: #dc2626;
+      color: #ffffff;
+    }
+
+    .btn-stats-tool.danger:hover {
+      background: #dc2626;
+      border-color: #b91c1c;
+      color: #ffffff;
     }
 
     .btn-stats-tool.success {
@@ -3906,7 +3936,7 @@
           </div>
           <div class="stats-quick-actions" style="gap:6px;">
             <button type="button" class="btn-stats-tool primary" id="btnVoipReloadAll" onclick="reloadVoipData(true)"
-              style="padding:5px 12px; font-size:12px; background:#0284c7; color:#ffffff; border-color:#0369a1; font-weight:700;"
+              style="padding:5px 12px; font-size:12px; font-weight:700;"
               title="Tải lại toàn bộ dữ liệu mới nhất (Cập nhật ghi chú của nhân viên khác, số miễn note & cuộc gọi mới)">
               <i class="fa-solid fa-arrows-rotate" id="iconVoipReload"></i> Làm mới dữ liệu
             </button>
