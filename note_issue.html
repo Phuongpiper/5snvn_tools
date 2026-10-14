@@ -9056,17 +9056,12 @@
           if (typeof validateHotline === "function") validateHotline();
         }
 
-        // 7. Ngày ghi nhận
-        if (data.date) {
-          const issueDateInput = document.getElementById("inputIssueDate");
-          if (issueDateInput) {
-            const match = String(data.date).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (match) {
-              const iso = `${match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
-              issueDateInput.value = iso;
-              issueDateInput.dispatchEvent(new Event("change"));
-            }
-          }
+        // 7. Ngày ghi nhận: Khi issue được đẩy từ call-log thì không cần lấy ngày cũ của cuộc gọi, luôn nhận đúng hôm nay
+        const issueDateInput = document.getElementById("inputIssueDate");
+        if (issueDateInput) {
+          const todayIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
+          issueDateInput.value = todayIso;
+          issueDateInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
         // 8. Cập nhật preview kết quả
@@ -13037,16 +13032,15 @@
           inputHotline.dispatchEvent(new Event("blur", { bubbles: true }));
         }
 
-        // Tự động chọn ngày tương ứng trên Date Picker nếu có truyền ngày
-        if (date) {
-          const dp = document.getElementById("inputIssueDate");
-          if (dp) {
-            dp.value = date;
-            dp.dispatchEvent(new Event("change", { bubbles: true }));
-          }
+        // Luôn nhận ngày hôm nay khi nạp từ cuộc gọi vào form Soạn Issue
+        const dp = document.getElementById("inputIssueDate");
+        if (dp) {
+          const todayIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
+          dp.value = todayIso;
+          dp.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
-        showToast(`Đã nạp số Hotline: ${phone}${date ? ' (ngày ' + date + ')' : ''} vào form Soạn Issue!`, "fa-phone");
+        showToast(`Đã nạp số Hotline: ${phone} vào form Soạn Issue!`, "fa-phone");
         setTimeout(() => {
           inputHotline?.scrollIntoView({ behavior: "smooth", block: "center" });
           inputHotline?.focus();

@@ -2306,9 +2306,7 @@
           if (hotMatch) cleanHotline = hotMatch[1].trim();
         }
 
-        // 6. Date
-        let dateFormatted = String(dateStr || "").trim();
-
+        // 6. Date: Khi đẩy sang Soạn Issue thì không cần lấy ngày cũ của Call Log, nhận đúng hôm nay
         return {
           solution,
           type,
@@ -2317,7 +2315,8 @@
           nvbh,
           role,
           hotline: cleanHotline,
-          date: dateFormatted,
+          date: "", // Không lấy ngày cũ từ call-log, để form nhận đúng hôm nay
+          callDate: String(dateStr || "").trim(),
           rawCallDetails: text
         };
       }
