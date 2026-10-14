@@ -32,8 +32,8 @@
       .topbar {
         background: #ffffff;
         border-bottom: 1px solid #e2e8f0;
-        padding: 9px 24px;
-        box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+        padding: 7px 20px;
+        box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
         position: relative;
         z-index: 100;
       }
@@ -41,10 +41,10 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
-        max-width: 1560px;
+        flex-wrap: nowrap;
+        max-width: 1720px;
         margin: 0 auto;
-        gap: 8px 16px;
+        gap: 14px;
       }
       .brand {
         display: flex;
@@ -57,95 +57,124 @@
         white-space: nowrap;
       }
       .brand-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 9px;
-        background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         color: #ffffff;
-        font-size: 16px;
-        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+        font-size: 15px;
+        box-shadow: 0 3px 8px rgba(79, 70, 229, 0.28);
         flex-shrink: 0;
+        transition: transform 0.2s ease;
+      }
+      .brand:hover .brand-icon {
+        transform: scale(1.04);
       }
       .brand-text {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 7px;
         white-space: nowrap;
         flex-shrink: 0;
       }
       .brand-title {
-        font-size: 16px;
+        font-size: 16.5px;
         font-weight: 800;
         color: #0f172a;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em;
         white-space: nowrap;
         display: inline-block;
       }
       .brand-badge {
         font-size: 10px;
-        font-weight: 700;
-        padding: 2px 6px;
+        font-weight: 800;
+        padding: 2.5px 7px;
         background: #eef2ff;
         color: #4f46e5;
-        border-radius: 6px;
+        border-radius: 9999px;
         border: 1px solid #c7d2fe;
         letter-spacing: 0.04em;
         white-space: nowrap;
         flex-shrink: 0;
       }
       .tabs {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 4px;
         background: #f1f5f9;
         padding: 4px;
-        border-radius: 10px;
+        border-radius: 12px;
         border: 1px solid #e2e8f0;
+        gap: 3px;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
         overflow-x: auto;
-        scrollbar-width: thin;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         flex-shrink: 1;
         min-width: 0;
+      }
+      .tabs::-webkit-scrollbar {
+        display: none;
       }
       .tab-button {
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 7px;
+        border-radius: 8px;
         color: #64748b;
         cursor: pointer;
-        font-size: clamp(11px, 1vw, 13px);
+        font-size: 12.5px;
         font-weight: 600;
-        padding: 6px 10px;
+        padding: 6.5px 12px;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        transition: all 0.16s ease;
+        gap: 6.5px;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
+        user-select: none;
+        letter-spacing: -0.01em;
+        position: relative;
       }
       .tab-button i {
-        font-size: 12px;
-        opacity: 0.8;
+        font-size: 13px;
+        color: #94a3b8;
+        transition: transform 0.2s ease, color 0.2s ease;
       }
       .tab-button:hover {
         color: #0f172a;
-        background: rgba(255, 255, 255, 0.6);
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
       }
+      .tab-button:hover i {
+        color: #4f46e5;
+        transform: translateY(-1px);
+      }
+
+      /* Micro-accent icon colors on hover */
+      .tab-button[data-frame-target="nvnSolutionsFrame"]:hover i { color: #f59e0b; }
+      .tab-button[data-frame-target="callLogFrame"]:hover i { color: #06b6d4; }
+      .tab-button[data-frame-target="sumaryticketFrame"]:hover i { color: #f97316; }
+      .tab-button[data-frame-target="vanMauNVNFrame"]:hover i { color: #3b82f6; }
+      .tab-button[data-frame-target="dms1ReportFrame"]:hover i { color: #10b981; }
+      .tab-button[data-frame-target="taskPendingFrame"]:hover i { color: #8b5cf6; }
+      .tab-button[data-frame-target="tableFrame"]:hover i { color: #64748b; }
+      .tab-button[data-frame-target="dtListFrame"]:hover i { color: #ec4899; }
+      .tab-button[data-frame-target="noteIssueFrame"]:hover i { color: #6366f1; }
+
       .tab-button.active {
-        background: #4f46e5;
-        border-color: #4338ca;
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
         color: #ffffff !important;
         font-weight: 700;
-        box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+        border-color: transparent;
+        box-shadow: 0 3px 10px -1px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
       }
       .tab-button.active i {
         color: #ffffff !important;
-        opacity: 1;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
       }
       .tab-button.active:hover {
-        background: #4338ca;
+        background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
         color: #ffffff !important;
       }
       .tab-frame {
@@ -220,7 +249,8 @@
       .top-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        flex-shrink: 0;
       }
 
       /* ── Upcoming Tasks Today UI ── */
@@ -229,40 +259,47 @@
         display: inline-block;
       }
       .upcoming-btn {
-        background: none;
-        border: none;
-        font-size: 26px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 16px;
         color: #6366f1;
         cursor: pointer;
-        padding: 8px;
-        border-radius: 50%;
+        padding: 0;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .upcoming-btn:hover {
         background-color: #eef2ff;
+        border-color: #c7d2fe;
         color: #4f46e5;
-        transform: scale(1.05);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(99, 102, 241, 0.18);
       }
       .upcoming-badge {
         position: absolute;
-        top: 2px;
-        right: 2px;
+        top: -4px;
+        right: -4px;
         background-color: #6366f1;
         color: #ffffff;
-        font-size: 11.5px;
-        font-weight: 700;
-        border-radius: 50%;
-        min-width: 19px;
-        height: 19px;
+        font-size: 10.5px;
+        font-weight: 800;
+        border-radius: 9999px;
+        min-width: 18px;
+        height: 18px;
         display: none;
         align-items: center;
         justify-content: center;
         padding: 0 4px;
         border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1;
       }
       .upcoming-dropdown {
         display: none;
@@ -387,40 +424,47 @@
         display: inline-block;
       }
       .bell-btn {
-        background: none;
-        border: none;
-        font-size: 30px;
-        color: #10b981;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 16px;
+        color: #059669;
         cursor: pointer;
-        padding: 8px;
-        border-radius: 50%;
+        padding: 0;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .bell-btn:hover {
         background-color: #ecfdf5;
-        color: #059669;
-        transform: scale(1.05);
+        border-color: #a7f3d0;
+        color: #047857;
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.18);
       }
       .bell-badge {
         position: absolute;
-        top: 2px;
-        right: 2px;
+        top: -4px;
+        right: -4px;
         background-color: #ef4444;
         color: #ffffff;
-        font-size: 12px;
-        font-weight: 700;
-        border-radius: 50%;
-        min-width: 20px;
-        height: 20px;
+        font-size: 10.5px;
+        font-weight: 800;
+        border-radius: 9999px;
+        min-width: 18px;
+        height: 18px;
         display: none;
         align-items: center;
         justify-content: center;
         padding: 0 4px;
         border: 2px solid #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1;
       }
       .bell-dropdown {
         display: none;
@@ -534,24 +578,26 @@
         display: inline-block;
       }
       .settings-btn {
-        background: none;
-        border: none;
-        font-size: 20px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 15px;
         color: #64748b;
         cursor: pointer;
-        padding: 8px;
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
+        padding: 0;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .settings-btn:hover {
-        background-color: #f1f5f9;
+        background-color: #ffffff;
+        border-color: #cbd5e1;
         color: #4f46e5;
-        transform: rotate(45deg) scale(1.08);
+        transform: rotate(45deg) scale(1.05);
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
       }
 
       /* Modals Overlay */
