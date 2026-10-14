@@ -2024,40 +2024,18 @@
       }
     }
 
-    /* ── STITCH REDESIGN: Tactical Segmented Dock Island View Switcher ── */
+    /* ── STITCH REDESIGN: Bright Segmented Navigation Dock (View Switcher) ── */
     .studio-header-nav {
       display: inline-flex;
       align-items: center;
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      padding: 4px 6px;
+      background: #ffffff;
+      padding: 4px 5px;
       border-radius: 9999px;
-      gap: 3px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      gap: 4px;
+      border: 1.5px solid #e0e7ff;
+      box-shadow: 0 4px 18px -2px rgba(79, 70, 229, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
       flex-shrink: 0;
       position: relative;
-    }
-
-    .dock-mode-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 10px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #94a3b8;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 9999px;
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      margin-right: 2px;
-      user-select: none;
-    }
-
-    .dock-mode-label i {
-      color: #818cf8;
-      font-size: 10.5px;
     }
 
     .studio-nav-btn {
@@ -2065,7 +2043,7 @@
       border-radius: 9999px;
       border: 1px solid transparent;
       background: transparent;
-      color: #94a3b8;
+      color: #475569;
       font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
@@ -2082,26 +2060,29 @@
     .studio-nav-btn i {
       font-size: 13px;
       transition: transform 0.2s ease, color 0.2s ease;
-      color: #64748b;
     }
 
+    #btnNavEditor i { color: #6366f1; }
+    #btnNavStats i { color: #0284c7; }
+    #btnNavVoip i { color: #059669; }
+    #btnNavReport i { color: #7c3aed; }
+
     .studio-nav-btn:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.06);
+      color: #0f172a;
+      background: #f1f5f9;
+      border-color: #e2e8f0;
     }
 
     .studio-nav-btn:hover i {
-      color: #cbd5e1;
       transform: translateY(-1px);
     }
 
     .studio-nav-btn.active {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%);
       color: #ffffff !important;
       font-weight: 700;
-      border-color: rgba(255, 255, 255, 0.25);
-      box-shadow: 0 3px 12px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      border-color: transparent;
+      box-shadow: 0 4px 14px -1px rgba(79, 70, 229, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);
     }
 
     .studio-nav-btn.active i {
@@ -2111,22 +2092,28 @@
 
     .nav-count-badge {
       font-size: 11px;
-      padding: 2px 7px;
+      padding: 1.5px 7px;
       border-radius: 9999px;
-      background: rgba(255, 255, 255, 0.12);
-      color: #cbd5e1;
+      background: #f1f5f9;
+      color: #475569;
       font-weight: 800;
       font-family: var(--font-mono);
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid #e2e8f0;
       transition: all 0.2s ease;
-      line-height: 1.2;
+      line-height: 1.25;
+    }
+
+    #navTotalIssuesBadge {
+      background: #eef2ff;
+      color: #4f46e5;
+      border-color: #c7d2fe;
     }
 
     .studio-nav-btn.active .nav-count-badge {
       background: rgba(255, 255, 255, 0.25) !important;
       color: #ffffff !important;
-      border-color: rgba(255, 255, 255, 0.35) !important;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      border-color: rgba(255, 255, 255, 0.38) !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
 
     /* ── Stats Page Styling ── */
@@ -3381,10 +3368,6 @@
 
     <!-- ── NAVIGATION TABS (CHUYỂN ĐỔI GIỮA SOẠN ISSUE & THỐNG KÊ NV & VOIP24H) ── -->
     <div class="studio-header-nav" id="studioHeaderNav" role="tablist" aria-label="Chế độ xem Note Issue Studio">
-      <div class="dock-mode-label" title="Chế độ xem trong Note Issue Studio">
-        <i class="fa-solid fa-shapes"></i>
-        <span>CHẾ ĐỘ</span>
-      </div>
       <button type="button" class="studio-nav-btn active" id="btnNavEditor" onclick="switchStudioView('editor')"
         title="Soạn thảo & Quản trị Issue (Alt+1)">
         <i class="fa-solid fa-pen-to-square"></i>
@@ -11677,14 +11660,14 @@
           const alertCount = isTeam ? 0 : myUnnotedCount;
           if (alertCount > 0) {
             badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> ${alertCount} chưa note`;
-            badge.style.background = "rgba(239, 68, 68, 0.25)";
-            badge.style.color = "#fca5a5";
-            badge.style.borderColor = "rgba(239, 68, 68, 0.4)";
+            badge.style.background = "#fee2e2";
+            badge.style.color = "#dc2626";
+            badge.style.borderColor = "#fecaca";
           } else {
             badge.textContent = `${validCallsCount} cuộc`;
-            badge.style.background = "rgba(99, 102, 241, 0.25)";
-            badge.style.color = "#c7d2fe";
-            badge.style.borderColor = "rgba(99, 102, 241, 0.4)";
+            badge.style.background = "#ecfdf5";
+            badge.style.color = "#047857";
+            badge.style.borderColor = "#a7f3d0";
           }
         }
 
