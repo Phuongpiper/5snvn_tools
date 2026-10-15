@@ -1344,7 +1344,13 @@
               // 1. Broadcast event
               activeFrame.contentWindow.postMessage({ type: "GLOBAL_SYNC_CLICKED" }, "*");
 
-              // 2. Kích hoạt trực tiếp các nút đồng bộ bên trong frame nếu cùng domain
+              // 2. Kích hoạt trực tiếp các hàm hoặc nút đồng bộ bên trong frame nếu cùng domain
+              try {
+                if (typeof activeFrame.contentWindow.forceSyncTableWithCloud === "function") {
+                  activeFrame.contentWindow.forceSyncTableWithCloud();
+                }
+              } catch (_) {}
+
               const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
               if (doc) {
                 const targetBtn =

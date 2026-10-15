@@ -1911,11 +1911,6 @@
 
     <!-- Header Actions -->
     <div class="header-actions">
-      <button class="btn btn-outline" id="btnSyncTable" onclick="forceSyncTableWithCloud()" title="Đồng bộ ngay với đám mây">
-        <i class="fa-solid fa-arrows-rotate" style="color: #0284c7;"></i>
-        <span>Đồng bộ</span>
-      </button>
-
       <button class="btn btn-outline" id="btnExportExcel" title="Xuất toàn bộ dữ liệu ra Excel (.xlsx)">
         <i class="fa-solid fa-file-excel" style="color: #10b981;"></i>
         <span>Xuất Excel</span>
@@ -3021,6 +3016,13 @@
       await fetchTableFromCloud(false);
       toast("Đã đồng bộ Bảng tính thành công!", "success");
     }
+
+    // Lắng nghe tín hiệu đồng bộ từ nút Đồng bộ trên topbar DMS Hub
+    window.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "GLOBAL_SYNC_CLICKED") {
+        forceSyncTableWithCloud();
+      }
+    });
 
     // Auto-sync on window focus and visibility
     window.addEventListener("focus", () => fetchTableFromCloud(true));
