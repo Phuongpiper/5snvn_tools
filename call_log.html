@@ -876,24 +876,6 @@
           </p>
         </div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <div id="cloudStatusBadge" style="
-            font-size:12px; font-weight:500; color:var(--text-secondary);
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:var(--radius-sm); padding:6px 12px;
-            display:flex; align-items:center; gap:6px; box-shadow:var(--shadow-sm);
-          ">
-            <i class="fa-solid fa-cloud" style="color:var(--accent);"></i>
-            <span id="cloudStatusText">Đang kiểm tra...</span>
-          </div>
-          <button id="syncR2Btn" type="button" style="
-            font-size:12px; font-weight:600; color:var(--text-secondary);
-            background:var(--surface); border:1px solid var(--border);
-            border-radius:var(--radius-sm); padding:6px 12px;
-            cursor:pointer; display:flex; align-items:center; gap:6px;
-            box-shadow:var(--shadow-sm); white-space:nowrap;
-          " title="Tải lại dữ liệu mới nhất từ hệ thống">
-            <i class="fa-solid fa-arrows-rotate" id="syncR2Icon"></i> Đồng bộ
-          </button>
           <button id="toggleUploadBtn" type="button" style="
             font-size:12px; font-weight:600; color:#ffffff;
             background:var(--accent); border:1px solid var(--accent);
@@ -1317,7 +1299,7 @@
         toggleUploadArrow.textContent = isVisible ? "▾" : "▴";
       });
 
-      syncR2Btn.addEventListener("click", () => {
+      syncR2Btn?.addEventListener("click", () => {
         fetchCallLogFromCloud(false);
       });
 
@@ -1465,8 +1447,11 @@
       window.addEventListener("message", (e) => {
         if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
           fetchCallLogFromCloud(true);
+        } else if (e.data?.type === "GLOBAL_SYNC_CLICKED") {
+          fetchCallLogFromCloud(false);
         }
       });
+      window.forceSyncWithCloud = () => fetchCallLogFromCloud(false);
 
       // Lắng nghe tín hiệu đồng bộ Call Log theo thời gian thực từ Note Issue Studio
       if (typeof BroadcastChannel !== "undefined") {

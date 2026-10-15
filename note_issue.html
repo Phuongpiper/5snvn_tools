@@ -818,7 +818,7 @@
       display: flex !important;
     }
 
-    .form-control-studio:not(:placeholder-shown) ~ .btn-clear-field {
+    .form-control-studio:not(:placeholder-shown)~.btn-clear-field {
       display: flex;
     }
 
@@ -2068,10 +2068,21 @@
       transition: transform 0.2s ease, color 0.2s ease;
     }
 
-    #btnNavEditor i { color: #6366f1; }
-    #btnNavStats i { color: #0284c7; }
-    #btnNavVoip i { color: #059669; }
-    #btnNavReport i { color: #7c3aed; }
+    #btnNavEditor i {
+      color: #6366f1;
+    }
+
+    #btnNavStats i {
+      color: #0284c7;
+    }
+
+    #btnNavVoip i {
+      color: #059669;
+    }
+
+    #btnNavReport i {
+      color: #7c3aed;
+    }
 
     .studio-nav-btn:hover {
       color: #0f172a;
@@ -2693,6 +2704,7 @@
       background: #e0f2fe;
       color: #0284c7;
     }
+
     .btn-ticket-pill {
       display: inline-flex;
       align-items: center;
@@ -2707,23 +2719,27 @@
       transition: all 0.15s ease;
       white-space: nowrap;
     }
+
     .btn-ticket-pill.noted {
       background: #ecfdf5;
       color: #047857;
       border-color: #a7f3d0;
     }
+
     .btn-ticket-pill.noted:hover {
       background: #d1fae5;
       color: #065f46;
       transform: translateY(-1px);
       box-shadow: 0 2px 5px rgba(16, 185, 129, 0.25);
     }
+
     .btn-ticket-pill.unnoted {
       background: #fffbeb;
       color: #b45309;
       border-color: #fde68a;
       cursor: pointer;
     }
+
     .btn-ticket-pill.unnoted:hover {
       background: #fef3c7;
       color: #92400e;
@@ -2731,12 +2747,14 @@
       transform: translateY(-1px);
       box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
     }
+
     .btn-ticket-pill.pending {
       background: #fff7ed;
       color: #c2410c;
       border-color: #ffedd5;
       cursor: pointer;
     }
+
     .btn-ticket-pill.pending:hover {
       background: #ffedd5;
       color: #9a3412;
@@ -2744,6 +2762,7 @@
       transform: translateY(-1px);
       box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
     }
+
     .staff-chatbox-stat-pill {
       font-size: 11px;
       margin-top: 4px;
@@ -2753,9 +2772,11 @@
       align-items: center;
       gap: 5px;
     }
+
     .staff-chatbox-stat-pill.full {
       color: #059669;
     }
+
     .chatbox-filter-pills {
       display: inline-flex;
       gap: 4px;
@@ -2764,6 +2785,7 @@
       border-radius: var(--radius-full);
       border: 1px solid var(--border);
     }
+
     .chatbox-filter-pills .preset-pill {
       font-size: 11px;
       padding: 3px 9px;
@@ -2778,11 +2800,13 @@
       gap: 4px;
       transition: all 0.15s ease;
     }
+
     .chatbox-filter-pills .preset-pill.active {
       background: #ffffff;
       color: var(--primary);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
     }
+
     .badge-mini-count {
       font-size: 10px;
       background: #e0f2fe;
@@ -2933,8 +2957,15 @@
     }
 
     @keyframes voipMenuFadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .voip-sync-menu-item {
@@ -3411,7 +3442,7 @@
       <button type="button" class="studio-nav-btn" id="btnNavStats" onclick="switchStudioView('stats')"
         title="Xem thống kê số lượng Issue theo nhân viên (Alt+2)">
         <i class="fa-solid fa-chart-pie"></i>
-        <span>Số lượng theo NV</span>
+        <span>SL Issue team</span>
         <span class="nav-count-badge" id="navTotalIssuesBadge">0</span>
       </button>
       <button type="button" class="studio-nav-btn" id="btnNavVoip" onclick="switchStudioView('voip')"
@@ -3440,8 +3471,7 @@
         <span class="user-chip-switch-badge"><i class="fa-solid fa-arrows-rotate"></i> Đổi</span>
       </div>
 
-      <button type="button" class="btn-header-action" id="btnRefreshData"
-        title="Tải lại dữ liệu mới nhất từ hệ thống">
+      <button type="button" class="btn-header-action" id="btnRefreshData" title="Tải lại dữ liệu mới nhất từ hệ thống">
         <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ
       </button>
     </div>
@@ -3468,7 +3498,8 @@
           </div>
         </div>
         <div class="notice-bar-right">
-          <button type="button" class="btn-notice-clear-all" id="btnNoticeClearAll" title="Xoá tất cả các ô để nhập mới">
+          <button type="button" class="btn-notice-clear-all" id="btnNoticeClearAll"
+            title="Xoá tất cả các ô để nhập mới">
             <i class="fa-solid fa-trash-can"></i> Xoá tất cả
           </button>
         </div>
@@ -3498,7 +3529,8 @@
                   <div class="field-input-box">
                     <input type="text" id="inputSolution" class="form-control-studio"
                       placeholder="Gõ từ khóa, VD: kht, đăng nhập..." autocomplete="off" spellcheck="false" />
-                    <button type="button" class="btn-clear-field" id="btnClearSolution" title="Xoá ô Tên solution" tabindex="-1">
+                    <button type="button" class="btn-clear-field" id="btnClearSolution" title="Xoá ô Tên solution"
+                      tabindex="-1">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                     <div class="autocomplete-card" id="dropdownSolution"></div>
@@ -3525,7 +3557,8 @@
                   <div class="field-input-box">
                     <input type="text" id="inputNpp" class="form-control-studio" placeholder="VD: tuan viet, van anh..."
                       autocomplete="off" spellcheck="false" />
-                    <button type="button" class="btn-clear-field" id="btnClearNpp" title="Xoá ô Nhà phân phối" tabindex="-1">
+                    <button type="button" class="btn-clear-field" id="btnClearNpp" title="Xoá ô Nhà phân phối"
+                      tabindex="-1">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                     <div class="autocomplete-card" id="dropdownNpp"></div>
@@ -3550,7 +3583,8 @@
                   <div class="field-input-box">
                     <input type="text" id="inputRole" class="form-control-studio" placeholder="VD: ADMIN, HQTANHBU..."
                       autocomplete="off" spellcheck="false" />
-                    <button type="button" class="btn-clear-field" id="btnClearRole" title="Xoá ô SUP/HQ/Admin" tabindex="-1">
+                    <button type="button" class="btn-clear-field" id="btnClearRole" title="Xoá ô SUP/HQ/Admin"
+                      tabindex="-1">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                     <div class="autocomplete-card" id="dropdownRole"></div>
@@ -3563,7 +3597,8 @@
                   <div class="field-input-box">
                     <input type="text" id="inputHotline" class="form-control-studio"
                       placeholder="VD: 0909280969, Zalo, OTRS..." autocomplete="off" spellcheck="false" />
-                    <button type="button" class="btn-clear-field" id="btnClearHotline" title="Xoá ô Hotline" tabindex="-1">
+                    <button type="button" class="btn-clear-field" id="btnClearHotline" title="Xoá ô Hotline"
+                      tabindex="-1">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                     <div class="autocomplete-card" id="dropdownHotline"></div>
@@ -3585,8 +3620,8 @@
               <span>PREVIEW</span>
             </div>
             <div class="result-actions-group">
-              <button type="button" class="btn-studio-action btn-studio-setup" id="btnOpenSetupModal" onclick="openSetupModal()"
-                title="Xem và sao chép thông số Cài máy cho NVBH">
+              <button type="button" class="btn-studio-action btn-studio-setup" id="btnOpenSetupModal"
+                onclick="openSetupModal()" title="Xem và sao chép thông số Cài máy cho NVBH">
                 <i class="fa-solid fa-mobile-screen-button"></i> Cài máy
               </button>
               <button type="button" class="btn-studio-action btn-studio-copy" id="btnCopyResult"
@@ -3631,8 +3666,7 @@
                 <span class="temp-counter-pill" id="badgeTempCount">0 note</span>
                 <span id="badgeTempUnsynced"
                   style="display:none; font-size:11.5px; font-weight:700; color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:2px 8px; border-radius:12px; align-items:center; gap:5px; cursor:pointer;"
-                  onclick="toggleFilterUnsyncedTemp()"
-                  title="Bấm để lọc các Issue chưa được Đồng bộ">
+                  onclick="toggleFilterUnsyncedTemp()" title="Bấm để lọc các Issue chưa được Đồng bộ">
                   <i class="fa-solid fa-cloud-arrow-up" style="color:#d97706; font-size:10.5px;"></i>
                   <span id="textTempUnsyncedCount">0</span> chưa đồng bộ
                 </span>
@@ -3674,7 +3708,8 @@
               title="Đồng bộ danh sách Issue vào Call Log & Issue">
               <i class="fa-solid fa-cloud-arrow-up" style="color:var(--primary);"></i>
               <span>Đồng bộ</span>
-              <span id="badgeBtnSyncCount" style="display:none; margin-left:4px; font-size:10px; font-weight:800; background:#ea580c; color:#fff; padding:1px 6px; border-radius:10px;">0</span>
+              <span id="badgeBtnSyncCount"
+                style="display:none; margin-left:4px; font-size:10px; font-weight:800; background:#ea580c; color:#fff; padding:1px 6px; border-radius:10px;">0</span>
             </button>
             <button type="button" class="btn-temp-action" id="btnOpenStatsFromTemp" onclick="switchStudioView('stats')"
               title="Xem thống kê số lượng Issue theo nhân viên">
@@ -3688,7 +3723,8 @@
           style="display:none; margin:10px 14px 4px 14px; padding:8px 12px; background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:6px; font-size:12px; color:#92400e; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <i class="fa-solid fa-phone-volume" style="color:#d97706; font-size:14px;"></i>
-            <span id="tempVoipAlertBannerText">Hôm nay bạn có <strong id="tempVoipUnnotedCount" style="color:#b91c1c;">0</strong> line cuộc gọi chưa được
+            <span id="tempVoipAlertBannerText">Hôm nay bạn có <strong id="tempVoipUnnotedCount"
+                style="color:#b91c1c;">0</strong> line cuộc gọi chưa được
               note vào Temp.</span>
           </div>
           <button type="button" onclick="switchStudioView('voip')"
@@ -3733,10 +3769,14 @@
             </div>
           </div>
           <div class="stats-quick-actions" style="align-items:center; gap:8px;">
-            <span id="helpdeskSyncTimeBadge" onclick="fetchHelpdeskTickets(false, true)" style="font-size:11px; font-weight:600; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;" title="Thời điểm đồng bộ Chatbox AI gần nhất (Tự động cập nhật 1 tiếng / lần). Bấm vào đây để đồng bộ ngay!">
-              <i class="fa-solid fa-robot" style="color:#0284c7;"></i> Chatbox AI: <span id="helpdeskLastSyncText" style="color:#0369a1; font-weight:700;">Đang nạp...</span>
+            <span id="helpdeskSyncTimeBadge" onclick="fetchHelpdeskTickets(false, true)"
+              style="font-size:11px; font-weight:600; color:#475569; background:#f0f9ff; border:1px solid #bae6fd; padding:3px 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px; cursor:pointer;"
+              title="Thời điểm đồng bộ Chatbox AI gần nhất (Tự động cập nhật 1 tiếng / lần). Bấm vào đây để đồng bộ ngay!">
+              <i class="fa-solid fa-robot" style="color:#0284c7;"></i> Chatbox AI: <span id="helpdeskLastSyncText"
+                style="color:#0369a1; font-weight:700;">Đang nạp...</span>
             </span>
-            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2" title="Tải lại toàn bộ dữ liệu mới nhất (Cập nhật Issue của nhân viên khác & Ticket Chatbox AI)">
+            <button type="button" class="btn-stats-tool primary" id="btnSyncStatsR2"
+              title="Tải lại toàn bộ dữ liệu mới nhất (Cập nhật Issue của nhân viên khác & Ticket Chatbox AI)">
               <i class="fa-solid fa-arrows-rotate" id="iconSyncStats"></i> Làm mới dữ liệu
             </button>
             <button type="button" class="btn-stats-tool" id="btnExportStatsExcel"
@@ -3875,14 +3915,19 @@
           </div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <div class="chatbox-filter-pills" id="chatboxFilterPillsBox">
-              <button type="button" class="preset-pill active" id="btnFilterChatboxAll" onclick="setStatsChatboxFilter('all')" title="Xem tất cả issue">
+              <button type="button" class="preset-pill active" id="btnFilterChatboxAll"
+                onclick="setStatsChatboxFilter('all')" title="Xem tất cả issue">
                 Tất cả (<span id="cntChatboxAll">0</span>)
               </button>
-              <button type="button" class="preset-pill" id="btnFilterChatboxNoted" onclick="setStatsChatboxFilter('noted')" title="Chỉ xem issue đã ghi nhận ticket Chatbox AI">
-                <i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Đã note (<span id="cntChatboxNoted">0</span>)
+              <button type="button" class="preset-pill" id="btnFilterChatboxNoted"
+                onclick="setStatsChatboxFilter('noted')" title="Chỉ xem issue đã ghi nhận ticket Chatbox AI">
+                <i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Đã note (<span
+                  id="cntChatboxNoted">0</span>)
               </button>
-              <button type="button" class="preset-pill" id="btnFilterChatboxUnnoted" onclick="setStatsChatboxFilter('unnoted')" title="Chỉ xem issue chưa có ticket Chatbox AI">
-                <i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Chưa note (<span id="cntChatboxUnnoted">0</span>)
+              <button type="button" class="preset-pill" id="btnFilterChatboxUnnoted"
+                onclick="setStatsChatboxFilter('unnoted')" title="Chỉ xem issue chưa có ticket Chatbox AI">
+                <i class="fa-solid fa-circle-exclamation" style="color:#f59e0b;"></i> Chưa note (<span
+                  id="cntChatboxUnnoted">0</span>)
               </button>
             </div>
             <span class="stats-card-badge" id="statsDetailCountBadge">0 issue</span>
@@ -3920,7 +3965,8 @@
     <div id="viewVoip" class="studio-view-panel" style="display:none;">
       <!-- Stats Header Card -->
       <div class="stats-header-card" style="padding:14px 18px; margin-bottom:16px;">
-        <div class="stats-filter-row" style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; gap:12px;">
+        <div class="stats-filter-row"
+          style="margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; gap:12px;">
           <div class="stats-title-group" style="gap:10px;">
             <div class="stats-avatar-icon"
               style="width:36px; height:36px; border-radius:8px; background:linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color:#0284c7; font-size:16px;">
@@ -3945,7 +3991,8 @@
               title="Tải lại toàn bộ dữ liệu mới nhất (Cập nhật ghi chú của nhân viên khác, số miễn note & cuộc gọi mới)">
               <i class="fa-solid fa-arrows-rotate" id="iconVoipReload"></i> Làm mới dữ liệu
             </button>
-            <button type="button" class="btn-stats-tool" id="btnOpenExcludedPhonesModal" onclick="openExcludedPhonesModal()"
+            <button type="button" class="btn-stats-tool" id="btnOpenExcludedPhonesModal"
+              onclick="openExcludedPhonesModal()"
               style="background:#ffffff; color:#dc2626; border-color:#fca5a5; font-weight:700; padding:5px 11px; font-size:12px;"
               title="Quản lý danh sách các số điện thoại không cần Note Issue">
               <i class="fa-solid fa-phone-slash" style="color:#dc2626;"></i> Số miễn note
@@ -3956,21 +4003,25 @@
             </button>
             <!-- Nút Đồng bộ cuộc gọi (Tự động) -->
             <div class="voip-sync-split-wrap" title="Đồng bộ cuộc gọi từ tổng đài">
-              <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh" onclick="fetchVoipCalls(true, false, 'auto', true)"
-                title="Đồng bộ trực tiếp: Lấy dữ liệu mới nhất từ tổng đài Voip24h và lưu vào Cloud" style="padding:5px 12px; font-size:12px;">
+              <button type="button" class="btn-stats-tool primary voip-sync-split-main" id="btnVoipRefresh"
+                onclick="fetchVoipCalls(true, false, 'auto', true)"
+                title="Đồng bộ trực tiếp: Lấy dữ liệu mới nhất từ tổng đài Voip24h và lưu vào Cloud"
+                style="padding:5px 12px; font-size:12px;">
                 <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ cuộc gọi
               </button>
-              <button type="button" class="btn-stats-tool primary voip-sync-split-caret" id="btnVoipSyncDropdown" onclick="toggleVoipSyncMenu(event)"
-                title="Tùy chọn luồng đồng bộ" style="padding:5px 8px; font-size:12px;">
+              <button type="button" class="btn-stats-tool primary voip-sync-split-caret" id="btnVoipSyncDropdown"
+                onclick="toggleVoipSyncMenu(event)" title="Tùy chọn luồng đồng bộ"
+                style="padding:5px 8px; font-size:12px;">
                 <i class="fa-solid fa-caret-down" id="iconVoipSyncCaret"></i>
               </button>
 
               <!-- Dropdown Menu chọn luồng -->
               <div id="voipSyncMenu" class="voip-sync-menu"
                 style="display:none; position:absolute; top:calc(100% + 6px); right:0; width:310px; background:#ffffff; border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 28px rgba(15,23,42,0.15); z-index:1050; padding:8px; font-family:inherit;">
-                
+
                 <div style="padding:4px 8px 8px; border-bottom:1px solid #f1f5f9; margin-bottom:6px;">
-                  <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
+                  <div
+                    style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">
                     <i class="fa-solid fa-sliders"></i> Tùy chọn luồng đồng bộ
                   </div>
                   <div style="font-size:11.5px; color:#64748b; margin-top:2px;">
@@ -3979,14 +4030,19 @@
                 </div>
 
                 <!-- Tùy chọn 1: Tự động (Khuyên dùng) -->
-                <button type="button" class="voip-sync-menu-item active" id="optVoipSyncAuto" onclick="triggerVoipSyncFlow('auto')">
-                  <div style="width:28px; height:28px; border-radius:6px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
+                <button type="button" class="voip-sync-menu-item active" id="optVoipSyncAuto"
+                  onclick="triggerVoipSyncFlow('auto')">
+                  <div
+                    style="width:28px; height:28px; border-radius:6px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                   </div>
                   <div style="flex:1;">
-                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
+                    <div
+                      style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
                       <span>Tự động (2 luồng)</span>
-                      <span style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 6px; border-radius:8px; font-weight:700;">Khuyên dùng</span>
+                      <span
+                        style="font-size:10px; background:#dbeafe; color:#1e40af; padding:1px 6px; border-radius:8px; font-weight:700;">Khuyên
+                        dùng</span>
                     </div>
                     <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
                       Ưu tiên kết nối <strong>Nội bộ</strong> ➔ Tự động chuyển sang <strong>Đám mây</strong>
@@ -3995,14 +4051,18 @@
                 </button>
 
                 <!-- Tùy chọn 2: Luồng Local -->
-                <button type="button" class="voip-sync-menu-item" id="optVoipSyncLocal" onclick="triggerVoipSyncFlow('local')">
-                  <div style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
+                <button type="button" class="voip-sync-menu-item" id="optVoipSyncLocal"
+                  onclick="triggerVoipSyncFlow('local')">
+                  <div
+                    style="width:28px; height:28px; border-radius:6px; background:#ecfdf5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
                     <i class="fa-solid fa-desktop"></i>
                   </div>
                   <div style="flex:1;">
-                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
+                    <div
+                      style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
                       <span>Luồng Local (Nội bộ)</span>
-                      <span id="voipLocalStatusBadge" style="font-size:10px; background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:8px; font-weight:700;">
+                      <span id="voipLocalStatusBadge"
+                        style="font-size:10px; background:#f1f5f9; color:#64748b; padding:1px 6px; border-radius:8px; font-weight:700;">
                         <i class="fa-solid fa-spinner fa-spin"></i> Kiểm tra...
                       </span>
                     </div>
@@ -4013,14 +4073,19 @@
                 </button>
 
                 <!-- Tùy chọn 3: Luồng Vercel Cloud -->
-                <button type="button" class="voip-sync-menu-item" id="optVoipSyncVercel" onclick="triggerVoipSyncFlow('vercel')">
-                  <div style="width:28px; height:28px; border-radius:6px; background:#f0f9ff; color:#0284c7; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
+                <button type="button" class="voip-sync-menu-item" id="optVoipSyncVercel"
+                  onclick="triggerVoipSyncFlow('vercel')">
+                  <div
+                    style="width:28px; height:28px; border-radius:6px; background:#f0f9ff; color:#0284c7; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; margin-top:2px;">
                     <i class="fa-solid fa-cloud"></i>
                   </div>
                   <div style="flex:1;">
-                    <div style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
+                    <div
+                      style="font-size:12.5px; font-weight:700; color:#1e293b; display:flex; align-items:center; justify-content:space-between;">
                       <span>Luồng Đám mây</span>
-                      <span style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:8px; font-weight:700;">Đám mây</span>
+                      <span
+                        style="font-size:10px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:8px; font-weight:700;">Đám
+                        mây</span>
                     </div>
                     <div style="font-size:11px; color:#64748b; margin-top:1px; line-height:1.35;">
                       Lấy từ bộ nhớ đệm máy chủ đám mây (nhanh &amp; ổn định)
@@ -4029,7 +4094,8 @@
                 </button>
 
                 <!-- Footer thông tin / trợ giúp -->
-                <div style="margin-top:6px; padding-top:6px; border-top:1px solid #f1f5f9; font-size:10.5px; color:#94a3b8; display:flex; align-items:center; gap:6px;">
+                <div
+                  style="margin-top:6px; padding-top:6px; border-top:1px solid #f1f5f9; font-size:10.5px; color:#94a3b8; display:flex; align-items:center; gap:6px;">
                   <i class="fa-solid fa-lightbulb" style="color:#f59e0b;"></i>
                   <span>Bật <code>sync-voip.bat</code> để máy nội bộ tự động đồng bộ.</span>
                 </div>
@@ -4049,7 +4115,8 @@
           <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
             <!-- Thời gian -->
             <div style="display:inline-flex; align-items:center; gap:5px;">
-              <span style="font-size:11px; font-weight:700; color:#6366f1; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
+              <span
+                style="font-size:11px; font-weight:700; color:#6366f1; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
                 <i class="fa-regular fa-calendar-days"></i> Thời gian:
               </span>
               <select id="voipSelectRange"
@@ -4074,7 +4141,8 @@
 
             <!-- Đầu số -->
             <div style="display:inline-flex; align-items:center; gap:5px;">
-              <span style="font-size:11px; font-weight:700; color:#0284c7; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
+              <span
+                style="font-size:11px; font-weight:700; color:#0284c7; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
                 <i class="fa-solid fa-sim-card"></i> Đầu số:
               </span>
               <select id="voipSelectDid"
@@ -4118,7 +4186,8 @@
 
           <!-- Right: Ô Tìm kiếm tức thì -->
           <div style="position:relative; display:inline-flex; align-items:center;">
-            <i class="fa-solid fa-magnify" style="position:absolute; left:9px; font-size:11px; color:#94a3b8; pointer-events:none;"></i>
+            <i class="fa-solid fa-magnify"
+              style="position:absolute; left:9px; font-size:11px; color:#94a3b8; pointer-events:none;"></i>
             <input type="text" id="voipSearchInput" placeholder="Tìm SĐT, máy nhánh..." oninput="renderVoipTable()"
               style="padding:5px 9px 5px 28px; font-size:12px; border:1px solid var(--border); border-radius:6px; font-family:inherit; width:190px; background:#ffffff;" />
           </div>
@@ -4427,13 +4496,15 @@
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-phone" style="color:#7c3aed; font-size:11px;"></i>
                 <span style="font-size:11.5px; color:var(--text-muted);">Hotline:</span>
-                <strong style="font-size:12.5px; font-family:var(--font-mono); color:#7c3aed;" id="repIssuesTodayHotline">0</strong>
+                <strong style="font-size:12.5px; font-family:var(--font-mono); color:#7c3aed;"
+                  id="repIssuesTodayHotline">0</strong>
               </div>
               <div style="width:1px; height:14px; background:#cbd5e1;"></div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-envelope" style="color:#059669; font-size:11px;"></i>
                 <span style="font-size:11.5px; color:var(--text-muted);">Mail:</span>
-                <strong style="font-size:12.5px; font-family:var(--font-mono); color:#059669;" id="repIssuesTodayMail">0</strong>
+                <strong style="font-size:12.5px; font-family:var(--font-mono); color:#059669;"
+                  id="repIssuesTodayMail">0</strong>
               </div>
             </div>
           </div>
@@ -4572,7 +4643,8 @@
                 <button type="button" class="preset-pill" id="btnOtrsFilterRequest"
                   onclick="setOtrsCategoryFilter('Request')">Chỉ Request</button>
                 <button type="button" class="preset-pill" style="border-color:#10b981; color:#059669; font-weight:700;"
-                  onclick="window.fixOtrsSheetDates()" title="Sửa lại định dạng dd/MM/yyyy cho các dòng trên Google Sheet báo cáo">
+                  onclick="window.fixOtrsSheetDates()"
+                  title="Sửa lại định dạng dd/MM/yyyy cho các dòng trên Google Sheet báo cáo">
                   <i class="fa-solid fa-wand-magic-sparkles"></i> Chuẩn hóa ngày Sheet
                 </button>
               </div>
@@ -4692,17 +4764,20 @@
   </div>
 
   <!-- MODAL: QUẢN LÝ SỐ ĐIỆN THOẠI MIỄN NOTE ISSUE -->
-  <div class="member-modal-backdrop" id="excludedPhonesModalBackdrop" onclick="if(event.target===this) closeExcludedPhonesModal()">
+  <div class="member-modal-backdrop" id="excludedPhonesModalBackdrop"
+    onclick="if(event.target===this) closeExcludedPhonesModal()">
     <div class="member-modal-box" style="max-width: 660px;">
       <div class="member-modal-header">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">
+          <div class="member-modal-header-icon"
+            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);">
             <i class="fa-solid fa-phone-slash"></i>
           </div>
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <h3 style="margin:0;">Số điện thoại miễn Note Issue</h3>
-              <span id="tagExcludedPhonesR2Status" style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
+              <span id="tagExcludedPhonesR2Status"
+                style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
                 <i class="fa-solid fa-cloud"></i> Đã đồng bộ
               </span>
             </div>
@@ -4714,26 +4789,29 @@
         </button>
       </div>
 
-      <div class="member-modal-body" style="padding: 18px 22px; max-height: 70vh; display: flex; flex-direction: column; gap: 14px;">
+      <div class="member-modal-body"
+        style="padding: 18px 22px; max-height: 70vh; display: flex; flex-direction: column; gap: 14px;">
         <!-- Form thêm số mới -->
         <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-md); padding:14px;">
-          <div style="font-weight:700; font-size:12.5px; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          <div
+            style="font-weight:700; font-size:12.5px; color:var(--text-main); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <i class="fa-solid fa-plus-circle" style="color:#ef4444;"></i> Thêm số điện thoại miễn note
           </div>
           <div style="display:grid; grid-template-columns: 1.2fr 1fr auto; gap:8px;">
             <input type="text" class="form-control-studio" id="inputNewExcludedPhone"
-              placeholder="Nhập SĐT (hỗ trợ nhiều số cách bởi dấu phẩy)..."
-              style="font-size:12.5px; padding:8px 10px;" onkeydown="if(event.key==='Enter') submitAddExcludedPhone()" />
+              placeholder="Nhập SĐT (hỗ trợ nhiều số cách bởi dấu phẩy)..." style="font-size:12.5px; padding:8px 10px;"
+              onkeydown="if(event.key==='Enter') submitAddExcludedPhone()" />
             <input type="text" class="form-control-studio" id="inputNewExcludedNote"
-              placeholder="Ghi chú lý do (vd: Nội bộ, Cá nhân, Spam...)"
-              style="font-size:12.5px; padding:8px 10px;" onkeydown="if(event.key==='Enter') submitAddExcludedPhone()" />
+              placeholder="Ghi chú lý do (vd: Nội bộ, Cá nhân, Spam...)" style="font-size:12.5px; padding:8px 10px;"
+              onkeydown="if(event.key==='Enter') submitAddExcludedPhone()" />
             <button type="button" class="btn-studio-action" onclick="submitAddExcludedPhone()"
               style="background:#dc2626; color:#fff; border:none; padding:8px 14px; font-weight:700; font-size:12.5px; cursor:pointer; white-space:nowrap; border-radius:var(--radius-sm);">
               <i class="fa-solid fa-plus"></i> Thêm
             </button>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
-            <i class="fa-solid fa-circle-info"></i> Các số trong danh sách này sẽ hiển thị xám nhạt, tự động gán trạng thái <em>Miễn note</em> và được loại trừ khỏi toàn bộ thẻ KPI và Báo cáo.
+            <i class="fa-solid fa-circle-info"></i> Các số trong danh sách này sẽ hiển thị xám nhạt, tự động gán trạng
+            thái <em>Miễn note</em> và được loại trừ khỏi toàn bộ thẻ KPI và Báo cáo.
           </div>
         </div>
 
@@ -4744,28 +4822,34 @@
             <input type="text" id="excludedPhoneSearchInput" placeholder="Tìm kiếm số điện thoại trong danh sách..."
               oninput="renderExcludedPhonesList(this.value)" />
           </div>
-          <div style="font-size:12px; font-weight:700; color:var(--text-muted); white-space:nowrap;" id="excludedPhonesCountLabel">
+          <div style="font-size:12px; font-weight:700; color:var(--text-muted); white-space:nowrap;"
+            id="excludedPhonesCountLabel">
             0 số miễn note
           </div>
         </div>
 
         <!-- Danh sách các số điện thoại -->
-        <div id="excludedPhonesListContainer" style="overflow-y:auto; max-height:280px; border:1px solid #e2e8f0; border-radius:var(--radius-sm); background:#fff;">
+        <div id="excludedPhonesListContainer"
+          style="overflow-y:auto; max-height:280px; border:1px solid #e2e8f0; border-radius:var(--radius-sm); background:#fff;">
           <!-- render bằng JS -->
         </div>
       </div>
 
-      <div class="member-modal-footer" style="padding:12px 22px; display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border-top:1px solid var(--border);">
+      <div class="member-modal-footer"
+        style="padding:12px 22px; display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border-top:1px solid var(--border);">
         <div style="display:flex; align-items:center; gap:8px;">
-          <button type="button" class="btn-stats-tool" id="btnSyncExcludedPhonesR2" onclick="fetchExcludedPhonesFromR2(false)"
-            style="padding:5px 11px; font-size:12px;" title="Làm mới danh sách từ hệ thống">
+          <button type="button" class="btn-stats-tool" id="btnSyncExcludedPhonesR2"
+            onclick="fetchExcludedPhonesFromR2(false)" style="padding:5px 11px; font-size:12px;"
+            title="Làm mới danh sách từ hệ thống">
             <i class="fa-solid fa-arrows-rotate" id="iconSyncExcludedPhones"></i> Đồng bộ
           </button>
-          <span id="labelExcludedPhonesR2Status" style="font-size:11.5px; color:#64748b; display:inline-flex; align-items:center; gap:5px;">
+          <span id="labelExcludedPhonesR2Status"
+            style="font-size:11.5px; color:#64748b; display:inline-flex; align-items:center; gap:5px;">
             <i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Tự động đồng bộ lên hệ thống
           </span>
         </div>
-        <button type="button" class="btn-modal-cancel" onclick="closeExcludedPhonesModal()" style="display:inline-flex;">
+        <button type="button" class="btn-modal-cancel" onclick="closeExcludedPhonesModal()"
+          style="display:inline-flex;">
           Đóng
         </button>
       </div>
@@ -4773,21 +4857,25 @@
   </div>
 
   <!-- MODAL: CHI TIẾT TICKET CHATBOX AI (HELPDESK) -->
-  <div class="member-modal-backdrop" id="ticketDetailModalBackdrop" onclick="if(event.target===this) closeTicketDetailModal()">
+  <div class="member-modal-backdrop" id="ticketDetailModalBackdrop"
+    onclick="if(event.target===this) closeTicketDetailModal()">
     <div class="member-modal-box" style="max-width: 720px;">
       <div class="member-modal-header">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);">
+          <div class="member-modal-header-icon"
+            style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);">
             <i class="fa-solid fa-robot"></i>
           </div>
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <h3 style="margin:0;" id="modalTicketTitle">Chi tiết Ticket Chatbox AI</h3>
-              <span id="modalTicketStatusBadge" style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px;">
+              <span id="modalTicketStatusBadge"
+                style="font-size:11px; font-weight:700; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:2px 8px; border-radius:12px;">
                 CLOSED
               </span>
             </div>
-            <p style="margin:2px 0 0;" id="modalTicketSub">Đã ghi nhận trên hệ thống Helpdesk AI Assistant (Category: HELPDESK | Project: NVN)</p>
+            <p style="margin:2px 0 0;" id="modalTicketSub">Đã ghi nhận trên hệ thống Helpdesk AI Assistant (Category:
+              HELPDESK | Project: NVN)</p>
           </div>
         </div>
         <button type="button" class="member-modal-close-btn" onclick="closeTicketDetailModal()" title="Đóng">
@@ -4795,19 +4883,26 @@
         </button>
       </div>
 
-      <div class="member-modal-body" id="modalTicketBody" style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
+      <div class="member-modal-body" id="modalTicketBody"
+        style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
         <!-- Rendered dynamically -->
       </div>
 
-      <div class="member-modal-footer" style="padding: 12px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <div class="member-modal-footer"
+        style="padding: 12px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-          <a id="btnOpenHelpdeskWeb" href="https://helpdesk.ai-audit-test.online/helpdesk/tickets" target="_blank" class="btn-stats-tool primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none;">
+          <a id="btnOpenHelpdeskWeb" href="https://helpdesk.ai-audit-test.online/helpdesk/tickets" target="_blank"
+            class="btn-stats-tool primary" style="padding:6px 14px; font-size:12.5px; text-decoration:none;">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trên Chatbox AI Helpdesk
           </a>
-          <button type="button" id="btnModalForceCloseTicket" class="btn-stats-tool danger" onclick="forceCloseHelpdeskTicketCurrent()" style="display:none; padding:6px 14px; font-size:12.5px;" title="Cập nhật trực tiếp trạng thái CLOSED lên hệ thống Helpdesk mà không tốn lượt chat AI">
+          <button type="button" id="btnModalForceCloseTicket" class="btn-stats-tool danger"
+            onclick="forceCloseHelpdeskTicketCurrent()" style="display:none; padding:6px 14px; font-size:12.5px;"
+            title="Cập nhật trực tiếp trạng thái CLOSED lên hệ thống Helpdesk mà không tốn lượt chat AI">
             <i class="fa-solid fa-lock"></i> Đóng Ticket Ngay (Force Close)
           </button>
-          <button type="button" id="btnModalCopyPromptNewChat" class="btn-stats-tool" onclick="copyPromptForNewChat()" style="display:none; padding:6px 14px; font-size:12.5px; background:#fff7ed; color:#c2410c; border:1px solid #ffedd5;" title="Sao chép lại prompt để gửi trong đoạn chat mới trên Chatbox AI">
+          <button type="button" id="btnModalCopyPromptNewChat" class="btn-stats-tool" onclick="copyPromptForNewChat()"
+            style="display:none; padding:6px 14px; font-size:12.5px; background:#fff7ed; color:#c2410c; border:1px solid #ffedd5;"
+            title="Sao chép lại prompt để gửi trong đoạn chat mới trên Chatbox AI">
             <i class="fa-regular fa-copy"></i> Sao chép gửi Chat mới
           </button>
         </div>
@@ -4819,21 +4914,25 @@
   </div>
 
   <!-- MODAL: GỬI TICKET CHATBOX AI CHO ISSUE CHƯA NOTE -->
-  <div class="member-modal-backdrop" id="unnotedTicketModalBackdrop" onclick="if(event.target===this) closeUnnotedTicketModal()">
+  <div class="member-modal-backdrop" id="unnotedTicketModalBackdrop"
+    onclick="if(event.target===this) closeUnnotedTicketModal()">
     <div class="member-modal-box" style="max-width: 650px;">
       <div class="member-modal-header">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">
+          <div class="member-modal-header-icon"
+            style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">
             <i class="fa-solid fa-robot"></i>
           </div>
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <h3 style="margin:0;">Tạo Ticket trên Chatbox AI</h3>
-              <span style="font-size:11px; font-weight:700; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:12px;">
+              <span
+                style="font-size:11px; font-weight:700; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:12px;">
                 Chưa note
               </span>
             </div>
-            <p style="margin:2px 0 0;" id="modalUnnotedSub">Hỗ trợ tự động tạo & đóng ticket trên Helpdesk AI Assistant</p>
+            <p style="margin:2px 0 0;" id="modalUnnotedSub">Hỗ trợ tự động tạo & đóng ticket trên Helpdesk AI Assistant
+            </p>
           </div>
         </div>
         <button type="button" class="member-modal-close-btn" onclick="closeUnnotedTicketModal()" title="Đóng">
@@ -4841,49 +4940,65 @@
         </button>
       </div>
 
-      <div class="member-modal-body" style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
-        <div id="modalUnnotedWarningBox" style="display:none; padding:10px 14px; border-radius:8px; font-size:12px; line-height:1.5;"></div>
+      <div class="member-modal-body"
+        style="padding: 18px 22px; max-height: 70vh; overflow-y:auto; display: flex; flex-direction: column; gap: 14px;">
+        <div id="modalUnnotedWarningBox"
+          style="display:none; padding:10px 14px; border-radius:8px; font-size:12px; line-height:1.5;"></div>
         <div style="background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px 14px;">
-          <div style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+          <div
+            style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
             <span><i class="fa-solid fa-terminal" style="color:var(--primary);"></i> Nội dung Prompt tạo ticket</span>
-            <button type="button" class="btn-stats-tool" onclick="copyUnnotedPromptOnly()" style="padding:2px 8px; font-size:11px;">
+            <button type="button" class="btn-stats-tool" onclick="copyUnnotedPromptOnly()"
+              style="padding:2px 8px; font-size:11px;">
               <i class="fa-regular fa-copy"></i> Sao chép
             </button>
           </div>
-          <div id="modalUnnotedPromptText" style="font-family:var(--font-mono); font-size:12px; color:#1e293b; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; white-space:pre-wrap; word-break:break-word; max-height:120px; overflow-y:auto; line-height:1.5;"></div>
+          <div id="modalUnnotedPromptText"
+            style="font-family:var(--font-mono); font-size:12px; color:#1e293b; background:#ffffff; border:1px solid #e2e8f0; border-radius:6px; padding:10px; white-space:pre-wrap; word-break:break-word; max-height:120px; overflow-y:auto; line-height:1.5;">
+          </div>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr; gap:10px;">
           <!-- Option 1: Tự động chạy trực tiếp từ Client -->
-          <div style="border:1.5px solid #38bdf8; background:#f0f9ff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div
+            style="border:1.5px solid #38bdf8; background:#f0f9ff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:13px; font-weight:800; color:#0369a1; display:flex; align-items:center; gap:6px;">
                 <i class="fa-solid fa-bolt" style="color:#0284c7;"></i> Cách 1: Tự động tạo Ticket qua AI (Khuyên dùng)
               </span>
-              <span style="font-size:10px; font-weight:800; background:#0284c7; color:#fff; padding:2px 6px; border-radius:6px;">100% Tự động</span>
+              <span
+                style="font-size:10px; font-weight:800; background:#0284c7; color:#fff; padding:2px 6px; border-radius:6px;">100%
+                Tự động</span>
             </div>
             <p style="font-size:12px; color:#0369a1; margin:0; line-height:1.4;">
-              Hệ thống dùng chính trình duyệt client gửi lệnh thẳng đến Chatbox AI. AI tự động tạo ticket, phân tích và close ticket, sau đó gắn mã Ticket vào bảng ngay (0% tốn CPU server).
+              Hệ thống dùng chính trình duyệt client gửi lệnh thẳng đến Chatbox AI. AI tự động tạo ticket, phân tích và
+              close ticket, sau đó gắn mã Ticket vào bảng ngay (0% tốn CPU server).
             </p>
             <div>
-              <button type="button" id="btnRunAiAutoTicket" class="btn-stats-tool primary" onclick="runAiAutoCreateTicketClient()" style="width:100%; justify-content:center; padding:9px 14px; font-size:13px; font-weight:700;">
+              <button type="button" id="btnRunAiAutoTicket" class="btn-stats-tool primary"
+                onclick="runAiAutoCreateTicketClient()"
+                style="width:100%; justify-content:center; padding:9px 14px; font-size:13px; font-weight:700;">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Bấm để AI tự tạo Ticket ngay
               </button>
             </div>
           </div>
 
           <!-- Option 2: Mở trang Chatbox AI -->
-          <div style="border:1px solid var(--border); background:#ffffff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+          <div
+            style="border:1px solid var(--border); background:#ffffff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:13px; font-weight:700; color:#334155; display:flex; align-items:center; gap:6px;">
-                <i class="fa-solid fa-arrow-up-right-from-square" style="color:#64748b;"></i> Cách 2: Mở trang Chatbox AI (Dán bằng Ctrl + V)
+                <i class="fa-solid fa-arrow-up-right-from-square" style="color:#64748b;"></i> Cách 2: Mở trang Chatbox
+                AI (Dán bằng Ctrl + V)
               </span>
             </div>
             <p style="font-size:12px; color:#64748b; margin:0; line-height:1.4;">
-              Do cơ chế bảo mật trình duyệt chặn can thiệp trang khác, hệ thống đã copy sẵn nội dung vào máy. Mở tab mới, bạn chỉ cần bấm vào ô chat và nhấn <strong>Ctrl + V</strong> rồi <strong>Enter</strong>.
+              Do cơ chế bảo mật trình duyệt chặn can thiệp trang khác, hệ thống đã copy sẵn nội dung vào máy. Mở tab
+              mới, bạn chỉ cần bấm vào ô chat và nhấn <strong>Ctrl + V</strong> rồi <strong>Enter</strong>.
             </p>
             <div>
-              <button type="button" class="btn-stats-tool secondary" onclick="openChatboxTabManual()" style="width:100%; justify-content:center; padding:8px 14px; font-size:12.5px;">
+              <button type="button" class="btn-stats-tool secondary" onclick="openChatboxTabManual()"
+                style="width:100%; justify-content:center; padding:8px 14px; font-size:12.5px;">
                 <i class="fa-regular fa-copy"></i> Mở Chatbox AI & Copy Prompt
               </button>
             </div>
@@ -4891,7 +5006,8 @@
         </div>
       </div>
 
-      <div class="member-modal-footer" style="padding: 10px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; align-items: center;">
+      <div class="member-modal-footer"
+        style="padding: 10px 22px; background: #fafbfc; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; align-items: center;">
         <button type="button" class="btn-modal-cancel" onclick="closeUnnotedTicketModal()" style="display:inline-flex;">
           Đóng
         </button>
@@ -4904,13 +5020,15 @@
     <div class="member-modal-box" style="max-width: 580px;">
       <div class="member-modal-header">
         <div style="display:flex; align-items:center; gap:12px;">
-          <div class="member-modal-header-icon" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);">
+          <div class="member-modal-header-icon"
+            style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);">
             <i class="fa-solid fa-mobile-screen-button"></i>
           </div>
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <h3 style="margin:0;">Thông số Cài máy DMS</h3>
-              <span style="font-size:11px; font-weight:700; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 8px; border-radius:12px;">
+              <span
+                style="font-size:11px; font-weight:700; background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; padding:2px 8px; border-radius:12px;">
                 Nestlé DMS
               </span>
             </div>
@@ -4924,63 +5042,77 @@
 
       <div class="member-modal-body" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px;">
         <!-- Bảng thông số Cài máy (chuẩn theo mẫu Excel) -->
-        <div style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+        <div
+          style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
           <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
             <thead>
               <tr style="background: #e2e8f0; color: #1e293b; border-bottom: 2px solid #cbd5e1;">
-                <th colspan="3" style="padding: 10px 14px; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: 0.05em; background: #f1f5f9; color: #0f172a;">
+                <th colspan="3"
+                  style="padding: 10px 14px; text-align: center; font-size: 15px; font-weight: 800; letter-spacing: 0.05em; background: #f1f5f9; color: #0f172a;">
                   <i class="fa-solid fa-wrench" style="margin-right: 6px; color:#0284c7;"></i> Cài máy
                 </th>
               </tr>
             </thead>
             <tbody>
               <!-- Row 1: Server URL -->
-              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                <td style="padding: 11px 14px; font-weight: 700; width: 140px; color: #334155; border-right: 1px solid #e2e8f0;">
+              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;"
+                onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                <td
+                  style="padding: 11px 14px; font-weight: 700; width: 140px; color: #334155; border-right: 1px solid #e2e8f0;">
                   Server URL
                 </td>
-                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; word-break: break-all;">
+                <td
+                  style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 600; color: #0284c7; word-break: break-all;">
                   <span id="setupDeviceServerUrl">https://fw.np.accenture.com</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right; width: 90px;">
-                  <button type="button" class="btn-copy-chip" onclick="copySetupField('https://fw.np.accenture.com', 'Server URL')" title="Sao chép Server URL">
+                  <button type="button" class="btn-copy-chip"
+                    onclick="copySetupField('https://fw.np.accenture.com', 'Server URL')" title="Sao chép Server URL">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
                 </td>
               </tr>
 
               <!-- Row 2: Company CD -->
-              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;"
+                onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                 <td style="padding: 11px 14px; font-weight: 700; color: #334155; border-right: 1px solid #e2e8f0;">
                   Company CD
                 </td>
-                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 700; color: #1e293b; letter-spacing: 0.03em;">
+                <td
+                  style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 700; color: #1e293b; letter-spacing: 0.03em;">
                   <span id="setupDeviceCompanyCd">C_NES_VNM</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right;">
-                  <button type="button" class="btn-copy-chip" onclick="copySetupField('C_NES_VNM', 'Company CD')" title="Sao chép Company CD">
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField('C_NES_VNM', 'Company CD')"
+                    title="Sao chép Company CD">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
                 </td>
               </tr>
 
               <!-- Row 3: User ID -->
-              <tr style="border-bottom: 1px solid #e2e8f0; background: #f0fdf4; transition: background 0.15s ease;" id="rowSetupUserId">
+              <tr style="border-bottom: 1px solid #e2e8f0; background: #f0fdf4; transition: background 0.15s ease;"
+                id="rowSetupUserId">
                 <td style="padding: 11px 14px; font-weight: 700; color: #166534; border-right: 1px solid #bbf7d0;">
                   User ID:
                 </td>
-                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 800; font-size: 14.5px; color: #15803d; letter-spacing: 0.02em;">
+                <td
+                  style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 800; font-size: 14.5px; color: #15803d; letter-spacing: 0.02em;">
                   <span id="setupDeviceUserId" style="display:inline-block;">7674110_338G0003</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right;">
-                  <button type="button" class="btn-copy-chip" style="background:#22c55e; color:#fff; border-color:#16a34a;" onclick="copySetupUserId()" title="Sao chép User ID">
+                  <button type="button" class="btn-copy-chip"
+                    style="background:#22c55e; color:#fff; border-color:#16a34a;" onclick="copySetupUserId()"
+                    title="Sao chép User ID">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
                 </td>
               </tr>
 
               <!-- Row 4: Pass -->
-              <tr style="transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+              <tr style="transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'"
+                onmouseout="this.style.background='transparent'">
                 <td style="padding: 11px 14px; font-weight: 700; color: #334155; border-right: 1px solid #e2e8f0;">
                   Pass
                 </td>
@@ -4988,7 +5120,8 @@
                   <span id="setupDevicePass">NPage@0101</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right;">
-                  <button type="button" class="btn-copy-chip" onclick="copySetupField('NPage@0101', 'Mật khẩu Pass')" title="Sao chép Mật khẩu">
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField('NPage@0101', 'Mật khẩu Pass')"
+                    title="Sao chép Mật khẩu">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
                 </td>
@@ -4998,15 +5131,19 @@
         </div>
 
         <!-- Chi tiết giải thích & Tuỳ chỉnh nhanh Mã NPP/NVBH hoặc SUP/HQ/Admin -->
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px 14px;">
-          <div id="setupRuleNote" style="font-size: 11.5px; color: #64748b; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
+        <div
+          style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm); padding: 12px 14px;">
+          <div id="setupRuleNote"
+            style="font-size: 11.5px; color: #64748b; margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
             <i class="fa-solid fa-circle-info" style="color:#0284c7;"></i>
-            <span id="setupRuleText">Quy tắc: <strong>User ID</strong> = <strong>Mã NPP</strong> _ <strong>Mã NVBH</strong></span>
+            <span id="setupRuleText">Quy tắc: <strong>User ID</strong> = <strong>Mã NPP</strong> _ <strong>Mã
+                NVBH</strong></span>
           </div>
 
           <div style="display:flex; align-items:center; gap:16px; margin-bottom:10px; font-size:12px; font-weight:700;">
             <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer; color:#334155;">
-              <input type="radio" name="setupMode" value="nvbh" id="setupRadioNvbh" onchange="onSetupModeChange('nvbh')" />
+              <input type="radio" name="setupMode" value="nvbh" id="setupRadioNvbh"
+                onchange="onSetupModeChange('nvbh')" />
               <span>Tài khoản NVBH (Mã NPP_ Mã NVBH)</span>
             </label>
             <label style="display:inline-flex; align-items:center; gap:5px; cursor:pointer; color:#334155;">
@@ -5017,27 +5154,36 @@
 
           <div id="setupNvbhInputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
-              <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã NPP:</label>
+              <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã
+                NPP:</label>
               <input type="text" id="setupInputMaNpp" class="form-control-studio" placeholder="VD: 7674110"
-                style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;" oninput="onSetupInputChange()" />
+                style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;"
+                oninput="onSetupInputChange()" />
             </div>
             <div>
-              <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã NVBH:</label>
+              <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã
+                NVBH:</label>
               <input type="text" id="setupInputMaNvbh" class="form-control-studio" placeholder="VD: 338G0003 hoặc 0003"
-                style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;" oninput="onSetupInputChange()" />
+                style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px;"
+                oninput="onSetupInputChange()" />
             </div>
           </div>
 
           <div id="setupHqInputs" style="display: none;">
-            <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã SUP / HQ / Admin (User ID):</label>
+            <label style="font-size: 11px; font-weight: 700; color: #475569; display:block; margin-bottom: 4px;">Mã SUP
+              / HQ / Admin (User ID):</label>
             <input type="text" id="setupInputRole" class="form-control-studio" placeholder="VD: ADMIN, HQTANHBU..."
-              style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px; text-transform:uppercase;" oninput="onSetupInputChange()" />
+              style="font-size: 12.5px; font-family: var(--font-mono); padding: 6px 10px; text-transform:uppercase;"
+              oninput="onSetupInputChange()" />
           </div>
         </div>
       </div>
 
-      <div class="member-modal-footer" style="padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; border-top: 1px solid var(--border);">
-        <button type="button" class="btn-studio-action" style="background:#0284c7; color:#fff; box-shadow:0 4px 12px rgba(2,132,199,0.3);" onclick="copyAllSetupInfo()" title="Sao chép toàn bộ thông số">
+      <div class="member-modal-footer"
+        style="padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; border-top: 1px solid var(--border);">
+        <button type="button" class="btn-studio-action"
+          style="background:#0284c7; color:#fff; box-shadow:0 4px 12px rgba(2,132,199,0.3);"
+          onclick="copyAllSetupInfo()" title="Sao chép toàn bộ thông số">
           <i class="fa-solid fa-copy"></i> Sao chép tất cả
         </button>
         <button type="button" class="btn-modal-cancel" onclick="closeSetupModal()">
@@ -5624,13 +5770,13 @@
               updateHelpdeskSyncUI();
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }
 
       function saveHelpdeskCacheToLocal(data) {
         try {
           localStorage.setItem(LS_HELPDESK_TICKETS_CACHE, JSON.stringify(data));
-        } catch (_) {}
+        } catch (_) { }
       }
 
       function updateHelpdeskSyncUI() {
@@ -5670,7 +5816,7 @@
             if (window.location.protocol === "file:" || !window.location.origin.includes("vercel.app")) {
               try {
                 res = await fetch(`https://5snvn-tools.vercel.app/api/helpdesk-tickets?_t=${Date.now()}${syncQuery}`, { cache: "no-store" });
-              } catch (_) {}
+              } catch (_) { }
             }
           }
 
@@ -5875,9 +6021,9 @@
         if (issueOtrs) {
           const otrsCandidates = agentDateCandidates.filter(t => {
             const tOtrs = extractOtrsNum(t.description || "") ||
-                          extractOtrsNum(t.rootCause || "") ||
-                          extractOtrsNum(t.result || "") ||
-                          extractOtrsNum(t.callDetails || "");
+              extractOtrsNum(t.rootCause || "") ||
+              extractOtrsNum(t.result || "") ||
+              extractOtrsNum(t.callDetails || "");
             return tOtrs === issueOtrs;
           });
 
@@ -6038,7 +6184,7 @@
         return null;
       }
 
-      window.setStatsChatboxFilter = function(mode) {
+      window.setStatsChatboxFilter = function (mode) {
         statsChatboxFilter = ["all", "noted", "unnoted"].includes(mode) ? mode : "all";
         ["btnFilterChatboxAll", "btnFilterChatboxNoted", "btnFilterChatboxUnnoted"].forEach(btnId => {
           const btn = document.getElementById(btnId);
@@ -6099,14 +6245,14 @@
             const ss = String(d.getSeconds()).padStart(2, "0");
             return `${hh}:${mm}:${ss} - ${day}/${month}/${year}`;
           }
-        } catch (_) {}
+        } catch (_) { }
 
         return str;
       }
 
       let currentModalTicketId = null;
 
-      window.openTicketDetailModal = function(ticketId) {
+      window.openTicketDetailModal = function (ticketId) {
         const modal = document.getElementById("ticketDetailModalBackdrop");
         if (!modal) return;
         const t = helpdeskTickets.find(item => String(item.id) === String(ticketId));
@@ -6227,7 +6373,7 @@
         modal.classList.add("show");
       };
 
-      window.closeTicketDetailModal = function() {
+      window.closeTicketDetailModal = function () {
         const modal = document.getElementById("ticketDetailModalBackdrop");
         if (modal) modal.classList.remove("show");
       };
@@ -6307,7 +6453,7 @@
         const t = helpdeskTickets.find(item => String(item.id) === String(currentModalTicketId));
         if (!t) return;
         let matchedIssue = (Array.isArray(r2Issues) ? r2Issues.find(iss => iss.matchedTicket?.id === t.id) : null) ||
-                          (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
+          (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
         let promptText = "";
         if (matchedIssue) {
           promptText = formatIssueCopyText(matchedIssue);
@@ -6585,7 +6731,7 @@
         }
       };
 
-      window.fixOtrsSheetDates = async function() {
+      window.fixOtrsSheetDates = async function () {
         try {
           showToast("Đang chuẩn hóa định dạng ngày trên Google Sheet...", "fa-spinner fa-spin");
           const res = await fetch(OTRS_REPORT_GAS_URL, {
@@ -8330,8 +8476,8 @@
           if (!q) return true;
           const syncText = isTempNoteSynced(n) ? "da dong bo đã đồng bộ" : "chua dong bo chưa đồng bộ";
           return normalizeStr(n.result).includes(q) ||
-                 normalizeStr(n.date).includes(q) ||
-                 normalizeStr(syncText).includes(q);
+            normalizeStr(n.date).includes(q) ||
+            normalizeStr(syncText).includes(q);
         });
 
         badgeTempCount.textContent = `${tempNotes.length} note`;
@@ -8486,7 +8632,7 @@
           // Parse OTRS Number
           let otrsCode = "";
           const matchNum = (item.fields && item.fields.npp ? String(item.fields.npp).match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i) : null) ||
-                           resultText.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i);
+            resultText.match(/(?:#|Ticket\s*#?|No\.?\s*)?(\d{14,18})/i);
           if (matchNum) {
             otrsCode = matchNum[1];
           }
@@ -8584,8 +8730,8 @@
         if (Array.isArray(solutionsList)) {
           const cleanSol = solutionName.toLowerCase();
           solObj = solutionsList.find(s => s && s.name && s.name.trim().toLowerCase() === cleanSol) ||
-                   solutionsList.find(s => s && s.code && s.code.toUpperCase() === (item.fields?.solutionCode || "").toUpperCase()) ||
-                   solutionsList.find(s => s && s.name && (s.name.toLowerCase().includes(cleanSol) || cleanSol.includes(s.name.toLowerCase())));
+            solutionsList.find(s => s && s.code && s.code.toUpperCase() === (item.fields?.solutionCode || "").toUpperCase()) ||
+            solutionsList.find(s => s && s.name && (s.name.toLowerCase().includes(cleanSol) || cleanSol.includes(s.name.toLowerCase())));
         }
 
         let solCode = (item.fields && item.fields.solutionCode) ? item.fields.solutionCode.trim().toUpperCase() : (solObj?.code || "");
@@ -8679,7 +8825,7 @@
 
       window.openChatboxForUnnotedIssue = function (id) {
         let found = (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null) ||
-                    (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null);
+          (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null);
         if (!found) {
           showToast("Không tìm thấy thông tin issue", "fa-triangle-exclamation");
           return;
@@ -8700,7 +8846,7 @@
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(promptText);
           }
-        } catch (_) {}
+        } catch (_) { }
 
         // Hiển thị modal xử lý
         const modal = document.getElementById("unnotedTicketModalBackdrop");
@@ -8788,7 +8934,7 @@
         const promptText = formatChatboxAiPrompt(currentUnnotedIssue);
         try {
           await navigator.clipboard.writeText(promptText);
-        } catch (_) {}
+        } catch (_) { }
 
         const targetUrl = "https://helpdesk.ai-audit-test.online/helpdesk/#prompt=" + encodeURIComponent(promptText);
         window.open(targetUrl, "_blank");
@@ -9009,7 +9155,7 @@
                   }));
                 }
               }
-            } catch (_) {}
+            } catch (_) { }
           }
 
           if (isOtrsTicketInNpp(cleanNpp)) {
@@ -10008,7 +10154,7 @@
                   </td>
                   <td class="text-center">
                     ${n.matchedTicket ? (
-                      (n.matchedTicket.status || "").toUpperCase() === "CLOSED" ? `
+                  (n.matchedTicket.status || "").toUpperCase() === "CLOSED" ? `
                         <button type="button" class="btn-ticket-pill noted" onclick="window.openTicketDetailModal('${escapeHTML(String(n.matchedTicket.id))}')" title="Đã đóng - Bấm để xem chi tiết Ticket #${escapeHTML(String(n.matchedTicket.id))}">
                           <i class="fa-solid fa-circle-check"></i> #${escapeHTML(String(n.matchedTicket.id))}
                         </button>
@@ -10017,7 +10163,7 @@
                           <i class="fa-solid fa-clock-rotate-left"></i> #${escapeHTML(String(n.matchedTicket.id))} (Pending)
                         </button>
                       `
-                    ) : `
+                ) : `
                       <button type="button" class="btn-ticket-pill unnoted" onclick="window.openChatboxForUnnotedIssue('${escapeHTML(String(n.id))}')" title="Bấm để sao chép prompt và mở Chatbox AI tạo ticket">
                         <i class="fa-solid fa-circle-exclamation"></i> Chưa note
                       </button>
@@ -10455,7 +10601,7 @@
       });
       syncInputClearButtons();
       initIssueDatePicker(); // Khởi tạo date picker với ngày hôm nay
-      window.reloadStatsData = async function(showToastMsg = true) {
+      window.reloadStatsData = async function (showToastMsg = true) {
         const iconSync = document.getElementById("iconSyncStats");
         const btnSync = document.getElementById("btnSyncStatsR2");
         if (iconSync) iconSync.classList.add("fa-spin");
@@ -10483,7 +10629,7 @@
         }
       };
 
-      window.reloadVoipData = async function(showToastMsg = true) {
+      window.reloadVoipData = async function (showToastMsg = true) {
         const iconReload = document.getElementById("iconVoipReload");
         const btnReload = document.getElementById("btnVoipReloadAll");
         if (iconReload) iconReload.classList.add("fa-spin");
@@ -11851,7 +11997,7 @@
               isAlive = true;
               break;
             }
-          } catch (_) {}
+          } catch (_) { }
         }
 
         if (isAlive) {
@@ -12062,8 +12208,8 @@
             }
             if (d1 && m1 && y1 && d2 && m2 && y2) {
               return parseInt(d1, 10) === parseInt(d2, 10) &&
-                     parseInt(m1, 10) === parseInt(m2, 10) &&
-                     parseInt(y1, 10) === parseInt(y2, 10);
+                parseInt(m1, 10) === parseInt(m2, 10) &&
+                parseInt(y1, 10) === parseInt(y2, 10);
             }
             return false;
           }
@@ -13082,7 +13228,7 @@
               const ping = await fetch("http://localhost:3000/api/voip24h-calls?ping=1", { signal: ctrl.signal });
               clearTimeout(tid);
               if (ping.ok) downloadEndpoint = "http://localhost:3000/api/voip24h-calls";
-            } catch (_) {}
+            } catch (_) { }
           }
 
           if (!downloadEndpoint) {
@@ -13177,7 +13323,7 @@
               window.loadIssueIntoForm(e.data);
             }
           };
-        } catch (_) {}
+        } catch (_) { }
       }
 
       window.addEventListener("pageshow", () => {
