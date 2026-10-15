@@ -2014,13 +2014,18 @@
         }
 
         const headers = ["solution_code", "solution_name", "content", "category"];
-        const dataRows = targetRows.map((r) => {
-          const code = String(r.__col_1 || r.columnB || r.Code || r.code || r.solution_code || "").trim();
-          const name = String(r.__col_4 || r.columnE || r["Tên Solution"] || r.name || r.solution_name || "").trim();
-          const content = String(r.__col_9 || r.columnJ || r.Solution || r.solution || r.content || "").trim();
-          const cat = String(r.__col_category || r.columnD || r.Type || r.type || r.category || CATEGORY_MAP[code] || "DC").trim();
-          return [code, name, content, cat];
-        });
+        const dataRows = targetRows
+          .filter((r) => {
+            const code = String(r.__col_1 || r.columnB || r.Code || r.code || r.solution_code || "").trim();
+            return code && code.toLowerCase() !== "code";
+          })
+          .map((r) => {
+            const code = String(r.__col_1 || r.columnB || r.Code || r.code || r.solution_code || "").trim();
+            const name = String(r.__col_4 || r.columnE || r["Tên Solution"] || r.name || r.solution_name || "").trim();
+            const content = String(r.__col_9 || r.columnJ || r.Solution || r.solution || r.content || "").trim();
+            const cat = String(r.__col_category || r.columnD || r.Type || r.type || r.category || CATEGORY_MAP[code] || "DC").trim();
+            return [code, name, content, cat];
+          });
 
         const wsData = [headers, ...dataRows];
         const ws = XLSX.utils.aoa_to_sheet(wsData);
