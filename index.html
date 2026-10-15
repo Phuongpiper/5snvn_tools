@@ -1651,386 +1651,7 @@
         });
       }
 
-      // ── Quản lý Dự án & Quản lý Nhân viên Toàn cục (Không chuyển tab) ──
-      (function initTopbarProjectsAndMembers() {
-        let gProjects = [];
-        let gMembers = [];
-        let gEditingMemberName = null;
 
-        function esc(str) {
-          return String(str || "")
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-        }
-
-        function showHubToast(msg, type = "success") {
-          const toast = document.createElement("div");
-          toast.className = `settings-toast ${type}`;
-          const icon = type === "success" ? "fa-circle-check" : "fa-triangle-exclamation";
-          toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
-          document.body.appendChild(toast);
-          setTimeout(() => {
-            toast.style.opacity = "0";
-            toast.style.transform = "translateY(-10px)";
-            toast.style.transition = "all 0.2s ease";
-            setTimeout(() => toast.remove(), 250);
-          }, 3000);
-        }
-
-        function getApiTasksUrl() {
-          let base = "";
-          if (window.location.protocol === "file:") {
-            base = "https://5snvn-tools.vercel.app";
-          }
-          return base + "/api/r2-tasks";
-        }
-
-        async function apiGet(action) {
-          const res = await fetch(`${getApiTasksUrl()}?action=${action}&t=${Date.now()}`, { cache: "no-cache" });
-          return res.json();
-        }
-
-        async function apiPost(body) {
-          const res = await fetch(getApiTasksUrl(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-          });
-          return res.json();
-        }
-
-        function notifyOtherTabs(type) {
-          try {
-            if (typeof BroadcastChannel !== "undefined") {
-              const ch = new BroadcastChannel("DMS_MEMBERS_SYNC");
-              ch.postMessage({ type });
-            }
-          } catch (_) {}
-
-          document.querySelectorAll(".tab-frame").forEach(frame => {
-            try {
-              if (frame.contentWindow) {
-                frame.contentWindow.postMessage({ type: "DATA_UPDATED", entity: type }, "*");
-                if (type === "projects" && typeof frame.contentWindow.loadProjects === "function") {
-                  frame.contentWindow.loadProjects();
-                }
-                if (type === "members" && typeof frame.contentWindow.loadMembers === "function") {
-                  frame.contentWindow.loadMembers();
-                }
-              }
-            } catch (_) {}
-          });
-        }
-
-        // ── PROJECTS MODAL ──
-        const modalProjects = document.getElementById("topbarProjectsModal");
-        const listProjects = document.getElementById("topProjectList");
-        const inputProjectName = document.getElementById("topNewProjectName");
-
-        function openProjectsModal() {
-          if (!modalProjects) return;
-          modalProjects.style.display = "flex";
-          loadProjectsList();
-          setTimeout(() => inputProjectName?.focus(), 120);
-        }
-
-        function closeProjectsModal() {
-          if (modalProjects) modalProjects.style.display = "none";
-        }
-
-        async function loadProjectsList() {
-          if (!listProjects) return;
-          try {
-            const res = await apiGet("read_projects");
-            if (res.status === "success") {
-              gProjects = res.data || res.projects || [];
-              try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) {}
-              renderProjects();
-            }
-          } catch (err) {
-            listProjects.innerHTML = `<li style="text-align:center; color:#ef4444; padding:14px;">Lỗi tải dự án</li>`;
-          }
-        }
-
-        function renderProjects() {
-          if (!listProjects) return;
-          listProjects.innerHTML = "";
-          if (!gProjects.length) {
-            listProjects.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có dự án nào</li>`;
-            return;
-          }
-          gProjects.forEach(p => {
-            const li = document.createElement("li");
-            li.className = "topbar-list-item";
-            li.innerHTML = `
-              <span style="font-weight:600; font-size:13.5px; color:#1e293b; display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-folder" style="color:#6366f1;"></i> ${esc(p.name)}
-              </span>
-              <div class="topbar-actions-btns">
-                <button type="button" class="topbar-icon-action-btn delete" title="Xóa dự án">
-                  <i class="fa-solid fa-trash-can"></i>
-                </button>
-              </div>
-            `;
-            li.querySelector(".delete")?.addEventListener("click", () => deleteProject(p.name));
-            listProjects.appendChild(li);
-          });
-        }
-
-        async function addProject() {
-          const name = (inputProjectName ? inputProjectName.value : "").trim();
-          if (!name) return;
-          try {
-            const res = await apiPost({ action: "add_project", name });
-            if (res.status === "success") {
-              showHubToast(`Đã thêm dự án "${name}"`, "success");
-              inputProjectName.value = "";
-              await loadProjectsList();
-              notifyOtherTabs("projects");
-            } else {
-              showHubToast(res.message || "Lỗi thêm dự án", "warning");
-            }
-          } catch (_) {
-            showHubToast("Lỗi kết nối máy chủ", "warning");
-          }
-        }
-
-        async function deleteProject(name) {
-          if (!confirm(`Xóa dự án "${name}"?`)) return;
-          try {
-            const res = await apiPost({ action: "delete_project", name });
-            if (res.status === "success") {
-              showHubToast(`Đã xóa dự án "${name}"`, "success");
-              await loadProjectsList();
-              notifyOtherTabs("projects");
-            } else {
-              showHubToast(res.message || "Lỗi xóa dự án", "warning");
-            }
-          } catch (_) {
-            showHubToast("Lỗi kết nối máy chủ", "warning");
-          }
-        }
-
-        // ── MEMBERS MODAL ──
-        const modalMembers = document.getElementById("topbarMembersModal");
-        const listMembers = document.getElementById("topMemberList");
-        const countMembers = document.getElementById("topMemberCountBadge");
-        const inputMemberCode = document.getElementById("topNewMemberCode");
-        const inputMemberName = document.getElementById("topNewMemberName");
-        const inputMemberExt = document.getElementById("topNewMemberExt");
-
-        function openMembersModal() {
-          if (!modalMembers) return;
-          modalMembers.style.display = "flex";
-          gEditingMemberName = null;
-          loadMembersList();
-          setTimeout(() => inputMemberCode?.focus(), 120);
-        }
-
-        function closeMembersModal() {
-          if (modalMembers) modalMembers.style.display = "none";
-          gEditingMemberName = null;
-        }
-
-        async function loadMembersList() {
-          if (!listMembers) return;
-          try {
-            const res = await apiGet("read_members");
-            if (res.status === "success") {
-              gMembers = (res.data || []).map(m => {
-                if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
-                return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
-              });
-              try { localStorage.setItem("app_members_data", JSON.stringify(gMembers)); } catch (_) {}
-              renderMembers();
-            }
-          } catch (err) {
-            listMembers.innerHTML = `<li style="text-align:center; color:#ef4444; padding:14px;">Lỗi tải nhân viên</li>`;
-          }
-        }
-
-        function renderMembers() {
-          if (!listMembers) return;
-          listMembers.innerHTML = "";
-          if (countMembers) countMembers.textContent = `${gMembers.length} thành viên`;
-          if (!gMembers.length) {
-            listMembers.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có thành viên nào</li>`;
-            return;
-          }
-
-          gMembers.forEach((m, idx) => {
-            const li = document.createElement("li");
-            li.className = "topbar-list-item";
-
-            if (gEditingMemberName === m.name) {
-              li.style.background = "#eef2ff";
-              li.style.borderColor = "#c7d2fe";
-              li.innerHTML = `
-                <div style="display:flex; gap:6px; flex:1; align-items:center; flex-wrap:wrap; margin-right:8px;">
-                  <input type="text" class="topbar-input edit-code" value="${esc(m.code || '')}" placeholder="Mã NV *" style="width:95px; text-transform:uppercase; font-weight:700; font-family:monospace; height:32px; font-size:12px; padding:0 8px;" />
-                  <input type="text" class="topbar-input edit-name" value="${esc(m.name)}" placeholder="Tên NV *" style="flex:1; min-width:110px; height:32px; font-size:12.5px; padding:0 8px;" />
-                  <input type="text" class="topbar-input edit-ext" value="${esc(m.extension || '')}" placeholder="Máy nhánh" style="width:85px; font-family:monospace; height:32px; font-size:12px; padding:0 8px;" />
-                </div>
-                <div class="topbar-actions-btns">
-                  <button type="button" class="topbar-icon-action-btn save-edit" title="Lưu thay đổi" style="background:#4f46e5; color:#fff; border-color:#4f46e5;">
-                    <i class="fa-solid fa-check"></i>
-                  </button>
-                  <button type="button" class="topbar-icon-action-btn cancel-edit" title="Hủy">
-                    <i class="fa-solid fa-xmark"></i>
-                  </button>
-                </div>
-              `;
-              const codeInp = li.querySelector(".edit-code");
-              const nameInp = li.querySelector(".edit-name");
-              const extInp = li.querySelector(".edit-ext");
-              li.querySelector(".save-edit")?.addEventListener("click", () => {
-                saveEditMember(m.name, codeInp.value, nameInp.value, extInp.value);
-              });
-              li.querySelector(".cancel-edit")?.addEventListener("click", () => {
-                gEditingMemberName = null;
-                renderMembers();
-              });
-            } else {
-              const codeTag = m.code ? `<span class="topbar-member-code">${esc(m.code)}</span>` : `<span class="topbar-member-code" style="background:#f1f5f9; color:#94a3b8; border-color:#e2e8f0;">Chưa có mã</span>`;
-              const extTag = m.extension ? `<span class="topbar-member-ext"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${esc(m.extension)}</span>` : '';
-              li.innerHTML = `
-                <div style="display:flex; align-items:center; gap:8px; overflow:hidden; min-width:0; flex-wrap:wrap;">
-                  ${codeTag}
-                  <span style="font-weight:600; font-size:13.5px; color:#1e293b;">${esc(m.name)}</span>
-                  ${extTag}
-                </div>
-                <div class="topbar-actions-btns">
-                  <button type="button" class="topbar-icon-action-btn edit" title="Sửa thông tin"><i class="fa-solid fa-pen-to-square"></i></button>
-                  <button type="button" class="topbar-icon-action-btn delete" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-              `;
-              li.querySelector(".edit")?.addEventListener("click", () => {
-                gEditingMemberName = m.name;
-                renderMembers();
-              });
-              li.querySelector(".delete")?.addEventListener("click", () => deleteMember(m.name));
-            }
-
-            listMembers.appendChild(li);
-          });
-        }
-
-        async function addMember() {
-          const code = (inputMemberCode ? inputMemberCode.value : "").trim().toUpperCase();
-          const name = (inputMemberName ? inputMemberName.value : "").trim();
-          const extension = (inputMemberExt ? inputMemberExt.value : "").trim();
-
-          if (!code) {
-            showHubToast("Vui lòng nhập Mã nhân viên (bắt buộc)", "warning");
-            inputMemberCode?.focus();
-            return;
-          }
-          if (!name) {
-            showHubToast("Vui lòng nhập Tên nhân viên (bắt buộc)", "warning");
-            inputMemberName?.focus();
-            return;
-          }
-
-          try {
-            const res = await apiPost({ action: "add_member", name, code, extension, requireCode: true });
-            if (res.status === "success") {
-              showHubToast(`Đã thêm [${code}] ${name}`, "success");
-              if (inputMemberCode) inputMemberCode.value = "";
-              if (inputMemberName) inputMemberName.value = "";
-              if (inputMemberExt) inputMemberExt.value = "";
-              inputMemberCode?.focus();
-              await loadMembersList();
-              notifyOtherTabs("members");
-            } else {
-              showHubToast(res.message || "Lỗi thêm nhân viên", "warning");
-            }
-          } catch (_) {
-            showHubToast("Lỗi kết nối máy chủ", "warning");
-          }
-        }
-
-        async function saveEditMember(oldName, code, name, extension) {
-          code = (code || "").trim().toUpperCase();
-          name = (name || "").trim();
-          extension = (extension || "").trim();
-
-          if (!code || !name) {
-            showHubToast("Mã và Tên nhân viên là bắt buộc", "warning");
-            return;
-          }
-
-          try {
-            const res = await apiPost({
-              action: "edit_member",
-              oldName,
-              newName: name,
-              code,
-              extension
-            });
-            if (res.status === "success") {
-              showHubToast(`Đã cập nhật [${code}] ${name}`, "success");
-              gEditingMemberName = null;
-              await loadMembersList();
-              notifyOtherTabs("members");
-            } else {
-              showHubToast(res.message || "Lỗi cập nhật nhân viên", "warning");
-            }
-          } catch (_) {
-            showHubToast("Lỗi kết nối máy chủ", "warning");
-          }
-        }
-
-        async function deleteMember(name) {
-          if (!confirm(`Xóa thành viên "${name}"?`)) return;
-          try {
-            const res = await apiPost({ action: "delete_member", name });
-            if (res.status === "success") {
-              showHubToast(`Đã xóa thành viên "${name}"`, "success");
-              if (gEditingMemberName === name) gEditingMemberName = null;
-              await loadMembersList();
-              notifyOtherTabs("members");
-            } else {
-              showHubToast(res.message || "Lỗi xóa thành viên", "warning");
-            }
-          } catch (_) {
-            showHubToast("Lỗi kết nối máy chủ", "warning");
-          }
-        }
-
-        // Event bindings
-        document.getElementById("btnTopProjects")?.addEventListener("click", openProjectsModal);
-        document.getElementById("btnCloseTopProjects")?.addEventListener("click", closeProjectsModal);
-        document.getElementById("btnFooterCloseTopProjects")?.addEventListener("click", closeProjectsModal);
-        modalProjects?.addEventListener("click", (e) => {
-          if (e.target === modalProjects) closeProjectsModal();
-        });
-
-        document.getElementById("btnTopAddProject")?.addEventListener("click", addProject);
-        inputProjectName?.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); addProject(); }
-        });
-
-        document.getElementById("btnTopMembers")?.addEventListener("click", openMembersModal);
-        document.getElementById("btnCloseTopMembers")?.addEventListener("click", closeMembersModal);
-        document.getElementById("btnFooterCloseTopMembers")?.addEventListener("click", closeMembersModal);
-        modalMembers?.addEventListener("click", (e) => {
-          if (e.target === modalMembers) closeMembersModal();
-        });
-
-        document.getElementById("btnTopAddMember")?.addEventListener("click", addMember);
-        inputMemberExt?.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); addMember(); }
-        });
-        inputMemberName?.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); inputMemberExt?.focus(); }
-        });
-        inputMemberCode?.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); inputMemberName?.focus(); }
-        });
-      })();
     </script>
 
     <!-- ── Global Priority Notification System ── -->
@@ -3077,6 +2698,398 @@
         </div>
       </div>
     </div>
+
+    <script>
+    /* ── Global Projects & Members Management Controller ── */
+    (function initTopbarProjectsAndMembers() {
+      let gProjects = [];
+      let gMembers = [];
+      let gEditingMemberName = null;
+
+      function esc(str) {
+        return String(str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function showHubToast(msg, type = "success") {
+        const toast = document.createElement("div");
+        toast.className = `settings-toast ${type}`;
+        const icon = type === "success" ? "fa-circle-check" : "fa-triangle-exclamation";
+        toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.transform = "translateY(-10px)";
+          toast.style.transition = "all 0.2s ease";
+          setTimeout(() => toast.remove(), 250);
+        }, 3000);
+      }
+
+      function getApiTasksUrl() {
+        let base = "";
+        if (window.location.protocol === "file:") {
+          base = "https://5snvn-tools.vercel.app";
+        }
+        return base + "/api/r2-tasks";
+      }
+
+      async function apiGet(action) {
+        const res = await fetch(`${getApiTasksUrl()}?action=${action}&t=${Date.now()}`, { cache: "no-cache" });
+        return res.json();
+      }
+
+      async function apiPost(body) {
+        const res = await fetch(getApiTasksUrl(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        return res.json();
+      }
+
+      function notifyOtherTabs(type) {
+        try {
+          if (typeof BroadcastChannel !== "undefined") {
+            const ch = new BroadcastChannel("DMS_MEMBERS_SYNC");
+            ch.postMessage({ type });
+          }
+        } catch (_) {}
+
+        document.querySelectorAll(".tab-frame").forEach(frame => {
+          try {
+            if (frame.contentWindow) {
+              frame.contentWindow.postMessage({ type: "DATA_UPDATED", entity: type }, "*");
+              if (type === "projects" && typeof frame.contentWindow.loadProjects === "function") {
+                frame.contentWindow.loadProjects();
+              }
+              if (type === "members" && typeof frame.contentWindow.loadMembers === "function") {
+                frame.contentWindow.loadMembers();
+              }
+            }
+          } catch (_) {}
+        });
+      }
+
+      // ── PROJECTS MODAL ──
+      function openProjectsModal() {
+        const modal = document.getElementById("topbarProjectsModal");
+        if (!modal) return;
+        modal.style.display = "flex";
+        loadProjectsList();
+        setTimeout(() => document.getElementById("topNewProjectName")?.focus(), 120);
+      }
+
+      function closeProjectsModal() {
+        const modal = document.getElementById("topbarProjectsModal");
+        if (modal) modal.style.display = "none";
+      }
+
+      async function loadProjectsList() {
+        const list = document.getElementById("topProjectList");
+        if (!list) return;
+        try {
+          const res = await apiGet("read_projects");
+          if (res.status === "success") {
+            gProjects = res.data || res.projects || [];
+            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) {}
+            renderProjects();
+          }
+        } catch (err) {
+          list.innerHTML = `<li style="text-align:center; color:#ef4444; padding:14px;">Lỗi tải dự án</li>`;
+        }
+      }
+
+      function renderProjects() {
+        const list = document.getElementById("topProjectList");
+        if (!list) return;
+        list.innerHTML = "";
+        if (!gProjects.length) {
+          list.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có dự án nào</li>`;
+          return;
+        }
+        gProjects.forEach(p => {
+          const li = document.createElement("li");
+          li.className = "topbar-list-item";
+          li.innerHTML = `
+            <span style="font-weight:600; font-size:13.5px; color:#1e293b; display:flex; align-items:center; gap:8px;">
+              <i class="fa-solid fa-folder" style="color:#6366f1;"></i> ${esc(p.name)}
+            </span>
+            <div class="topbar-actions-btns">
+              <button type="button" class="topbar-icon-action-btn delete" title="Xóa dự án">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          `;
+          li.querySelector(".delete")?.addEventListener("click", () => deleteProject(p.name));
+          list.appendChild(li);
+        });
+      }
+
+      async function addProject() {
+        const input = document.getElementById("topNewProjectName");
+        const name = (input ? input.value : "").trim();
+        if (!name) return;
+        try {
+          const res = await apiPost({ action: "add_project", name });
+          if (res.status === "success") {
+            showHubToast(`Đã thêm dự án "${name}"`, "success");
+            input.value = "";
+            await loadProjectsList();
+            notifyOtherTabs("projects");
+          } else {
+            showHubToast(res.message || "Lỗi thêm dự án", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
+      async function deleteProject(name) {
+        if (!confirm(`Xóa dự án "${name}"?`)) return;
+        try {
+          const res = await apiPost({ action: "delete_project", name });
+          if (res.status === "success") {
+            showHubToast(`Đã xóa dự án "${name}"`, "success");
+            await loadProjectsList();
+            notifyOtherTabs("projects");
+          } else {
+            showHubToast(res.message || "Lỗi xóa dự án", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
+      // ── MEMBERS MODAL ──
+      function openMembersModal() {
+        const modal = document.getElementById("topbarMembersModal");
+        if (!modal) return;
+        modal.style.display = "flex";
+        gEditingMemberName = null;
+        loadMembersList();
+        setTimeout(() => document.getElementById("topNewMemberCode")?.focus(), 120);
+      }
+
+      function closeMembersModal() {
+        const modal = document.getElementById("topbarMembersModal");
+        if (modal) modal.style.display = "none";
+        gEditingMemberName = null;
+      }
+
+      async function loadMembersList() {
+        const list = document.getElementById("topMemberList");
+        if (!list) return;
+        try {
+          const res = await apiGet("read_members");
+          if (res.status === "success") {
+            gMembers = (res.data || []).map(m => {
+              if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
+              return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
+            });
+            try { localStorage.setItem("app_members_data", JSON.stringify(gMembers)); } catch (_) {}
+            renderMembers();
+          }
+        } catch (err) {
+          list.innerHTML = `<li style="text-align:center; color:#ef4444; padding:14px;">Lỗi tải nhân viên</li>`;
+        }
+      }
+
+      function renderMembers() {
+        const list = document.getElementById("topMemberList");
+        const count = document.getElementById("topMemberCountBadge");
+        if (!list) return;
+        list.innerHTML = "";
+        if (count) count.textContent = `${gMembers.length} thành viên`;
+        if (!gMembers.length) {
+          list.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có thành viên nào</li>`;
+          return;
+        }
+
+        gMembers.forEach((m, idx) => {
+          const li = document.createElement("li");
+          li.className = "topbar-list-item";
+
+          if (gEditingMemberName === m.name) {
+            li.style.background = "#eef2ff";
+            li.style.borderColor = "#c7d2fe";
+            li.innerHTML = `
+              <div style="display:flex; gap:6px; flex:1; align-items:center; flex-wrap:wrap; margin-right:8px;">
+                <input type="text" class="topbar-input edit-code" value="${esc(m.code || '')}" placeholder="Mã NV *" style="width:95px; text-transform:uppercase; font-weight:700; font-family:monospace; height:32px; font-size:12px; padding:0 8px;" />
+                <input type="text" class="topbar-input edit-name" value="${esc(m.name)}" placeholder="Tên NV *" style="flex:1; min-width:110px; height:32px; font-size:12.5px; padding:0 8px;" />
+                <input type="text" class="topbar-input edit-ext" value="${esc(m.extension || '')}" placeholder="Máy nhánh" style="width:85px; font-family:monospace; height:32px; font-size:12px; padding:0 8px;" />
+              </div>
+              <div class="topbar-actions-btns">
+                <button type="button" class="topbar-icon-action-btn save-edit" title="Lưu thay đổi" style="background:#4f46e5; color:#fff; border-color:#4f46e5;">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button type="button" class="topbar-icon-action-btn cancel-edit" title="Hủy">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            `;
+            const codeInp = li.querySelector(".edit-code");
+            const nameInp = li.querySelector(".edit-name");
+            const extInp = li.querySelector(".edit-ext");
+            li.querySelector(".save-edit")?.addEventListener("click", () => {
+              saveEditMember(m.name, codeInp.value, nameInp.value, extInp.value);
+            });
+            li.querySelector(".cancel-edit")?.addEventListener("click", () => {
+              gEditingMemberName = null;
+              renderMembers();
+            });
+          } else {
+            const codeTag = m.code ? `<span class="topbar-member-code">${esc(m.code)}</span>` : `<span class="topbar-member-code" style="background:#f1f5f9; color:#94a3b8; border-color:#e2e8f0;">Chưa có mã</span>`;
+            const extTag = m.extension ? `<span class="topbar-member-ext"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${esc(m.extension)}</span>` : '';
+            li.innerHTML = `
+              <div style="display:flex; align-items:center; gap:8px; overflow:hidden; min-width:0; flex-wrap:wrap;">
+                ${codeTag}
+                <span style="font-weight:600; font-size:13.5px; color:#1e293b;">${esc(m.name)}</span>
+                ${extTag}
+              </div>
+              <div class="topbar-actions-btns">
+                <button type="button" class="topbar-icon-action-btn edit" title="Sửa thông tin"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button type="button" class="topbar-icon-action-btn delete" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+            `;
+            li.querySelector(".edit")?.addEventListener("click", () => {
+              gEditingMemberName = m.name;
+              renderMembers();
+            });
+            li.querySelector(".delete")?.addEventListener("click", () => deleteMember(m.name));
+          }
+
+          list.appendChild(li);
+        });
+      }
+
+      async function addMember() {
+        const codeInput = document.getElementById("topNewMemberCode");
+        const nameInput = document.getElementById("topNewMemberName");
+        const extInput = document.getElementById("topNewMemberExt");
+        const code = (codeInput ? codeInput.value : "").trim().toUpperCase();
+        const name = (nameInput ? nameInput.value : "").trim();
+        const extension = (extInput ? extInput.value : "").trim();
+
+        if (!code) {
+          showHubToast("Vui lòng nhập Mã nhân viên (bắt buộc)", "warning");
+          codeInput?.focus();
+          return;
+        }
+        if (!name) {
+          showHubToast("Vui lòng nhập Tên nhân viên (bắt buộc)", "warning");
+          nameInput?.focus();
+          return;
+        }
+
+        try {
+          const res = await apiPost({ action: "add_member", name, code, extension, requireCode: true });
+          if (res.status === "success") {
+            showHubToast(`Đã thêm [${code}] ${name}`, "success");
+            if (codeInput) codeInput.value = "";
+            if (nameInput) nameInput.value = "";
+            if (extInput) extInput.value = "";
+            codeInput?.focus();
+            await loadMembersList();
+            notifyOtherTabs("members");
+          } else {
+            showHubToast(res.message || "Lỗi thêm nhân viên", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
+      async function saveEditMember(oldName, code, name, extension) {
+        code = (code || "").trim().toUpperCase();
+        name = (name || "").trim();
+        extension = (extension || "").trim();
+
+        if (!code || !name) {
+          showHubToast("Mã và Tên nhân viên là bắt buộc", "warning");
+          return;
+        }
+
+        try {
+          const res = await apiPost({
+            action: "edit_member",
+            oldName,
+            newName: name,
+            code,
+            extension
+          });
+          if (res.status === "success") {
+            showHubToast(`Đã cập nhật [${code}] ${name}`, "success");
+            gEditingMemberName = null;
+            await loadMembersList();
+            notifyOtherTabs("members");
+          } else {
+            showHubToast(res.message || "Lỗi cập nhật nhân viên", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
+      async function deleteMember(name) {
+        if (!confirm(`Xóa thành viên "${name}"?`)) return;
+        try {
+          const res = await apiPost({ action: "delete_member", name });
+          if (res.status === "success") {
+            showHubToast(`Đã xóa thành viên "${name}"`, "success");
+            if (gEditingMemberName === name) gEditingMemberName = null;
+            await loadMembersList();
+            notifyOtherTabs("members");
+          } else {
+            showHubToast(res.message || "Lỗi xóa thành viên", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
+      function setupEvents() {
+        document.getElementById("btnTopProjects")?.addEventListener("click", openProjectsModal);
+        document.getElementById("btnCloseTopProjects")?.addEventListener("click", closeProjectsModal);
+        document.getElementById("btnFooterCloseTopProjects")?.addEventListener("click", closeProjectsModal);
+        document.getElementById("topbarProjectsModal")?.addEventListener("click", (e) => {
+          if (e.target && e.target.id === "topbarProjectsModal") closeProjectsModal();
+        });
+
+        document.getElementById("btnTopAddProject")?.addEventListener("click", addProject);
+        document.getElementById("topNewProjectName")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); addProject(); }
+        });
+
+        document.getElementById("btnTopMembers")?.addEventListener("click", openMembersModal);
+        document.getElementById("btnCloseTopMembers")?.addEventListener("click", closeMembersModal);
+        document.getElementById("btnFooterCloseTopMembers")?.addEventListener("click", closeMembersModal);
+        document.getElementById("topbarMembersModal")?.addEventListener("click", (e) => {
+          if (e.target && e.target.id === "topbarMembersModal") closeMembersModal();
+        });
+
+        document.getElementById("btnTopAddMember")?.addEventListener("click", addMember);
+        document.getElementById("topNewMemberExt")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); addMember(); }
+        });
+        document.getElementById("topNewMemberName")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); document.getElementById("topNewMemberExt")?.focus(); }
+        });
+        document.getElementById("topNewMemberCode")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); document.getElementById("topNewMemberName")?.focus(); }
+        });
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupEvents);
+      } else {
+        setupEvents();
+      }
+    })();
+    </script>
 
     <script>
     /* ── Settings & Tab Visibility Controller ── */
