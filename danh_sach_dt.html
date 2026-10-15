@@ -1027,9 +1027,6 @@
     </div>
 
     <div class="header-right">
-      <button class="btn btn-outline" id="btnManualSync" onclick="forceSyncWithCloud()" title="Đồng bộ ngay với đám mây">
-        <i class="fa-solid fa-arrows-rotate"></i> Đồng bộ
-      </button>
       <button class="btn btn-import" id="btnImportFile" title="Tải file Excel / CSV nạp vào danh sách">
         <i class="fa-solid fa-file-arrow-up"></i> Nhập File Excel
       </button>
@@ -1628,6 +1625,15 @@
       await fetchDtFromCloud(false);
       toast("Đã đồng bộ dữ liệu thành công!", "success");
     }
+
+    // Lắng nghe tín hiệu đồng bộ từ nút Đồng bộ trên topbar DMS Hub
+    window.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "GLOBAL_SYNC_CLICKED") {
+        if (typeof forceSyncWithCloud === "function") {
+          forceSyncWithCloud();
+        }
+      }
+    });
 
     function showAutoSaveIndicator(status = "saved") {
       const container = document.getElementById("autoSaveIndicator");

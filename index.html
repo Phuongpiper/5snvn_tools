@@ -1349,6 +1349,9 @@
                 if (typeof activeFrame.contentWindow.forceSyncTableWithCloud === "function") {
                   activeFrame.contentWindow.forceSyncTableWithCloud();
                 }
+                if (typeof activeFrame.contentWindow.forceSyncWithCloud === "function") {
+                  activeFrame.contentWindow.forceSyncWithCloud();
+                }
               } catch (_) {}
 
               const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
