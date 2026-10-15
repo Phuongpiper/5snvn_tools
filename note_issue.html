@@ -5754,7 +5754,7 @@
           return "/api/helpdesk-tickets";
         }
         if (window.location.protocol === "file:") {
-          return "http://localhost:3000/api/helpdesk-tickets";
+          return "https://5snvn-tools.vercel.app/api/helpdesk-tickets";
         }
         return "/api/helpdesk-tickets";
       }
@@ -5902,6 +5902,7 @@
         if (combined.includes("nvn-663") || combined.includes("close") || combined.includes("đóng")) return "close";
         if (combined.includes("nvn-664") || combined.includes("update") || combined.includes("cập nhật")) return "update";
         if (combined.includes("nvn-399") || combined.includes("nvn-665") || combined.includes("raise")) return "raise";
+        if (combined.includes("nvn-651") || combined.includes("push acn") || combined.includes("gửi mail về ticket")) return "push_acn";
         return "";
       }
 
@@ -6020,10 +6021,16 @@
         // 1. Nếu là OTRS Ticket (có mã 14-18 số), BẮT BUỘC phải khớp đúng mã OTRS VÀ ĐÚNG LOẠI GIẢI PHÁP (Solution)
         if (issueOtrs) {
           const otrsCandidates = agentDateCandidates.filter(t => {
-            const tOtrs = extractOtrsNum(t.description || "") ||
+            const tOtrs = extractOtrsNum(t.distName || "") ||
+              extractOtrsNum(t.dist_name || "") ||
+              extractOtrsNum(t.description || "") ||
               extractOtrsNum(t.rootCause || "") ||
               extractOtrsNum(t.result || "") ||
-              extractOtrsNum(t.callDetails || "");
+              extractOtrsNum(t.processSteps || "") ||
+              extractOtrsNum(t.callDetails || "") ||
+              extractOtrsNum(t.phone || "") ||
+              extractOtrsNum(t.dsrCode || "") ||
+              extractOtrsNum(t.dsr_code || "");
             return tOtrs === issueOtrs;
           });
 
@@ -6057,6 +6064,11 @@
               if (!tAction) {
                 m = otrsCandidates[0];
               }
+            }
+
+            // Fallback: nếu trong ngày chỉ có 1 ticket mang đúng mã OTRS này cho Agent thì khớp luôn
+            if (!m && otrsCandidates.length === 1) {
+              m = otrsCandidates[0];
             }
 
             if (m) {
