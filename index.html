@@ -29,17 +29,16 @@
         flex-direction: column;
         height: 100%;
       }
+      /* ── Premium Enterprise SaaS Topbar (Linear/Vercel Aesthetic) ── */
       .topbar {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
+        background: #ffffff;
         border-bottom: 1px solid #e2e8f0;
-        padding: 0 16px;
-        height: 52px;
-        box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+        padding: 0 18px;
+        height: 66px;
+        box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
         position: sticky;
         top: 0;
-        z-index: 100;
+        z-index: 1000;
         display: flex;
         align-items: center;
       }
@@ -51,12 +50,15 @@
         width: 100%;
         max-width: 100%;
         margin: 0 auto;
-        gap: 12px;
+        gap: 14px;
+        min-width: 0;
       }
+
+      /* A. Brand Section */
       .brand {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 9px;
         text-decoration: none;
         color: inherit;
         user-select: none;
@@ -64,16 +66,16 @@
         white-space: nowrap;
       }
       .brand-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         color: #ffffff;
-        font-size: 13px;
-        box-shadow: 0 2px 5px rgba(79, 70, 229, 0.28);
+        font-size: 14px;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
         flex-shrink: 0;
         transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
@@ -83,12 +85,12 @@
       .brand-text {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 8px;
         white-space: nowrap;
         flex-shrink: 0;
       }
       .brand-title {
-        font-size: 14.5px;
+        font-size: 15px;
         font-weight: 700;
         color: #0f172a;
         letter-spacing: -0.025em;
@@ -96,14 +98,14 @@
         line-height: 1;
       }
       .brand-badge {
-        font-size: 9.5px;
+        font-size: 10px;
         font-weight: 700;
-        padding: 2px 6.5px;
+        padding: 2.5px 7px;
         background: #ecfdf5;
         color: #047857;
         border-radius: 9999px;
         border: 1px solid #a7f3d0;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.04em;
         white-space: nowrap;
         flex-shrink: 0;
         display: inline-flex;
@@ -124,94 +126,148 @@
       }
       .brand-divider {
         width: 1px;
-        height: 16px;
+        height: 22px;
         background: #e2e8f0;
-        margin-left: 4px;
+        margin: 0 4px 0 8px;
+        flex-shrink: 0;
       }
-      .tabs {
-        display: inline-flex;
+
+      /* B. Primary Navigation */
+      .topbar-nav {
+        display: flex;
         align-items: center;
-        background: #f1f5f9;
-        padding: 3px;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        gap: 2px;
-        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+        gap: 4px;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: visible;
+      }
+      .nav-tabs-rail {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        min-width: 0;
         overflow-x: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        flex-shrink: 1;
-        min-width: 0;
       }
-      .tabs::-webkit-scrollbar {
+      .nav-tabs-rail::-webkit-scrollbar {
         display: none;
       }
+
       .tab-button {
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 7px;
-        color: #64748b;
+        border-radius: 8px;
+        color: #475569;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
-        padding: 5px 10px;
+        padding: 7px 11px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 7px;
         transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
         user-select: none;
         letter-spacing: -0.01em;
         position: relative;
-        line-height: 1.2;
+        line-height: 1.25;
+        flex-shrink: 0;
       }
       .tab-button i {
-        font-size: 12px;
+        font-size: 13px;
         color: #94a3b8;
         transition: color 0.16s ease, transform 0.16s ease;
       }
       .tab-button:hover {
         color: #0f172a;
-        background: rgba(255, 255, 255, 0.7);
+        background: #f8fafc;
       }
       .tab-button:hover i {
-        color: #4f46e5;
+        color: #2563eb;
         transform: translateY(-0.5px);
       }
-
-      /* Micro-accent icon colors on hover */
-      .tab-button[data-frame-target="nvnSolutionsFrame"]:hover i { color: #f59e0b; }
-      .tab-button[data-frame-target="callLogFrame"]:hover i { color: #06b6d4; }
-      .tab-button[data-frame-target="sumaryticketFrame"]:hover i { color: #f97316; }
-      .tab-button[data-frame-target="vanMauNVNFrame"]:hover i { color: #3b82f6; }
-      .tab-button[data-frame-target="dms1ReportFrame"]:hover i { color: #10b981; }
-      .tab-button[data-frame-target="taskPendingFrame"]:hover i { color: #8b5cf6; }
-      .tab-button[data-frame-target="tableFrame"]:hover i { color: #64748b; }
-      .tab-button[data-frame-target="dtListFrame"]:hover i { color: #ec4899; }
-      .tab-button[data-frame-target="noteIssueFrame"]:hover i { color: #6366f1; }
-
       .tab-button.active {
-        background: #ffffff !important;
-        color: #4f46e5 !important;
+        background: #eff6ff !important;
+        color: #2563eb !important;
         font-weight: 600;
-        border-color: rgba(226, 232, 240, 0.8);
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+        border-color: #bfdbfe !important;
+        box-shadow: 0 1px 2px rgba(37, 99, 235, 0.06);
       }
       .tab-button.active i {
-        color: #4f46e5 !important;
-      }
-      .tab-button.active:hover {
-        background: #ffffff !important;
-        color: #4338ca !important;
+        color: #2563eb !important;
       }
       .tab-dot {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
         background: #ef4444;
         display: inline-block;
         margin-left: 2px;
       }
+
+      /* More Navigation Dropdown */
+      .nav-more-container {
+        position: relative;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      .nav-more-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: #64748b;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.16s ease;
+      }
+      .nav-more-btn:hover,
+      .nav-more-btn.active {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .nav-more-btn.has-active-child {
+        color: #2563eb;
+        background: #eff6ff;
+        border-color: #bfdbfe;
+      }
+      .nav-more-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        min-width: 210px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+        z-index: 10001;
+        padding: 6px;
+        animation: dropdownSlideDown 0.15s ease-out;
+      }
+      .nav-more-dropdown.show {
+        display: block;
+      }
+      .dropdown-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        padding: 6px 10px 4px;
+      }
+      .nav-more-dropdown .tab-button {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 8px 11px;
+        border-radius: 7px;
+      }
+
       .tab-frame {
         border: 0;
         display: none;
@@ -280,24 +336,300 @@
         to { opacity: 0; transform: translateX(-16px); }
       }
 
-      /* ── Top Navigation Actions ── */
-      .top-actions {
+      /* ── C. Utilities & Account Actions ── */
+      .topbar-right {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 8px;
         flex-shrink: 0;
       }
-      .top-cluster {
+      .topbar-icon-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .topbar-icon-btn:hover,
+      .topbar-icon-btn.active {
+        background-color: #f1f5f9;
+        color: #0f172a;
+      }
+      .topbar-icon-btn:active {
+        transform: scale(0.96);
+      }
+
+      /* 1. Search Component */
+      .search-container {
+        position: relative;
+        display: inline-block;
+      }
+      .search-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 320px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+        z-index: 10001;
+        padding: 10px;
+        animation: dropdownSlideDown 0.15s ease-out;
+      }
+      .search-dropdown.show {
+        display: block;
+      }
+      .search-input-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0 10px;
+        height: 38px;
+        transition: all 0.15s ease;
+      }
+      .search-input-box:focus-within {
+        border-color: #2563eb;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+      .search-input-box input {
+        border: none;
+        outline: none;
+        background: transparent;
+        width: 100%;
+        font-size: 13px;
+        font-family: inherit;
+        color: #0f172a;
+      }
+      .search-esc-hint {
+        font-size: 10px;
+        font-weight: 700;
+        color: #94a3b8;
+        background: #f1f5f9;
+        padding: 2px 5px;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+      }
+
+      /* 2. Notifications Group */
+      .topbar-notif-group {
         display: flex;
         align-items: center;
         gap: 4px;
       }
-      .top-divider {
-        width: 1px;
-        height: 16px;
+
+      /* 3. Utilities (Waffle/Grid Icon) */
+      .utilities-container {
+        position: relative;
+        display: inline-block;
+      }
+      .utilities-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 260px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+        z-index: 10001;
+        padding: 8px;
+        overflow: hidden;
+        animation: dropdownSlideDown 0.15s ease-out;
+      }
+      .utilities-dropdown.show {
+        display: block;
+      }
+      .util-dropdown-header {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        padding: 6px 10px 4px;
+      }
+      .util-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: none;
+        background: transparent;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.15s ease;
+        font-family: inherit;
+      }
+      .util-menu-item:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .util-menu-item i {
+        font-size: 14px;
+        width: 20px;
+        text-align: center;
+      }
+      .util-divider {
+        height: 1px;
         background: #e2e8f0;
-        margin: 0 4px;
+        margin: 6px 0;
+      }
+
+      /* 4. User Profile Account Dropdown */
+      .profile-container {
+        position: relative;
+        display: inline-block;
+      }
+      .profile-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 9999px;
+        padding: 3px 10px 3px 3px;
+        cursor: pointer;
+        transition: all 0.16s ease;
+        user-select: none;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      }
+      .profile-btn:hover,
+      .profile-btn.active {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+      .profile-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #2563eb;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.02em;
         flex-shrink: 0;
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+      }
+      .profile-info {
+        display: flex;
+        flex-direction: column;
+        text-align: left;
+        line-height: 1.15;
+      }
+      .profile-name {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #0f172a;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+      .profile-role {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: #64748b;
+        white-space: nowrap;
+      }
+      .profile-chevron {
+        font-size: 10px;
+        color: #94a3b8;
+        margin-left: 2px;
+        transition: transform 0.2s ease;
+      }
+      .profile-btn.active .profile-chevron {
+        transform: rotate(180deg);
+      }
+      .profile-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 260px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+        z-index: 10001;
+        padding: 10px;
+        animation: dropdownSlideDown 0.15s ease-out;
+      }
+      .profile-dropdown.show {
+        display: block;
+      }
+      .profile-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 6px 10px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .profile-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: #10b981;
+        font-weight: 600;
+        margin-top: 3px;
+      }
+      .profile-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+      }
+      .profile-menu-list {
+        padding: 6px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .profile-info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 6px;
+        font-size: 12px;
+        color: #64748b;
+      }
+      .profile-info-row .info-val {
+        font-weight: 600;
+        color: #1e293b;
+      }
+      .profile-info-row kbd {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        padding: 1px 4px;
+        font-size: 10.5px;
+        color: #475569;
+      }
+
+      @keyframes dropdownSlideDown {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
       }
 
       /* ── Upcoming Tasks Today UI ── */
@@ -905,41 +1237,67 @@
         color: #ef4444;
       }
 
-      /* ── Topbar Sync Button ── */
+      /* ── 5. STANDALONE SYNC BUTTON - MANDATORY FAR RIGHT ── */
       .top-sync-btn {
-        background: #4f46e5;
+        background: #2563eb;
         border: 1px solid transparent;
-        height: 32px;
-        padding: 0 11px;
+        height: 38px;
+        padding: 0 16px;
         border-radius: 8px;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
         color: #ffffff;
         cursor: pointer;
-        display: inline-flex;
+        display: inline-flex !important;
         align-items: center;
-        gap: 6px;
+        gap: 7px;
         transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+        box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2), 0 2px 5px rgba(37, 99, 235, 0.15);
         font-family: inherit;
         white-space: nowrap;
+        flex-shrink: 0 !important;
+        user-select: none;
       }
       .top-sync-btn:hover {
-        background: #4338ca;
-        box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);
+        background: #1d4ed8;
+        box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
         transform: translateY(-0.5px);
       }
       .top-sync-btn:active {
         transform: scale(0.97);
       }
       .top-sync-btn i {
-        font-size: 11.5px;
+        font-size: 13px;
         color: #ffffff;
         transition: transform 0.25s ease;
       }
       .top-sync-btn:disabled {
         opacity: 0.65;
         cursor: not-allowed;
+        transform: none !important;
+      }
+
+      /* Responsive Rules */
+      @media (max-width: 1200px) {
+        .topbar { padding: 0 12px; height: 64px; }
+        .profile-info { display: none; }
+        .profile-btn { padding: 2px; }
+      }
+      @media (max-width: 992px) {
+        .brand-badge { display: none; }
+        .brand-divider { margin: 0 2px 0 4px; }
+        .topbar-nav .tab-button { padding: 6px 9px; font-size: 12.5px; }
+      }
+      @media (max-width: 768px) {
+        .topbar { height: 60px; padding: 0 10px; }
+        .brand-title { font-size: 14px; }
+        .topbar-nav .tab-button:not(.active) { display: none; }
+        .top-sync-btn { height: 36px; padding: 0 12px; font-size: 12.5px; }
+      }
+      @media (max-width: 480px) {
+        .topbar { padding: 0 8px; gap: 6px; }
+        .brand-text { display: none; }
+        .top-sync-btn { padding: 0 10px; }
       }
 
       /* Modals Overlay */
@@ -1431,6 +1789,7 @@
     <div class="shell">
       <div class="topbar">
         <div class="topbar-inner">
+          <!-- A. Brand Section -->
           <div class="brand">
             <div class="brand-icon">
               <i class="fa-solid fa-shapes"></i>
@@ -1444,84 +1803,114 @@
             </div>
             <div class="brand-divider"></div>
           </div>
-          <div class="tabs">
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="nvnSolutionsFrame"
-            >
-              <i class="fa-solid fa-lightbulb"></i> NVN Solutions
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="callLogFrame"
-            >
-              <i class="fa-solid fa-headset"></i> Call Log
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="sumaryticketFrame"
-            >
-              <i class="fa-solid fa-ticket"></i> Summary Ticket
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="vanMauNVNFrame"
-            >
-              <i class="fa-solid fa-file-signature"></i> Văn mẫu NVN
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="dms1ReportFrame"
-            >
-              <i class="fa-solid fa-chart-simple"></i> DMS1 Report
-            </button>
-            <button
-              class="tab-button active"
-              type="button"
-              data-frame-target="taskPendingFrame"
-            >
-              <i class="fa-solid fa-list-check"></i> Task Pending NVN
-              <span class="tab-dot" title="Có công việc cần theo dõi"></span>
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="tableFrame"
-            >
-              <i class="fa-solid fa-table"></i> Table
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="dtListFrame"
-            >
-              <i class="fa-solid fa-address-book"></i> Danh sách DT
-            </button>
-            <button
-              class="tab-button"
-              type="button"
-              data-frame-target="noteIssueFrame"
-            >
-              <i class="fa-solid fa-note-sticky"></i> Note Issue
-            </button>
-          </div>
-          <div class="top-actions">
-            <!-- Cluster 1: Notifications -->
-            <div class="top-cluster">
+
+          <!-- B. Navigation -->
+          <nav class="topbar-nav" aria-label="Điều hướng chính">
+            <div class="nav-tabs-rail">
+              <button
+                class="tab-button active"
+                type="button"
+                data-frame-target="noteIssueFrame"
+              >
+                <i class="fa-solid fa-note-sticky"></i> Note Issue
+              </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="nvnSolutionsFrame"
+              >
+                <i class="fa-solid fa-lightbulb"></i> NVN Solutions
+              </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="callLogFrame"
+              >
+                <i class="fa-solid fa-headset"></i> Call Log
+              </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="sumaryticketFrame"
+              >
+                <i class="fa-solid fa-ticket"></i> Summary Ticket
+              </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="vanMauNVNFrame"
+              >
+                <i class="fa-solid fa-file-signature"></i> Văn mẫu NVN
+              </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="dms1ReportFrame"
+              >
+                <i class="fa-solid fa-chart-simple"></i> DMS1 Report
+              </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="taskPendingFrame"
+              >
+                <i class="fa-solid fa-list-check"></i> Task Pending NVN
+                <span class="tab-dot" title="Có công việc cần theo dõi"></span>
+              </button>
+            </div>
+
+            <!-- More Navigation Dropdown -->
+            <div class="nav-more-container" id="navMoreContainer">
+              <button class="nav-more-btn" id="btnNavMore" type="button" title="Thêm danh mục khác" aria-label="More navigation items">
+                <i class="fa-solid fa-ellipsis"></i>
+              </button>
+              <div class="nav-more-dropdown" id="navMoreDropdown">
+                <div class="dropdown-section-title">Danh mục mở rộng</div>
+                <button
+                  class="tab-button nav-more-item"
+                  type="button"
+                  data-frame-target="tableFrame"
+                >
+                  <i class="fa-solid fa-table"></i> Table
+                </button>
+                <button
+                  class="tab-button nav-more-item"
+                  type="button"
+                  data-frame-target="dtListFrame"
+                >
+                  <i class="fa-solid fa-address-book"></i> Danh sách DT
+                </button>
+              </div>
+            </div>
+          </nav>
+
+          <!-- C. Utilities & Account Actions -->
+          <div class="topbar-right">
+            <!-- 1. Search -->
+            <div class="search-container" id="topbarSearchContainer">
+              <button class="topbar-icon-btn" id="topbarSearchBtn" type="button" title="Tìm kiếm nhanh">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+              <div class="search-dropdown" id="topbarSearchDropdown">
+                <div class="search-input-box">
+                  <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8; font-size: 13px;"></i>
+                  <input type="text" id="topbarSearchInput" placeholder="Tìm nhanh giải pháp, NPP, số ĐT..." autocomplete="off" />
+                  <span class="search-esc-hint">ESC</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Notifications with unread-count badge -->
+            <div class="topbar-notif-group">
               <!-- Upcoming Tasks Button -->
               <div class="upcoming-container" id="upcomingContainer">
-                <button class="upcoming-btn" id="upcomingBtn" title="Task sắp thông báo hôm nay">
+                <button class="topbar-icon-btn upcoming-btn" id="upcomingBtn" type="button" title="Task sắp thông báo hôm nay">
                   <i class="fa-regular fa-clock"></i>
                   <span class="upcoming-badge" id="upcomingBadge">0</span>
                 </button>
                 <div class="upcoming-dropdown" id="upcomingDropdown">
                   <div class="upcoming-hdr">
-                    <h4><i class="fa-regular fa-clock" style="color: #6366f1;"></i> Sắp thông báo hôm nay</h4>
+                    <h4><i class="fa-regular fa-clock" style="color: #2563eb;"></i> Sắp thông báo hôm nay</h4>
                     <span class="upcoming-count-badge" id="upcomingCountBadge">0 task</span>
                   </div>
                   <div class="upcoming-list" id="upcomingList">
@@ -1532,7 +1921,7 @@
 
               <!-- Bell Notification Button -->
               <div class="bell-container" id="bellContainer">
-                <button class="bell-btn" id="bellBtn" title="Thông báo khẩn cấp">
+                <button class="topbar-icon-btn bell-btn" id="bellBtn" type="button" title="Thông báo khẩn cấp">
                   <i class="fa-solid fa-bell"></i>
                   <span class="bell-badge" id="bellBadge">0</span>
                 </button>
@@ -1548,38 +1937,81 @@
               </div>
             </div>
 
-            <div class="top-divider"></div>
-
-            <!-- Cluster 2: Management Tools -->
-            <div class="top-cluster">
-              <!-- Quản lý Dự án -->
-              <button class="top-action-btn" id="btnTopProjects" type="button" title="Quản lý dự án">
-                <i class="fa-solid fa-diagram-project"></i>
+            <!-- 3. Application Utilities (Waffle/Grid icon) -->
+            <div class="utilities-container" id="topbarUtilitiesContainer">
+              <button class="topbar-icon-btn" id="topbarAppsBtn" type="button" title="Tiện ích & Quản trị">
+                <i class="fa-solid fa-table-cells"></i>
               </button>
+              <div class="utilities-dropdown" id="topbarAppsDropdown">
+                <div class="util-dropdown-header">Quản trị & Thiết lập</div>
+                <!-- Preserving existing IDs for Projects, Members, and Settings -->
+                <button class="util-menu-item" id="btnTopProjects" type="button" title="Quản lý dự án">
+                  <i class="fa-solid fa-diagram-project" style="color: #6366f1;"></i>
+                  <span>Quản lý Dự án</span>
+                </button>
+                <button class="util-menu-item" id="btnTopMembers" type="button" title="Quản lý nhân viên">
+                  <i class="fa-solid fa-users" style="color: #0284c7;"></i>
+                  <span>Quản lý Nhân viên</span>
+                </button>
+                <button class="util-menu-item" id="btnOpenSettings" type="button" title="Cài đặt & Quản lý Tabs">
+                  <i class="fa-solid fa-gear" style="color: #f59e0b;"></i>
+                  <span>Cài đặt & Quản lý Tabs</span>
+                </button>
 
-              <!-- Quản lý Nhân viên / Thành viên -->
-              <button class="top-action-btn" id="btnTopMembers" type="button" title="Quản lý nhân viên">
-                <i class="fa-solid fa-users"></i>
-              </button>
-            </div>
-
-            <div class="top-divider"></div>
-
-            <!-- Cluster 3: System & Sync -->
-            <div class="top-cluster">
-              <!-- Settings Button -->
-              <div class="settings-container" id="settingsContainer">
-                <button class="settings-btn" id="btnOpenSettings" title="Cài đặt & Quản lý Tabs (Yêu cầu mật khẩu)">
-                  <i class="fa-solid fa-gear"></i>
+                <div class="util-divider"></div>
+                <div class="util-dropdown-header">Hệ thống</div>
+                <button class="util-menu-item" id="btnAppHardReload" type="button" title="Tải lại toàn bộ hệ thống">
+                  <i class="fa-solid fa-arrows-rotate" style="color: #10b981;"></i>
+                  <span>Tải lại trang (Reload)</span>
                 </button>
               </div>
-
-              <!-- Nút Đồng bộ -->
-              <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
-                <i class="fa-solid fa-arrows-rotate"></i>
-                <span>Đồng bộ</span>
-              </button>
             </div>
+
+            <!-- 4. User Profile / Account Dropdown -->
+            <div class="profile-container" id="topbarProfileContainer">
+              <button class="profile-btn" id="userProfileBtn" type="button" title="Tài khoản cá nhân" aria-haspopup="true">
+                <div class="profile-avatar">TB</div>
+                <div class="profile-info">
+                  <span class="profile-name">TANH. H. BUI 3811</span>
+                  <span class="profile-role">Tánh</span>
+                </div>
+                <i class="fa-solid fa-chevron-down profile-chevron"></i>
+              </button>
+              <div class="profile-dropdown" id="userProfileDropdown">
+                <div class="profile-card-header">
+                  <div class="profile-avatar" style="width: 38px; height: 38px; font-size: 14px;">TB</div>
+                  <div class="profile-info" style="display: flex;">
+                    <span class="profile-name" style="font-size: 13px;">TANH. H. BUI 3811</span>
+                    <span class="profile-role">Support Engineer · DMS NVN</span>
+                    <span class="profile-status-badge">
+                      <span class="profile-status-dot"></span> Trực tuyến
+                    </span>
+                  </div>
+                </div>
+                <div class="util-divider"></div>
+                <div class="profile-menu-list">
+                  <div class="profile-info-row">
+                    <span class="info-label"><i class="fa-regular fa-id-badge"></i> Mã NV:</span>
+                    <span class="info-val">TANH.H.BUI.3811</span>
+                  </div>
+                  <div class="profile-info-row">
+                    <span class="info-label"><i class="fa-regular fa-keyboard"></i> Phím tắt:</span>
+                    <span class="info-val"><kbd>Alt</kbd> + <kbd>S</kbd> Đồng bộ</span>
+                  </div>
+                </div>
+                <div class="util-divider"></div>
+                <button class="util-menu-item" id="btnProfileReload" type="button">
+                  <i class="fa-solid fa-rotate" style="color: #2563eb;"></i>
+                  <span>Làm mới phiên làm việc</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. STANDALONE SYNC BUTTON - MANDATORY FAR RIGHT -->
+            <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Đồng bộ</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1615,7 +2047,7 @@
         title="DMS1 Report"
       ></iframe>
       <iframe
-        class="tab-frame active"
+        class="tab-frame"
         id="taskPendingFrame"
         src="task_pending_nvn.html"
         title="Task Pending NVN"
@@ -1633,7 +2065,7 @@
         title="Danh sách DT"
       ></iframe>
       <iframe
-        class="tab-frame"
+        class="tab-frame active"
         id="noteIssueFrame"
         src="note_issue.html"
         title="Note Issue"
@@ -1650,6 +2082,15 @@
           tabButtons.forEach((item) => {
             item.classList.toggle("active", item === button);
           });
+
+          // Highlight More button if an item inside More is active
+          const btnNavMore = document.getElementById("btnNavMore");
+          if (btnNavMore) {
+            btnNavMore.classList.toggle("has-active-child", button.classList.contains("nav-more-item"));
+          }
+          const navMoreDropdown = document.getElementById("navMoreDropdown");
+          if (navMoreDropdown) navMoreDropdown.classList.remove("show");
+
           tabFrames.forEach((frame) => {
             const isActive = frame.id === targetId;
             frame.classList.toggle("active", isActive);
@@ -2515,35 +2956,109 @@
         const upcomingBtn = document.getElementById("upcomingBtn");
         const upcomingDropdown = document.getElementById("upcomingDropdown");
 
-        if (upcomingBtn && upcomingDropdown) {
-          upcomingBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (bellDropdown) bellDropdown.classList.remove("show");
-            upcomingDropdown.classList.toggle("show");
+        const btnNavMore = document.getElementById("btnNavMore");
+        const navMoreDropdown = document.getElementById("navMoreDropdown");
+
+        const topbarSearchBtn = document.getElementById("topbarSearchBtn");
+        const topbarSearchDropdown = document.getElementById("topbarSearchDropdown");
+        const topbarSearchInput = document.getElementById("topbarSearchInput");
+
+        const topbarAppsBtn = document.getElementById("topbarAppsBtn");
+        const topbarAppsDropdown = document.getElementById("topbarAppsDropdown");
+
+        const userProfileBtn = document.getElementById("userProfileBtn");
+        const userProfileDropdown = document.getElementById("userProfileDropdown");
+
+        const allDropdownPairs = [
+          { btn: bellBtn, menu: bellDropdown },
+          { btn: upcomingBtn, menu: upcomingDropdown },
+          { btn: btnNavMore, menu: navMoreDropdown },
+          { btn: topbarSearchBtn, menu: topbarSearchDropdown },
+          { btn: topbarAppsBtn, menu: topbarAppsDropdown },
+          { btn: userProfileBtn, menu: userProfileDropdown }
+        ];
+
+        function closeAllDropdowns(exceptMenu) {
+          allDropdownPairs.forEach(({ menu, btn }) => {
+            if (menu && menu !== exceptMenu) {
+              menu.classList.remove("show");
+            }
+            if (btn && (!exceptMenu || btn.nextElementSibling !== exceptMenu)) {
+              btn.classList.remove("active");
+            }
           });
         }
 
-        if (bellBtn && bellDropdown) {
-          bellBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            if (upcomingDropdown) upcomingDropdown.classList.remove("show");
-            bellDropdown.classList.toggle("show");
-          });
-        }
-
-        // Tự động đóng dropdown khi click ra ngoài hoặc click vào bên trong iframe
-        document.addEventListener("click", (e) => {
-          if (bellBtn && bellDropdown && !bellBtn.contains(e.target) && !bellDropdown.contains(e.target)) {
-            bellDropdown.classList.remove("show");
-          }
-          if (upcomingBtn && upcomingDropdown && !upcomingBtn.contains(e.target) && !upcomingDropdown.contains(e.target)) {
-            upcomingDropdown.classList.remove("show");
+        // Bind dropdown toggles
+        allDropdownPairs.forEach(({ btn, menu }) => {
+          if (btn && menu) {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const isShowing = menu.classList.contains("show");
+              closeAllDropdowns();
+              if (!isShowing) {
+                menu.classList.add("show");
+                btn.classList.add("active");
+                if (btn === topbarSearchBtn && topbarSearchInput) {
+                  setTimeout(() => topbarSearchInput.focus(), 60);
+                }
+              }
+            });
           }
         });
 
+        // Search in active frame handler
+        if (topbarSearchInput) {
+          topbarSearchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              topbarSearchDropdown?.classList.remove("show");
+              topbarSearchBtn?.classList.remove("active");
+            } else if (e.key === "Enter") {
+              const query = topbarSearchInput.value.trim();
+              const activeFrame = document.querySelector(".tab-frame.active");
+              if (activeFrame && activeFrame.contentWindow) {
+                try {
+                  activeFrame.contentWindow.postMessage({ type: "GLOBAL_SEARCH", query }, "*");
+                  const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
+                  if (doc) {
+                    const searchInput = doc.querySelector("input[type='search'], input[type='text']:not([readonly])");
+                    if (searchInput) {
+                      searchInput.value = query;
+                      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+                      searchInput.dispatchEvent(new Event("change", { bubbles: true }));
+                      searchInput.focus();
+                    }
+                  }
+                } catch (_) {}
+              }
+              topbarSearchDropdown?.classList.remove("show");
+              topbarSearchBtn?.classList.remove("active");
+            }
+          });
+        }
+
+        // Apps reload and profile reload handlers
+        document.getElementById("btnAppHardReload")?.addEventListener("click", () => {
+          closeAllDropdowns();
+          window.location.reload();
+        });
+        document.getElementById("btnProfileReload")?.addEventListener("click", () => {
+          closeAllDropdowns();
+          window.location.reload();
+        });
+
+        // Tự động đóng dropdown khi click ra ngoài hoặc click vào bên trong iframe
+        document.addEventListener("click", (e) => {
+          allDropdownPairs.forEach(({ btn, menu }) => {
+            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+              menu.classList.remove("show");
+              btn.classList.remove("active");
+            }
+          });
+        });
+
         window.addEventListener("blur", () => {
-          if (bellDropdown) bellDropdown.classList.remove("show");
-          if (upcomingDropdown) upcomingDropdown.classList.remove("show");
+          closeAllDropdowns();
         });
 
         function bindIframeOutsideClicks() {
