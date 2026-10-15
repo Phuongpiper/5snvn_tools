@@ -1379,7 +1379,17 @@
           if (!Array.isArray(cached.rows) || !cached.rows.length) return;
 
           workbookData = null;
-          rows = cached.rows;
+          // Loại bỏ dòng trống/dòng rác thừa (chỉ có type DC mà không có mã giải pháp hoặc nội dung)
+          rows = cached.rows.filter((r) => {
+            const code = String(r.__col_1 || r.columnB || r.Code || r.code || r.solution_code || "").trim();
+            const name = String(r.__col_4 || r.columnE || r["Tên Solution"] || r.name || r.solution_name || "").trim();
+            const sol = String(r.__col_9 || r.columnJ || r.Solution || r.solution || r.content || "").trim();
+            const isHeader =
+              normalizeForSearch(code) === "code" ||
+              normalizeForSearch(name) === "ten solution" ||
+              normalizeForSearch(code) === "solution code";
+            return !isHeader && (Boolean(code) || Boolean(name || sol));
+          });
           columnLabels = cached.columnLabels || {};
           searchInput.value = cached.search || "";
           refineSearchInput.value = cached.refine || "";
@@ -2125,25 +2135,35 @@
 
         return data
           .map((item) => {
-            const code = String(item.columnB || item.Code || "").trim();
-            const cat = String(item.columnD || item.Type || item.type || item.category || item.Category || CATEGORY_MAP[code] || "DC").trim();
+            const code = String(item.columnB || item.Code || item.code || item.solution_code || "").trim();
+            const rawCat = item.columnD || item.Type || item.type || item.category || item.Category;
+            const cat = code ? String(rawCat || CATEGORY_MAP[code] || "DC").trim() : "";
             return {
               __col_1: code,
               __col_category: cat,
-              __col_4: item.columnE || item["Tên Solution"] || "",
+              __col_4: item.columnE || item["Tên Solution"] || item.name || item.solution_name || "",
               __col_5: item.columnF || item["Thông báo lỗi của hệ thống"] || "",
               __col_6:
                 item.columnG ||
                 item["KT thêm thông tin trước khi giải quyết issue"] ||
+                item.issue ||
                 "",
-              __col_9: item.columnJ || item.Solution || "",
+              __col_9: item.columnJ || item.Solution || item.solution || item.content || "",
             };
           })
           .filter((row) => {
             const isHeader =
               normalizeForSearch(row.__col_1) === "code" ||
-              normalizeForSearch(row.__col_4) === "ten solution";
-            return !isHeader && Object.values(row).some((value) => String(value || "").trim());
+              normalizeForSearch(row.__col_4) === "ten solution" ||
+              normalizeForSearch(row.__col_1) === "solution code";
+            const hasCode = Boolean(row.__col_1 && row.__col_1.trim());
+            const hasContent = Boolean(
+              (row.__col_4 && row.__col_4.trim()) ||
+              (row.__col_5 && row.__col_5.trim()) ||
+              (row.__col_6 && row.__col_6.trim()) ||
+              (row.__col_9 && row.__col_9.trim())
+            );
+            return !isHeader && (hasCode || hasContent);
           });
       }
 
@@ -2232,7 +2252,12 @@
           columnLabels[key] = title ? `Cột ${columnName} - ${title}` : fallback;
         });
         return dataRows
-          .filter((row) => row.some(Boolean))
+          .filter((row) => {
+            const filled = row.map((cell) => String(cell || "").trim()).filter(Boolean);
+            if (!filled.length) return false;
+            if (filled.length === 1 && filled[0].length <= 3 && columnCount > 2) return false;
+            return true;
+          })
           .map((row) => {
             const obj = {};
             headers.forEach((key, i) => {
