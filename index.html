@@ -1850,13 +1850,6 @@
               >
                 <i class="fa-solid fa-file-signature"></i> Văn mẫu NVN
               </button>
-              <button
-                class="tab-button"
-                type="button"
-                data-frame-target="dms1ReportFrame"
-              >
-                <i class="fa-solid fa-chart-simple"></i> DMS1 Report
-              </button>
             </div>
 
             <!-- More Navigation Dropdown -->
@@ -1866,6 +1859,13 @@
               </button>
               <div class="nav-more-dropdown" id="navMoreDropdown">
                 <div class="dropdown-section-title">Danh mục mở rộng</div>
+                <button
+                  class="tab-button nav-more-item"
+                  type="button"
+                  data-frame-target="dms1ReportFrame"
+                >
+                  <i class="fa-solid fa-chart-simple"></i> DMS1 Report
+                </button>
                 <button
                   class="tab-button nav-more-item"
                   type="button"
@@ -2086,7 +2086,7 @@
           // Highlight More button if an item inside More is active
           const btnNavMore = document.getElementById("btnNavMore");
           if (btnNavMore) {
-            btnNavMore.classList.toggle("has-active-child", button.classList.contains("nav-more-item"));
+            btnNavMore.classList.toggle("has-active-child", button.closest("#navMoreDropdown") !== null);
           }
           const navMoreDropdown = document.getElementById("navMoreDropdown");
           if (navMoreDropdown) navMoreDropdown.classList.remove("show");
@@ -2102,6 +2102,37 @@
           });
         });
       });
+
+      // ── Tự động chuyển tab bị lẹm/tràn vào Danh mục mở rộng (More) ──
+      function updateNavOverflow() {
+        const rail = document.querySelector(".nav-tabs-rail");
+        const moreDropdown = document.getElementById("navMoreDropdown");
+        const btnNavMore = document.getElementById("btnNavMore");
+        if (!rail || !moreDropdown) return;
+
+        let guard = 0;
+        while (rail.scrollWidth > rail.clientWidth && rail.children.length > 2 && guard < 10) {
+          guard++;
+          const lastBtn = rail.lastElementChild;
+          if (!lastBtn) break;
+          lastBtn.classList.add("nav-more-item");
+          const sectionTitle = moreDropdown.querySelector(".dropdown-section-title");
+          if (sectionTitle && sectionTitle.nextSibling) {
+            moreDropdown.insertBefore(lastBtn, sectionTitle.nextSibling);
+          } else {
+            moreDropdown.appendChild(lastBtn);
+          }
+        }
+
+        const activeInMore = moreDropdown.querySelector(".tab-button.active");
+        if (btnNavMore) {
+          btnNavMore.classList.toggle("has-active-child", !!activeInMore);
+        }
+      }
+
+      window.addEventListener("resize", updateNavOverflow);
+      window.addEventListener("DOMContentLoaded", updateNavOverflow);
+      setTimeout(updateNavOverflow, 120);
 
       // ── Xử lý nút Đồng bộ trên topbar ──
       const btnGlobalSync = document.getElementById("btnGlobalSync");
