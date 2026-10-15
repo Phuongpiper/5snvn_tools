@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- SheetJS with styling support for Excel XLSX Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <style>
       * {
         box-sizing: border-box;
@@ -600,6 +602,14 @@
           flex-wrap: wrap;
         }
       }
+      .export-menu-item:hover {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+      }
+      #btnExportExcel:hover {
+        background: #dcfce7 !important;
+        border-color: #86efac !important;
+      }
     </style>
   </head>
   <body>
@@ -612,16 +622,61 @@
             tra cứu tức thì.
           </p>
         </div>
-        <button id="toggleUploadBtn" type="button" style="
-          font-size:12px; font-weight:600; color:#6b7280;
-          background:#fff; border:1px solid #e5e7eb;
-          border-radius:6px; padding:6px 12px;
-          cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px;
-          box-shadow:0 1px 3px rgba(0,0,0,0.07); white-space:nowrap;
-        ">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
-          Tải dữ liệu <span id="toggleUploadArrow"><i class="fa-solid fa-chevron-down" style="font-size:10px;"></i></span>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <!-- Dropdown Xuất Excel Template (Vị trí theo khung đỏ của User) -->
+          <div class="export-dropdown-wrapper" style="position:relative; display:inline-block;">
+            <button id="btnExportExcel" type="button" style="
+              font-size:12px; font-weight:600; color:#15803d;
+              background:#f0fdf4; border:1px solid #bbf7d0;
+              border-radius:6px; padding:6px 12px;
+              cursor:pointer; display:flex; align-items:center; gap:6px;
+              box-shadow:0 1px 3px rgba(0,0,0,0.05); white-space:nowrap; transition:all 0.15s ease;
+            " title="Xuất dữ liệu theo file Template Solutions NVN">
+              <i class="fa-solid fa-file-excel" style="color:#16a34a; font-size:13px;"></i>
+              Xuất Excel <span id="exportCountBadge" style="background:#dcfce7; color:#15803d; padding:1px 6px; border-radius:10px; font-size:10.5px; font-weight:700;">...</span>
+              <span id="exportArrow"><i class="fa-solid fa-chevron-down" style="font-size:10px; opacity:0.7; margin-left:2px;"></i></span>
+            </button>
+            <div id="exportMenu" class="export-dropdown-menu" style="
+              display:none; position:absolute; right:0; top:calc(100% + 6px);
+              background:#ffffff; border:1px solid #e2e8f0; border-radius:8px;
+              box-shadow:0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+              min-width:260px; z-index:1000; overflow:hidden; padding:4px;
+            ">
+              <div style="padding:6px 10px; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #f1f5f9;">
+                Xuất Excel theo Template
+              </div>
+              <button id="btnExportFiltered" type="button" class="export-menu-item" style="
+                width:100%; text-align:left; background:transparent; border:none; padding:8px 10px;
+                font-size:12.5px; color:#1e293b; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+              ">
+                <span><i class="fa-solid fa-filter" style="color:#0284c7; width:18px;"></i> Kết quả đang lọc</span>
+                <span id="exportFilteredNum" style="background:#e0f2fe; color:#0369a1; padding:1px 7px; border-radius:10px; font-size:11px; font-weight:600;">...</span>
+              </button>
+              <button id="btnExportAll" type="button" class="export-menu-item" style="
+                width:100%; text-align:left; background:transparent; border:none; padding:8px 10px;
+                font-size:12.5px; color:#1e293b; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+              ">
+                <span><i class="fa-solid fa-database" style="color:#16a34a; width:18px;"></i> Toàn bộ giải pháp</span>
+                <span id="exportAllNum" style="background:#dcfce7; color:#15803d; padding:1px 7px; border-radius:10px; font-size:11px; font-weight:600;">...</span>
+              </button>
+              <div style="height:1px; background:#f1f5f9; margin:4px 0;"></div>
+              <div style="padding:6px 10px; font-size:11px; color:#64748b; display:flex; align-items:center; gap:5px;">
+                <i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Chuẩn mẫu: <code>Template_Solutions_NVN.xlsx</code>
+              </div>
+            </div>
+          </div>
+
+          <button id="toggleUploadBtn" type="button" style="
+            font-size:12px; font-weight:600; color:#6b7280;
+            background:#fff; border:1px solid #e5e7eb;
+            border-radius:6px; padding:6px 12px;
+            cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px;
+            box-shadow:0 1px 3px rgba(0,0,0,0.07); white-space:nowrap;
+          ">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            Tải dữ liệu <span id="toggleUploadArrow"><i class="fa-solid fa-chevron-down" style="font-size:10px;"></i></span>
+          </button>
+        </div>
       </div>
       <!-- Upload (hidden by default) -->
       <div class="card" id="uploadCard" style="display:none">
@@ -839,7 +894,9 @@
         bestMatchRow = null,
         workbookData = null,
         searchIndex = [],
-        renderTimer = null;
+        renderTimer = null,
+        currentFilteredRows = [];
+      const CATEGORY_MAP = {"NVN-001":"DC","NVN-002":"DC","NVN-003":"DC","NVN-004":"DC","NVN-005":"HH","NVN-006":"DC","NVN-007":"DC","NVN-008":"DC","NVN-009":"DC","NVN-010":"DC","NVN-011":"DC","NVN-012":"DC","NVN-013":"DC","NVN-014":"DC","NVN-015":"DC","NVN-016":"DC","NVN-017":"DC","NVN-018":"HH","NVN-019":"DC","NVN-020":"DC","NVN-021":"DC","NVN-022":"DC","NVN-023":"DC","NVN-024":"DC","NVN-025":"DC","NVN-026":"HH","NVN-027":"DC","NVN-028":"HH","NVN-029":"HH","NVN-030":"HH","NVN-031":"HH","NVN-032":"HH","NVN-033":"DC","NVN-034":"HH","NVN-035":"HH","NVN-036":"DC","NVN-037":"DC","NVN-038":"HH","NVN-039":"HH","NVN-040":"HH","NVN-041":"DC-HH","NVN-042":"HH","NVN-043":"DC","NVN-044":"HH","NVN-045":"HH","NVN-046":"DC","NVN-047":"DC","NVN-048":"HH","NVN-049":"DC","NVN-050":"HH","NVN-051":"DC","NVN-052":"DC","NVN-053":"HH","NVN-054":"HH","NVN-055":"DC","NVN-056":"HH","NVN-057":"HH","NVN-058":"HH","NVN-059":"DC","NVN-060":"HH","NVN-061":"HH","NVN-062":"HH","NVN-063":"HH","NVN-064":"HH","NVN-065":"DC","NVN-066":"HH","NVN-067":"HH","NVN-068":"HH","NVN-069":"HH","NVN-070":"HH","NVN-071":"DC","NVN-072":"DC","NVN-073":"NVN","NVN-074":"HH","NVN-075":"HH","NVN-076":"DC","NVN-077":"HH","NVN-078":"HH","NVN-079":"HH","NVN-080":"HH","NVN-081":"HH","NVN-082":"DC","NVN-083":"DC","NVN-084":"DC","NVN-085":"DC","NVN-086":"HH","NVN-087":"HH","NVN-088":"DC","NVN-089":"HH","NVN-090":"DC","NVN-091":"HH","NVN-092":"HH","NVN-093":"HH","NVN-094":"HH","NVN-095":"HH","NVN-096":"HH","NVN-097":"DC","NVN-098":"HH","NVN-099":"DC","NVN-100":"DC","NVN-101":"DC","NVN-102":"HH","NVN-103":"DC","NVN-104":"HH","NVN-105":"DC","NVN-106":"DC","NVN-107":"DC","NVN-108":"DC","NVN-109":"DC","NVN-110":"HH","NVN-111":"HH","NVN-112":"DC","NVN-113":"HH","NVN-114":"HH","NVN-115":"DC","NVN-116":"HH","NVN-117":"HH","NVN-118":"HH","NVN-119":"HH","NVN-120":"HH","NVN-121":"DC","NVN-122":"HH","NVN-123":"HH","NVN-124":"HH","NVN-125":"HH","NVN-126":"HH","NVN-127":"DC","NVN-128":"HH","NVN-129":"HH","NVN-130":"HH","NVN-131":"HH","NVN-132":"HH","NVN-133":"DC","NVN-134":"DC","NVN-135":"DC","NVN-136":"HH","NVN-137":"HH","NVN-138":"DC","NVN-139":"DC","NVN-140":"DC","NVN-141":"DC","NVN-142":"DC","NVN-143":"DC","NVN-144":"DC","NVN-145":"DC","NVN-146":"HH","NVN-147":"HH","NVN-148":"DC","NVN-149":"HH","NVN-150":"HH","NVN-151":"DC","NVN-152":"DC","NVN-153":"DC","NVN-154":"HH","NVN-155":"DC","NVN-156":"DC","NVN-157":"DC","NVN-158":"DC","NVN-159":"DC","NVN-160":"HH","NVN-161":"HH","NVN-162":"DC","NVN-163":"DC","NVN-164":"DC","NVN-165":"DC","NVN-166":"DC","NVN-167":"DC","NVN-168":"DC","NVN-169":"DC","NVN-170":"DC","NVN-171":"DC","NVN-172":"DC","NVN-173":"DC","NVN-174":"DC","NVN-175":"DC","NVN-176":"DC","NVN-177":"DC","NVN-178":"DC","NVN-179":"DC","NVN-180":"DC","NVN-181":"DC","NVN-182":"DC","NVN-183":"DC","NVN-184":"DC","NVN-185":"DC","NVN-186":"DC","NVN-187":"HH","NVN-188":"HH","NVN-189":"HH","NVN-190":"HH","NVN-191":"HH","NVN-192":"DC","NVN-193":"DC","NVN-194":"HH","NVN-195":"HH","NVN-196":"HH","NVN-197":"HH","NVN-198":"HH","NVN-199":"HH","NVN-200":"DC","NVN-201":"DC","NVN-202":"HH","NVN-203":"HH","NVN-204":"DC","NVN-205":"HH","NVN-206":"DC","NVN-207":"DC","NVN-208":"DC","NVN-209":"DC","NVN-210":"DC","NVN-211":"DC","NVN-212":"HH","NVN-213":"HH","NVN-214":"DC","NVN-215":"DC","NVN-216":"HH","NVN-217":"HH","NVN-218":"DC","NVN-219":"DC","NVN-220":"DC","NVN-221":"DC","NVN-222":"DC","NVN-223":"DC","NVN-224":"DC","NVN-225":"DC","NVN-226":"DC","NVN-227":"DC","NVN-228":"HH","NVN-229":"DC","NVN-230":"HH","NVN-231":"DC","NVN-232":"HH","NVN-233":"HH","NVN-234":"HH","NVN-235":"HH","NVN-236":"DC","NVN-237":"DC","NVN-238":"DC","NVN-239":"DC","NVN-240":"HH","NVN-241":"DC","NVN-242":"DC","NVN-243":"DC","NVN-244":"HH","NVN-245":"DC","NVN-246":"DC","NVN-247":"DC","NVN-248":"DC","NVN-249":"HH","NVN-250":"HH","NVN-251":"HH","NVN-252":"HH","NVN-253":"HH","NVN-254":"HH","NVN-255":"HH","NVN-256":"HH","NVN-257":"HH","NVN-258":"HH","NVN-259":"HH","NVN-260":"HH","NVN-261":"HH","NVN-262":"HH","NVN-263":"HH","NVN-264":"HH","NVN-265":"HH","NVN-266":"HH","NVN-267":"HH","NVN-268":"HH","NVN-269":"HH","NVN-270":"DC","NVN-271":"HH","NVN-272":"HH","NVN-273":"HH","NVN-274":"HH","NVN-275":"DC","NVN-276":"DC","NVN-277":"DC","NVN-278":"DC","NVN-279":"HH","NVN-280":"HH","NVN-281":"HH","NVN-282":"DC","NVN-283":"DC","NVN-284":"HH","NVN-285":"DC","NVN-286":"HH","NVN-287":"HH","NVN-288":"HH","NVN-289":"DC","NVN-290":"DC","NVN-291":"DC","NVN-292":"DC","NVN-293":"DC","NVN-294":"HH","NVN-295":"DC","NVN-296":"HH","NVN-297":"DC","NVN-298":"DC","NVN-299":"HH","NVN-300":"HH","NVN-301":"DC","NVN-302":"DC","NVN-303":"HH","NVN-304":"HH","NVN-305":"DC","NVN-306":"DC","NVN-307":"DC","NVN-308":"HH","NVN-309":"Mail","NVN-310":"HH","NVN-311":"OTRS","NVN-312":"HH","NVN-313":"HH","NVN-314":"DC","NVN-315":"HH","NVN-316":"DC","NVN-317":"HH","NVN-318":"DC","NVN-319":"DC","NVN-320":"DC","NVN-321":"HH","NVN-322":"DC","NVN-323":"HH","NVN-324":"HH","NVN-325":"HH","NVN-326":"DC","NVN-327":"HH","NVN-328":"DC","NVN-329":"DC","NVN-330":"DC","NVN-331":"DC","NVN-332":"DC","NVN-333":"HH","NVN-334":"HH","NVN-335":"DC","NVN-336":"DC","NVN-337":"HH","NVN-338":"DC","NVN-339":"HH","NVN-340":"HH","NVN-341":"HH","NVN-342":"DC","NVN-343":"DC","NVN-344":"DC","NVN-345":"HH","NVN-346":"HH","NVN-347":"DC","NVN-348":"DC","NVN-349":"DC","NVN-350":"DC","NVN-351":"HH","NVN-352":"HH","NVN-353":"HH","NVN-354":"DC","NVN-355":"DC","NVN-356":"DC","NVN-357":"HH","NVN-358":"HH","NVN-359":"HH","NVN-360":"DC","NVN-361":"HH","NVN-362":"DC","NVN-363":"HH","NVN-364":"HH","NVN-365":"HH","NVN-366":"HH","NVN-367":"DC","NVN-368":"DC","NVN-369":"HH","NVN-370":"HH","NVN-371":"DC","NVN-372":"HH","NVN-373":"DC","NVN-374":"HH","NVN-375":"DC","NVN-376":"DC","NVN-377":"DC","NVN-378":"DC","NVN-379":"DC","NVN-380":"DC","NVN-381":"HH","NVN-382":"HH","NVN-383":"HH","NVN-384":"DC","NVN-385":"HH","NVN-386":"DC","NVN-387":"DC","NVN-388":"DC","NVN-389":"DC","NVN-390":"DC","NVN-391":"DC","NVN-392":"DC","NVN-393":"DC","NVN-394":"DC","NVN-395":"DC","NVN-396":"HH","NVN-397":"HH","NVN-398":"DC","NVN-399":"OTRS","NVN-400":"DC","NVN-401":"DC","NVN-402":"HH","NVN-403":"DC","NVN-404":"HH","NVN-405":"DC","NVN-406":"DC","NVN-407":"HH","NVN-408":"HH","NVN-409":"HH","NVN-410":"HH","NVN-411":"HH","NVN-412":"HH","NVN-413":"DC","NVN-414":"DC","NVN-415":"HH","NVN-416":"DC","NVN-417":"DC","NVN-418":"DC","NVN-419":"DC","NVN-420":"DC","NVN-421":"HH","NVN-422":"HH","NVN-423":"HH","NVN-424":"DC","NVN-425":"DC","NVN-426":"DC","NVN-427":"HH","NVN-428":"DC","NVN-429":"DC","NVN-430":"HH","NVN-431":"DC","NVN-432":"DC","NVN-433":"DC","NVN-434":"HH","NVN-435":"DC","NVN-436":"DC","NVN-437":"DC","NVN-438":"HH","NVN-439":"DC","NVN-440":"DC","NVN-441":"DC","NVN-442":"DC","NVN-443":"DC","NVN-444":"DC","NVN-445":"DC","NVN-446":"DC","NVN-447":"DC","NVN-448":"DC","NVN-449":"DC","NVN-450":"DC","NVN-451":"DC","NVN-452":"DC","NVN-453":"DC","NVN-454":"DC","NVN-455":"DC","NVN-456":"DC","NVN-457":"DC","NVN-458":"DC","NVN-459":"DC","NVN-460":"DC","NVN-461":"DC","NVN-462":"DC","NVN-463":"DC","NVN-464":"HH","NVN-465":"DC","NVN-466":"HH","NVN-467":"HH","NVN-468":"HH","NVN-469":"HH","NVN-470":"HH","NVN-471":"HH","NVN-472":"HH","NVN-473":"HH","NVN-474":"HH","NVN-475":"HH","NVN-476":"DC","NVN-477":"HH","NVN-478":"HH","NVN-479":"DC","NVN-480":"DC","NVN-481":"HH","NVN-482":"HH","NVN-483":"HH","NVN-484":"HH","NVN-485":"DC","NVN-486":"HH","NVN-487":"HH","NVN-488":"DC","NVN-489":"HH","NVN-490":"DC","NVN-491":"DC","NVN-492":"DC","NVN-493":"DC","NVN-494":"HH","NVN-495":"HH","NVN-496":"HH","NVN-497":"DC","NVN-498":"DC","NVN-499":"HH","NVN-500":"HH","NVN-501":"HH","NVN-502":"HH","NVN-503":"HH","NVN-504":"HH","NVN-505":"HH","NVN-506":"DC","NVN-507":"DC","NVN-508":"DC","NVN-509":"HH","NVN-510":"HH","NVN-511":"DC","NVN-512":"DC","NVN-513":"DC","NVN-514":"DC","NVN-515":"DC","NVN-516":"DC","NVN-517":"DC","NVN-518":"HH","NVN-519":"HH","NVN-520":"DC","NVN-521":"HH","NVN-522":"DC","NVN-523":"HH","NVN-524":"DC","NVN-525":"DC","NVN-526":"DC","NVN-527":"DC","NVN-528":"DC","NVN-529":"HH","NVN-530":"DC","NVN-531":"DC","NVN-532":"DC","NVN-533":"DC","NVN-534":"DC","NVN-535":"HH","NVN-536":"DC","NVN-537":"DC","NVN-538":"DC","NVN-539":"DC","NVN-540":"DC","NVN-541":"HH","NVN-542":"DC","NVN-543":"DC","NVN-544":"DC","NVN-545":"DC","NVN-546":"DC","NVN-547":"HH","NVN-548":"DC","NVN-549":"DC","NVN-550":"DC","NVN-551":"HH","NVN-552":"HH","NVN-553":"DC","NVN-554":"DC","NVN-555":"DC","NVN-556":"DC","NVN-557":"DC","NVN-558":"HH","NVN-559":"HH","NVN-560":"DC","NVN-561":"DC","NVN-562":"HH","NVN-563":"DC","NVN-564":"HH","NVN-565":"DC","NVN-566":"DC","NVN-567":"HH","NVN-568":"HH","NVN-569":"DC","NVN-570":"DC","NVN-571":"HH","NVN-572":"HH","NVN-573":"HH","NVN-574":"DC","NVN-575":"HH","NVN-576":"HH","NVN-577":"HH","NVN-578":"HH","NVN-579":"HH","NVN-580":"HH","NVN-581":"DC","NVN-582":"DC","NVN-583":"HH","NVN-584":"DC","NVN-585":"HH","NVN-586":"HH","NVN-587":"HH","NVN-588":"HH","NVN-589":"DC","NVN-590":"DC","NVN-591":"DC","NVN-592":"DC","NVN-593":"DC","NVN-594":"DC","NVN-595":"DC","NVN-596":"DC","NVN-597":"DC","NVN-598":"DC","NVN-599":"DC","NVN-600":"DC","NVN-601":"DC","NVN-602":"DC","NVN-603":"DC","NVN-604":"HH","NVN-605":"HH","NVN-606":"HH","NVN-607":"DC","NVN-608":"DC","NVN-609":"HH","NVN-610":"HH","NVN-611":"HH","NVN-612":"HH","NVN-613":"DC","NVN-614":"HH","NVN-615":"HH","NVN-616":"HH","NVN-617":"HH","NVN-618":"HH","NVN-619":"HH","NVN-620":"OTRS","NVN-621":"HH","NVN-622":"HH","NVN-623":"DC","NVN-624":"HH","NVN-625":"DC","NVN-626":"DC","NVN-627":"HH","NVN-628":"HH","NVN-629":"HH","NVN-630":"HH","NVN-631":"DC","NVN-632":"HH","NVN-633":"DC","NVN-634":"HH","NVN-635":"HH","NVN-636":"HH","NVN-637":"HH","NVN-638":"DC","NVN-639":"DC","NVN-640":"DC","NVN-641":"DC","NVN-642":"DC","NVN-643":"HH","NVN-644":"HH","NVN-645":"HH","NVN-646":"HH","NVN-647":"HH","NVN-648":"HH","NVN-649":"HH","NVN-650":"HH","NVN-651":"DC","NVN-652":"DC","NVN-653":"DC","NVN-654":"DC","NVN-655":"DC","NVN-656":"DC","NVN-657":"DC","NVN-658":"DC","NVN-659":"DC","NVN-660":"DC","NVN-661":"DC","NVN-662":"DC","NVN-663":"OTRS","NVN-664":"OTRS","NVN-665":"OTRS","NVN-666":"DC","NVN-667":"DC","NVN-668":"DC","NVN-669":"DC","NVN-670":"DC","NVN-671":"DC","NVN-672":"DC","NVN-673":"DC","NVN-674":"DC","NVN-675":"HH"};
       const MAX_RENDER_ROWS = 200;
       const CACHE_KEY = "dms_nvn_solutions_cache_v1";
       const CACHE_DB_NAME = "dms_search_cache_db";
@@ -856,8 +913,13 @@
       );
 
       // Thiết lập giá trị ban đầu cho các input từ localStorage
-      const defaultJsonUrl = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnRy4OcIKBmKuP6pDcca_yzalKKkwCpcOLdb1WoVT_YJ4h2OYW06C24wxLbPrca9ECZQmH_8-gMpjvOvxFmQflJRDYjZG-DMlov5PmjB968By6eB0y_6LSWOm7tdBbRdwcPYGjaNSV2sFq7h0oeMaxvXO_JgOng9xjLFBkReuj6RhgkKcBrm1ND7B4Qts7WhQyHkEDMyMRA7PN5x8OGt5r9XTN5NEpig-nkgFhlxTJOykBT0xuh-Q0aB3p2beEHombmuVvEq4ifNU5vqN1CrgXJFcgqCdg&lib=MMhwz9pBNVli5DJbMNtBflfD8R0iiSsw_";
-      jsonUrlInput.value = localStorage.getItem("NVN_SOLUTIONS_API_URL") || defaultJsonUrl;
+      const defaultJsonUrl = "https://script.google.com/macros/s/AKfycbx3m2eFrfAh4xQpGCCdxxnq0ZRPHLCpJ1Xq9RfVcGgz83jivaL-OpnlFm8gOFaQuM1D/exec";
+      const storedApiUrl = localStorage.getItem("NVN_SOLUTIONS_API_URL");
+      const isOldEchoUrl = storedApiUrl && storedApiUrl.includes("script.googleusercontent.com");
+      jsonUrlInput.value = (!storedApiUrl || isOldEchoUrl) ? defaultJsonUrl : storedApiUrl;
+      if (isOldEchoUrl) {
+        localStorage.setItem("NVN_SOLUTIONS_API_URL", defaultJsonUrl);
+      }
       document.getElementById("workerUrlInput").value = localStorage.getItem("NVN_SOLUTIONS_WORKER_URL") || "";
       const columnPanel = document.getElementById("columnPanel");
       const sheetChooser = document.getElementById("sheetChooser");
@@ -873,6 +935,55 @@
         uploadCard.style.display = isVisible ? "none" : "block";
         toggleUploadArrow.textContent = isVisible ? "▾" : "▴";
       });
+
+      // Export Excel Template Handlers
+      const btnExportExcel = document.getElementById("btnExportExcel");
+      const exportMenu = document.getElementById("exportMenu");
+      const btnExportFiltered = document.getElementById("btnExportFiltered");
+      const btnExportAll = document.getElementById("btnExportAll");
+
+      if (btnExportExcel && exportMenu) {
+        btnExportExcel.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isHidden = exportMenu.style.display === "none" || !exportMenu.style.display;
+          exportMenu.style.display = isHidden ? "block" : "none";
+        });
+      }
+
+      document.addEventListener("click", (e) => {
+        if (exportMenu && !exportMenu.contains(e.target) && e.target !== btnExportExcel) {
+          exportMenu.style.display = "none";
+        }
+      });
+
+      if (btnExportFiltered) {
+        btnExportFiltered.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (exportMenu) exportMenu.style.display = "none";
+          const list = currentFilteredRows && currentFilteredRows.length ? currentFilteredRows : rows;
+          const kw = (searchInput?.value || "").trim();
+          const fname = kw ? `Solutions_NVN_Loc_${kw.replace(/[^a-zA-Z0-9_\-\s]/g, "").trim().replace(/\s+/g, "_")}.xlsx` : "Template_Solutions_NVN.xlsx";
+          exportToTemplateExcel(list, fname);
+        });
+      }
+
+      if (btnExportAll) {
+        btnExportAll.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (exportMenu) exportMenu.style.display = "none";
+          exportToTemplateExcel(rows, "Template_Solutions_NVN.xlsx");
+        });
+      }
+
+      function updateExportCounts(filteredCount, totalCount) {
+        const badge = document.getElementById("exportCountBadge");
+        const filNum = document.getElementById("exportFilteredNum");
+        const allNum = document.getElementById("exportAllNum");
+        const filVal = filteredCount !== undefined ? filteredCount : totalCount;
+        if (badge) badge.textContent = filVal;
+        if (filNum) filNum.textContent = filVal;
+        if (allNum) allNum.textContent = totalCount || 0;
+      }
       const searchInput = document.getElementById("searchInput");
       const refineSearchInput = document.getElementById("refineSearchInput");
       const countBadge = document.getElementById("countBadge");
@@ -1172,6 +1283,7 @@
         buildRowSearchIndex();
         setupColumnSelectors();
         panelToggles.style.display = "flex";
+        updateExportCounts(rows.length, rows.length);
         columnPanel.style.display = "none";
         toggleColumnPanelButton.classList.remove("active");
         toggleColumnPanelButton.textContent = "Hiện cấu hình cột";
@@ -1413,6 +1525,8 @@
           document.getElementById("tableBody").innerHTML =
             `<tr><td colspan="${selected.length}" class="table-empty">Không tìm thấy dữ liệu phù hợp.</td></tr>`;
         }
+        currentFilteredRows = filtered.map((i) => i.row);
+        updateExportCounts(filtered.length, rows.length);
       }
 
       const abbreviationPairs = [
@@ -1888,6 +2002,93 @@
           normalizeForSearch(columnLabels[h] || h).includes(n),
         );
       }
+      
+      function exportToTemplateExcel(targetRows, filename = "Template_Solutions_NVN.xlsx") {
+        if (typeof XLSX === "undefined") {
+          alert("Thư viện SheetJS chưa sẵn sàng. Vui lòng kiểm tra kết nối mạng và thử lại.");
+          return;
+        }
+        if (!targetRows || targetRows.length === 0) {
+          alert("Không có dữ liệu giải pháp để xuất.");
+          return;
+        }
+
+        const headers = ["solution_code", "solution_name", "content", "category"];
+        const dataRows = targetRows.map((r) => {
+          const code = String(r.__col_1 || r.columnB || r.Code || r.code || r.solution_code || "").trim();
+          const name = String(r.__col_4 || r.columnE || r["Tên Solution"] || r.name || r.solution_name || "").trim();
+          const content = String(r.__col_9 || r.columnJ || r.Solution || r.solution || r.content || "").trim();
+          const cat = String(r.__col_category || r.columnD || r.Type || r.type || r.category || CATEGORY_MAP[code] || "DC").trim();
+          return [code, name, content, cat];
+        });
+
+        const wsData = [headers, ...dataRows];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Đặt độ rộng cột tiêu chuẩn khớp template
+        ws["!cols"] = [
+          { wch: 16 }, // solution_code
+          { wch: 45 }, // solution_name
+          { wch: 75 }, // content
+          { wch: 14 }  // category
+        ];
+        ws["!rows"] = [{ hpt: 26 }];
+
+        // Định dạng header và cell bằng xlsx-js-style
+        const headerFont = { name: "Calibri", sz: 11, bold: true, color: { rgb: "0F172A" } };
+        const headerFill = { fgColor: { rgb: "F1F5F9" } };
+        const thinBorder = {
+          top: { style: "thin", color: { rgb: "CBD5E1" } },
+          bottom: { style: "medium", color: { rgb: "94A3B8" } },
+          left: { style: "thin", color: { rgb: "E2E8F0" } },
+          right: { style: "thin", color: { rgb: "E2E8F0" } }
+        };
+        const cellBorder = {
+          top: { style: "thin", color: { rgb: "E2E8F0" } },
+          bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+          left: { style: "thin", color: { rgb: "E2E8F0" } },
+          right: { style: "thin", color: { rgb: "E2E8F0" } }
+        };
+
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+          for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellAddr]) continue;
+
+            if (R === 0) {
+              ws[cellAddr].s = {
+                fill: headerFill,
+                font: headerFont,
+                alignment: { vertical: "center", horizontal: (C === 0 || C === 3) ? "center" : "left" },
+                border: thinBorder
+              };
+            } else {
+              const isCode = (C === 0);
+              const isCat = (C === 3);
+              ws[cellAddr].s = {
+                font: {
+                  name: "Calibri",
+                  sz: 11,
+                  bold: isCode || isCat,
+                  color: { rgb: isCode ? "0369A1" : (isCat ? "475569" : "0F172A") }
+                },
+                alignment: {
+                  vertical: "top",
+                  horizontal: (isCode || isCat) ? "center" : "left",
+                  wrapText: (C === 1 || C === 2)
+                },
+                border: cellBorder
+              };
+            }
+          }
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Solutions");
+        XLSX.writeFile(wb, filename);
+      }
+
       function escapeHTML(value) {
         return String(value)
           .replaceAll("&", "&amp;")
@@ -1919,8 +2120,11 @@
 
         return data
           .map((item) => {
+            const code = String(item.columnB || item.Code || "").trim();
+            const cat = String(item.columnD || item.Type || item.type || item.category || item.Category || CATEGORY_MAP[code] || "DC").trim();
             return {
-              __col_1: item.columnB || item.Code || "",
+              __col_1: code,
+              __col_category: cat,
               __col_4: item.columnE || item["Tên Solution"] || "",
               __col_5: item.columnF || item["Thông báo lỗi của hệ thống"] || "",
               __col_6:
