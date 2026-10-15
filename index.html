@@ -30,26 +30,33 @@
         height: 100%;
       }
       .topbar {
-        background: #ffffff;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid #e2e8f0;
-        padding: 7px 20px;
-        box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
-        position: relative;
+        padding: 0 16px;
+        height: 52px;
+        box-shadow: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+        position: sticky;
+        top: 0;
         z-index: 100;
+        display: flex;
+        align-items: center;
       }
       .topbar-inner {
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: nowrap;
-        max-width: 1720px;
+        width: 100%;
+        max-width: 100%;
         margin: 0 auto;
-        gap: 14px;
+        gap: 12px;
       }
       .brand {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         text-decoration: none;
         color: inherit;
         user-select: none;
@@ -57,21 +64,21 @@
         white-space: nowrap;
       }
       .brand-icon {
-        width: 35px;
-        height: 35px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
         display: flex;
         align-items: center;
         justify-content: center;
         color: #ffffff;
-        font-size: 15px;
-        box-shadow: 0 3px 8px rgba(79, 70, 229, 0.28);
+        font-size: 13px;
+        box-shadow: 0 2px 5px rgba(79, 70, 229, 0.28);
         flex-shrink: 0;
-        transition: transform 0.2s ease;
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .brand:hover .brand-icon {
-        transform: scale(1.04);
+        transform: scale(1.05);
       }
       .brand-text {
         display: flex;
@@ -81,34 +88,55 @@
         flex-shrink: 0;
       }
       .brand-title {
-        font-size: 16.5px;
-        font-weight: 800;
+        font-size: 14.5px;
+        font-weight: 700;
         color: #0f172a;
         letter-spacing: -0.025em;
         white-space: nowrap;
-        display: inline-block;
+        line-height: 1;
       }
       .brand-badge {
-        font-size: 10px;
-        font-weight: 800;
-        padding: 2.5px 7px;
-        background: #eef2ff;
-        color: #4f46e5;
+        font-size: 9.5px;
+        font-weight: 700;
+        padding: 2px 6.5px;
+        background: #ecfdf5;
+        color: #047857;
         border-radius: 9999px;
-        border: 1px solid #c7d2fe;
-        letter-spacing: 0.04em;
+        border: 1px solid #a7f3d0;
+        letter-spacing: 0.05em;
         white-space: nowrap;
         flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        line-height: 1;
+      }
+      .brand-badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #10b981;
+        animation: pulseProdDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes pulseProdDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(0.8); }
+      }
+      .brand-divider {
+        width: 1px;
+        height: 16px;
+        background: #e2e8f0;
+        margin-left: 4px;
       }
       .tabs {
         display: inline-flex;
         align-items: center;
         background: #f1f5f9;
-        padding: 4px;
-        border-radius: 12px;
+        padding: 3px;
+        border-radius: 10px;
         border: 1px solid #e2e8f0;
-        gap: 3px;
-        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+        gap: 2px;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
         overflow-x: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
@@ -121,34 +149,34 @@
       .tab-button {
         background: transparent;
         border: 1px solid transparent;
-        border-radius: 8px;
+        border-radius: 7px;
         color: #64748b;
         cursor: pointer;
-        font-size: 12.5px;
-        font-weight: 600;
-        padding: 6.5px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 5px 10px;
         display: inline-flex;
         align-items: center;
-        gap: 6.5px;
-        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        gap: 6px;
+        transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
         white-space: nowrap;
         user-select: none;
         letter-spacing: -0.01em;
         position: relative;
+        line-height: 1.2;
       }
       .tab-button i {
-        font-size: 13px;
+        font-size: 12px;
         color: #94a3b8;
-        transition: transform 0.2s ease, color 0.2s ease;
+        transition: color 0.16s ease, transform 0.16s ease;
       }
       .tab-button:hover {
         color: #0f172a;
-        background: #ffffff;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.7);
       }
       .tab-button:hover i {
         color: #4f46e5;
-        transform: translateY(-1px);
+        transform: translateY(-0.5px);
       }
 
       /* Micro-accent icon colors on hover */
@@ -163,19 +191,26 @@
       .tab-button[data-frame-target="noteIssueFrame"]:hover i { color: #6366f1; }
 
       .tab-button.active {
-        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
-        color: #ffffff !important;
-        font-weight: 700;
-        border-color: transparent;
-        box-shadow: 0 3px 10px -1px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        background: #ffffff !important;
+        color: #4f46e5 !important;
+        font-weight: 600;
+        border-color: rgba(226, 232, 240, 0.8);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
       }
       .tab-button.active i {
-        color: #ffffff !important;
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+        color: #4f46e5 !important;
       }
       .tab-button.active:hover {
-        background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
-        color: #ffffff !important;
+        background: #ffffff !important;
+        color: #4338ca !important;
+      }
+      .tab-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #ef4444;
+        display: inline-block;
+        margin-left: 2px;
       }
       .tab-frame {
         border: 0;
@@ -249,7 +284,19 @@
       .top-actions {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .top-cluster {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .top-divider {
+        width: 1px;
+        height: 16px;
+        background: #e2e8f0;
+        margin: 0 4px;
         flex-shrink: 0;
       }
 
@@ -260,11 +307,11 @@
       }
       .upcoming-btn {
         background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        font-size: 16px;
+        border: 1px solid #e2e8f0;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 13.5px;
         color: #6366f1;
         cursor: pointer;
         padding: 0;
@@ -272,33 +319,34 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       }
       .upcoming-btn:hover {
         background-color: #eef2ff;
         border-color: #c7d2fe;
         color: #4f46e5;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(99, 102, 241, 0.18);
+        transform: translateY(-0.5px);
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.16);
       }
       .upcoming-badge {
         position: absolute;
-        top: -4px;
-        right: -4px;
+        top: -3px;
+        right: -3px;
         background-color: #6366f1;
         color: #ffffff;
-        font-size: 10.5px;
-        font-weight: 800;
+        font-size: 9px;
+        font-weight: 700;
         border-radius: 9999px;
-        min-width: 18px;
-        height: 18px;
+        min-width: 15px;
+        height: 15px;
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 0 4px;
-        border: 2px solid #ffffff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
-        font-family: 'JetBrains Mono', monospace;
+        padding: 0 3px;
+        border: 1.5px solid #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        font-family: 'Inter', sans-serif;
         line-height: 1;
       }
       .upcoming-dropdown {
@@ -425,11 +473,11 @@
       }
       .bell-btn {
         background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        font-size: 16px;
+        border: 1px solid #e2e8f0;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 13.5px;
         color: #059669;
         cursor: pointer;
         padding: 0;
@@ -437,33 +485,34 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       }
       .bell-btn:hover {
         background-color: #ecfdf5;
         border-color: #a7f3d0;
         color: #047857;
-        transform: translateY(-1px);
-        box-shadow: 0 3px 8px rgba(16, 185, 129, 0.18);
+        transform: translateY(-0.5px);
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.16);
       }
       .bell-badge {
         position: absolute;
-        top: -4px;
-        right: -4px;
+        top: -3px;
+        right: -3px;
         background-color: #ef4444;
         color: #ffffff;
-        font-size: 10.5px;
-        font-weight: 800;
+        font-size: 9px;
+        font-weight: 700;
         border-radius: 9999px;
-        min-width: 18px;
-        height: 18px;
+        min-width: 15px;
+        height: 15px;
         display: none;
         align-items: center;
         justify-content: center;
-        padding: 0 4px;
-        border: 2px solid #ffffff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
-        font-family: 'JetBrains Mono', monospace;
+        padding: 0 3px;
+        border: 1.5px solid #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        font-family: 'Inter', sans-serif;
         line-height: 1;
       }
       .bell-dropdown {
@@ -579,35 +628,11 @@
       }
       .settings-btn {
         background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        font-size: 15px;
-        color: #64748b;
-        cursor: pointer;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .settings-btn:hover {
-        background-color: #ffffff;
-        border-color: #cbd5e1;
-        color: #4f46e5;
-        transform: rotate(45deg) scale(1.05);
-        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
-      }
-
-      /* ── Topbar Action Buttons (Projects, Members) ── */
-      .top-action-btn {
-        background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        font-size: 14px;
+        border: 1px solid #e2e8f0;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 13.5px;
         color: #64748b;
         cursor: pointer;
         padding: 0;
@@ -615,17 +640,42 @@
         align-items: center;
         justify-content: center;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+      .settings-btn:hover {
+        background-color: #ffffff;
+        border-color: #cbd5e1;
+        color: #4f46e5;
+        transform: rotate(45deg);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+      }
+
+      /* ── Topbar Action Buttons (Projects, Members) ── */
+      .top-action-btn {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
       }
       .top-action-btn:hover {
         background-color: #ffffff;
-        border-color: #6366f1;
+        border-color: #cbd5e1;
         color: #4f46e5;
-        transform: translateY(-1px) scale(1.05);
-        box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
+        transform: translateY(-0.5px);
+        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.15);
       }
       .top-action-btn:active {
-        transform: translateY(0) scale(0.98);
+        transform: scale(0.97);
       }
 
       /* ── Topbar Management Modals (Projects & Members) ── */
@@ -857,36 +907,34 @@
 
       /* ── Topbar Sync Button ── */
       .top-sync-btn {
-        background: #ffffff;
-        border: 1.5px solid #e2e8f0;
-        height: 36px;
-        padding: 0 13px;
-        border-radius: 10px;
-        font-size: 13px;
+        background: #4f46e5;
+        border: 1px solid transparent;
+        height: 32px;
+        padding: 0 11px;
+        border-radius: 8px;
+        font-size: 12px;
         font-weight: 600;
-        color: #1e293b;
+        color: #ffffff;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        gap: 6px;
+        transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
         font-family: inherit;
         white-space: nowrap;
       }
       .top-sync-btn:hover {
-        background-color: #f8fafc;
-        border-color: #6366f1;
-        color: #4f46e5;
-        box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
-        transform: translateY(-1px);
+        background: #4338ca;
+        box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);
+        transform: translateY(-0.5px);
       }
       .top-sync-btn:active {
-        transform: translateY(0) scale(0.98);
+        transform: scale(0.97);
       }
       .top-sync-btn i {
-        font-size: 13px;
-        color: #6366f1;
+        font-size: 11.5px;
+        color: #ffffff;
         transition: transform 0.25s ease;
       }
       .top-sync-btn:disabled {
@@ -1385,12 +1433,16 @@
         <div class="topbar-inner">
           <div class="brand">
             <div class="brand-icon">
-              <i class="fa-solid fa-cubes"></i>
+              <i class="fa-solid fa-shapes"></i>
             </div>
             <div class="brand-text">
               <span class="brand-title">DMS Hub</span>
-              <span class="brand-badge">PROD</span>
+              <span class="brand-badge">
+                <span class="brand-badge-dot"></span>
+                PROD
+              </span>
             </div>
+            <div class="brand-divider"></div>
           </div>
           <div class="tabs">
             <button
@@ -1434,6 +1486,7 @@
               data-frame-target="taskPendingFrame"
             >
               <i class="fa-solid fa-list-check"></i> Task Pending NVN
+              <span class="tab-dot" title="Có công việc cần theo dõi"></span>
             </button>
             <button
               class="tab-button"
@@ -1458,61 +1511,75 @@
             </button>
           </div>
           <div class="top-actions">
-            <!-- Upcoming Tasks Button -->
-            <div class="upcoming-container" id="upcomingContainer">
-              <button class="upcoming-btn" id="upcomingBtn" title="Task sắp thông báo hôm nay">
-                <i class="fa-regular fa-clock"></i>
-                <span class="upcoming-badge" id="upcomingBadge">0</span>
-              </button>
-              <div class="upcoming-dropdown" id="upcomingDropdown">
-                <div class="upcoming-hdr">
-                  <h4><i class="fa-regular fa-clock" style="color: #6366f1;"></i> Sắp thông báo hôm nay</h4>
-                  <span class="upcoming-count-badge" id="upcomingCountBadge">0 task</span>
+            <!-- Cluster 1: Notifications -->
+            <div class="top-cluster">
+              <!-- Upcoming Tasks Button -->
+              <div class="upcoming-container" id="upcomingContainer">
+                <button class="upcoming-btn" id="upcomingBtn" title="Task sắp thông báo hôm nay">
+                  <i class="fa-regular fa-clock"></i>
+                  <span class="upcoming-badge" id="upcomingBadge">0</span>
+                </button>
+                <div class="upcoming-dropdown" id="upcomingDropdown">
+                  <div class="upcoming-hdr">
+                    <h4><i class="fa-regular fa-clock" style="color: #6366f1;"></i> Sắp thông báo hôm nay</h4>
+                    <span class="upcoming-count-badge" id="upcomingCountBadge">0 task</span>
+                  </div>
+                  <div class="upcoming-list" id="upcomingList">
+                    <!-- Dynamic Items -->
+                  </div>
                 </div>
-                <div class="upcoming-list" id="upcomingList">
-                  <!-- Dynamic Items -->
+              </div>
+
+              <!-- Bell Notification Button -->
+              <div class="bell-container" id="bellContainer">
+                <button class="bell-btn" id="bellBtn" title="Thông báo khẩn cấp">
+                  <i class="fa-solid fa-bell"></i>
+                  <span class="bell-badge" id="bellBadge">0</span>
+                </button>
+                <div class="bell-dropdown" id="bellDropdown">
+                  <div class="bell-hdr">
+                    <h4>Thông báo khẩn cấp</h4>
+                    <button class="bell-mark-all" id="bellMarkAllBtn"><i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc</button>
+                  </div>
+                  <div class="bell-list" id="bellList">
+                    <!-- Dynamic Items -->
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Bell Notification Button -->
-            <div class="bell-container" id="bellContainer">
-              <button class="bell-btn" id="bellBtn" title="Thông báo khẩn cấp">
-                <i class="fa-solid fa-bell"></i>
-                <span class="bell-badge" id="bellBadge">0</span>
+            <div class="top-divider"></div>
+
+            <!-- Cluster 2: Management Tools -->
+            <div class="top-cluster">
+              <!-- Quản lý Dự án -->
+              <button class="top-action-btn" id="btnTopProjects" type="button" title="Quản lý dự án">
+                <i class="fa-solid fa-diagram-project"></i>
               </button>
-              <div class="bell-dropdown" id="bellDropdown">
-                <div class="bell-hdr">
-                  <h4>Thông báo khẩn cấp</h4>
-                  <button class="bell-mark-all" id="bellMarkAllBtn"><i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc</button>
-                </div>
-                <div class="bell-list" id="bellList">
-                  <!-- Dynamic Items -->
-                </div>
+
+              <!-- Quản lý Nhân viên / Thành viên -->
+              <button class="top-action-btn" id="btnTopMembers" type="button" title="Quản lý nhân viên">
+                <i class="fa-solid fa-users"></i>
+              </button>
+            </div>
+
+            <div class="top-divider"></div>
+
+            <!-- Cluster 3: System & Sync -->
+            <div class="top-cluster">
+              <!-- Settings Button -->
+              <div class="settings-container" id="settingsContainer">
+                <button class="settings-btn" id="btnOpenSettings" title="Cài đặt & Quản lý Tabs (Yêu cầu mật khẩu)">
+                  <i class="fa-solid fa-gear"></i>
+                </button>
               </div>
-            </div>
-            <!-- Quản lý Dự án -->
-            <button class="top-action-btn" id="btnTopProjects" type="button" title="Quản lý dự án">
-              <i class="fa-solid fa-diagram-project"></i>
-            </button>
 
-            <!-- Quản lý Nhân viên / Thành viên -->
-            <button class="top-action-btn" id="btnTopMembers" type="button" title="Quản lý nhân viên">
-              <i class="fa-solid fa-users"></i>
-            </button>
-
-            <!-- Settings Button -->
-            <div class="settings-container" id="settingsContainer">
-              <button class="settings-btn" id="btnOpenSettings" title="Cài đặt & Quản lý Tabs (Yêu cầu mật khẩu)">
-                <i class="fa-solid fa-gear"></i>
+              <!-- Nút Đồng bộ -->
+              <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Đồng bộ</span>
               </button>
             </div>
-
-            <!-- Nút Đồng bộ dời lên topbar -->
-            <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
-              <i class="fa-solid fa-arrows-rotate"></i>
-              <span>Đồng bộ</span>
-            </button>
           </div>
         </div>
       </div>
