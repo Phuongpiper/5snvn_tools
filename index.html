@@ -495,137 +495,6 @@
         margin: 6px 0;
       }
 
-      /* 4. User Profile Account Dropdown */
-      .profile-container {
-        position: relative;
-        display: inline-block;
-      }
-      .profile-btn {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 9999px;
-        padding: 3px 10px 3px 3px;
-        cursor: pointer;
-        transition: all 0.16s ease;
-        user-select: none;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-      }
-      .profile-btn:hover,
-      .profile-btn.active {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-      }
-      .profile-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #2563eb;
-        color: #ffffff;
-        font-size: 12px;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        letter-spacing: 0.02em;
-        flex-shrink: 0;
-        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
-      }
-      .profile-info {
-        display: flex;
-        flex-direction: column;
-        text-align: left;
-        line-height: 1.15;
-      }
-      .profile-name {
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #0f172a;
-        letter-spacing: -0.01em;
-        white-space: nowrap;
-      }
-      .profile-role {
-        font-size: 10.5px;
-        font-weight: 500;
-        color: #64748b;
-        white-space: nowrap;
-      }
-      .profile-chevron {
-        font-size: 10px;
-        color: #94a3b8;
-        margin-left: 2px;
-        transition: transform 0.2s ease;
-      }
-      .profile-btn.active .profile-chevron {
-        transform: rotate(180deg);
-      }
-      .profile-dropdown {
-        display: none;
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        width: 260px;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-        z-index: 10001;
-        padding: 10px;
-        animation: dropdownSlideDown 0.15s ease-out;
-      }
-      .profile-dropdown.show {
-        display: block;
-      }
-      .profile-card-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 6px 6px 10px;
-        border-bottom: 1px solid #f1f5f9;
-      }
-      .profile-status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 11px;
-        color: #10b981;
-        font-weight: 600;
-        margin-top: 3px;
-      }
-      .profile-status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #10b981;
-      }
-      .profile-menu-list {
-        padding: 6px 0;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .profile-info-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 4px 6px;
-        font-size: 12px;
-        color: #64748b;
-      }
-      .profile-info-row .info-val {
-        font-weight: 600;
-        color: #1e293b;
-      }
-      .profile-info-row kbd {
-        background: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        border-radius: 4px;
-        padding: 1px 4px;
-        font-size: 10.5px;
-        color: #475569;
-      }
 
       @keyframes dropdownSlideDown {
         from { opacity: 0; transform: translateY(-6px); }
@@ -1280,8 +1149,6 @@
       /* Responsive Rules */
       @media (max-width: 1200px) {
         .topbar { padding: 0 12px; height: 64px; }
-        .profile-info { display: none; }
-        .profile-btn { padding: 2px; }
       }
       @media (max-width: 992px) {
         .brand-badge { display: none; }
@@ -1850,6 +1717,13 @@
               >
                 <i class="fa-solid fa-file-signature"></i> Văn mẫu NVN
               </button>
+              <button
+                class="tab-button"
+                type="button"
+                data-frame-target="dms1ReportFrame"
+              >
+                <i class="fa-solid fa-chart-simple"></i> DMS1 Report
+              </button>
             </div>
 
             <!-- More Navigation Dropdown -->
@@ -1859,13 +1733,6 @@
               </button>
               <div class="nav-more-dropdown" id="navMoreDropdown">
                 <div class="dropdown-section-title">Danh mục mở rộng</div>
-                <button
-                  class="tab-button nav-more-item"
-                  type="button"
-                  data-frame-target="dms1ReportFrame"
-                >
-                  <i class="fa-solid fa-chart-simple"></i> DMS1 Report
-                </button>
                 <button
                   class="tab-button nav-more-item"
                   type="button"
@@ -1967,45 +1834,6 @@
               </div>
             </div>
 
-            <!-- 4. User Profile / Account Dropdown -->
-            <div class="profile-container" id="topbarProfileContainer">
-              <button class="profile-btn" id="userProfileBtn" type="button" title="Tài khoản cá nhân" aria-haspopup="true">
-                <div class="profile-avatar">TB</div>
-                <div class="profile-info">
-                  <span class="profile-name">TANH. H. BUI 3811</span>
-                  <span class="profile-role">Tánh</span>
-                </div>
-                <i class="fa-solid fa-chevron-down profile-chevron"></i>
-              </button>
-              <div class="profile-dropdown" id="userProfileDropdown">
-                <div class="profile-card-header">
-                  <div class="profile-avatar" style="width: 38px; height: 38px; font-size: 14px;">TB</div>
-                  <div class="profile-info" style="display: flex;">
-                    <span class="profile-name" style="font-size: 13px;">TANH. H. BUI 3811</span>
-                    <span class="profile-role">Support Engineer · DMS NVN</span>
-                    <span class="profile-status-badge">
-                      <span class="profile-status-dot"></span> Trực tuyến
-                    </span>
-                  </div>
-                </div>
-                <div class="util-divider"></div>
-                <div class="profile-menu-list">
-                  <div class="profile-info-row">
-                    <span class="info-label"><i class="fa-regular fa-id-badge"></i> Mã NV:</span>
-                    <span class="info-val">TANH.H.BUI.3811</span>
-                  </div>
-                  <div class="profile-info-row">
-                    <span class="info-label"><i class="fa-regular fa-keyboard"></i> Phím tắt:</span>
-                    <span class="info-val"><kbd>Alt</kbd> + <kbd>S</kbd> Đồng bộ</span>
-                  </div>
-                </div>
-                <div class="util-divider"></div>
-                <button class="util-menu-item" id="btnProfileReload" type="button">
-                  <i class="fa-solid fa-rotate" style="color: #2563eb;"></i>
-                  <span>Làm mới phiên làm việc</span>
-                </button>
-              </div>
-            </div>
 
             <!-- 5. STANDALONE SYNC BUTTON - MANDATORY FAR RIGHT -->
             <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
@@ -2997,16 +2825,12 @@
         const topbarAppsBtn = document.getElementById("topbarAppsBtn");
         const topbarAppsDropdown = document.getElementById("topbarAppsDropdown");
 
-        const userProfileBtn = document.getElementById("userProfileBtn");
-        const userProfileDropdown = document.getElementById("userProfileDropdown");
-
         const allDropdownPairs = [
           { btn: bellBtn, menu: bellDropdown },
           { btn: upcomingBtn, menu: upcomingDropdown },
           { btn: btnNavMore, menu: navMoreDropdown },
           { btn: topbarSearchBtn, menu: topbarSearchDropdown },
-          { btn: topbarAppsBtn, menu: topbarAppsDropdown },
-          { btn: userProfileBtn, menu: userProfileDropdown }
+          { btn: topbarAppsBtn, menu: topbarAppsDropdown }
         ];
 
         function closeAllDropdowns(exceptMenu) {
@@ -3070,10 +2894,6 @@
 
         // Apps reload and profile reload handlers
         document.getElementById("btnAppHardReload")?.addEventListener("click", () => {
-          closeAllDropdowns();
-          window.location.reload();
-        });
-        document.getElementById("btnProfileReload")?.addEventListener("click", () => {
           closeAllDropdowns();
           window.location.reload();
         });
