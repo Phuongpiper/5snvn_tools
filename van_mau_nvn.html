@@ -8,7 +8,9 @@
   <!-- Google Font: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     * {
@@ -72,7 +74,9 @@
       width: 44px;
       height: 44px;
       border-radius: var(--radius-md);
-      background: var(--header-bg);
+      background: var(--accent-bg);
+      color: var(--accent);
+      border: 1px solid var(--accent-border);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -236,6 +240,7 @@
       gap: 6px;
       white-space: nowrap;
     }
+
     .cloud-badge.error {
       background: #fef2f2;
       color: #b91c1c;
@@ -370,7 +375,8 @@
       opacity: 0.75;
       width: 28px;
       height: 28px;
-      font-size: 15px; /* Kích thước icon tăng 1.2x */
+      font-size: 15px;
+      /* Kích thước icon tăng 1.2x */
       padding: 0;
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -716,7 +722,8 @@
       white-space: pre-wrap;
       word-break: break-word;
       line-height: 1.55;
-      max-height: 4.65em; /* 3 lines */
+      max-height: 4.65em;
+      /* 3 lines */
     }
 
     /* ── View detail button (small eye icon) ── */
@@ -818,7 +825,7 @@
 <body>
   <div class="page">
     <div class="hero">
-      <div class="hero-icon">📄</div>
+      <div class="hero-icon"><i class="fa-solid fa-file-lines"></i></div>
       <div>
         <h1>Văn mẫu NVN</h1>
         <p>Quản lý và tra cứu nhanh các câu văn mẫu tiếng Anh/tiếng Việt phục vụ hỗ trợ khách hàng.</p>
@@ -829,8 +836,8 @@
       <div class="search-group">
         <div class="search-container">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" class="search-input" id="searchBar" placeholder="Tìm kiếm nhanh Tiếng Anh, Tiếng Việt, Note..."
-            oninput="handleSearch()" autocomplete="off" />
+          <input type="text" class="search-input" id="searchBar"
+            placeholder="Tìm kiếm nhanh Tiếng Anh, Tiếng Việt, Note..." oninput="handleSearch()" autocomplete="off" />
           <button type="button" class="clear-input-btn" id="clearSearchBar" title="Xóa nội dung">
             <i class="fa-solid fa-xmark"></i>
           </button>
@@ -843,12 +850,6 @@
         <div class="result-badge" id="countBadge">
           <i class="fa-solid fa-layer-group"></i> 0 mẫu
         </div>
-        <div class="cloud-badge" id="cloudStatusBadge" title="Dữ liệu lưu trữ và đồng bộ trực tiếp trên Cloudflare R2">
-          <i class="fa-solid fa-cloud-arrow-up"></i> Cloud R2
-        </div>
-        <button type="button" class="btn-sync" id="btnSyncR2" onclick="loadData(false)" title="Tải lại dữ liệu mới nhất từ Cloud R2">
-          <i class="fa-solid fa-arrows-rotate" id="syncIcon"></i> Đồng bộ R2
-        </button>
         <button class="btn-primary" onclick="openAddModal()">
           <i class="fa-solid fa-plus"></i>
           Thêm mới mẫu
@@ -896,20 +897,25 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="englishInput">Tiếng Anh <span style="color:var(--danger)">*</span></label>
-            <textarea class="form-control" id="englishInput" rows="3" placeholder="Nhập câu tiếng Anh..." required></textarea>
+            <textarea class="form-control" id="englishInput" rows="3" placeholder="Nhập câu tiếng Anh..."
+              required></textarea>
           </div>
           <div class="form-group">
             <label for="vietnameseInput">Tiếng Việt <span style="color:var(--danger)">*</span></label>
-            <textarea class="form-control" id="vietnameseInput" rows="3" placeholder="Nhập câu tiếng Việt dịch tương ứng..." required></textarea>
+            <textarea class="form-control" id="vietnameseInput" rows="3"
+              placeholder="Nhập câu tiếng Việt dịch tương ứng..." required></textarea>
           </div>
           <div class="form-group">
             <label for="noteInput">Note (Ghi chú)</label>
-            <input type="text" class="form-control" id="noteInput" placeholder="Ví dụ: Dùng khi cấu hình máy, Mail cho HQ..." />
+            <input type="text" class="form-control" id="noteInput"
+              placeholder="Ví dụ: Dùng khi cấu hình máy, Mail cho HQ..." />
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-outline" onclick="closeModal()"><i class="fa-solid fa-xmark"></i> Đóng</button>
-          <button type="submit" class="btn-primary" id="btnSubmit"><i class="fa-solid fa-floppy-disk"></i> Lưu lại</button>
+          <button type="button" class="btn-outline" onclick="closeModal()"><i class="fa-solid fa-xmark"></i>
+            Đóng</button>
+          <button type="submit" class="btn-primary" id="btnSubmit"><i class="fa-solid fa-floppy-disk"></i> Lưu
+            lại</button>
         </div>
       </form>
     </div>
@@ -926,7 +932,8 @@
         <!-- filled by JS -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn-outline" onclick="closeDetailModal()"><i class="fa-solid fa-xmark"></i> Đóng</button>
+        <button type="button" class="btn-outline" onclick="closeDetailModal()"><i class="fa-solid fa-xmark"></i>
+          Đóng</button>
       </div>
     </div>
   </div>
@@ -1035,7 +1042,7 @@
             filteredTemplates = [...allTemplates];
             renderTable();
             showToast("Đang hiển thị bản lưu gần nhất (Offline)", "error");
-          } catch (_) {}
+          } catch (_) { }
         } else {
           tbody.innerHTML = `
             <tr>
@@ -1150,7 +1157,7 @@
         // Cell Actions
         const tdActions = document.createElement("td");
         tdActions.className = "col-actions";
-        
+
         const actionWrap = document.createElement("div");
         actionWrap.style.cssText = "display:flex; justify-content:center; align-items:center; gap:6px;";
 
@@ -1159,7 +1166,7 @@
         btnEdit.title = "Sửa câu mẫu";
         btnEdit.innerHTML = `<i class="fa-solid fa-pen-to-square"></i>`;
         btnEdit.onclick = () => openEditModal(item);
-        
+
         const btnDel = document.createElement("button");
         btnDel.className = "btn-delete";
         btnDel.title = "Xóa câu mẫu";
@@ -1245,7 +1252,7 @@
       body.innerHTML =
         sectionHTML("🇬🇧 Tiếng Anh", item.english) +
         sectionHTML("🇻🇳 Tiếng Việt", item.vietnamese) +
-        (item.note ? `<div class="detail-section"><div class="detail-section-label">📝 Note</div><div class="detail-section-content" style="padding-right:44px;"><pre style="margin:0;font-family:inherit;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${item.note.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</pre><button class="detail-copy-btn" title="Copy" onclick="detailCopy(this)"><i class="fa-regular fa-copy"></i></button></div></div>` : "");
+        (item.note ? `<div class="detail-section"><div class="detail-section-label">📝 Note</div><div class="detail-section-content" style="padding-right:44px;"><pre style="margin:0;font-family:inherit;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;">${item.note.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre><button class="detail-copy-btn" title="Copy" onclick="detailCopy(this)"><i class="fa-regular fa-copy"></i></button></div></div>` : "");
       body.scrollTop = 0;
       body.scrollLeft = 0;
       document.getElementById("detailModal").classList.add("show");
@@ -1312,7 +1319,7 @@
       document.getElementById("englishInput").value = "";
       document.getElementById("vietnameseInput").value = "";
       document.getElementById("noteInput").value = "";
-      
+
       const modal = document.getElementById("formModal");
       modal.classList.add("show");
       setTimeout(() => document.getElementById("englishInput")?.focus(), 150);
@@ -1325,7 +1332,7 @@
       document.getElementById("englishInput").value = item.english || "";
       document.getElementById("vietnameseInput").value = item.vietnamese || "";
       document.getElementById("noteInput").value = item.note || "";
-      
+
       const modal = document.getElementById("formModal");
       modal.classList.add("show");
       setTimeout(() => document.getElementById("englishInput")?.focus(), 150);
@@ -1363,7 +1370,7 @@
         vietnamese: vietnamese,
         note: note
       };
-      
+
       if (isEdit) {
         payload.id = parseInt(id);
       }
@@ -1376,16 +1383,16 @@
         });
 
         const result = await response.json();
-        
+
         if (result.status === "success") {
           showToast(isEdit ? "Cập nhật câu văn mẫu thành công!" : "Thêm mới câu văn mẫu thành công!", "success");
           closeModal();
-          
+
           // Phát tín hiệu đồng bộ realtime sang các tab khác
           if (vmBroadcast) {
-            try { vmBroadcast.postMessage({ type: "VANMAU_UPDATED" }); } catch(_) {}
+            try { vmBroadcast.postMessage({ type: "VANMAU_UPDATED" }); } catch (_) { }
           }
-          
+
           await loadData(true);
         } else {
           showToast("Có lỗi xảy ra: " + (result.message || "Không rõ"), "error");
@@ -1420,9 +1427,9 @@
         const result = await response.json();
         if (result.status === "success") {
           showToast("Đã xóa câu văn mẫu thành công khỏi R2!", "success");
-          
+
           if (vmBroadcast) {
-            try { vmBroadcast.postMessage({ type: "VANMAU_UPDATED" }); } catch(_) {}
+            try { vmBroadcast.postMessage({ type: "VANMAU_UPDATED" }); } catch (_) { }
           }
 
           await loadData(true);
@@ -1450,17 +1457,19 @@
           filteredTemplates = [...allTemplates];
           renderTable();
           updateCloudStatus(`R2 (${allTemplates.length} mẫu)`);
-        } catch (_) {}
+        } catch (_) { }
       }
 
       // Nạp dữ liệu mới nhất từ R2
       loadData(false);
 
+      window.forceSyncWithCloud = () => loadData(false);
+
       window.addEventListener("pageshow", () => {
         loadData(true);
       });
       window.addEventListener("message", (e) => {
-        if (e.data === "tab-activated" || (e.data && e.data.type === "TAB_ACTIVATED")) {
+        if (e.data === "tab-activated" || (e.data && (e.data.type === "TAB_ACTIVATED" || e.data.type === "GLOBAL_SYNC_CLICKED"))) {
           loadData(true);
         }
       });
