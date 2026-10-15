@@ -600,6 +600,45 @@
         box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
       }
 
+      /* ── Topbar Sync Button ── */
+      .top-sync-btn {
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        height: 36px;
+        padding: 0 13px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .top-sync-btn:hover {
+        background-color: #f8fafc;
+        border-color: #6366f1;
+        color: #4f46e5;
+        box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
+        transform: translateY(-1px);
+      }
+      .top-sync-btn:active {
+        transform: translateY(0) scale(0.98);
+      }
+      .top-sync-btn i {
+        font-size: 13px;
+        color: #6366f1;
+        transition: transform 0.25s ease;
+      }
+      .top-sync-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+      }
+
       /* Modals Overlay */
       .settings-modal-overlay {
         position: fixed;
@@ -1203,6 +1242,12 @@
                 <i class="fa-solid fa-gear"></i>
               </button>
             </div>
+
+            <!-- Nút Đồng bộ dời lên topbar -->
+            <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Đồng bộ</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1284,6 +1329,53 @@
           });
         });
       });
+
+      // ── Xử lý nút Đồng bộ trên topbar ──
+      const btnGlobalSync = document.getElementById("btnGlobalSync");
+      if (btnGlobalSync) {
+        btnGlobalSync.addEventListener("click", () => {
+          const icon = btnGlobalSync.querySelector("i");
+          if (icon) icon.classList.add("fa-spin");
+          btnGlobalSync.disabled = true;
+
+          const activeFrame = document.querySelector(".tab-frame.active");
+          if (activeFrame && activeFrame.contentWindow) {
+            try {
+              // 1. Broadcast event
+              activeFrame.contentWindow.postMessage({ type: "GLOBAL_SYNC_CLICKED" }, "*");
+
+              // 2. Kích hoạt trực tiếp các nút đồng bộ bên trong frame nếu cùng domain
+              const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
+              if (doc) {
+                const targetBtn =
+                  doc.getElementById("btnRefreshData") ||
+                  doc.getElementById("btnSyncR2") ||
+                  doc.getElementById("btnSyncTable") ||
+                  doc.getElementById("btnVoipReloadAll") ||
+                  doc.querySelector(".btn-sync");
+                if (targetBtn && typeof targetBtn.click === "function") {
+                  targetBtn.click();
+                }
+              }
+            } catch (err) {
+              console.warn("Lỗi gọi đồng bộ frame:", err);
+            }
+          }
+
+          setTimeout(() => {
+            if (icon) icon.classList.remove("fa-spin");
+            btnGlobalSync.disabled = false;
+          }, 1200);
+        });
+
+        // Phím tắt Alt+S
+        window.addEventListener("keydown", (e) => {
+          if (e.altKey && (e.key === "s" || e.key === "S")) {
+            e.preventDefault();
+            btnGlobalSync.click();
+          }
+        });
+      }
     </script>
 
     <!-- ── Global Priority Notification System ── -->

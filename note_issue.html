@@ -212,6 +212,11 @@
       color: var(--primary);
     }
 
+    /* Khi nhúng trong DMS Hub (iframe), nút Đồng bộ đã được dời lên topbar chính */
+    body.is-embedded #btnRefreshData {
+      display: none !important;
+    }
+
     /* ── USER EMPLOYEE CHIP IN HEADER ── */
     .user-employee-chip {
       display: inline-flex;
@@ -5047,6 +5052,11 @@
        NOTE ISSUE STUDIO 2.0 (STITCH MODERN CONTROLLER)
     ────────────────────────────────────────────────────────────────────────── */
     (function initStudio() {
+      // Đánh dấu nếu trang đang nằm trong iframe của topbar DMS Hub
+      if (window.self !== window.top) {
+        document.body.classList.add("is-embedded");
+      }
+
       // API & Keys
       const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbx3m2eFrfAh4xQpGCCdxxnq0ZRPHLCpJ1Xq9RfVcGgz83jivaL-OpnlFm8gOFaQuM1D/exec";
       const R2_DT_API_URL = "https://5snvn-tools.vercel.app/api/r2-dt";
@@ -10525,6 +10535,13 @@
         } finally {
           if (icon) icon.classList.remove("fa-spin");
           btnRefreshData.disabled = false;
+        }
+      });
+
+      // Lắng nghe tín hiệu đồng bộ từ nút Đồng bộ trên topbar DMS Hub
+      window.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "GLOBAL_SYNC_CLICKED") {
+          btnRefreshData?.click();
         }
       });
 
