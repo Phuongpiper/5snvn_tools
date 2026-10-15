@@ -628,6 +628,233 @@
         transform: translateY(0) scale(0.98);
       }
 
+      /* ── Topbar Management Modals (Projects & Members) ── */
+      .topbar-modal-card {
+        background: #ffffff;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.3);
+        display: flex;
+        flex-direction: column;
+        max-height: 88vh;
+        overflow: hidden;
+        animation: scaleInCard 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .topbar-modal-card.wide {
+        max-width: 600px;
+      }
+      .topbar-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .topbar-modal-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .topbar-modal-icon-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: #eef2ff;
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .topbar-modal-header h3 {
+        margin: 0;
+        font-size: 16.5px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .topbar-modal-header p {
+        margin: 2px 0 0;
+        font-size: 12.5px;
+        color: #64748b;
+      }
+      .topbar-modal-close-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 16px;
+        cursor: pointer;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+      }
+      .topbar-modal-close-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .topbar-modal-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+        flex: 1;
+      }
+      .topbar-modal-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .topbar-form-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 16px;
+      }
+      .topbar-form-title {
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .topbar-input {
+        height: 38px;
+        padding: 0 12px;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        background: #ffffff;
+        transition: all 0.15s ease;
+      }
+      .topbar-input:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+      }
+      .topbar-btn-primary {
+        height: 38px;
+        padding: 0 16px;
+        border: none;
+        background: #4f46e5;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+      .topbar-btn-primary:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+      }
+      .topbar-btn-secondary {
+        height: 36px;
+        padding: 0 16px;
+        border: 1.5px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .topbar-btn-secondary:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .topbar-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 320px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .topbar-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        transition: all 0.15s ease;
+      }
+      .topbar-list-item:hover {
+        background: #ffffff;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
+      }
+      .topbar-member-code {
+        font-family: monospace;
+        font-weight: 700;
+        font-size: 11.5px;
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid #c7d2fe;
+        padding: 2px 7px;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+      .topbar-member-ext {
+        font-family: monospace;
+        font-weight: 600;
+        font-size: 11px;
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+        padding: 2px 6px;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+      .topbar-actions-btns {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .topbar-icon-action-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #64748b;
+        transition: all 0.15s ease;
+      }
+      .topbar-icon-action-btn:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+      .topbar-icon-action-btn.delete:hover {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #ef4444;
+      }
+
       /* ── Topbar Sync Button ── */
       .top-sync-btn {
         background: #ffffff;
@@ -1424,47 +1651,386 @@
         });
       }
 
-      // ── Xử lý mở Quản lý dự án & Quản lý nhân viên từ topbar ──
-      function triggerTaskPendingModal(action) {
-        const pendingBtn = document.querySelector('[data-frame-target="taskPendingFrame"]');
-        const frame = document.getElementById("taskPendingFrame");
-        if (pendingBtn && !pendingBtn.classList.contains("active")) {
-          pendingBtn.click();
+      // ── Quản lý Dự án & Quản lý Nhân viên Toàn cục (Không chuyển tab) ──
+      (function initTopbarProjectsAndMembers() {
+        let gProjects = [];
+        let gMembers = [];
+        let gEditingMemberName = null;
+
+        function esc(str) {
+          return String(str || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
         }
 
-        function openModalInFrame() {
-          if (!frame || !frame.contentWindow) return;
+        function showHubToast(msg, type = "success") {
+          const toast = document.createElement("div");
+          toast.className = `settings-toast ${type}`;
+          const icon = type === "success" ? "fa-circle-check" : "fa-triangle-exclamation";
+          toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+          document.body.appendChild(toast);
+          setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transform = "translateY(-10px)";
+            toast.style.transition = "all 0.2s ease";
+            setTimeout(() => toast.remove(), 250);
+          }, 3000);
+        }
+
+        function getApiTasksUrl() {
+          let base = "";
+          if (window.location.protocol === "file:") {
+            base = "https://5snvn-tools.vercel.app";
+          }
+          return base + "/api/r2-tasks";
+        }
+
+        async function apiGet(action) {
+          const res = await fetch(`${getApiTasksUrl()}?action=${action}&t=${Date.now()}`, { cache: "no-cache" });
+          return res.json();
+        }
+
+        async function apiPost(body) {
+          const res = await fetch(getApiTasksUrl(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          return res.json();
+        }
+
+        function notifyOtherTabs(type) {
           try {
-            if (action === "projects") {
-              if (typeof frame.contentWindow.openProjectModal === "function") {
-                frame.contentWindow.openProjectModal();
-              } else {
-                frame.contentWindow.postMessage({ type: "OPEN_PROJECT_MODAL" }, "*");
-              }
-            } else if (action === "members") {
-              if (typeof frame.contentWindow.openMemberModal === "function") {
-                frame.contentWindow.openMemberModal();
-              } else {
-                frame.contentWindow.postMessage({ type: "OPEN_MEMBER_MODAL" }, "*");
-              }
+            if (typeof BroadcastChannel !== "undefined") {
+              const ch = new BroadcastChannel("DMS_MEMBERS_SYNC");
+              ch.postMessage({ type });
             }
-          } catch (_) {
-            frame.contentWindow.postMessage({ 
-              type: action === "projects" ? "OPEN_PROJECT_MODAL" : "OPEN_MEMBER_MODAL" 
-            }, "*");
+          } catch (_) {}
+
+          document.querySelectorAll(".tab-frame").forEach(frame => {
+            try {
+              if (frame.contentWindow) {
+                frame.contentWindow.postMessage({ type: "DATA_UPDATED", entity: type }, "*");
+                if (type === "projects" && typeof frame.contentWindow.loadProjects === "function") {
+                  frame.contentWindow.loadProjects();
+                }
+                if (type === "members" && typeof frame.contentWindow.loadMembers === "function") {
+                  frame.contentWindow.loadMembers();
+                }
+              }
+            } catch (_) {}
+          });
+        }
+
+        // ── PROJECTS MODAL ──
+        const modalProjects = document.getElementById("topbarProjectsModal");
+        const listProjects = document.getElementById("topProjectList");
+        const inputProjectName = document.getElementById("topNewProjectName");
+
+        function openProjectsModal() {
+          if (!modalProjects) return;
+          modalProjects.style.display = "flex";
+          loadProjectsList();
+          setTimeout(() => inputProjectName?.focus(), 120);
+        }
+
+        function closeProjectsModal() {
+          if (modalProjects) modalProjects.style.display = "none";
+        }
+
+        async function loadProjectsList() {
+          if (!listProjects) return;
+          try {
+            const res = await apiGet("read_projects");
+            if (res.status === "success") {
+              gProjects = res.data || res.projects || [];
+              try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) {}
+              renderProjects();
+            }
+          } catch (err) {
+            listProjects.innerHTML = `<li style="text-align:center; color:#ef4444; padding:14px;">Lỗi tải dự án</li>`;
           }
         }
 
-        setTimeout(openModalInFrame, 150);
-      }
+        function renderProjects() {
+          if (!listProjects) return;
+          listProjects.innerHTML = "";
+          if (!gProjects.length) {
+            listProjects.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có dự án nào</li>`;
+            return;
+          }
+          gProjects.forEach(p => {
+            const li = document.createElement("li");
+            li.className = "topbar-list-item";
+            li.innerHTML = `
+              <span style="font-weight:600; font-size:13.5px; color:#1e293b; display:flex; align-items:center; gap:8px;">
+                <i class="fa-solid fa-folder" style="color:#6366f1;"></i> ${esc(p.name)}
+              </span>
+              <div class="topbar-actions-btns">
+                <button type="button" class="topbar-icon-action-btn delete" title="Xóa dự án">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            `;
+            li.querySelector(".delete")?.addEventListener("click", () => deleteProject(p.name));
+            listProjects.appendChild(li);
+          });
+        }
 
-      document.getElementById("btnTopProjects")?.addEventListener("click", () => {
-        triggerTaskPendingModal("projects");
-      });
+        async function addProject() {
+          const name = (inputProjectName ? inputProjectName.value : "").trim();
+          if (!name) return;
+          try {
+            const res = await apiPost({ action: "add_project", name });
+            if (res.status === "success") {
+              showHubToast(`Đã thêm dự án "${name}"`, "success");
+              inputProjectName.value = "";
+              await loadProjectsList();
+              notifyOtherTabs("projects");
+            } else {
+              showHubToast(res.message || "Lỗi thêm dự án", "warning");
+            }
+          } catch (_) {
+            showHubToast("Lỗi kết nối máy chủ", "warning");
+          }
+        }
 
-      document.getElementById("btnTopMembers")?.addEventListener("click", () => {
-        triggerTaskPendingModal("members");
-      });
+        async function deleteProject(name) {
+          if (!confirm(`Xóa dự án "${name}"?`)) return;
+          try {
+            const res = await apiPost({ action: "delete_project", name });
+            if (res.status === "success") {
+              showHubToast(`Đã xóa dự án "${name}"`, "success");
+              await loadProjectsList();
+              notifyOtherTabs("projects");
+            } else {
+              showHubToast(res.message || "Lỗi xóa dự án", "warning");
+            }
+          } catch (_) {
+            showHubToast("Lỗi kết nối máy chủ", "warning");
+          }
+        }
+
+        // ── MEMBERS MODAL ──
+        const modalMembers = document.getElementById("topbarMembersModal");
+        const listMembers = document.getElementById("topMemberList");
+        const countMembers = document.getElementById("topMemberCountBadge");
+        const inputMemberCode = document.getElementById("topNewMemberCode");
+        const inputMemberName = document.getElementById("topNewMemberName");
+        const inputMemberExt = document.getElementById("topNewMemberExt");
+
+        function openMembersModal() {
+          if (!modalMembers) return;
+          modalMembers.style.display = "flex";
+          gEditingMemberName = null;
+          loadMembersList();
+          setTimeout(() => inputMemberCode?.focus(), 120);
+        }
+
+        function closeMembersModal() {
+          if (modalMembers) modalMembers.style.display = "none";
+          gEditingMemberName = null;
+        }
+
+        async function loadMembersList() {
+          if (!listMembers) return;
+          try {
+            const res = await apiGet("read_members");
+            if (res.status === "success") {
+              gMembers = (res.data || []).map(m => {
+                if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
+                return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
+              });
+              try { localStorage.setItem("app_members_data", JSON.stringify(gMembers)); } catch (_) {}
+              renderMembers();
+            }
+          } catch (err) {
+            listMembers.innerHTML = `<li style="text-align:center; color:#ef4444; padding:14px;">Lỗi tải nhân viên</li>`;
+          }
+        }
+
+        function renderMembers() {
+          if (!listMembers) return;
+          listMembers.innerHTML = "";
+          if (countMembers) countMembers.textContent = `${gMembers.length} thành viên`;
+          if (!gMembers.length) {
+            listMembers.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có thành viên nào</li>`;
+            return;
+          }
+
+          gMembers.forEach((m, idx) => {
+            const li = document.createElement("li");
+            li.className = "topbar-list-item";
+
+            if (gEditingMemberName === m.name) {
+              li.style.background = "#eef2ff";
+              li.style.borderColor = "#c7d2fe";
+              li.innerHTML = `
+                <div style="display:flex; gap:6px; flex:1; align-items:center; flex-wrap:wrap; margin-right:8px;">
+                  <input type="text" class="topbar-input edit-code" value="${esc(m.code || '')}" placeholder="Mã NV *" style="width:95px; text-transform:uppercase; font-weight:700; font-family:monospace; height:32px; font-size:12px; padding:0 8px;" />
+                  <input type="text" class="topbar-input edit-name" value="${esc(m.name)}" placeholder="Tên NV *" style="flex:1; min-width:110px; height:32px; font-size:12.5px; padding:0 8px;" />
+                  <input type="text" class="topbar-input edit-ext" value="${esc(m.extension || '')}" placeholder="Máy nhánh" style="width:85px; font-family:monospace; height:32px; font-size:12px; padding:0 8px;" />
+                </div>
+                <div class="topbar-actions-btns">
+                  <button type="button" class="topbar-icon-action-btn save-edit" title="Lưu thay đổi" style="background:#4f46e5; color:#fff; border-color:#4f46e5;">
+                    <i class="fa-solid fa-check"></i>
+                  </button>
+                  <button type="button" class="topbar-icon-action-btn cancel-edit" title="Hủy">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              `;
+              const codeInp = li.querySelector(".edit-code");
+              const nameInp = li.querySelector(".edit-name");
+              const extInp = li.querySelector(".edit-ext");
+              li.querySelector(".save-edit")?.addEventListener("click", () => {
+                saveEditMember(m.name, codeInp.value, nameInp.value, extInp.value);
+              });
+              li.querySelector(".cancel-edit")?.addEventListener("click", () => {
+                gEditingMemberName = null;
+                renderMembers();
+              });
+            } else {
+              const codeTag = m.code ? `<span class="topbar-member-code">${esc(m.code)}</span>` : `<span class="topbar-member-code" style="background:#f1f5f9; color:#94a3b8; border-color:#e2e8f0;">Chưa có mã</span>`;
+              const extTag = m.extension ? `<span class="topbar-member-ext"><i class="fa-solid fa-phone" style="font-size:10px;"></i> ${esc(m.extension)}</span>` : '';
+              li.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px; overflow:hidden; min-width:0; flex-wrap:wrap;">
+                  ${codeTag}
+                  <span style="font-weight:600; font-size:13.5px; color:#1e293b;">${esc(m.name)}</span>
+                  ${extTag}
+                </div>
+                <div class="topbar-actions-btns">
+                  <button type="button" class="topbar-icon-action-btn edit" title="Sửa thông tin"><i class="fa-solid fa-pen-to-square"></i></button>
+                  <button type="button" class="topbar-icon-action-btn delete" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+              `;
+              li.querySelector(".edit")?.addEventListener("click", () => {
+                gEditingMemberName = m.name;
+                renderMembers();
+              });
+              li.querySelector(".delete")?.addEventListener("click", () => deleteMember(m.name));
+            }
+
+            listMembers.appendChild(li);
+          });
+        }
+
+        async function addMember() {
+          const code = (inputMemberCode ? inputMemberCode.value : "").trim().toUpperCase();
+          const name = (inputMemberName ? inputMemberName.value : "").trim();
+          const extension = (inputMemberExt ? inputMemberExt.value : "").trim();
+
+          if (!code) {
+            showHubToast("Vui lòng nhập Mã nhân viên (bắt buộc)", "warning");
+            inputMemberCode?.focus();
+            return;
+          }
+          if (!name) {
+            showHubToast("Vui lòng nhập Tên nhân viên (bắt buộc)", "warning");
+            inputMemberName?.focus();
+            return;
+          }
+
+          try {
+            const res = await apiPost({ action: "add_member", name, code, extension, requireCode: true });
+            if (res.status === "success") {
+              showHubToast(`Đã thêm [${code}] ${name}`, "success");
+              if (inputMemberCode) inputMemberCode.value = "";
+              if (inputMemberName) inputMemberName.value = "";
+              if (inputMemberExt) inputMemberExt.value = "";
+              inputMemberCode?.focus();
+              await loadMembersList();
+              notifyOtherTabs("members");
+            } else {
+              showHubToast(res.message || "Lỗi thêm nhân viên", "warning");
+            }
+          } catch (_) {
+            showHubToast("Lỗi kết nối máy chủ", "warning");
+          }
+        }
+
+        async function saveEditMember(oldName, code, name, extension) {
+          code = (code || "").trim().toUpperCase();
+          name = (name || "").trim();
+          extension = (extension || "").trim();
+
+          if (!code || !name) {
+            showHubToast("Mã và Tên nhân viên là bắt buộc", "warning");
+            return;
+          }
+
+          try {
+            const res = await apiPost({
+              action: "edit_member",
+              oldName,
+              newName: name,
+              code,
+              extension
+            });
+            if (res.status === "success") {
+              showHubToast(`Đã cập nhật [${code}] ${name}`, "success");
+              gEditingMemberName = null;
+              await loadMembersList();
+              notifyOtherTabs("members");
+            } else {
+              showHubToast(res.message || "Lỗi cập nhật nhân viên", "warning");
+            }
+          } catch (_) {
+            showHubToast("Lỗi kết nối máy chủ", "warning");
+          }
+        }
+
+        async function deleteMember(name) {
+          if (!confirm(`Xóa thành viên "${name}"?`)) return;
+          try {
+            const res = await apiPost({ action: "delete_member", name });
+            if (res.status === "success") {
+              showHubToast(`Đã xóa thành viên "${name}"`, "success");
+              if (gEditingMemberName === name) gEditingMemberName = null;
+              await loadMembersList();
+              notifyOtherTabs("members");
+            } else {
+              showHubToast(res.message || "Lỗi xóa thành viên", "warning");
+            }
+          } catch (_) {
+            showHubToast("Lỗi kết nối máy chủ", "warning");
+          }
+        }
+
+        // Event bindings
+        document.getElementById("btnTopProjects")?.addEventListener("click", openProjectsModal);
+        document.getElementById("btnCloseTopProjects")?.addEventListener("click", closeProjectsModal);
+        document.getElementById("btnFooterCloseTopProjects")?.addEventListener("click", closeProjectsModal);
+        modalProjects?.addEventListener("click", (e) => {
+          if (e.target === modalProjects) closeProjectsModal();
+        });
+
+        document.getElementById("btnTopAddProject")?.addEventListener("click", addProject);
+        inputProjectName?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); addProject(); }
+        });
+
+        document.getElementById("btnTopMembers")?.addEventListener("click", openMembersModal);
+        document.getElementById("btnCloseTopMembers")?.addEventListener("click", closeMembersModal);
+        document.getElementById("btnFooterCloseTopMembers")?.addEventListener("click", closeMembersModal);
+        modalMembers?.addEventListener("click", (e) => {
+          if (e.target === modalMembers) closeMembersModal();
+        });
+
+        document.getElementById("btnTopAddMember")?.addEventListener("click", addMember);
+        inputMemberExt?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); addMember(); }
+        });
+        inputMemberName?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); inputMemberExt?.focus(); }
+        });
+        inputMemberCode?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); inputMemberName?.focus(); }
+        });
+      })();
     </script>
 
     <!-- ── Global Priority Notification System ── -->
@@ -2424,6 +2990,90 @@
               <i class="fa-solid fa-check"></i> Lưu & Áp dụng
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Modal: Quản lý Dự án (Toàn cục Topbar) ── -->
+    <div class="settings-modal-overlay" id="topbarProjectsModal" style="display: none;">
+      <div class="topbar-modal-card">
+        <div class="topbar-modal-header">
+          <div class="topbar-modal-header-left">
+            <div class="topbar-modal-icon-badge">
+              <i class="fa-solid fa-diagram-project"></i>
+            </div>
+            <div>
+              <h3>Quản lý Dự án</h3>
+              <p>Danh sách các dự án &amp; phân loại công việc</p>
+            </div>
+          </div>
+          <button type="button" class="topbar-modal-close-btn" id="btnCloseTopProjects" title="Đóng">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="topbar-modal-body">
+          <div style="display:flex; gap:8px; margin-bottom:14px;">
+            <input type="text" class="topbar-input" id="topNewProjectName" placeholder="Nhập tên dự án mới..." style="flex:1;" />
+            <button class="topbar-btn-primary" id="btnTopAddProject">
+              <i class="fa-solid fa-folder-plus"></i> Thêm
+            </button>
+          </div>
+          <ul class="topbar-list" id="topProjectList">
+            <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
+          </ul>
+        </div>
+        <div class="topbar-modal-footer">
+          <button type="button" class="topbar-btn-secondary" id="btnFooterCloseTopProjects">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Modal: Quản lý Nhân viên (Toàn cục Topbar) ── -->
+    <div class="settings-modal-overlay" id="topbarMembersModal" style="display: none;">
+      <div class="topbar-modal-card wide">
+        <div class="topbar-modal-header">
+          <div class="topbar-modal-header-left">
+            <div class="topbar-modal-icon-badge">
+              <i class="fa-solid fa-users-gear"></i>
+            </div>
+            <div>
+              <h3>Quản lý Nhân viên</h3>
+              <p>Danh sách thành viên, mã nhân viên &amp; số máy nhánh</p>
+            </div>
+          </div>
+          <button type="button" class="topbar-modal-close-btn" id="btnCloseTopMembers" title="Đóng">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="topbar-modal-body">
+          <div class="topbar-form-card">
+            <div class="topbar-form-title">
+              <i class="fa-solid fa-user-plus" style="color:#4f46e5;"></i> Thêm thành viên mới
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <input type="text" class="topbar-input" id="topNewMemberCode" placeholder="Mã NV *" style="width:120px; text-transform:uppercase; font-family:monospace; font-weight:700;" title="Mã nhân viên (bắt buộc)" />
+              <input type="text" class="topbar-input" id="topNewMemberName" placeholder="Tên nhân viên *" style="flex:1; min-width:130px;" title="Tên nhân viên (bắt buộc)" />
+              <input type="text" class="topbar-input" id="topNewMemberExt" placeholder="Máy nhánh" style="width:100px; font-family:monospace;" title="Số máy nhánh nội bộ (tuỳ chọn)" />
+              <button class="topbar-btn-primary" id="btnTopAddMember">
+                <i class="fa-solid fa-plus"></i> Thêm
+              </button>
+            </div>
+            <div style="font-size:11.5px; color:#64748b; margin-top:8px;">
+              <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...) · Máy nhánh tuỳ chọn
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách nhân viên</span>
+            <span id="topMemberCountBadge" style="font-size:11.5px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 8px; border-radius:12px; color:#475569; font-weight:600;">0 thành viên</span>
+          </div>
+
+          <ul class="topbar-list" id="topMemberList">
+            <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
+          </ul>
+        </div>
+        <div class="topbar-modal-footer">
+          <button type="button" class="topbar-btn-secondary" id="btnFooterCloseTopMembers">Đóng</button>
         </div>
       </div>
     </div>
