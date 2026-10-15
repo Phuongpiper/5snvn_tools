@@ -284,6 +284,35 @@ const server = http.createServer(function(req, res) {
     return;
   }
 
+  if (pathname === "/api/r2-vanmau") {
+    let body = "";
+    req.on("data", function(chunk) { body += chunk; });
+    req.on("end", async function() {
+      try {
+        if (body) {
+          try { req.body = JSON.parse(body); } catch(_) { req.body = body; }
+        }
+        res.status = function(code) { res.statusCode = code; return this; };
+        res.json = function(data) {
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(data));
+          return this;
+        };
+        res.send = function(data) {
+          res.end(typeof data === "string" ? data : JSON.stringify(data));
+          return this;
+        };
+        delete require.cache[require.resolve("./api/r2-vanmau.js")];
+        const handler = require("./api/r2-vanmau.js");
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "error", message: err.message }));
+      }
+    });
+    return;
+  }
+
   if (pathname === "/api/r2-calllog") {
     let body = "";
     req.on("data", function(chunk) { body += chunk; });

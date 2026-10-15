@@ -1,0 +1,158 @@
+{
+  "status": "success",
+  "data": [
+    {
+      "id": 1,
+      "english": "Dear , \n\nAccenture team has provided feedback on the ticket. Please see and verify:\n\" \"",
+      "vietnamese": "Accenture team có phản hồi trên ticket này. 5S gửi anh/chị thông tin nhờ anh/chị xem qua",
+      "note": "Phản hồi maill cho HQ",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 2,
+      "english": "Install HH device",
+      "vietnamese": "5S xin gửi anh/chị quy trình thực hiện trước và trong khi cài máy như sau:\n\nTrước khi cài máy mới, vui lòng lưu ý:\n\n+ DSR phải đồng bộ dữ liệu máy cũ hoặc đã gửi dữ liệu lên hệ thống.\n(Vì sau khi cài máy mới, máy cũ sẽ không thể tiếp tục sử dụng để đi bán hàng.)\n+ Trên máy mới phải có sẵn ứng dụng Quick Support (Tải trên CH Play) để 5S kết nối và hỗ trợ cài máy.\n\nKiểm tra thông tin trên ứng dụng Knox, đảm bảo đã đúng.\n\nKhi đến thời gian cài máy:\n5S sẽ chủ động liên hệ theo lịch hẹn.\n(Lưu ý: thời gian có thể thay đổi do yếu tố khách quan.)\n\nNgười đại diện:\n+ Cung cấp mã NVBH (xem trong Knox nếu cần).\n+ Mở ứng dụng Quick Support và cung cấp ID để 5S kết nối.\n\nLưu ý: Trong suốt quá trình cài đặt, vui lòng giữ màn hình sáng và luôn ở trong ứng dụng Quick Support cho đến khi 5S kết nối thành công.\n\n5S xin chân thành cảm ơn anh/chị.",
+      "note": "Quy trình cài máy",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 3,
+      "english": "Dear Accenture team,\n\nWe have updated the OTRS ticket. Please check and provide feedback.\nTicketnumber#",
+      "vietnamese": "update ticket",
+      "note": "Update ticekt qua mail",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 4,
+      "english": "Waiting for feedback from HQ",
+      "vietnamese": "Chờ",
+      "note": "Đã gửi mail rồi sẽ waitng form HQ",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 5,
+      "english": "",
+      "vietnamese": "Em gửi anh hình ảnh screenshot thể hiện phần cập nhật thông tin CCCD và MST trên phiên bản mới của HHT. \n\nCác bước thực hiện như sau: \n- Vào phần Thông tin khách hàng \n- Kéo xuống phần Khác, sau đó chọn nút Hơn \n- Hộp thoại hiển thị thông tin bao gồm các trường để nhập và sửa: \n+ Company Tax Reg No (MST) \n+ CCCD \n+ Tax Representator (Người đại diện) \n\nThông tin sau khi nhập có thể Lưu lại để cập nhật cho khách hàng.",
+      "note": "",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 6,
+      "english": "We are confirming with the admin users and will inform you once it becomes possible",
+      "vietnamese": "",
+      "note": "Đang check với admin",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 7,
+      "english": "Could you please check and update us on the status?",
+      "vietnamese": "Push ACN",
+      "note": "Push",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 8,
+      "english": "5S has completely closed the ticket",
+      "vietnamese": "Hoàn tất close ticket",
+      "note": "",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 9,
+      "english": "Please find the attachment with list of tickets discussed in weekly call",
+      "vietnamese": "",
+      "note": "Xem file đính kèm",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 10,
+      "english": "Dear Accenture team,\n\nWe have raised the ticket on OTRS. Kindly check and provide feedback.",
+      "vietnamese": "NA",
+      "note": "Raise ticket qua mail",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 11,
+      "english": "",
+      "vietnamese": "Việc hiển thị vị trí bị lệch có thể do sai số GPS của thiết bị (khi sóng yếu, ở trong nhà, gần cao tầng) hoặc do bản đồ Google tại khu vực chưa khớp tuyệt đối. Đây là sai số phát sinh từ phía thiết bị/bản đồ, không phải từ hệ thống ạ. \nNếu anh/chị có vấn đề khi ghé thăm khách hàng thì vui lòng liên hệ hotline để được hỗ trợ ạ",
+      "note": "Trả lời vấn đề bị lệch toạ độ khi check GG map nhưng toạ độ CH đã đúng",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 12,
+      "english": "",
+      "vietnamese": "Việc hiển thị vị trí bị lệch có thể do sai số GPS của thiết bị (khi sóng yếu, ở trong nhà, gần cao tầng) hoặc do bản đồ Google tại khu vực chưa khớp tuyệt đối. Đây là sai số phát sinh từ phía thiết bị/bản đồ, không phải từ hệ thống ạ.\nNgoài ra, việc trước đây hiển thị đúng nhưng hiện tại kiểm tra lại thấy sai có thể do điều kiện môi trường thay đổi (ví dụ: chất lượng tín hiệu GPS khác, vị trí kiểm tra ở trong nhà hoặc gần vật cản), hoặc do Google cập nhật dữ liệu bản đồ khiến tọa độ hiển thị có sự chênh lệch so với trước.",
+      "note": "Trả lời vấn đề bị lệch toạ độ khi check GG map nhưng trước đây thì đúng",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 13,
+      "english": "",
+      "vietnamese": "Dạ anh/chị, để kiểm tra và ghi nhận chính xác vấn đề này, 5S cần phải kết nối trực tiếp vào thiết bị tại thời điểm DSR thực hiện mở mới cửa hiệu.\nNhờ các anh/chị ASM khi có trường hợp mở mới KH thì báo DSR liên hệ ngay cho 5S để kết nối kiểm tra, đồng thời 5S sẽ quay lại video thao tác và gửi cho bộ phận kỹ thuật xử lý ạ.\n5S xin cảm ơn ạ.",
+      "note": "Trả lời vấn đề khi có người báo lên Issue khi không có hình ảnh hay video chứng minh",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 14,
+      "english": "kết nối quicksupport",
+      "vietnamese": "Tiếng Việt: \"Dạ mình chọn \"\"Xác minh người dùng\"\" -> chọn ô vuông trước \"\"\nTôi muốn cho phép truy cập\"\" -> \"\"Cho phép\"\" -> \"\"Bắt đầu ngay\"\"\n--------------------------------------------------------------------------------------\nTiếng Anh cho người Việt: Chọn “Verify User” → tích vào ô vuông “I trust this person and allow immediate access to my device” → nhấp vào “Allow access” → sau đó chọn “Start now.”\n---------------------------------------------------------------------------------------\nTiếng anh: Select “Verify User” → check the box “I trust this person and allow immediate access to my device” → click “Allow access” → then select “Start now.”",
+      "note": "Link: 0.Step-by-Step Guide on TeamViewer QuickSupport.docx",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 15,
+      "english": "",
+      "vietnamese": "Dạ đối với các ứng dụng ngoài hệ thống DMS, 5S không hỗ trợ được do không quản lý tính năng của các ứng dụng này. Nhờ anh/chị liên hệ về công ty để được hỗ trợ chi tiết ạ",
+      "note": "Trả lời cho các app ngoài dms",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 16,
+      "english": "Lỗi không truy cập được server - hệ thống không hoạt động",
+      "vietnamese": "Dear @All Anh/Chị ASM, \n5S đã nhận thông tin trường hợp không đồng bộ được hoặc không vào được ứng dụng. \n5S đã báo kỹ thuật kiểm tra, khi có phản hồi 5S sẽ thông báo đến Anh/Chị ạ\nXin cảm ơn ạ\n\nDear @All Anh/Chị ASM,\n\nHiện tại, vấn đề không thể kết nối đến sever. 5S đã gửi cho kỹ thuật kiểm tra, 5S sẽ thông báo cho anh/chị sớm khi có kết quả ạ. Nhờ anh/chị thông báo đến DSR giúp 5S ạ\n\n5S xin cảm ơn!\n\nDear @All,\nDạ hiện tại đã đồng bộ bình thường, nhờ anh/chị báo DSR thoát ra và đồng bộ lại giúp 5S ạ. \n5S xin cảm ơn!\n\nDear @All Anh/Chị,\nDạ hiện tại hệ thống đã hoạt động bình thường, nhờ anh/chị thử lại giúp 5S ạ. \n5S xin cảm ơn!",
+      "note": "Cannot connect to seser",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 17,
+      "english": "Locked OTP",
+      "vietnamese": "Dear Anh/Chị, \n5S kiểm tra thì thấy máy bị khoá do xác minh sai Face ID/OTP ạ, nhờ anh gửi mail cho anh Mới để được hỗ trợ mở khoá ạ. 5S xin cảm ơn!",
+      "note": "Khoá OTP",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 18,
+      "english": "NA",
+      "vietnamese": "Dạ đối với ứng dụng chụp ảnh AI Field V3 pro, nhờ anh/chị liên hệ về hotline của Nestle để được hỗ trợ ạ. 5S xin cảm ơn ạ!",
+      "note": "V3 pro",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    },
+    {
+      "id": 19,
+      "english": "NA",
+      "vietnamese": "Dạ do Face ID hiện không nhận điện được khuôn mặt nhờ anh chị dùng tạm tính năng lấy OTP giúp 5S ạ\nMình bấm Get OTP 1 lần duy nhất rồi liên hệ Admin để lấy mã OTP\nTránh nhập sai nhiều lần gây khoá máy ạ\n\nTrong trường hợp máy bị khoá nhờ anh/chị ASM liên hệ anh Mới để mở khoá và liên hệ 5S để được hướng dẫn thao tác ạ\n5S xin cảm ơn",
+      "note": "",
+      "createdAt": 1792032965519,
+      "updatedAt": 1792032965519
+    }
+  ],
+  "updatedAt": 1792032965519
+}

@@ -223,26 +223,45 @@
       gap: 6px;
     }
 
-    .btn-config {
-      background: var(--surface);
-      border: 1px solid var(--border-strong);
-      color: var(--text-secondary);
-      width: 36px;
-      height: 36px;
-      padding: 0;
+    .cloud-badge {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
       border-radius: var(--radius-sm);
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .cloud-badge.error {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .btn-sync {
+      background: #ffffff;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 7px 13px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      transition: all 0.15s ease;
+      gap: 6px;
+      transition: all 0.16s ease;
+      white-space: nowrap;
     }
 
-    .btn-config:hover {
-      background: #f1f5f9;
+    .btn-sync:hover {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
       color: var(--accent);
-      border-color: var(--accent);
     }
 
     /* ── Card ── */
@@ -806,17 +825,6 @@
       </div>
     </div>
 
-    <!-- Cấu hình API URL linh hoạt (mặc định ẩn) -->
-    <div class="config-panel" id="configPanel" style="display: none;">
-      <label for="apiUrlInput">Google Apps Script Web App URL (Văn mẫu):</label>
-      <input type="text" id="apiUrlInput" placeholder="Dán Web App URL của Văn mẫu tại đây..." style="flex: 1; min-width: 250px;" />
-      
-      <label for="workerUrlInput" style="margin-left: 10px;">Worker API URL:</label>
-      <input type="text" id="workerUrlInput" placeholder="Dán Worker API URL tại đây..." style="width: 250px;" />
-      
-      <button class="btn-primary" onclick="saveApiUrl()" style="padding: 6px 12px; font-size:12px;"><i class="fa-solid fa-floppy-disk"></i> Lưu &amp; Tải</button>
-    </div>
-
     <div class="action-bar">
       <div class="search-group">
         <div class="search-container">
@@ -835,8 +843,11 @@
         <div class="result-badge" id="countBadge">
           <i class="fa-solid fa-layer-group"></i> 0 mẫu
         </div>
-        <button class="btn-config" onclick="toggleConfigPanel()" title="Cấu hình URL API">
-          <i class="fa-solid fa-gear"></i>
+        <div class="cloud-badge" id="cloudStatusBadge" title="Dữ liệu lưu trữ và đồng bộ trực tiếp trên Cloudflare R2">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Cloud R2
+        </div>
+        <button type="button" class="btn-sync" id="btnSyncR2" onclick="loadData(false)" title="Tải lại dữ liệu mới nhất từ Cloud R2">
+          <i class="fa-solid fa-arrows-rotate" id="syncIcon"></i> Đồng bộ R2
         </button>
         <button class="btn-primary" onclick="openAddModal()">
           <i class="fa-solid fa-plus"></i>
@@ -863,7 +874,7 @@
               <td colspan="5">
                 <div class="loading-container">
                   <div class="spinner"></div>
-                  <div>Đang tải dữ liệu từ Google Sheets...</div>
+                  <div>Đang tải dữ liệu từ Cloudflare R2...</div>
                 </div>
               </td>
             </tr>
@@ -923,161 +934,121 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
-    // ── URL Config ───────────────────────────────────────────────────────────
-    const VM_LS_KEY     = "NVN_VANMAU_API_URL";
-    const WORKER_LS_KEY = "NVN_VANMAU_WORKER_URL";
-
-    let API_URL = localStorage.getItem(VM_LS_KEY) || "";
-    document.getElementById("apiUrlInput").value = API_URL;
-
-    let WORKER_API_URL = localStorage.getItem(WORKER_LS_KEY) || "";
-    document.getElementById("workerUrlInput").value = WORKER_API_URL;
-
     let allTemplates = [];
     let filteredTemplates = [];
+    let isCloudLoading = false;
 
-    // Bật/tắt thanh cấu hình URL
-    function toggleConfigPanel() {
-      const panel = document.getElementById("configPanel");
-      if (panel) {
-        panel.style.display = (panel.style.display === "none" || !panel.style.display) ? "flex" : "none";
-      }
+    // Real-time broadcast channel giữa các tab
+    const vmBroadcast = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("DMS_VANMAU_SYNC") : null;
+    if (vmBroadcast) {
+      vmBroadcast.onmessage = (e) => {
+        if (e.data && e.data.type === "VANMAU_UPDATED") {
+          console.log("[Broadcast] Nhận tín hiệu cập nhật Văn mẫu từ tab khác");
+          loadData(true);
+        }
+      };
     }
 
-    // R2 endpoint luôn là /api/r2-urls trên Vercel production
-    function getR2Endpoint() {
-      return "/api/r2-urls";
-    }
-
-    // Lưu URL Apps Script cấu hình (localStorage & R2)
-    async function saveApiUrl() {
-      const workerVal = document.getElementById("workerUrlInput").value.trim();
-      if (!workerVal) {
-        alert("Vui lòng dán URL Apps Script vào ô Worker API URL trước khi lưu.");
-        return;
-      }
-
-      // Lưu local và đồng bộ cả 2 ô
-      localStorage.setItem(WORKER_LS_KEY, workerVal);
-      WORKER_API_URL = workerVal;
-
-      localStorage.setItem(VM_LS_KEY, workerVal);
-      API_URL = workerVal;
-      document.getElementById("apiUrlInput").value = workerVal;
-
-      showToast("Đã lưu cấu hình cục bộ!", "success");
-
-      // Đồng bộ lên R2
-      try {
-        const payload = JSON.stringify({ action: "save_url", name: "Văn mẫu", url: workerVal });
-        const endpoint = getR2Endpoint();
-        const separator = endpoint.includes("?") ? "&" : "?";
-        const requestUrl = `${endpoint}${separator}data=${encodeURIComponent(payload)}&t=${Date.now()}`;
-
-        const res = await fetch(requestUrl);
-        const rawText = await res.text();
-        console.log("[R2 Save] endpoint:", requestUrl);
-        console.log("[R2 Save] HTTP status:", res.status);
-        console.log("[R2 Save] response body:", rawText);
-        if (!res.ok) throw new Error(`HTTP ${res.status}: ${rawText}`);
-        let result;
-        try { result = JSON.parse(rawText); } catch(e) { throw new Error("Response không phải JSON: " + rawText); }
-        if (result.status === "success" || result.success) {
-          showToast("✅ Đã đồng bộ URL Văn mẫu thành công!", "success");
+    // Endpoint API R2
+    function getVanMauApiEndpoint(queryParam = "") {
+      let base = "";
+      if (window.location.protocol === "file:") {
+        base = "https://5snvn-tools.vercel.app";
+      } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        if (window.location.port !== "3000") {
+          base = "http://localhost:3000";
         } else {
-          const detail = [result.message, result.r2Body].filter(Boolean).join(" | ");
-          showToast("⚠️ Lưu cấu hình thất bại: " + (detail || "lỗi không rõ"), "error");
+          base = "";
         }
-      } catch (err) {
-        console.error("[R2 Save] Error:", err);
-        alert(`Lưu cấu hình thất bại:\n${err.message}`);
+      } else {
+        base = "";
       }
-      
-      loadData();
+      const sep = queryParam ? (queryParam.startsWith("?") ? "" : "?") : "";
+      return base + "/api/r2-vanmau" + (queryParam ? sep + queryParam : "");
     }
 
-    // Tự động lấy URL Văn mẫu từ R2 khi mở trang
-    async function autoDetectVanMauUrl() {
-      const endpoint = getR2Endpoint();
-      try {
-        const res = await fetch(endpoint + (endpoint.includes("?") ? "&" : "?") + "t=" + Date.now());
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        
-        // Tìm URL tương ứng với "Văn mẫu"
-        const vmUrl = data["Văn mẫu"] || data["Văn mẫu NVN"] || data["van mau"] || data["template"];
-        if (vmUrl) {
-          const cleanUrl = vmUrl.trim();
-          const localUrl = localStorage.getItem(WORKER_LS_KEY) || "";
-          if (cleanUrl && cleanUrl !== localUrl) {
-            // Đồng bộ cả 2 ô cấu hình và local storage
-            document.getElementById("workerUrlInput").value = cleanUrl;
-            localStorage.setItem(WORKER_LS_KEY, cleanUrl);
-            WORKER_API_URL = cleanUrl;
-
-            document.getElementById("apiUrlInput").value = cleanUrl;
-            localStorage.setItem(VM_LS_KEY, cleanUrl);
-            API_URL = cleanUrl;
-
-            console.log("[R2 Sync] Tự động tải URL Văn mẫu từ R2 và điền vào cấu hình:", cleanUrl);
-          }
-        }
-      } catch (err) {
-        console.warn("Lỗi auto-detect URL từ R2:", err);
+    // Cập nhật huy hiệu trạng thái Cloud
+    function updateCloudStatus(text, isError = false) {
+      const badge = document.getElementById("cloudStatusBadge");
+      if (!badge) return;
+      if (isError) {
+        badge.className = "cloud-badge error";
+        badge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${text}`;
+      } else {
+        badge.className = "cloud-badge";
+        badge.innerHTML = `<i class="fa-solid fa-cloud-check"></i> ${text}`;
       }
     }
 
+    // Tải dữ liệu từ R2 (có hỗ trợ cache localStorage hiển thị tức thì)
+    async function loadData(isSilent = false) {
+      if (isCloudLoading) return;
+      isCloudLoading = true;
 
-    // Tải dữ liệu từ Apps Script
-    async function loadData() {
       const tbody = document.getElementById("tableBody");
+      const syncIcon = document.getElementById("syncIcon");
+      if (syncIcon) syncIcon.classList.add("fa-spin");
 
-      if (!API_URL) {
+      // Nếu chưa có dữ liệu nào và không silent thì hiện spinner
+      if (!isSilent && (!allTemplates || allTemplates.length === 0)) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="empty-state">
-              <div style="color: var(--danger); font-weight:600; margin-bottom: 8px;">Vui lòng nhập Google Apps Script Web App URL của Văn mẫu ở cấu hình phía trên!</div>
-              <div>Bạn cần triển khai mã Apps Script dưới dạng Web App, cấu hình chế độ truy cập "Anyone" và điền URL vào ô cấu hình để bắt đầu sử dụng.</div>
+            <td colspan="5">
+              <div class="loading-container">
+                <div class="spinner"></div>
+                <div>Đang tải dữ liệu từ Cloudflare R2...</div>
+              </div>
             </td>
           </tr>
         `;
-        return;
       }
 
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5">
-            <div class="loading-container">
-              <div class="spinner"></div>
-              <div>Đang tải dữ liệu từ Google Sheets...</div>
-            </div>
-          </td>
-        </tr>
-      `;
-
       try {
-        const response = await fetch(`${API_URL}?action=read`);
+        const url = getVanMauApiEndpoint("t=" + Date.now());
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         const result = await response.json();
 
-        if (result.status === "success") {
-          allTemplates = result.data || [];
+        if (result.status === "success" && Array.isArray(result.data)) {
+          allTemplates = result.data;
           filteredTemplates = [...allTemplates];
+          localStorage.setItem("NVN_VANMAU_CACHE", JSON.stringify(allTemplates));
           renderTable();
+          updateCloudStatus(`R2 (${allTemplates.length} mẫu)`);
+          if (!isSilent) {
+            showToast(`Đã đồng bộ ${allTemplates.length} câu văn mẫu từ Cloud R2!`, "success");
+          }
         } else {
-          showToast("Lỗi khi đọc dữ liệu từ Sheets!", "error");
-          tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Không thể tải dữ liệu. Lỗi: ${result.message || 'Lỗi không rõ'}</td></tr>`;
+          throw new Error(result.message || "Dữ liệu trả về không hợp lệ");
         }
       } catch (error) {
-        console.error("Lỗi:", error);
-        showToast("Lỗi kết nối API Apps Script!", "error");
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="5" class="empty-state">
-              <div style="color: var(--danger); font-weight:600; margin-bottom:8px;">Lỗi kết nối!</div>
-              <div style="font-size:12px; color:#555;">Hãy chắc chắn bạn đã deploy Apps Script đúng cách.</div>
-            </td>
-          </tr>
-        `;
+        console.error("Lỗi tải từ R2:", error);
+        updateCloudStatus("Lỗi kết nối R2", true);
+
+        // Fallback đọc từ cache nếu có
+        const cached = localStorage.getItem("NVN_VANMAU_CACHE");
+        if (cached) {
+          try {
+            allTemplates = JSON.parse(cached);
+            filteredTemplates = [...allTemplates];
+            renderTable();
+            showToast("Đang hiển thị bản lưu gần nhất (Offline)", "error");
+          } catch (_) {}
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" class="empty-state">
+                <div style="color: var(--danger); font-weight:600; margin-bottom:8px;">Không thể tải dữ liệu từ Cloud R2</div>
+                <div style="font-size:12px; color:#64748b;">${error.message || "Vui lòng kiểm tra lại kết nối mạng hoặc thử lại."}</div>
+              </td>
+            </tr>
+          `;
+        }
+      } finally {
+        isCloudLoading = false;
+        if (syncIcon) syncIcon.classList.remove("fa-spin");
       }
     }
 
@@ -1193,7 +1164,7 @@
         btnDel.className = "btn-delete";
         btnDel.title = "Xóa câu mẫu";
         btnDel.innerHTML = `<i class="fa-solid fa-trash-can"></i>`;
-        btnDel.onclick = () => handleDelete(item.id, item.english);
+        btnDel.onclick = () => handleDelete(item.id, item.english || item.vietnamese);
 
         actionWrap.appendChild(btnEdit);
         actionWrap.appendChild(btnDel);
@@ -1240,6 +1211,7 @@
     // Hiển thị thông báo Toast
     function showToast(message, type = "success") {
       const container = document.getElementById("toastContainer");
+      if (!container) return;
       const toast = document.createElement("div");
       toast.className = `toast toast-${type}`;
       toast.innerHTML = `
@@ -1335,7 +1307,7 @@
 
     // Mở Modal Thêm mới
     function openAddModal() {
-      document.getElementById("modalTitle").textContent = "Thêm mới câu văn mẫu";
+      document.getElementById("modalTitle").textContent = "Thêm mới câu văn mẫu (Lưu lên R2)";
       document.getElementById("templateId").value = "";
       document.getElementById("englishInput").value = "";
       document.getElementById("vietnameseInput").value = "";
@@ -1343,18 +1315,20 @@
       
       const modal = document.getElementById("formModal");
       modal.classList.add("show");
+      setTimeout(() => document.getElementById("englishInput")?.focus(), 150);
     }
 
     // Mở Modal Sửa
     function openEditModal(item) {
-      document.getElementById("modalTitle").textContent = "Cập nhật câu văn mẫu";
+      document.getElementById("modalTitle").textContent = "Cập nhật câu văn mẫu (R2)";
       document.getElementById("templateId").value = item.id;
-      document.getElementById("englishInput").value = item.english;
-      document.getElementById("vietnameseInput").value = item.vietnamese;
+      document.getElementById("englishInput").value = item.english || "";
+      document.getElementById("vietnameseInput").value = item.vietnamese || "";
       document.getElementById("noteInput").value = item.note || "";
       
       const modal = document.getElementById("formModal");
       modal.classList.add("show");
+      setTimeout(() => document.getElementById("englishInput")?.focus(), 150);
     }
 
     // Đóng Modal
@@ -1363,55 +1337,24 @@
       modal.classList.remove("show");
     }
 
-    // Hàm gửi request ghi dữ liệu dùng chung (Hỗ trợ GET Fallback phòng lỗi CORS redirect của Apps Script)
-    async function sendApiWriteRequest(payload) {
-      try {
-        // 1. Thử gửi POST thông thường
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload)
-        });
-        const result = await response.json();
-
-        const errMsg = String(result.message || "");
-        if (result.status === "error" && (errMsg.includes("Action không hợp lệ") || errMsg.includes("không được hỗ trợ"))) {
-          console.warn("POST bị redirect thành GET, kích hoạt GET Fallback cho Văn mẫu...");
-          return await sendApiWriteRequestFallback(payload);
-        }
-        return result;
-
-      } catch (error) {
-        console.warn("Lỗi fetch POST, thử GET Fallback cho Văn mẫu:", error);
-        return await sendApiWriteRequestFallback(payload);
-      }
-    }
-
-    // Gửi request ghi dữ liệu bằng GET (mã hóa JSON qua tham số data)
-    async function sendApiWriteRequestFallback(payload) {
-      const url = `${API_URL}?action=${payload.action}&data=${encodeURIComponent(JSON.stringify(payload))}`;
-      const response = await fetch(url);
-      return response.json();
-    }
-
-    // Xử lý Lưu Thêm mới / Sửa cập nhật
+    // Xử lý Lưu Thêm mới / Sửa cập nhật trực tiếp lên Cloudflare R2
     async function handleSubmit(event) {
       event.preventDefault();
-      
-      if (!API_URL) {
-        showToast("Chưa cấu hình API URL!", "error");
-        return;
-      }
 
       const id = document.getElementById("templateId").value;
       const english = document.getElementById("englishInput").value.trim();
       const vietnamese = document.getElementById("vietnameseInput").value.trim();
       const note = document.getElementById("noteInput").value.trim();
 
+      if (!english && !vietnamese) {
+        showToast("Vui lòng nhập ít nhất Tiếng Anh hoặc Tiếng Việt!", "error");
+        return;
+      }
+
       const btnSubmit = document.getElementById("btnSubmit");
-      const originalBtnText = btnSubmit.textContent;
+      const originalBtnText = btnSubmit.innerHTML;
       btnSubmit.disabled = true;
-      btnSubmit.textContent = "Đang xử lý...";
+      btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu lên R2...`;
 
       const isEdit = id !== "";
       const payload = {
@@ -1426,32 +1369,40 @@
       }
 
       try {
-        const result = await sendApiWriteRequest(payload);
+        const response = await fetch(getVanMauApiEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
         
         if (result.status === "success") {
-          showToast(isEdit ? "Cập nhật thành công!" : "Thêm mới thành công!", "success");
+          showToast(isEdit ? "Cập nhật câu văn mẫu thành công!" : "Thêm mới câu văn mẫu thành công!", "success");
           closeModal();
-          loadData();
+          
+          // Phát tín hiệu đồng bộ realtime sang các tab khác
+          if (vmBroadcast) {
+            try { vmBroadcast.postMessage({ type: "VANMAU_UPDATED" }); } catch(_) {}
+          }
+          
+          await loadData(true);
         } else {
           showToast("Có lỗi xảy ra: " + (result.message || "Không rõ"), "error");
         }
       } catch (error) {
-        console.error("Lỗi:", error);
-        showToast("Lỗi kết nối tới Server!", "error");
+        console.error("Lỗi khi lưu lên R2:", error);
+        showToast("Lỗi kết nối tới Server R2!", "error");
       } finally {
         btnSubmit.disabled = false;
-        btnSubmit.textContent = originalBtnText;
+        btnSubmit.innerHTML = originalBtnText;
       }
     }
 
-    // Xóa dòng
+    // Xóa câu văn mẫu trực tiếp trên R2
     async function handleDelete(id, nameSnippet) {
-      if (!API_URL) {
-        showToast("Chưa cấu hình API URL!", "error");
-        return;
-      }
-
-      const confirmMsg = `Bạn có chắc chắn muốn xóa câu văn mẫu này?\n"${nameSnippet.substring(0, 60)}${nameSnippet.length > 60 ? '...' : ''}"`;
+      const preview = (nameSnippet || "").trim();
+      const confirmMsg = `Bạn có chắc chắn muốn xóa câu văn mẫu này khỏi Cloud R2?\n\n"${preview.substring(0, 60)}${preview.length > 60 ? '...' : ''}"`;
       if (!confirm(confirmMsg)) return;
 
       try {
@@ -1460,30 +1411,60 @@
           id: parseInt(id)
         };
 
-        const result = await sendApiWriteRequest(payload);
+        const response = await fetch(getVanMauApiEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
         if (result.status === "success") {
-          showToast("Đã xóa câu văn mẫu thành công!", "success");
-          loadData();
+          showToast("Đã xóa câu văn mẫu thành công khỏi R2!", "success");
+          
+          if (vmBroadcast) {
+            try { vmBroadcast.postMessage({ type: "VANMAU_UPDATED" }); } catch(_) {}
+          }
+
+          await loadData(true);
         } else {
           showToast("Xóa thất bại: " + (result.message || "Không rõ"), "error");
         }
       } catch (error) {
-        console.error("Lỗi khi xóa:", error);
+        console.error("Lỗi khi xóa trên R2:", error);
         showToast("Lỗi kết nối khi thực hiện xóa!", "error");
       }
     }
 
-    // Load dữ liệu khi trang khởi động
+    // Khởi động trang: đọc cache tức thì rồi nạp dữ liệu mới nhất từ R2
     window.onload = async () => {
       const clearSearchBar = document.getElementById("clearSearchBar");
       if (clearSearchBar) {
         clearSearchBar.addEventListener("click", clearSearch);
       }
-      // Tự động tải URL từ R2 nếu chưa cấu hình cục bộ hoặc để làm mới
-      await autoDetectVanMauUrl();
-      loadData();
-    };
 
+      // Đọc cache tức thì (zero flash)
+      const cached = localStorage.getItem("NVN_VANMAU_CACHE");
+      if (cached) {
+        try {
+          allTemplates = JSON.parse(cached);
+          filteredTemplates = [...allTemplates];
+          renderTable();
+          updateCloudStatus(`R2 (${allTemplates.length} mẫu)`);
+        } catch (_) {}
+      }
+
+      // Nạp dữ liệu mới nhất từ R2
+      loadData(false);
+
+      window.addEventListener("pageshow", () => {
+        loadData(true);
+      });
+      window.addEventListener("message", (e) => {
+        if (e.data === "tab-activated" || (e.data && e.data.type === "TAB_ACTIVATED")) {
+          loadData(true);
+        }
+      });
+    };
   </script>
 </body>
 
