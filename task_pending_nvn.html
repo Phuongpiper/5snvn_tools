@@ -1390,12 +1390,6 @@
           <p>Quản lý công việc đang chờ xử lý, phân công và theo dõi tiến độ cho cả nhóm.</p>
         </div>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <button class="btn-outline" onclick="openProjectModal()" style="gap: 6px;"><i class="fa-solid fa-diagram-project"></i> Quản
-          lý dự án</button>
-        <button class="btn-outline" onclick="openMemberModal()" style="gap: 6px;"><i class="fa-solid fa-users"></i> Quản
-          lý thành viên</button>
-      </div>
     </div>
 
     <!-- ── Summary Cards ── -->
@@ -3216,6 +3210,17 @@
     /* ──────────────────────────────────────────────────────────────────────────
        INIT
     ────────────────────────────────────────────────────────────────────────── */
+    window.openProjectModal = openProjectModal;
+    window.openMemberModal = openMemberModal;
+
+    window.addEventListener("message", (e) => {
+      if (e.data?.type === "OPEN_PROJECT_MODAL") {
+        openProjectModal();
+      } else if (e.data?.type === "OPEN_MEMBER_MODAL") {
+        openMemberModal();
+      }
+    });
+
     window.addEventListener("load", async () => {
       await autoDetectTaskUrl();
       loadAll();

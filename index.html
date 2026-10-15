@@ -600,6 +600,34 @@
         box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
       }
 
+      /* ── Topbar Action Buttons (Projects, Members) ── */
+      .top-action-btn {
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        font-size: 14px;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      }
+      .top-action-btn:hover {
+        background-color: #ffffff;
+        border-color: #6366f1;
+        color: #4f46e5;
+        transform: translateY(-1px) scale(1.05);
+        box-shadow: 0 3px 8px rgba(99, 102, 241, 0.15);
+      }
+      .top-action-btn:active {
+        transform: translateY(0) scale(0.98);
+      }
+
       /* ── Topbar Sync Button ── */
       .top-sync-btn {
         background: #ffffff;
@@ -1236,6 +1264,16 @@
                 </div>
               </div>
             </div>
+            <!-- Quản lý Dự án -->
+            <button class="top-action-btn" id="btnTopProjects" type="button" title="Quản lý dự án">
+              <i class="fa-solid fa-diagram-project"></i>
+            </button>
+
+            <!-- Quản lý Nhân viên / Thành viên -->
+            <button class="top-action-btn" id="btnTopMembers" type="button" title="Quản lý nhân viên">
+              <i class="fa-solid fa-users"></i>
+            </button>
+
             <!-- Settings Button -->
             <div class="settings-container" id="settingsContainer">
               <button class="settings-btn" id="btnOpenSettings" title="Cài đặt & Quản lý Tabs (Yêu cầu mật khẩu)">
@@ -1385,6 +1423,48 @@
           }
         });
       }
+
+      // ── Xử lý mở Quản lý dự án & Quản lý nhân viên từ topbar ──
+      function triggerTaskPendingModal(action) {
+        const pendingBtn = document.querySelector('[data-frame-target="taskPendingFrame"]');
+        const frame = document.getElementById("taskPendingFrame");
+        if (pendingBtn && !pendingBtn.classList.contains("active")) {
+          pendingBtn.click();
+        }
+
+        function openModalInFrame() {
+          if (!frame || !frame.contentWindow) return;
+          try {
+            if (action === "projects") {
+              if (typeof frame.contentWindow.openProjectModal === "function") {
+                frame.contentWindow.openProjectModal();
+              } else {
+                frame.contentWindow.postMessage({ type: "OPEN_PROJECT_MODAL" }, "*");
+              }
+            } else if (action === "members") {
+              if (typeof frame.contentWindow.openMemberModal === "function") {
+                frame.contentWindow.openMemberModal();
+              } else {
+                frame.contentWindow.postMessage({ type: "OPEN_MEMBER_MODAL" }, "*");
+              }
+            }
+          } catch (_) {
+            frame.contentWindow.postMessage({ 
+              type: action === "projects" ? "OPEN_PROJECT_MODAL" : "OPEN_MEMBER_MODAL" 
+            }, "*");
+          }
+        }
+
+        setTimeout(openModalInFrame, 150);
+      }
+
+      document.getElementById("btnTopProjects")?.addEventListener("click", () => {
+        triggerTaskPendingModal("projects");
+      });
+
+      document.getElementById("btnTopMembers")?.addEventListener("click", () => {
+        triggerTaskPendingModal("members");
+      });
     </script>
 
     <!-- ── Global Priority Notification System ── -->
