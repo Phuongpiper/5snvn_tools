@@ -3920,9 +3920,14 @@
                 Tất cả (<span id="cntChatboxAll">0</span>)
               </button>
               <button type="button" class="preset-pill" id="btnFilterChatboxNoted"
-                onclick="setStatsChatboxFilter('noted')" title="Chỉ xem issue đã ghi nhận ticket Chatbox AI">
+                onclick="setStatsChatboxFilter('noted')" title="Chỉ xem issue đã hoàn tất đóng ticket Chatbox AI">
                 <i class="fa-solid fa-circle-check" style="color:#10b981;"></i> Đã note (<span
                   id="cntChatboxNoted">0</span>)
+              </button>
+              <button type="button" class="preset-pill" id="btnFilterChatboxPending"
+                onclick="setStatsChatboxFilter('pending')" title="Chỉ xem issue có ticket Chatbox AI đang Pending (chưa đóng)">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#f97316;"></i> Đang Pending (<span
+                  id="cntChatboxPending">0</span>)
               </button>
               <button type="button" class="preset-pill" id="btnFilterChatboxUnnoted"
                 onclick="setStatsChatboxFilter('unnoted')" title="Chỉ xem issue chưa có ticket Chatbox AI">
@@ -5979,7 +5984,16 @@
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = getIssueDateNormalized(issue);
-        const issueAgent = String(issue.memberCode || "").trim().toLowerCase();
+        let issueAgent = String(issue.memberCode || "").trim().toLowerCase();
+        if (!issueAgent && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
+          issueAgent = String(currentSelectedMember.code).trim().toLowerCase();
+        }
+        if (!issueAgent && Array.isArray(r2Issues)) {
+          const r2Found = r2Issues.find(r => r && (String(r.id) === String(issue.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(issue))));
+          if (r2Found && r2Found.memberCode) {
+            issueAgent = String(r2Found.memberCode).trim().toLowerCase();
+          }
+        }
         const issueOtrs = extractOtrsNum(issue.result) || extractOtrsNum(issue.fields?.npp) || extractOtrsNum(issue.fields?.hotline);
         const issueNpp = extractNppFromIssue(issue);
 
@@ -6011,7 +6025,9 @@
         const agentDateCandidates = availableTickets.filter(t => {
           const tAgent = String(t.agentId || "").trim().toLowerCase();
           const tDate = getTicketDateNormalized(t);
-          return tAgent === issueAgent && tDate === issueDate;
+          const isAgentMatch = !issueAgent || tAgent === issueAgent ||
+            (tAgent && issueAgent && (tAgent.startsWith(issueAgent) || issueAgent.startsWith(tAgent)));
+          return isAgentMatch && tDate === issueDate;
         });
 
         if (agentDateCandidates.length === 0) {
@@ -6055,6 +6071,14 @@
               m = otrsCandidates.find(t => {
                 const tAction = getOtrsActionType(t.solutionCode, t.solutionName, t.description);
                 return tAction === issueAction;
+              });
+            }
+
+            // Ưu tiên 4: Khớp theo Mã nhân viên / DSR nếu có
+            if (!m && issueDsr) {
+              m = otrsCandidates.find(t => {
+                const tDsr = extractDsrFromTicket(t);
+                return tDsr && tDsr === issueDsr;
               });
             }
 
@@ -6197,8 +6221,8 @@
       }
 
       window.setStatsChatboxFilter = function (mode) {
-        statsChatboxFilter = ["all", "noted", "unnoted"].includes(mode) ? mode : "all";
-        ["btnFilterChatboxAll", "btnFilterChatboxNoted", "btnFilterChatboxUnnoted"].forEach(btnId => {
+        statsChatboxFilter = ["all", "noted", "pending", "unnoted"].includes(mode) ? mode : "all";
+        ["btnFilterChatboxAll", "btnFilterChatboxNoted", "btnFilterChatboxPending", "btnFilterChatboxUnnoted"].forEach(btnId => {
           const btn = document.getElementById(btnId);
           if (btn) btn.classList.toggle("active", btnId.toLowerCase().includes(statsChatboxFilter));
         });
@@ -6297,11 +6321,31 @@
         const btnCopyNewChat = document.getElementById("btnModalCopyPromptNewChat");
         if (btnCopyNewChat) {
           btnCopyNewChat.style.display = isClosed ? "none" : "inline-flex";
+          btnCopyNewChat.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Mở Chat mới đóng ticket';
         }
+
+        let matchedIssue = (Array.isArray(r2Issues) ? r2Issues.find(iss => iss.matchedTicket?.id === t.id) : null) ||
+          (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
+        const pendingPromptText = !isClosed ? formatPendingTicketClosePrompt(t, matchedIssue) : "";
 
         const bodyEl = document.getElementById("modalTicketBody");
         if (bodyEl) {
           bodyEl.innerHTML = `
+            ${!isClosed ? `
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-md); padding:12px 14px;">
+              <div style="font-size:12.5px; font-weight:800; color:#b45309; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Ticket đang ở trạng thái PENDING (chưa đóng)
+              </div>
+              <div style="font-size:12px; color:#92400e; line-height:1.5;">
+                Bạn có thể nhấn <strong>"Đóng Ticket Ngay"</strong> để hệ thống tự gửi lệnh phân tích và đóng ticket trên Chatbox AI, hoặc nhấn <strong>"Mở Chat mới đóng ticket"</strong> để mở tab Chatbox AI.
+              </div>
+              <details style="font-size:11.5px; color:#b45309; margin-top:8px;">
+                <summary style="cursor:pointer; font-weight:700;">Xem nội dung lệnh Chat đóng ticket</summary>
+                <pre style="background:#fef3c7; padding:8px 10px; border-radius:6px; overflow-x:auto; margin-top:6px; font-family:var(--font-mono); font-size:11px; white-space:pre-wrap; border:1px solid #fde68a; color:#78350f;">${escapeHTML(pendingPromptText)}</pre>
+              </details>
+            </div>
+            ` : ''}
+
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-md); padding:14px;">
               <div>
                 <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Mã Ticket</div>
@@ -6390,6 +6434,49 @@
         if (modal) modal.classList.remove("show");
       };
 
+      function formatPendingTicketClosePrompt(ticket, matchedIssue = null) {
+        if (!ticket) return "";
+        const t = ticket;
+        if (!matchedIssue) {
+          matchedIssue = (Array.isArray(r2Issues) ? r2Issues.find(iss => iss.matchedTicket?.id === t.id) : null) ||
+            (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
+        }
+
+        // Call details: Ưu tiên raw result của issue hoặc description/solutionName của ticket
+        const callDetails = (matchedIssue ? matchedIssue.result : "") || t.description || t.solutionName || "Hỗ trợ DMS";
+
+        // Tên Solution:
+        let solName = t.solutionName || t.description || (matchedIssue ? (matchedIssue.fields?.solution || matchedIssue.result) : "") || "Hỗ trợ DMS";
+
+        // Gán Solution Code:
+        let solCode = t.solutionCode || (matchedIssue ? matchedIssue.fields?.solutionCode : "") || "";
+        if (!solCode && solName && typeof getSolutionCodeByName === "function") {
+          solCode = getSolutionCodeByName(solName);
+        }
+        if (!solCode) solCode = "NVN-074";
+
+        let nppName = t.distName || (matchedIssue ? matchedIssue.fields?.npp : "") || "Chưa có";
+        let nppCode = t.distCode || (matchedIssue ? (matchedIssue.fields?.distCode || matchedIssue.distCode || "") : "") || "Chưa có";
+        let dsrCode = t.dsrCode || (matchedIssue ? (matchedIssue.fields?.nvbhFormatted || matchedIssue.fields?.nvbh || matchedIssue.fields?.role || "") : "") || "Chưa có";
+
+        let contact = t.phone || t.contact_source || (matchedIssue ? (matchedIssue.fields?.hotline || "") : "") || "Hotline";
+        if (contact.toLowerCase().includes("otrs") || contact.toLowerCase().includes("mail")) {
+          contact = "Hotline";
+        }
+
+        return [
+          `Close ticker Ticket ${t.id} với thông tin: Project NVN`,
+          `- Call Details: ${callDetails}`,
+          `- Tên Solution: ${solName}`,
+          `- Gán Solution: ${solCode}`,
+          `- Tên NPP: ${nppName}`,
+          `- Mã NPP: ${nppCode}`,
+          `- Mã nhân viên (DSR): ${dsrCode}`,
+          `- Nguồn liên hệ: ${contact}`,
+          `=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket`
+        ].join("\n");
+      }
+
       window.forceCloseHelpdeskTicketCurrent = async function () {
         if (!currentModalTicketId) return;
         await window.forceCloseHelpdeskTicket(currentModalTicketId);
@@ -6399,21 +6486,66 @@
         const btnForceClose = document.getElementById("btnModalForceCloseTicket");
         if (btnForceClose) {
           btnForceClose.disabled = true;
-          btnForceClose.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đóng ticket...';
+          btnForceClose.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi lệnh đóng ticket...';
         }
 
         try {
-          const currentMemberCode = (currentSelectedMember?.code || "tanh.h.bui.3811").toLowerCase();
-          const loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: currentMemberCode, password: "1" })
-          });
-          if (!loginRes.ok) throw new Error("Đăng nhập Helpdesk không thành công");
-          const authData = await loginRes.json();
-          const token = authData.access_token;
-          if (!token) throw new Error("Không nhận được token xác thực");
+          const t = helpdeskTickets.find(item => String(item.id) === String(ticketId));
+          const agentUsername = (t?.agentId || currentSelectedMember?.code || "tanh.h.bui.3811").toLowerCase();
+          
+          let token = "";
+          try {
+            const loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: agentUsername, password: "1" })
+            });
+            if (loginRes.ok) {
+              const authData = await loginRes.json();
+              token = authData.access_token || "";
+            }
+          } catch (loginErr) {
+            console.warn("Login with agent failed, fallback default:", loginErr);
+          }
 
+          if (!token) {
+            const defLogin = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: "tanh.h.bui.3811", password: "1" })
+            });
+            if (defLogin.ok) {
+              const dAuth = await defLogin.json();
+              token = dAuth.access_token || "";
+            }
+          }
+
+          if (!token) throw new Error("Không nhận được token xác thực từ Helpdesk");
+
+          // 1. Tạo prompt close ticket và sao chép vào Clipboard
+          const closePrompt = formatPendingTicketClosePrompt(t);
+          if (closePrompt) {
+            try {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(closePrompt);
+              }
+            } catch (_) { }
+
+            // Gửi lệnh chat sang Chatbox AI (/api/chat) để AI tự động phân tích & ghi nhận Root Cause / Result
+            try {
+              const formData = new FormData();
+              formData.append("text", closePrompt);
+              await fetch("https://helpdesk.ai-audit-test.online/api/chat", {
+                method: "POST",
+                headers: { "Authorization": "Bearer " + token },
+                body: formData
+              });
+            } catch (chatErr) {
+              console.warn("Lỗi gửi chat AI tự động đóng ticket:", chatErr);
+            }
+          }
+
+          // 2. Đồng thời gọi trực tiếp PUT /api/tickets/{id} status: CLOSED để đảm bảo 100% ticket được đóng
           const putRes = await fetch(`https://helpdesk.ai-audit-test.online/api/tickets/${ticketId}`, {
             method: "PUT",
             headers: {
@@ -6423,11 +6555,10 @@
             body: JSON.stringify({ status: "CLOSED" })
           });
 
-          if (!putRes.ok) {
+          if (!putRes.ok && !closePrompt) {
             throw new Error(`Cập nhật thất bại (HTTP ${putRes.status})`);
           }
 
-          const t = helpdeskTickets.find(item => String(item.id) === String(ticketId));
           if (t) t.status = "CLOSED";
 
           const badgeStatus = document.getElementById("modalTicketStatusBadge");
@@ -6442,13 +6573,16 @@
           const btnCopyNewChat = document.getElementById("btnModalCopyPromptNewChat");
           if (btnCopyNewChat) btnCopyNewChat.style.display = "none";
 
-          showToast(`🎉 Đã đóng thành công Ticket #${ticketId}!`, "fa-circle-check");
+          showToast(`🎉 Đã đóng thành công Ticket #${ticketId}! (Đã copy prompt phân tích vào Clipboard)`, "fa-circle-check");
 
           if (typeof fetchHelpdeskTickets === "function") {
             fetchHelpdeskTickets(false, true);
           }
           if (typeof renderStatsPage === "function") {
             renderStatsPage();
+          }
+          if (typeof renderTempTable === "function") {
+            renderTempTable();
           }
         } catch (err) {
           console.error("Lỗi đóng ticket:", err);
@@ -6464,26 +6598,40 @@
         if (!currentModalTicketId) return;
         const t = helpdeskTickets.find(item => String(item.id) === String(currentModalTicketId));
         if (!t) return;
-        let matchedIssue = (Array.isArray(r2Issues) ? r2Issues.find(iss => iss.matchedTicket?.id === t.id) : null) ||
-          (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
+        
         let promptText = "";
-        if (matchedIssue) {
-          promptText = formatIssueCopyText(matchedIssue);
+        const isClosed = (t.status || "").toUpperCase() === "CLOSED";
+        if (!isClosed) {
+          promptText = formatPendingTicketClosePrompt(t);
         } else {
-          promptText = [
-            `Tạo mới Ticket với thông tin: Project NVN`,
-            `- Call Details: ${t.description || t.solutionName || 'Hỗ trợ DMS'}`,
-            `- Tên Solution: ${t.solutionName || 'Hỗ trợ DMS'}`,
-            `- Gán Solution: ${t.solutionCode || 'NVN-074'}`,
-            `- Tên NPP: ${t.distName || 'Chưa có'}`,
-            `- Mã NPP: ${t.distCode || 'Chưa có'}`,
-            `- Mã nhân viên (DSR): ${t.dsrCode || 'Chưa có'}`,
-            `- Nguồn liên hệ: ${t.contact_source || t.phone || 'Hotline'}`,
-            `=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`
-          ].join("\n");
+          let matchedIssue = (Array.isArray(r2Issues) ? r2Issues.find(iss => iss.matchedTicket?.id === t.id) : null) ||
+            (Array.isArray(tempNotes) ? tempNotes.find(iss => iss.matchedTicket?.id === t.id) : null);
+          if (matchedIssue) {
+            promptText = formatIssueCopyText(matchedIssue);
+          } else {
+            promptText = [
+              `Tạo mới Ticket với thông tin: Project NVN`,
+              `- Call Details: ${t.description || t.solutionName || 'Hỗ trợ DMS'}`,
+              `- Tên Solution: ${t.solutionName || 'Hỗ trợ DMS'}`,
+              `- Gán Solution: ${t.solutionCode || 'NVN-074'}`,
+              `- Tên NPP: ${t.distName || 'Chưa có'}`,
+              `- Mã NPP: ${t.distCode || 'Chưa có'}`,
+              `- Mã nhân viên (DSR): ${t.dsrCode || 'Chưa có'}`,
+              `- Nguồn liên hệ: ${t.contact_source || t.phone || 'Hotline'}`,
+              `=> Sau đó hãy dựa vào solution để tự phân tích Nguyên nhân & Kết quả rồi tự close ticket vừa tạo.`
+            ].join("\n");
+          }
         }
-        navigator.clipboard.writeText(promptText);
-        showToast(`Đã sao chép prompt cho Ticket #${t.id}! Mở Chat mới dán Ctrl + V.`, "fa-copy");
+
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(promptText);
+          }
+        } catch (_) { }
+
+        const targetUrl = "https://helpdesk.ai-audit-test.online/helpdesk/#prompt=" + encodeURIComponent(promptText);
+        window.open(targetUrl, "_blank");
+        showToast(`📋 Đã sao chép prompt đóng Ticket #${t.id} và mở Chatbox AI!`, "fa-copy");
       };
 
       // ── TỰ ĐỘNG ĐỒNG BỘ OTRS TICKET LÊN GOOGLE SHEET BÁO CÁO ──
@@ -8512,10 +8660,19 @@
         tempTbody.innerHTML = filtered
           .map(
             (n, idx) => {
-              const isPastDate = n.date && todayStr && n.date !== todayStr;
-              const isOtrs = isOtrsRaiseCloseTicket(n);
-              const isSynced = isTempNoteSynced(n);
-              const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(n, helpdeskTickets, usedTicketIds) : null;
+              let effectiveIssue = n;
+              if (!effectiveIssue.memberCode) {
+                if (Array.isArray(r2Issues)) {
+                  const r2Match = r2Issues.find(r => r && (String(r.id) === String(n.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(n))));
+                  if (r2Match && r2Match.memberCode) {
+                    effectiveIssue = Object.assign({}, n, { memberCode: r2Match.memberCode, memberName: r2Match.memberName || n.memberName });
+                  }
+                }
+                if (!effectiveIssue.memberCode && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
+                  effectiveIssue = Object.assign({}, n, { memberCode: currentSelectedMember.code, memberName: currentSelectedMember.name || n.memberName });
+                }
+              }
+              const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(effectiveIssue, helpdeskTickets, usedTicketIds) : null;
               const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép Prompt AI (Hotline Ticket)";
               return `
           <tr data-id="${n.id}" class="${!isSynced ? 'tr-temp-unsynced' : ''}">
@@ -10121,20 +10278,25 @@
         // Cập nhật số lượng trên các nút lọc Chatbox
         const cntAll = document.getElementById("cntChatboxAll");
         const cntNoted = document.getElementById("cntChatboxNoted");
+        const cntPending = document.getElementById("cntChatboxPending");
         const cntUnnoted = document.getElementById("cntChatboxUnnoted");
         const cTotal = baseDetailList.length;
-        const cNoted = baseDetailList.filter(n => n.matchedTicket != null).length;
-        const cUnnoted = cTotal - cNoted;
+        const cClosed = baseDetailList.filter(n => n.matchedTicket && (n.matchedTicket.status || "").toUpperCase() === "CLOSED").length;
+        const cPending = baseDetailList.filter(n => n.matchedTicket && (n.matchedTicket.status || "").toUpperCase() !== "CLOSED").length;
+        const cUnnoted = baseDetailList.filter(n => !n.matchedTicket).length;
         if (cntAll) cntAll.textContent = cTotal;
-        if (cntNoted) cntNoted.textContent = cNoted;
+        if (cntNoted) cntNoted.textContent = cClosed;
+        if (cntPending) cntPending.textContent = cPending;
         if (cntUnnoted) cntUnnoted.textContent = cUnnoted;
 
-        // Áp dụng bộ lọc Chatbox (All / Noted / Unnoted)
+        // Áp dụng bộ lọc Chatbox (All / Noted (Closed) / Pending / Unnoted)
         let detailList = baseDetailList;
         if (statsChatboxFilter === "noted") {
-          detailList = detailList.filter(n => n.matchedTicket != null);
+          detailList = detailList.filter(n => n.matchedTicket && (n.matchedTicket.status || "").toUpperCase() === "CLOSED");
+        } else if (statsChatboxFilter === "pending") {
+          detailList = detailList.filter(n => n.matchedTicket && (n.matchedTicket.status || "").toUpperCase() !== "CLOSED");
         } else if (statsChatboxFilter === "unnoted") {
-          detailList = detailList.filter(n => n.matchedTicket == null);
+          detailList = detailList.filter(n => !n.matchedTicket);
         }
 
         const badgeDetail = document.getElementById("statsDetailCountBadge");

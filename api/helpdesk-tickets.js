@@ -263,17 +263,17 @@ let lastLiveSyncTime = 0;
 let ongoingLiveSyncPromise = null;
 
 async function syncHelpdeskTickets(force = false, options = {}) {
-  // 1. Nếu không ép buộc, kiểm tra cache R2 xem còn hạn (< 3 phút) không
+  // 1. Nếu không ép buộc, kiểm tra cache R2 xem còn hạn (< 20 giây) không
   if (!force) {
     const cached = await getCacheFromR2();
     if (cached && Array.isArray(cached.tickets)) {
       const syncedMs = cached.syncedAt ? new Date(cached.syncedAt).getTime() : 0;
-      const ageMinutes = (Date.now() - syncedMs) / (60 * 1000);
-      if (ageMinutes < 3) {
+      const ageSeconds = (Date.now() - syncedMs) / 1000;
+      if (ageSeconds < 20) {
         return {
           ...cached,
           source: "r2_cache",
-          cacheAgeMinutes: Math.round(ageMinutes * 10) / 10
+          cacheAgeSeconds: Math.round(ageSeconds)
         };
       }
     }
@@ -335,14 +335,14 @@ module.exports = async function handler(req, res) {
     const cached = await getCacheFromR2();
     if (cached && Array.isArray(cached.tickets)) {
       const syncedMs = cached.syncedAt ? new Date(cached.syncedAt).getTime() : 0;
-      const ageMinutes = (Date.now() - syncedMs) / (60 * 1000);
+      const ageSeconds = (Date.now() - syncedMs) / 1000;
 
-      // Nếu cache còn mới (< 3 phút), trả về ngay tức khắc để tránh spam
-      if (ageMinutes < 3) {
+      // Nếu cache còn mới (< 20 giây), trả về ngay tức khắc để tránh spam
+      if (ageSeconds < 20) {
         return res.status(200).json({
           ...cached,
           source: "r2_cache",
-          cacheAgeMinutes: Math.round(ageMinutes * 10) / 10,
+          cacheAgeSeconds: Math.round(ageSeconds),
           server: isVercel ? "vercel" : "local"
         });
       }

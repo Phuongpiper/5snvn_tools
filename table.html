@@ -15,6 +15,9 @@
   
   <!-- SheetJS with styling support for professional Excel XLSX Export/Import -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  
+  <!-- html2canvas for High-Definition Excel Table Image Capture & Copy -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
     /* ── RESET & TOKENS (STITCH MODERN DESIGN) ── */
@@ -1880,6 +1883,118 @@
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* ── FLOATING EXCEL CAMERA BUTTON ── */
+    .fab-excel-group {
+      position: absolute;
+      bottom: 18px;
+      right: 20px;
+      z-index: 50;
+    }
+
+    /* Button — thu gọn mặc định chỉ hiện icon camera */
+    .fab-excel-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      padding: 7px 8px;
+      max-width: 38px;
+      height: 36px;
+      box-sizing: border-box;
+      overflow: hidden;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition:
+        max-width 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+        gap 0.25s ease,
+        padding 0.25s ease,
+        box-shadow 0.25s ease,
+        transform 0.2s ease;
+      user-select: none;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: linear-gradient(135deg, #0e7039 0%, #107c41 50%, #15803d 100%);
+      box-shadow: 0 4px 14px rgba(16, 124, 65, 0.38);
+      border-radius: 50px;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+
+    /* Hover: mở rộng sang dạng pill đầy đủ */
+    .fab-excel-btn:hover {
+      max-width: 250px;
+      gap: 7px;
+      padding: 7px 12px 7px 9px;
+      box-shadow: 0 8px 22px rgba(16, 124, 65, 0.50);
+      transform: translateY(-2px);
+    }
+
+    .fab-excel-btn:active {
+      transform: translateY(0) scale(0.97);
+    }
+
+    /* Text & badge ẩn khi thu gọn, hiện khi hover */
+    .fab-excel-btn .fab-text,
+    .fab-excel-btn .fab-badge {
+      opacity: 0;
+      transition: opacity 0.15s ease 0.1s;
+    }
+
+    .fab-excel-btn:hover .fab-text,
+    .fab-excel-btn:hover .fab-badge {
+      opacity: 1;
+    }
+
+    /* Icon wrap */
+    .fab-excel-btn .fab-icon-wrap {
+      width: 22px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.22);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #ffffff;
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+    }
+
+    .fab-excel-btn:hover .fab-icon-wrap {
+      transform: scale(1.1);
+    }
+
+    .fab-excel-btn .fab-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      padding: 2px 6px;
+      border-radius: 10px;
+      letter-spacing: 0.04em;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      flex-shrink: 0;
+    }
+
+    .fab-excel-btn.loading {
+      pointer-events: none;
+      opacity: 0.88;
+    }
+
+    .fab-excel-btn.success {
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5);
+    }
+
+    @media (max-width: 600px) {
+      .fab-excel-group {
+        bottom: 14px;
+        right: 14px;
+      }
+    }
   </style>
 </head>
 
@@ -2023,6 +2138,17 @@
         <p>Thử xoá bộ lọc hoặc nhấn nút "+ Thêm dòng" để bắt đầu nhập liệu.</p>
         <button class="btn btn-primary" onclick="addNewRow()"><i class="fa-solid fa-plus"></i> Thêm dòng đầu tiên</button>
       </div>
+    </div>
+
+    <!-- ── Floating Action: Chụp & Copy ảnh Excel ── -->
+    <div class="fab-excel-group" id="fabExcelGroup">
+      <button class="fab-excel-btn" id="btnCaptureExcelImage" type="button" title="Chụp & copy ảnh Excel format đẹp để dán (Ctrl+V) vào Zalo, Chat, hệ thống khác...">
+        <div class="fab-icon-wrap">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+        <span class="fab-text">Chụp &amp; Copy ảnh Excel</span>
+        <span class="fab-badge" id="fabMainBadge">Dán ngay</span>
+      </button>
     </div>
   </div>
 
@@ -2231,6 +2357,50 @@
     <div class="dropdown-item" onclick="exportAsJson()"><i class="fa-solid fa-download"></i> Sao lưu toàn bộ (JSON)</div>
     <div class="dropdown-item" onclick="triggerJsonImport()"><i class="fa-solid fa-upload"></i> Khôi phục từ JSON</div>
     <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
+  </div>
+
+  <!-- ── MODAL: XEM & SAO CHÉP ẢNH EXCEL ── -->
+  <div class="modal-overlay" id="excelImagePreviewModal">
+    <div class="modal-box" style="max-width: 840px; width: 95%;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0e7039 0%, #107c41 100%); color: #ffffff;">
+        <h3 style="color: #ffffff; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-file-excel"></i>
+          <span>Ảnh Bảng Tính Dạng Excel Chuẩn Đẹp</span>
+        </h3>
+        <button class="btn-modal-close" style="color: #ffffff; opacity: 0.85;" onclick="closeExcelImageModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px; max-height: 75vh; overflow-y: auto;">
+        <!-- Success Alert / Instruction -->
+        <div id="excelCopyStatusAlert" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; color: #065f46;">
+          <i class="fa-solid fa-circle-check" style="font-size: 20px; color: #10b981; flex-shrink: 0;"></i>
+          <div style="font-size: 13px; line-height: 1.45;">
+            <strong>Đã tự động sao chép vào bộ nhớ tạm (Clipboard)!</strong>
+            <div style="color: #047857; font-size: 12px; margin-top: 2px;">Bạn có thể mở Zalo, Facebook Messenger, Teams, Outlook, Word... và bấm <kbd style="background: #ffffff; border: 1px solid #cbd5e1; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 11px; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.06);">Ctrl + V</kbd> để dán ảnh ngay lập tức.</div>
+          </div>
+        </div>
+
+        <!-- Preview Image Container -->
+        <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 14px; display: flex; justify-content: center; align-items: center; overflow: auto; max-height: 450px;">
+          <img id="excelPreviewImg" alt="Xem trước ảnh Excel" style="max-width: 100%; height: auto; border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); background: #ffffff;" />
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-shield-halved" style="color: #107c41;"></i> Ảnh PNG độ nét cao (2x DPI) format như Excel gốc
+        </span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline" id="btnCopyTableFormatModal" style="border-color: #2563eb; color: #1e40af;" title="Copy định dạng bảng để dán vào Excel, Google Sheets, Word...">
+            <i class="fa-solid fa-table-cells" style="color: #2563eb;"></i> Copy bảng Excel
+          </button>
+          <button class="btn btn-outline" id="btnCopyExcelImageAgain">
+            <i class="fa-solid fa-copy"></i> Sao chép lại ảnh
+          </button>
+          <button class="btn btn-primary" id="btnDownloadExcelImage" style="background: #107c41; border-color: #107c41;">
+            <i class="fa-solid fa-download"></i> Tải ảnh (.PNG)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Container -->
@@ -6161,6 +6331,559 @@
       exportToCsvFallback(sheet);
     }
 
+    /* ──────────────────────────────────────────────────────────────────────────
+       EXCEL IMAGE CAPTURE & CLIPBOARD ENGINE (BEAUTIFUL EXCEL-LIKE IMAGE)
+    ────────────────────────────────────────────────────────────────────────── */
+    let currentExcelImageBlob = null;
+    let currentExcelImageFileName = "";
+
+    function ensureHtml2CanvasLoaded() {
+      if (typeof html2canvas !== "undefined") return Promise.resolve(true);
+      return new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => {
+          const fallbackScript = document.createElement("script");
+          fallbackScript.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+          fallbackScript.onload = () => resolve(true);
+          fallbackScript.onerror = () => resolve(false);
+          document.head.appendChild(fallbackScript);
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function captureExcelImage() {
+      const sheet = getActiveSheet();
+      if (!sheet) {
+        toast("Không tìm thấy dữ liệu Sheet hiện tại!", "warning");
+        return;
+      }
+
+      const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
+      let targetRows = [];
+      const isSelection = selectedRowIds.size > 0;
+
+      if (isSelection) {
+        targetRows = sheet.rows.filter(r => selectedRowIds.has(r.id));
+      } else {
+        targetRows = allRows.filter(r => !r.locked);
+      }
+
+      if (targetRows.length === 0) {
+        toast("Không có dữ liệu phù hợp để chụp ảnh (Dòng đang bị khoá 🔒 hoặc bị lọc ẩn)!", "warning");
+        return;
+      }
+
+      const btn = document.getElementById("btnCaptureExcelImage");
+      const origHtml = btn ? btn.innerHTML : "";
+      if (btn) {
+        btn.classList.add("loading");
+        btn.innerHTML = `<div class="fab-icon-wrap"><i class="fa-solid fa-spinner fa-spin"></i></div><span class="fab-text">Đang tạo ảnh...</span>`;
+      }
+
+      try {
+        if (document.fonts && document.fonts.ready) {
+          try { await document.fonts.ready; } catch (_) {}
+        }
+        await ensureHtml2CanvasLoaded();
+
+        // Exclude member / assignee columns per user requirement
+        const columns = (sheet.columns || []).filter(col => {
+          if (col.type === "member") return false;
+          const nameLow = (col.name || "").toLowerCase().trim();
+          if (nameLow.includes("nhân viên") || nameLow.includes("nhan vien") || 
+              nameLow.includes("mã nv") || nameLow.includes("ma nv") || 
+              nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
+              nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee")) {
+            return false;
+          }
+          return true;
+        });
+
+        // Offscreen container to build pure Excel table DOM (no banners, no footers)
+        const container = document.createElement("div");
+        container.id = "excelRenderOffscreenContainer";
+        container.style.position = "fixed";
+        container.style.left = "-9999px";
+        container.style.top = "0";
+        container.style.zIndex = "-9999";
+        container.style.background = "#ffffff";
+        container.style.padding = "0px";
+        container.style.margin = "0px";
+        container.style.fontFamily = "'Segoe UI', Aptos, Calibri, Arial, sans-serif";
+        container.style.color = "#111827";
+        container.style.width = "max-content";
+
+        // Current timestamp for file naming
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        // Thead: Deep Royal Navy #1E3A8A header exactly matching normal Excel table
+        let theadHtml = `
+          <thead>
+            <tr style="background: #1e3a8a; color: #ffffff;">
+              <th style="padding: 8px 12px; border: 1px solid #1e3a8a; font-size: 13px; font-weight: 700; text-align: center; width: 44px; white-space: nowrap; font-family: inherit;">STT</th>
+        `;
+
+        columns.forEach(col => {
+          let align = "left";
+          if (["dt_code", "date", "status", "project", "checkbox"].includes(col.type)) align = "center";
+          if (col.type === "number") align = "right";
+
+          theadHtml += `
+            <th style="padding: 8px 14px; border: 1px solid #2563eb; font-size: 13px; font-weight: 700; text-align: ${align}; white-space: nowrap; font-family: inherit;">
+              ${escapeHtml(col.name)}
+            </th>
+          `;
+        });
+        theadHtml += `</tr></thead>`;
+
+        // Tbody: Plain normal Excel text, clean borders, no flashy pills or badges
+        let tbodyHtml = `<tbody>`;
+        targetRows.forEach((r, idx) => {
+          const isEven = idx % 2 === 1;
+          const rowBg = r.highlight || (isEven ? "#f8fafc" : "#ffffff");
+          const sttBg = r.highlight || (isEven ? "#f1f5f9" : "#f8fafc");
+
+          tbodyHtml += `<tr style="background: ${rowBg};">`;
+
+          // STT column
+          tbodyHtml += `
+            <td style="padding: 7px 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 13px; font-weight: 700; color: #111827; font-family: inherit; background: ${sttBg};">
+              ${idx + 1}
+            </td>
+          `;
+
+          // Other columns
+          columns.forEach(col => {
+            const val = r[col.id];
+            const cellHighlight = r.highlights?.[col.id];
+            const cellBg = cellHighlight ? cellHighlight : "transparent";
+
+            let align = "left";
+            let displayVal = "";
+
+            if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
+              displayVal = "";
+            } else if (col.type === "checkbox") {
+              align = "center";
+              displayVal = (val === true || val === "true" || val === 1 || val === "1") ? "Có" : "Không";
+            } else if (col.type === "date") {
+              align = "center";
+              displayVal = formatDisplayDate(val);
+            } else if (col.type === "number") {
+              align = "right";
+              const num = Number(val);
+              displayVal = !isNaN(num) ? num.toLocaleString("vi-VN") : String(val);
+            } else if (col.type === "dt_code" || col.type === "status" || col.type === "project") {
+              align = "center";
+              displayVal = String(val);
+            } else {
+              align = "left";
+              displayVal = String(val);
+            }
+
+            tbodyHtml += `
+              <td style="padding: 7px 12px; border: 1px solid #cbd5e1; text-align: ${align}; font-size: 13px; font-weight: 400; color: #111827; font-family: inherit; background: ${cellBg}; white-space: nowrap;">
+                ${escapeHtml(displayVal)}
+              </td>
+            `;
+          });
+
+          tbodyHtml += `</tr>`;
+        });
+        tbodyHtml += `</tbody>`;
+
+        // Render pure table only (no banner, no footer summary)
+        container.innerHTML = `
+          <table style="border-collapse: collapse; width: 100%; border: 1px solid #1e3a8a; background: #ffffff; font-family: 'Segoe UI', Aptos, Calibri, Arial, sans-serif;">
+            ${theadHtml}
+            ${tbodyHtml}
+          </table>
+        `;
+
+        document.body.appendChild(container);
+
+        let canvas = null;
+        if (typeof html2canvas !== "undefined") {
+          canvas = await html2canvas(container, {
+            scale: 2, // 2x DPI Retina
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false
+          });
+        } else {
+          canvas = renderExcelCanvasDirect(sheet, targetRows, columns);
+        }
+
+        container.remove();
+
+        if (!canvas) {
+          throw new Error("Không thể khởi tạo Canvas ảnh!");
+        }
+
+        const dataUrl = canvas.toDataURL("image/png");
+        const safeName = (sheet.name || "BangTinh").replace(/[\\/:*?"<>|]/g, "_").trim().replace(/\s+/g, "_");
+        const fileName = `${safeName}_${getTodayIso()}_${timeStr.replace(":", "")}.png`;
+
+        // Copy blob to Clipboard
+        canvas.toBlob(async (blob) => {
+          let isCopied = false;
+          if (blob && navigator.clipboard && window.ClipboardItem) {
+            try {
+              await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": blob })
+              ]);
+              isCopied = true;
+              toast("Đã sao chép ảnh dạng Excel vào bộ nhớ tạm! Bạn có thể dán (Ctrl + V) ngay.", "success");
+            } catch (clipErr) {
+              console.warn("ClipboardItem write failed:", clipErr);
+            }
+          }
+
+          // Open image preview & actions modal
+          openExcelImageModal(dataUrl, blob, fileName, isCopied);
+
+          if (btn) {
+            btn.classList.remove("loading");
+            btn.classList.add("success");
+            btn.innerHTML = `<div class="fab-icon-wrap"><i class="fa-solid fa-check"></i></div><span class="fab-text">Đã copy ảnh!</span><span class="fab-badge">Ctrl+V</span>`;
+            setTimeout(() => {
+              btn.classList.remove("success");
+              btn.innerHTML = origHtml;
+              updateFooterStats();
+            }, 3000);
+          }
+        }, "image/png");
+
+      } catch (err) {
+        console.error("Capture Excel error:", err);
+        toast("Có lỗi khi tạo ảnh Excel: " + (err.message || err), "danger");
+        if (btn) {
+          btn.classList.remove("loading");
+          btn.innerHTML = origHtml;
+          updateFooterStats();
+        }
+        const c = document.getElementById("excelRenderOffscreenContainer");
+        if (c) c.remove();
+      }
+    }
+
+    // Modal Display & Action Handlers
+    function openExcelImageModal(imgDataUrl, blob, fileName, isCopied) {
+      currentExcelImageBlob = blob;
+      currentExcelImageFileName = fileName;
+      const modal = document.getElementById("excelImagePreviewModal");
+      const img = document.getElementById("excelPreviewImg");
+      const alert = document.getElementById("excelCopyStatusAlert");
+      if (img) img.src = imgDataUrl;
+      if (alert) {
+        alert.style.display = isCopied ? "flex" : "none";
+      }
+      if (modal) modal.classList.add("active");
+    }
+
+    function closeExcelImageModal() {
+      const modal = document.getElementById("excelImagePreviewModal");
+      if (modal) modal.classList.remove("active");
+    }
+
+    function setupExcelImageModalEvents() {
+      const btnDownload = document.getElementById("btnDownloadExcelImage");
+      if (btnDownload) {
+        btnDownload.addEventListener("click", () => {
+          const img = document.getElementById("excelPreviewImg");
+          if (!img || !img.src) return;
+          const a = document.createElement("a");
+          a.href = img.src;
+          a.download = currentExcelImageFileName || `BangTinh_Excel_${getTodayIso()}.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          toast("Đã tải ảnh Excel về máy!", "success");
+        });
+      }
+
+      const btnCopyAgain = document.getElementById("btnCopyExcelImageAgain");
+      if (btnCopyAgain) {
+        btnCopyAgain.addEventListener("click", async () => {
+          if (!currentExcelImageBlob) return;
+          try {
+            if (navigator.clipboard && window.ClipboardItem) {
+              await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": currentExcelImageBlob })
+              ]);
+              toast("Đã sao chép lại ảnh vào Clipboard! Nhấn Ctrl + V để dán.", "success");
+            } else {
+              toast("Vui lòng nhấp chuột phải vào ảnh và chọn 'Sao chép hình ảnh'", "info");
+            }
+          } catch (err) {
+            toast("Vui lòng nhấp chuột phải vào ảnh và chọn 'Sao chép hình ảnh'", "info");
+          }
+        });
+      }
+
+      const modal = document.getElementById("excelImagePreviewModal");
+      if (modal) {
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) closeExcelImageModal();
+        });
+      }
+
+      const btnCopyTableModal = document.getElementById("btnCopyTableFormatModal");
+      if (btnCopyTableModal) {
+        btnCopyTableModal.addEventListener("click", copyExcelTableFormat);
+      }
+    }
+
+    /* ── COPY BẢNG ĐỊNH DẠNG EXCEL (HTML + TSV) ĐỂ DÁN VÀO EXCEL / SHEETS / WORD ── */
+    async function copyExcelTableFormat() {
+      const sheet = getActiveSheet();
+      if (!sheet) {
+        toast("Không tìm thấy dữ liệu Sheet hiện tại!", "warning");
+        return;
+      }
+
+      const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
+      let targetRows = [];
+      const isSelection = selectedRowIds.size > 0;
+
+      if (isSelection) {
+        targetRows = sheet.rows.filter(r => selectedRowIds.has(r.id));
+      } else {
+        targetRows = allRows.filter(r => !r.locked);
+      }
+
+      if (targetRows.length === 0) {
+        toast("Không có dữ liệu phù hợp để copy (Dòng đang bị khoá 🔒 hoặc bị lọc ẩn)!", "warning");
+        return;
+      }
+
+      // Filter out member / assignee columns per user request
+      const columns = (sheet.columns || []).filter(col => {
+        if (col.type === "member") return false;
+        const nameLow = (col.name || "").toLowerCase().trim();
+        if (nameLow.includes("nhân viên") || nameLow.includes("nhan vien") || 
+            nameLow.includes("mã nv") || nameLow.includes("ma nv") || 
+            nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
+            nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee")) {
+          return false;
+        }
+        return true;
+      });
+
+      // Build TSV (tab-separated values) - standard format for Excel / Google Sheets pasting
+      const headerRowTsv = ["STT", ...columns.map(c => c.name)].join("\t");
+      const dataRowsTsv = targetRows.map((r, idx) => {
+        const rowVals = [idx + 1];
+        columns.forEach(col => {
+          let val = r[col.id];
+          if (val === undefined || val === null) val = "";
+          else if (col.type === "checkbox") val = (val === true || val === "true" || val === 1 || val === "1") ? "Có" : "Không";
+          else if (col.type === "date") val = formatDisplayDate(val);
+          else if (col.type === "number") {
+            const num = Number(val);
+            val = !isNaN(num) ? num.toLocaleString("vi-VN") : String(val);
+          } else {
+            val = String(val).replace(/[\r\n\t]/g, " ");
+          }
+          rowVals.push(val);
+        });
+        return rowVals.join("\t");
+      });
+      const tsvText = [headerRowTsv, ...dataRowsTsv].join("\r\n");
+
+      // Build HTML table for rich formatting in Excel, Word, Outlook
+      let htmlTable = `
+        <table style="border-collapse: collapse; font-family: 'Segoe UI', Aptos, Calibri, Arial, sans-serif; font-size: 13px; color: #111827;">
+          <thead>
+            <tr style="background-color: #1e3a8a; color: #ffffff;">
+              <th style="border: 1px solid #1e3a8a; padding: 7px 10px; text-align: center; font-weight: bold;">STT</th>
+      `;
+      columns.forEach(col => {
+        let align = "left";
+        if (["dt_code", "date", "status", "project", "checkbox"].includes(col.type)) align = "center";
+        if (col.type === "number") align = "right";
+        htmlTable += `<th style="border: 1px solid #2563eb; padding: 7px 12px; text-align: ${align}; font-weight: bold;">${escapeHtml(col.name)}</th>`;
+      });
+      htmlTable += `</tr></thead><tbody>`;
+
+      targetRows.forEach((r, idx) => {
+        const isEven = idx % 2 === 1;
+        const bg = isEven ? "#f8fafc" : "#ffffff";
+        htmlTable += `<tr style="background-color: ${bg};">`;
+        htmlTable += `<td style="border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center; font-weight: bold;">${idx + 1}</td>`;
+        columns.forEach(col => {
+          let val = r[col.id];
+          let align = "left";
+          let displayVal = "";
+          if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
+            displayVal = "";
+          } else if (col.type === "checkbox") {
+            align = "center";
+            displayVal = (val === true || val === "true" || val === 1 || val === "1") ? "Có" : "Không";
+          } else if (col.type === "date") {
+            align = "center";
+            displayVal = formatDisplayDate(val);
+          } else if (col.type === "number") {
+            align = "right";
+            const num = Number(val);
+            displayVal = !isNaN(num) ? num.toLocaleString("vi-VN") : String(val);
+          } else if (["dt_code", "status", "project"].includes(col.type)) {
+            align = "center";
+            displayVal = String(val);
+          } else {
+            align = "left";
+            displayVal = String(val);
+          }
+          htmlTable += `<td style="border: 1px solid #cbd5e1; padding: 6px 12px; text-align: ${align};">${escapeHtml(displayVal)}</td>`;
+        });
+        htmlTable += `</tr>`;
+      });
+      htmlTable += `</tbody></table>`;
+
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([
+            new ClipboardItem({
+              "text/html": new Blob([htmlTable], { type: "text/html" }),
+              "text/plain": new Blob([tsvText], { type: "text/plain" })
+            })
+          ]);
+          toast("Đã copy định dạng bảng Excel! Bạn có thể dán (Ctrl+V) vào Excel, Sheets, Word ngay.", "success");
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(tsvText);
+          toast("Đã copy bảng dữ liệu! Bạn có thể dán (Ctrl+V) vào Excel/Sheets.", "success");
+        } else {
+          const ta = document.createElement("textarea");
+          ta.value = tsvText;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+          toast("Đã copy bảng dữ liệu vào Clipboard!", "success");
+        }
+
+        const btn = document.getElementById("btnCopyExcelTable");
+        if (btn) {
+          const origHtml = btn.innerHTML;
+          btn.innerHTML = `<div class="fab-icon-wrap"><i class="fa-solid fa-check"></i></div><span class="fab-text">Đã copy bảng!</span>`;
+          btn.classList.add("success");
+          setTimeout(() => {
+            btn.classList.remove("success");
+            btn.innerHTML = origHtml;
+            updateFooterStats();
+          }, 2500);
+        }
+      } catch (err) {
+        console.error("Copy table format failed:", err);
+        toast("Không thể copy bảng: " + err.message, "danger");
+      }
+    }
+
+    // Direct Canvas Fallback if html2canvas is completely unreachable (pure table only)
+    function renderExcelCanvasDirect(sheet, targetRows, columns) {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const colWidths = [44];
+      columns.forEach(c => {
+        let w = c.width || 130;
+        if (c.type === "dt_code") w = Math.max(w, 100);
+        if (c.type === "dt_name") w = Math.max(w, 180);
+        if (c.type === "status") w = Math.max(w, 100);
+        colWidths.push(w);
+      });
+
+      const totalTableWidth = colWidths.reduce((a, b) => a + b, 0);
+      const rowHeight = 32;
+      const headerHeight = 34;
+      const totalHeight = headerHeight + (targetRows.length * rowHeight);
+
+      // Scale 2x for Retina sharpness
+      const scale = 2;
+      canvas.width = totalTableWidth * scale;
+      canvas.height = totalHeight * scale;
+      ctx.scale(scale, scale);
+
+      // Background
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, totalTableWidth, totalHeight);
+
+      // Header row
+      let curY = 0;
+      let curX = 0;
+      ctx.fillStyle = "#1e3a8a";
+      ctx.fillRect(curX, curY, totalTableWidth, headerHeight);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 13px 'Segoe UI', Aptos, Calibri, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.strokeStyle = "#1e3a8a";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(curX, curY, colWidths[0], headerHeight);
+      ctx.fillText("STT", curX + colWidths[0] / 2, curY + headerHeight / 2);
+
+      curX += colWidths[0];
+      columns.forEach((c, idx) => {
+        const w = colWidths[idx + 1];
+        ctx.strokeStyle = "#2563eb";
+        ctx.strokeRect(curX, curY, w, headerHeight);
+        ctx.fillText(c.name, curX + w / 2, curY + headerHeight / 2);
+        curX += w;
+      });
+
+      // Data Rows
+      curY += headerHeight;
+      targetRows.forEach((r, rIdx) => {
+        curX = 0;
+        const isEven = rIdx % 2 === 1;
+        ctx.fillStyle = r.highlight || (isEven ? "#f8fafc" : "#ffffff");
+        ctx.fillRect(curX, curY, totalTableWidth, rowHeight);
+
+        // STT
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.strokeRect(curX, curY, colWidths[0], rowHeight);
+        ctx.fillStyle = "#111827";
+        ctx.font = "bold 13px 'Segoe UI', Aptos, Calibri, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(String(rIdx + 1), curX + colWidths[0] / 2, curY + rowHeight / 2);
+
+        curX += colWidths[0];
+        columns.forEach((c, cIdx) => {
+          const w = colWidths[cIdx + 1];
+          ctx.strokeStyle = "#cbd5e1";
+          ctx.strokeRect(curX, curY, w, rowHeight);
+
+          const val = r[c.id];
+          const valStr = val !== undefined && val !== null ? String(val) : "";
+          ctx.fillStyle = "#111827";
+          ctx.font = "400 13px 'Segoe UI', Aptos, Calibri, sans-serif";
+          
+          let align = "left";
+          let drawX = curX + 10;
+          if (["dt_code", "date", "status", "project", "checkbox"].includes(c.type)) {
+            align = "center";
+            drawX = curX + w / 2;
+          } else if (c.type === "number") {
+            align = "right";
+            drawX = curX + w - 10;
+          }
+
+          ctx.textAlign = align;
+          ctx.fillText(valStr.length > 30 ? valStr.substring(0, 27) + "..." : valStr, drawX, curY + rowHeight / 2);
+          curX += w;
+        });
+
+        curY += rowHeight;
+      });
+
+      return canvas;
+    }
+
     function exportToCsvFallback(sheet) {
       const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
       const exportRows = allRows.filter(r => !r.locked);
@@ -6470,12 +7193,24 @@
       const bulkActionsGroup = document.getElementById("bulkActionsGroup");
       const selCountBadge = document.getElementById("selectedCountBadge");
       const lockCountBadge = document.getElementById("lockCountBadge");
+      const fabCaptureBtn = document.getElementById("btnCaptureExcelImage");
+      const fabBadge = document.getElementById("fabMainBadge");
+      const fabText = fabCaptureBtn ? fabCaptureBtn.querySelector(".fab-text") : null;
+
       if (selectedRowIds.size > 0) {
         if (bulkActionsGroup) bulkActionsGroup.style.display = "inline-flex";
         if (selCountBadge) selCountBadge.textContent = selectedRowIds.size;
         if (lockCountBadge) lockCountBadge.textContent = selectedRowIds.size;
+        if (fabText && fabCaptureBtn && !fabCaptureBtn.classList.contains("loading")) {
+          fabText.textContent = `Chụp ảnh (${selectedRowIds.size} dòng)`;
+        }
+        if (fabBadge) fabBadge.textContent = "Đã chọn";
       } else {
         if (bulkActionsGroup) bulkActionsGroup.style.display = "none";
+        if (fabText && fabCaptureBtn && !fabCaptureBtn.classList.contains("loading")) {
+          fabText.textContent = "Chụp & Copy ảnh Excel";
+        }
+        if (fabBadge) fabBadge.textContent = "Dán ngay";
       }
 
       // Check for numeric columns to show sum/avg
@@ -6640,6 +7375,10 @@
       on("btnImportExcel", "click", triggerImportExcel);
       on("excelFileInput", "change", handleExcelFileImport);
       on("jsonFileInput", "change", handleJsonImport);
+
+      // Capture Excel Image (Floating Camera Button)
+      on("btnCaptureExcelImage", "click", captureExcelImage);
+      setupExcelImageModalEvents();
 
       // More Options Menu Toggle
       const moreBtn = document.getElementById("btnMoreOptions");
