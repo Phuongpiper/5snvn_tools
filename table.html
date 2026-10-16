@@ -6666,65 +6666,56 @@
       setupDraggableFabExcelButton();
     }
 
-    /* ── KÉO NÚT CAMERA FAB ĐI CÁC GÓC MÀN HÌNH (DRAGGABLE & SNAP TO CORNERS) ── */
+    /* ── KÉO NÚT CAMERA FAB VÀ TỰ ĐỘNG NHẢY VÀO GÓC MÀN HÌNH (AUTO SNAP TO 4 CORNERS) ── */
     function setupDraggableFabExcelButton() {
       const fabGroup = document.getElementById("fabExcelGroup");
       const fabBtn = document.getElementById("btnCaptureExcelImage");
       if (!fabGroup || !fabBtn) return;
 
-      const STORAGE_KEY = "dms_table_fab_camera_pos_v2";
+      const STORAGE_KEY = "dms_table_fab_camera_corner_v3";
       let isPointerDown = false;
       let hasDragged = false;
       let startX = 0, startY = 0;
       let origLeft = 0, origTop = 0;
       let ignoreNextClick = false;
 
-      // 1. Phục hồi vị trí đã lưu trước đó nếu có
-      const restoreSavedPosition = () => {
-        try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (!saved) return;
-          const pos = JSON.parse(saved);
-          if (typeof pos.x === "number" && typeof pos.y === "number") {
-            const btnW = fabGroup.offsetWidth || 38;
-            const btnH = fabGroup.offsetHeight || 36;
-            const minX = 12;
-            const maxX = Math.max(minX, window.innerWidth - btnW - 12);
-            const minY = 56;
-            const maxY = Math.max(minY, window.innerHeight - btnH - 52);
-
-            const safeX = Math.min(Math.max(pos.x, minX), maxX);
-            const safeY = Math.min(Math.max(pos.y, minY), maxY);
-
-            fabGroup.style.left = safeX + "px";
-            fabGroup.style.top = safeY + "px";
+      // Đặt vị trí cố định chuẩn xác vào 1 trong 4 góc màn hình
+      const applyCorner = (cornerId) => {
+        fabGroup.style.transition = "";
+        switch (cornerId) {
+          case "top-left":
+            fabGroup.style.left = "20px";
+            fabGroup.style.top = "64px";
             fabGroup.style.right = "auto";
             fabGroup.style.bottom = "auto";
-          }
-        } catch (_) {}
+            break;
+          case "top-right":
+            fabGroup.style.right = "20px";
+            fabGroup.style.top = "64px";
+            fabGroup.style.left = "auto";
+            fabGroup.style.bottom = "auto";
+            break;
+          case "bottom-left":
+            fabGroup.style.left = "20px";
+            fabGroup.style.bottom = "72px";
+            fabGroup.style.right = "auto";
+            fabGroup.style.top = "auto";
+            break;
+          case "bottom-right":
+          default:
+            fabGroup.style.right = "20px";
+            fabGroup.style.bottom = "72px";
+            fabGroup.style.left = "auto";
+            fabGroup.style.top = "auto";
+            break;
+        }
       };
 
-      restoreSavedPosition();
+      // 1. Phục hồi góc đã lưu
+      const savedCorner = localStorage.getItem(STORAGE_KEY) || "bottom-right";
+      applyCorner(savedCorner);
 
-      // Giữ vị trí trong màn hình khi co giãn cửa sổ
-      window.addEventListener("resize", () => {
-        const rect = fabGroup.getBoundingClientRect();
-        const minX = 12;
-        const maxX = Math.max(minX, window.innerWidth - rect.width - 12);
-        const minY = 56;
-        const maxY = Math.max(minY, window.innerHeight - rect.height - 52);
-
-        if (fabGroup.style.left) {
-          const curX = parseFloat(fabGroup.style.left) || rect.left;
-          const curY = parseFloat(fabGroup.style.top) || rect.top;
-          const clampedX = Math.min(Math.max(curX, minX), maxX);
-          const clampedY = Math.min(Math.max(curY, minY), maxY);
-          fabGroup.style.left = clampedX + "px";
-          fabGroup.style.top = clampedY + "px";
-        }
-      });
-
-      // 2. Drag bằng Pointer Events (chuột, cảm ứng, bút)
+      // 2. Kéo thả tự do bằng Pointer Events
       fabBtn.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         isPointerDown = true;
@@ -6780,50 +6771,35 @@
           ignoreNextClick = true;
           setTimeout(() => { ignoreNextClick = false; }, 150);
 
-          // Tự động hít (snap) vào góc nếu thả gần 4 góc màn hình
+          // TỰ ĐỘNG NHẢY VÀO GÓC MÀN HÌNH GẦN NHẤT
           const rect = fabGroup.getBoundingClientRect();
           const btnW = rect.width || 38;
           const btnH = rect.height || 36;
-          const minX = 16;
-          const maxX = Math.max(minX, window.innerWidth - btnW - 16);
-          const minY = 60;
-          const maxY = Math.max(minY, window.innerHeight - btnH - 54);
+          const btnCenterX = rect.left + btnW / 2;
+          const btnCenterY = rect.top + btnH / 2;
 
-          const currentX = rect.left;
-          const currentY = rect.top;
+          const midX = window.innerWidth / 2;
+          const midY = window.innerHeight / 2;
 
-          // 4 góc chuẩn
-          const corners = [
-            { id: "top-left", x: minX, y: minY },
-            { id: "top-right", x: maxX, y: minY },
-            { id: "bottom-left", x: minX, y: maxY },
-            { id: "bottom-right", x: maxX, y: maxY }
-          ];
+          const isRight = btnCenterX >= midX;
+          const isBottom = btnCenterY >= midY;
 
-          let targetX = currentX;
-          let targetY = currentY;
-          const CORNER_SNAP_DIST = 90;
+          const cornerId = `${isBottom ? "bottom" : "top"}-${isRight ? "right" : "left"}`;
 
-          // Kiểm tra xem có gần góc nào không
-          for (const c of corners) {
-            const dist = Math.hypot(currentX - c.x, currentY - c.y);
-            if (dist <= CORNER_SNAP_DIST) {
-              targetX = c.x;
-              targetY = c.y;
-              break;
-            }
-          }
+          const targetLeft = isRight ? (window.innerWidth - btnW - 20) : 20;
+          const targetTop = isBottom ? (window.innerHeight - btnH - 72) : 64;
 
-          // Hiệu ứng lướt nhẹ khi hít vào góc / vị trí
-          fabGroup.style.transition = "left 0.28s cubic-bezier(0.16, 1, 0.3, 1), top 0.28s cubic-bezier(0.16, 1, 0.3, 1)";
-          fabGroup.style.left = targetX + "px";
-          fabGroup.style.top = targetY + "px";
+          // Hiệu ứng mượt mà lướt thẳng vào góc màn hình
+          fabGroup.style.transition = "left 0.32s cubic-bezier(0.16, 1, 0.3, 1), top 0.32s cubic-bezier(0.16, 1, 0.3, 1)";
+          fabGroup.style.left = targetLeft + "px";
+          fabGroup.style.top = targetTop + "px";
+
           setTimeout(() => {
-            fabGroup.style.transition = "";
-          }, 320);
+            applyCorner(cornerId);
+          }, 340);
 
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ x: targetX, y: targetY }));
+            localStorage.setItem(STORAGE_KEY, cornerId);
           } catch (_) {}
         }
       };
