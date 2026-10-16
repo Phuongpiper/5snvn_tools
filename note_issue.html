@@ -8672,6 +8672,9 @@
                   effectiveIssue = Object.assign({}, n, { memberCode: currentSelectedMember.code, memberName: currentSelectedMember.name || n.memberName });
                 }
               }
+              const isPastDate = n.date && todayStr && n.date !== todayStr;
+              const isOtrs = isOtrsRaiseCloseTicket(n);
+              const isSynced = isTempNoteSynced(n);
               const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(effectiveIssue, helpdeskTickets, usedTicketIds) : null;
               const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép Prompt AI (Hotline Ticket)";
               return `
