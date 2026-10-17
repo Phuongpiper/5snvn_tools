@@ -180,11 +180,12 @@ async function fetchLiveTickets(options = {}) {
   const defaultRange = getCurrentMonthRange();
   const from_date = options.from_date || defaultRange.from_date;
   const to_date = options.to_date || defaultRange.to_date;
+  const isFull = options.full === true || options.full === "1";
 
   let allItems = [];
   let page = 1;
   const limit = 100;
-  const maxPages = 50;
+  const maxPages = isFull ? 50 : 2; // Mặc định chỉ lấy 1-2 trang mới nhất (~200 ticket) để tốc độ cực nhanh (< 500ms), không bị timeout Vercel
 
   while (page <= maxPages) {
     const query = new URLSearchParams({
@@ -226,6 +227,33 @@ async function fetchLiveTickets(options = {}) {
       } catch (_) {}
     }
 
+    // Chuyển created_at sang múi giờ Việt Nam (UTC+7) chuẩn xác
+    let vnDate = t.date || t.created_date || "";
+    if (t.created_at) {
+      try {
+        const d = new Date(t.created_at);
+        if (!isNaN(d.getTime())) {
+          const vnD = new Date(d.getTime() + (d.getTimezoneOffset() === 0 ? 7 * 3600000 : 0));
+          const y = vnD.getFullYear();
+          const m = String(vnD.getMonth() + 1).padStart(2, "0");
+          const day = String(vnD.getDate()).padStart(2, "0");
+          vnDate = `${y}-${m}-${day}`;
+        }
+      } catch (_) {}
+    }
+    if (!vnDate && t.created_at) vnDate = t.created_at.slice(0, 10);
+
+    // Trích xuất số điện thoại (từ contact_source hoặc dự phòng từ description / call_details)
+    let phone = (t.contact_source || "").trim();
+    if (!/\d{8,11}/.test(phone) && t.description) {
+      const pm = t.description.match(/Hotline\s*(\d{8,11})/i) || t.description.match(/(0\d{8,10})/);
+      if (pm) phone = pm[1] || pm[0];
+    }
+    if (!/\d{8,11}/.test(phone) && t.call_details) {
+      const pm = String(t.call_details).match(/(0\d{8,10})/);
+      if (pm) phone = pm[1];
+    }
+
     return {
       id: t.id,
       project: t.project || "NVN",
@@ -234,10 +262,10 @@ async function fetchLiveTickets(options = {}) {
       priority: t.priority || "P3",
       agentId: (t.assigned_agent?.agent_id || t.assigned_agent_id || "").trim(),
       agentName: (t.assigned_agent?.name || "").trim(),
-      date: t.date || t.created_date || (t.created_at ? t.created_at.slice(0, 10) : ""),
+      date: vnDate,
       createdAt: t.created_at || "",
-      createdDate: t.created_date || t.date || "",
-      phone: (t.contact_source || "").trim(),
+      createdDate: vnDate,
+      phone: phone,
       distName: (t.dist_name || "").trim(),
       dsrCode: (t.dsr_code || "").trim(),
       solutionCode: (t.solution_code || callDetailObj?.solution_linked?.solution_code || "").trim(),
@@ -285,20 +313,29 @@ async function syncHelpdeskTickets(force = false, options = {}) {
 
   ongoingLiveSyncPromise = (async () => {
     try {
-      console.log(`[Helpdesk Sync] 🚀 Đang cào dữ liệu từ Helpdesk AI Assistant (scope=team, category=HELPDESK, project=NVN)...`);
+      console.log(`[Helpdesk Sync] 🚀 Đang cào dữ liệu mới từ Helpdesk AI Assistant (scope=team, category=HELPDESK, project=NVN)...`);
       const result = await fetchLiveTickets(options);
+
+      // Merge vé mới cào được vào danh sách cache cũ trên R2 để không bị mất các vé cũ
+      const cached = await getCacheFromR2();
+      const existingTickets = (cached && Array.isArray(cached.tickets)) ? cached.tickets : [];
+      const ticketMap = new Map();
+      existingTickets.forEach(t => { if (t && t.id) ticketMap.set(t.id, t); });
+      result.tickets.forEach(t => { if (t && t.id) ticketMap.set(t.id, t); });
+      const mergedTickets = Array.from(ticketMap.values()).sort((a, b) => b.id - a.id);
+
       const payload = {
         status: "success",
-        total: result.total,
+        total: mergedTickets.length,
         syncedAt: new Date().toISOString(),
         source: "live_crawled",
         filter: result.filter,
         loggedUser: result.loggedUser,
-        tickets: result.tickets
+        tickets: mergedTickets
       };
       await saveCacheToR2(payload);
       lastLiveSyncTime = Date.now();
-      console.log(`[Helpdesk Sync] ✅ Đã đồng bộ thành công ${payload.total} ticket lên Cloudflare R2!`);
+      console.log(`[Helpdesk Sync] ✅ Đã đồng bộ thành công ${mergedTickets.length} ticket lên Cloudflare R2!`);
       return payload;
     } finally {
       ongoingLiveSyncPromise = null;
