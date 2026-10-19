@@ -4931,7 +4931,7 @@
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <h3 style="margin:0;">Tạo Ticket trên Chatbox AI</h3>
-              <span
+              <span id="modalUnnotedStatusBadge"
                 style="font-size:11px; font-weight:700; background:#fffbeb; color:#b45309; border:1px solid #fde68a; padding:2px 8px; border-radius:12px;">
                 Chưa note
               </span>
@@ -5973,7 +5973,31 @@
             (tName && issueAgent && tName.includes(issueAgent));
         });
 
-        // 1. OTRS TICKET: Mã OTRS 14-18 số là định danh toàn cục duy nhất
+        // 0. KHỚP CALL DETAIL 100% (Ưu tiên tuyệt đối cao nhất - không match một phần):
+        // Nếu chuỗi Call Detail / result của issue khớp 100% với description hoặc callDetails của ticket
+        const rawIssueResult = String(issue.result || issue.issue || "").trim();
+        const normIssueResult = rawIssueResult.toLowerCase().replace(/\s+/g, " ");
+        if (normIssueResult.length > 10) {
+          const poolForExact = agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets;
+          // CHỈ KHỚP 100% - tuyệt đối không match một phần (partial match)
+          let exactMatch = poolForExact.find(t => {
+            const tDesc = String(t.description || "").trim().toLowerCase().replace(/\s+/g, " ");
+            if (tDesc === normIssueResult) return true;
+
+            const tCall = String(t.callDetails || "").trim().toLowerCase().replace(/\s+/g, " ");
+            // Chỉ khớp khi chuỗi BẰNG NHAU HOÀN TOÀN, không dùng includes() để tránh partial match
+            if (tCall === normIssueResult) return true;
+
+            return false;
+          });
+
+          if (exactMatch) {
+            if (usedTicketIds) usedTicketIds.add(exactMatch.id);
+            return exactMatch;
+          }
+        }
+
+        // 1. OTRS TICKET: Mã OTRS 14-18 số (BẮT BUỘC KHÔNG XUNG ĐỘT ACTION HOẶC SOLUTION)
         if (issueOtrs) {
           const otrsCandidates = sameDateTickets.filter(t => {
             const full = `${t.distName || ""} ${t.dist_name || ""} ${t.description || ""} ${t.rootCause || ""} ${t.result || ""} ${t.processSteps || ""} ${t.callDetails || ""} ${t.phone || ""}`;
@@ -5981,36 +6005,79 @@
           });
 
           if (otrsCandidates.length > 0) {
+            const issueOtrsTask = typeof getOtrsCvName === "function" ? getOtrsCvName(issue) : null;
             const issueAction = getOtrsActionType(issueSolCode, issueSolName, issue.result);
-            // Ưu tiên 1: Cùng Agent + cùng Solution Code
-            let m = otrsCandidates.find(t =>
-              (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
-              String(t.solutionCode || "").trim().toUpperCase() === issueSolCode
-            );
-            // Ưu tiên 2: Cùng Agent + cùng OTRS Action
-            if (!m && issueAction) {
-              m = otrsCandidates.find(t =>
-                (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
-                getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction
-              );
-            }
-            // Ưu tiên 3: Cùng Agent
-            if (!m && issueAgent) {
-              m = otrsCandidates.find(t => String(t.agentId || "").toLowerCase().startsWith(issueAgent));
-            }
-            // Ưu tiên 4: Cùng OTRS Action
-            if (!m && issueAction) {
-              m = otrsCandidates.find(t => getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction);
-            }
-            // Fallback: Vé duy nhất trong ngày có mã OTRS này
-            if (!m) m = otrsCandidates[0];
 
+            // BẮT BUỘC KHỚP SOLUTION/TASK - TUYỆT ĐỐI KHÔNG MATCH MỘT PHẦN KHI KHÁC SOLUTION
+            const validCandidates = otrsCandidates.filter(t => {
+              const tOtrsTask = typeof getOtrsCvName === "function" ? getOtrsCvName(t) : null;
+              // Nếu cả issue và candidate đều xác định được task OTRS (vd: "Phản hồi mail ticket cho HQ" vs "Raise OTRS Ticket")
+              // thì BẮT BUỘC PHẢI TRÙNG NHAU, tuyệt đối không gán chéo
+              if (issueOtrsTask && tOtrsTask && issueOtrsTask !== tOtrsTask) return false;
+
+              const tAction = getOtrsActionType(t.solutionCode, t.solutionName, t.description);
+              if (issueAction && tAction && issueAction !== tAction) return false;
+
+              const tSol = String(t.solutionCode || "").trim().toUpperCase();
+              if (issueSolCode && tSol && issueSolCode !== tSol) return false;
+
+              return true;
+            });
+
+            if (validCandidates.length > 0) {
+              // Ưu tiên 1: Cùng Agent + cùng Solution Code
+              let m = validCandidates.find(t =>
+                (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
+                String(t.solutionCode || "").trim().toUpperCase() === issueSolCode
+              );
+              // Ưu tiên 2: Cùng Agent + cùng OTRS Task / Action
+              if (!m && (issueOtrsTask || issueAction)) {
+                m = validCandidates.find(t =>
+                  (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
+                  ((issueOtrsTask && typeof getOtrsCvName === "function" && getOtrsCvName(t) === issueOtrsTask) ||
+                   (issueAction && getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction))
+                );
+              }
+              // Ưu tiên 3: Cùng OTRS Task hoặc Cùng Action (bất kể tài khoản)
+              if (!m && (issueOtrsTask || issueAction)) {
+                m = validCandidates.find(t =>
+                  (issueOtrsTask && typeof getOtrsCvName === "function" && getOtrsCvName(t) === issueOtrsTask) ||
+                  (issueAction && getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction)
+                );
+              }
+              // CHÚ Ý: Nếu issue có xác định Solution/Action/Task nhưng candidate không khớp -> TUYỆT ĐỐI KHÔNG GÁN BỪA!
+              if (!m && !issueOtrsTask && !issueAction && !issueSolCode) {
+                m = validCandidates[0];
+              }
+
+              if (m) {
+                if (usedTicketIds) usedTicketIds.add(m.id);
+                return m;
+              }
+            }
+          }
+          // Nếu không tìm thấy vé OTRS phù hợp, cho phép fall through xuống các rule bên dưới (Rule 1.5, Rule 2, v.v.)
+        }
+
+        // 1.5. OTRS / MAIL KHỚP THEO AGENT + SOLUTION CODE (khi ticket thiếu số OTRS trong description, VD Ticket #12815 Phản hồi mail)
+        if (issueSolCode && isOtrsRaiseCloseTicket(issue)) {
+          const pool = agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets;
+          const solMatches = pool.filter(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode);
+          if (solMatches.length === 1) {
+            let m = solMatches[0];
+            if (usedTicketIds) usedTicketIds.add(m.id);
+            return m;
+          } else if (solMatches.length > 1) {
+            const words = normIssueResult.split(/[_ -]+/).filter(w => w.length > 4);
+            let m = solMatches.find(t => {
+              const tDesc = String(t.description || "").toLowerCase();
+              return words.filter(w => tDesc.includes(w)).length >= 2;
+            }) || solMatches[0];
             if (m) {
               if (usedTicketIds) usedTicketIds.add(m.id);
               return m;
             }
           }
-          return null;
         }
 
         // 2. HOTLINE (Số điện thoại): Tìm theo số điện thoại (từ contact_source hoặc description/call_details)
@@ -6069,7 +6136,7 @@
           }
         }
 
-        // 4. SOLUTION NAME + NPP
+        // 4. SOLUTION NAME + NPP (phải khớp exact 100%, không match partial một chiều)
         if (issueSolName && issueSolName.length > 5 && issueNpp && !isOtrsRaiseCloseTicket(issue)) {
           const pool = agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets;
           let m = pool.find(t => {
@@ -6078,7 +6145,10 @@
             const tPhone = getTicketPhone(t);
             if (isPhoneConflict(issuePhone, tPhone)) return false;
             const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
-            return tName.includes(issueSolName) || issueSolName.includes(tName);
+            // Phải khớp exact (normalize whitespace) hoặc issueSolName là exact substring có nghĩa đầy đủ
+            const normIssue = issueSolName.replace(/\s+/g, " ").trim();
+            const normTicket = tName.replace(/\s+/g, " ").trim();
+            return normIssue === normTicket;
           });
           if (m) {
             if (usedTicketIds) usedTicketIds.add(m.id);
@@ -8632,25 +8702,55 @@
         const todayStr = typeof getTodayString === "function" ? getTodayString() : "";
         const usedTicketIds = new Set();
 
+        // Pre-seed usedTicketIds từ r2Issues đã được match sẵn
+        // Điều này đảm bảo temp items không "lấy mất" ticket đã thuộc về r2Issues
+        if (Array.isArray(r2Issues)) {
+          r2Issues.forEach(r => {
+            if (r && r.matchedTicket && r.matchedTicket.id) {
+              // Kiểm tra xem issue này có trong tempNotes không
+              // Nếu CÓ trong tempNotes (đã đồng bộ), vẫn để temp tự tính lại
+              const isInTemp = filtered.some(n => String(n.id) === String(r.id) ||
+                (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === getIssueUniqueKey(r)));
+              if (!isInTemp) {
+                usedTicketIds.add(r.matchedTicket.id);
+              }
+            }
+          });
+        }
+
         tempTbody.innerHTML = filtered
           .map(
             (n, idx) => {
-              let effectiveIssue = n;
-              if (!effectiveIssue.memberCode) {
-                if (Array.isArray(r2Issues)) {
-                  const r2Match = r2Issues.find(r => r && (String(r.id) === String(n.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(n))));
-                  if (r2Match && r2Match.memberCode) {
-                    effectiveIssue = Object.assign({}, n, { memberCode: r2Match.memberCode, memberName: r2Match.memberName || n.memberName });
+              let effectiveIssue = Object.assign({}, n);
+              let r2MatchedTicket = null;
+              if (Array.isArray(r2Issues)) {
+                const r2Match = r2Issues.find(r => r && (String(r.id) === String(n.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(n))));
+                if (r2Match) {
+                  effectiveIssue = Object.assign({}, r2Match, n, {
+                    memberCode: n.memberCode || r2Match.memberCode,
+                    memberName: n.memberName || r2Match.memberName,
+                    fields: Object.assign({}, r2Match.fields || {}, n.fields || {})
+                  });
+                  // Nếu bên Issue đồng bộ qua (r2Match) đã khớp đúng ticket, ưu tiên dùng luôn
+                  if (r2Match.matchedTicket && !usedTicketIds.has(r2Match.matchedTicket.id)) {
+                    r2MatchedTicket = r2Match.matchedTicket;
+                    effectiveIssue.matchedTicket = r2Match.matchedTicket;
+                  } else if (r2Match.matchedTicket) {
+                    // ticket đã bị dùng trước đó → reset để findMatchedTicket tính lại
+                    effectiveIssue.matchedTicket = null;
                   }
                 }
-                if (!effectiveIssue.memberCode && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
-                  effectiveIssue = Object.assign({}, n, { memberCode: currentSelectedMember.code, memberName: currentSelectedMember.name || n.memberName });
-                }
+              }
+              if (!effectiveIssue.memberCode && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
+                effectiveIssue.memberCode = currentSelectedMember.code;
+                effectiveIssue.memberName = currentSelectedMember.name || effectiveIssue.memberName;
               }
               const isPastDate = n.date && todayStr && n.date !== todayStr;
-              const isOtrs = isOtrsRaiseCloseTicket(n);
+              const isOtrs = isOtrsRaiseCloseTicket(effectiveIssue);
               const isSynced = isTempNoteSynced(n);
-              const matchedTicket = typeof findMatchedTicket === "function" ? findMatchedTicket(effectiveIssue, helpdeskTickets, usedTicketIds) : null;
+              const matchedTicket = effectiveIssue.matchedTicket || (typeof findMatchedTicket === "function" ? findMatchedTicket(effectiveIssue, helpdeskTickets, usedTicketIds) : null);
+              if (matchedTicket && matchedTicket.id) usedTicketIds.add(matchedTicket.id);
+              n.matchedTicket = matchedTicket;
               const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép Prompt AI (Hotline Ticket)";
               return `
           <tr data-id="${n.id}" class="${!isSynced ? 'tr-temp-unsynced' : ''}">
@@ -8737,7 +8837,7 @@
       }
 
       function getSolutionCodeByName(name) {
-        if (!name) return "NVN-665";
+        if (!name) return "";
         const clean = name.trim().toLowerCase();
         if (Array.isArray(solutionsList)) {
           let item = solutionsList.find(s => s && s.name && s.name.trim().toLowerCase() === clean);
@@ -8750,7 +8850,7 @@
         if (/update\s+otrs/i.test(clean)) return "NVN-664";
         if (/phản\s*hồi\s*mail/i.test(clean)) return "NVN-603";
         if (/raise\s+ticket/i.test(clean)) return "NVN-399";
-        return "NVN-665";
+        return "";
       }
 
       function formatIssueCopyText(item) {
@@ -9014,15 +9114,38 @@
         let matchedTicket = found.matchedTicket || null;
         if (!matchedTicket && typeof findMatchedTicket === "function") {
           const usedTicketIds = new Set();
-          if (Array.isArray(r2Issues)) {
-            r2Issues.forEach(item => {
-              if (item && item.id !== found.id && item.matchedTicket && item.matchedTicket.id) {
-                usedTicketIds.add(item.matchedTicket.id);
-              }
-            });
+          // LUÔN dùng r2Issues để build usedTicketIds theo thứ tự nhất quán với main list
+          // (Không dùng tempNotes vì thứ tự khác nhau sẽ gây gán ticket sai)
+          const issuesForMatching = Array.isArray(r2Issues) ? r2Issues : [];
+          for (const item of issuesForMatching) {
+            if (!item) continue;
+            if (String(item.id) === String(found.id) ||
+                (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(item) === getIssueUniqueKey(found))) break;
+            // Ưu tiên dùng matchedTicket đã tính sẵn trên r2Issues item
+            const prevTicket = item.matchedTicket || findMatchedTicket(item, helpdeskTickets, usedTicketIds);
+            if (prevTicket && prevTicket.id) usedTicketIds.add(prevTicket.id);
           }
-          matchedTicket = findMatchedTicket(found, helpdeskTickets, usedTicketIds);
+          // Xây dựng effectiveIssue cho chính item đang xét, ghép data từ r2Issues nếu có
+          let foundEffective = Object.assign({}, found);
+          if (Array.isArray(r2Issues)) {
+            const r2Match = r2Issues.find(r => r && (String(r.id) === String(found.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(found))));
+            if (r2Match) {
+              foundEffective = Object.assign({}, r2Match, found, {
+                memberCode: found.memberCode || r2Match.memberCode,
+                memberName: found.memberName || r2Match.memberName,
+                fields: Object.assign({}, r2Match.fields || {}, found.fields || {})
+              });
+              // Nếu r2Match đã có matchedTicket và chưa bị dùng, ưu tiên dùng luôn
+              if (r2Match.matchedTicket && !usedTicketIds.has(r2Match.matchedTicket.id)) {
+                foundEffective.matchedTicket = r2Match.matchedTicket;
+              } else {
+                foundEffective.matchedTicket = null; // tính lại
+              }
+            }
+          }
+          matchedTicket = foundEffective.matchedTicket || findMatchedTicket(foundEffective, helpdeskTickets, usedTicketIds);
         }
+
 
         if (isCurrentlyRunning) {
           if (warnBox) {
@@ -9053,6 +9176,27 @@
           if (btnAi) {
             btnAi.disabled = false;
             btnAi.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Bấm để AI tự tạo Ticket ngay';
+          }
+        }
+
+        // Cập nhật badge header modal theo trạng thái thực tế
+        const statusBadge = document.getElementById("modalUnnotedStatusBadge");
+        if (statusBadge) {
+          if (matchedTicket) {
+            statusBadge.textContent = `✓ Đã có Ticket #${matchedTicket.id}`;
+            statusBadge.style.background = "#ecfdf5";
+            statusBadge.style.color = "#047857";
+            statusBadge.style.border = "1px solid #a7f3d0";
+          } else if (isCurrentlyRunning) {
+            statusBadge.textContent = "⏳ Đang xử lý...";
+            statusBadge.style.background = "#fffbeb";
+            statusBadge.style.color = "#b45309";
+            statusBadge.style.border = "1px solid #fde68a";
+          } else {
+            statusBadge.textContent = "Chưa note";
+            statusBadge.style.background = "#fffbeb";
+            statusBadge.style.color = "#b45309";
+            statusBadge.style.border = "1px solid #fde68a";
           }
         }
 
