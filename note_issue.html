@@ -5812,7 +5812,12 @@
 
       function getTicketDateNormalized(ticket) {
         if (!ticket) return "";
-        const raw = ticket.createdDate || ticket.date || ticket.createdAt || "";
+        // Ưu tiên trích xuất trực tiếp từ chuỗi createdAt (ISO: YYYY-MM-DD...)
+        if (ticket.createdAt && typeof ticket.createdAt === "string") {
+          const m = ticket.createdAt.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+        }
+        const raw = ticket.createdDate || ticket.date || "";
         if (raw) {
           const n = normalizeDateStr(raw);
           if (n) return n;
@@ -5964,9 +5969,15 @@
           ? tickets.filter(t => !usedTicketIds.has(t.id) && !usedTicketIds.has(String(t.id)))
           : tickets;
 
-        // Các ticket trong cùng ngày với issue
-        const sameDateTickets = availableTickets.filter(t => getTicketDateNormalized(t) === issueDate);
-        if (sameDateTickets.length === 0) return null;
+        // Các ticket trong cùng ngày với issue (hỗ trợ cả ngày chuẩn và ngày trích từ createdAt)
+        const sameDateTickets = availableTickets.filter(t => {
+          const tDate = getTicketDateNormalized(t);
+          if (tDate && tDate === issueDate) return true;
+          if (t.createdAt && String(t.createdAt).slice(0, 10) === issueDate) return true;
+          if (t.date && normalizeDateStr(t.date) === issueDate) return true;
+          if (t.createdDate && normalizeDateStr(t.createdDate) === issueDate) return true;
+          return false;
+        });
 
         // Các ticket cùng Agent trong ngày
         const agentDateCandidates = sameDateTickets.filter(t => {
@@ -5982,7 +5993,12 @@
         const rawIssueResult = String(issue.result || issue.issue || "").trim();
         const normIssueResult = rawIssueResult.toLowerCase().replace(/\s+/g, " ");
         if (normIssueResult.length > 10) {
-          const poolForExact = agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets;
+          const poolForExact = agentDateCandidates.length > 0 ? agentDateCandidates :
+            (sameDateTickets.length > 0 ? sameDateTickets : availableTickets.filter(t => {
+              const tAgent = String(t.agentId || "").trim().toLowerCase();
+              return !issueAgent || tAgent === issueAgent || (tAgent && issueAgent && tAgent.startsWith(issueAgent));
+            }));
+
           // CHỈ KHỚP 100% - tuyệt đối không match một phần (partial match)
           let exactMatch = poolForExact.find(t => {
             const tDesc = String(t.description || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -6004,9 +6020,17 @@
           }
         }
 
+        // Nếu không có ticket nào trong cùng ngày và không khớp chuỗi 100% thì kiểm tra OTRS đặc thù trước khi dừng
+        const otrsPool = sameDateTickets.length > 0 ? sameDateTickets : availableTickets.filter(t => {
+          const tAgent = String(t.agentId || "").trim().toLowerCase();
+          return !issueAgent || tAgent === issueAgent || (tAgent && issueAgent && tAgent.startsWith(issueAgent));
+        });
+
+        if (sameDateTickets.length === 0 && !issueOtrs) return null;
+
         // 1. OTRS TICKET: Mã OTRS 14-18 số (BẮT BUỘC KHÔNG XUNG ĐỘT ACTION HOẶC SOLUTION)
         if (issueOtrs) {
-          const otrsCandidates = sameDateTickets.filter(t => {
+          const otrsCandidates = otrsPool.filter(t => {
             const full = `${t.distName || ""} ${t.dist_name || ""} ${t.description || ""} ${t.rootCause || ""} ${t.result || ""} ${t.processSteps || ""} ${t.callDetails || ""} ${t.phone || ""}`;
             return extractOtrsNum(full) === issueOtrs;
           });

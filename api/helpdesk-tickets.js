@@ -227,21 +227,18 @@ async function fetchLiveTickets(options = {}) {
       } catch (_) {}
     }
 
-    // Chuyển created_at sang múi giờ Việt Nam (UTC+7) chuẩn xác
-    let vnDate = t.date || t.created_date || "";
-    if (t.created_at) {
-      try {
-        const d = new Date(t.created_at);
-        if (!isNaN(d.getTime())) {
-          const vnD = new Date(d.getTime() + (d.getTimezoneOffset() === 0 ? 7 * 3600000 : 0));
-          const y = vnD.getFullYear();
-          const m = String(vnD.getMonth() + 1).padStart(2, "0");
-          const day = String(vnD.getDate()).padStart(2, "0");
-          vnDate = `${y}-${m}-${day}`;
-        }
-      } catch (_) {}
+    // Lấy ngày chuẩn từ created_at (Helpdesk server đã trả về giờ local theo chuỗi ISO, ví dụ: "2026-10-19T17:04:39")
+    // Tuyệt đối không cộng thêm 7 tiếng vì sẽ làm các ticket tạo sau 17:00 chiều bị văng sang ngày hôm sau!
+    let vnDate = "";
+    if (t.created_at && typeof t.created_at === "string") {
+      const datePart = t.created_at.slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+        vnDate = datePart;
+      }
     }
-    if (!vnDate && t.created_at) vnDate = t.created_at.slice(0, 10);
+    if (!vnDate) {
+      vnDate = t.date || t.created_date || "";
+    }
 
     // Trích xuất số điện thoại (từ contact_source hoặc dự phòng từ description / call_details)
     let phone = (t.contact_source || "").trim();
