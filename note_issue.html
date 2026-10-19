@@ -5655,6 +5655,10 @@
           if (res.ok) {
             const data = await res.json();
             r2Issues = Array.isArray(data.issues) ? data.issues : [];
+            // Dọn sạch matchedTicket lưu tĩnh cũ từ DB (chỉ tính động bằng findMatchedTicket)
+            r2Issues.forEach(item => {
+              if (item && item.matchedTicket) delete item.matchedTicket;
+            });
             if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
             updateR2Badge();
             if (typeof renderTempTable === "function") renderTempTable();
@@ -7001,14 +7005,22 @@
 
         try {
           const endpoint = getIssuesApiEndpoint();
+          const cleanedTempNotes = tempNotes.map(n => {
+            const clone = Object.assign({}, n);
+            delete clone.matchedTicket;
+            return clone;
+          });
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "sync_issues", issues: tempNotes })
+            body: JSON.stringify({ action: "sync_issues", issues: cleanedTempNotes })
           });
           if (res.ok) {
             const json = await res.json();
             r2Issues = Array.isArray(json.issues) ? json.issues : tempNotes;
+            r2Issues.forEach(item => {
+              if (item && item.matchedTicket) delete item.matchedTicket;
+            });
             updateR2Badge();
 
             // Đánh dấu các note này đã được đồng bộ
@@ -9081,19 +9093,88 @@
       let currentUnnotedIssue = null;
       const inFlightAiTicketIssues = new Set();
 
+      function findDynamicMatchedTicketForIssue(targetIssue) {
+        if (!targetIssue || typeof findMatchedTicket !== "function" || !Array.isArray(helpdeskTickets) || helpdeskTickets.length === 0) {
+          return null;
+        }
+        const usedTicketIds = new Set();
+        const targetId = String(targetIssue.id || (typeof getIssueUniqueKey === "function" ? getIssueUniqueKey(targetIssue) : ""));
+
+        // Xác định ngữ cảnh danh sách: Nếu issue nằm trong tempNotes thì duyệt theo thứ tự tempNotes; ngược lại duyệt r2Issues
+        const isFromTemp = Array.isArray(tempNotes) && tempNotes.some(n => String(n.id) === targetId);
+        const listToCheck = isFromTemp ? tempNotes : (Array.isArray(r2Issues) ? r2Issues : []);
+
+        for (const item of listToCheck) {
+          if (!item) continue;
+          const itemId = String(item.id || (typeof getIssueUniqueKey === "function" ? getIssueUniqueKey(item) : ""));
+          if (itemId === targetId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(item) === getIssueUniqueKey(targetIssue))) {
+            break;
+          }
+          let effItem = Object.assign({}, item);
+          if (Array.isArray(r2Issues)) {
+            const r2m = r2Issues.find(r => r && (String(r.id) === itemId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(item))));
+            if (r2m) {
+              effItem = Object.assign({}, r2m, item, {
+                memberCode: item.memberCode || r2m.memberCode,
+                memberName: item.memberName || r2m.memberName,
+                fields: Object.assign({}, r2m.fields || {}, item.fields || {})
+              });
+            }
+          }
+          if (!effItem.memberCode && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
+            effItem.memberCode = currentSelectedMember.code;
+            effItem.memberName = currentSelectedMember.name || effItem.memberName;
+          }
+          delete effItem.matchedTicket;
+
+          const prevTicket = findMatchedTicket(effItem, helpdeskTickets, usedTicketIds);
+          if (prevTicket && prevTicket.id) {
+            usedTicketIds.add(prevTicket.id);
+            usedTicketIds.add(String(prevTicket.id));
+          }
+        }
+
+        // Xây dựng effectiveIssue cho chính targetIssue
+        let effTarget = Object.assign({}, targetIssue);
+        if (Array.isArray(r2Issues)) {
+          const r2m = r2Issues.find(r => r && (String(r.id) === targetId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(targetIssue))));
+          if (r2m) {
+            effTarget = Object.assign({}, r2m, targetIssue, {
+              memberCode: targetIssue.memberCode || r2m.memberCode,
+              memberName: targetIssue.memberName || r2m.memberName,
+              fields: Object.assign({}, r2m.fields || {}, targetIssue.fields || {})
+            });
+          }
+        }
+        if (!effTarget.memberCode && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
+          effTarget.memberCode = currentSelectedMember.code;
+          effTarget.memberName = currentSelectedMember.name || effTarget.memberName;
+        }
+        delete effTarget.matchedTicket;
+
+        return findMatchedTicket(effTarget, helpdeskTickets, usedTicketIds);
+      }
+
       window.openChatboxForUnnotedIssue = function (id) {
-        let found = (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null) ||
-          (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null);
+        let found = (Array.isArray(tempNotes) ? tempNotes.find(n => String(n.id) === String(id)) : null) ||
+          (Array.isArray(r2Issues) ? r2Issues.find(n => String(n.id) === String(id)) : null);
         if (!found) {
           showToast("Không tìm thấy thông tin issue", "fa-triangle-exclamation");
           return;
         }
 
-        // Nếu issue từ tempNotes nhưng đã đồng bộ sang r2Issues, ghép thêm thông tin từ r2Issues
+        // Ghép thêm thông tin từ r2Issues nếu có
         if (found && Array.isArray(r2Issues)) {
           const r2Found = r2Issues.find(r => r && (String(r.id) === String(found.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(found))));
-          if (r2Found) found = Object.assign({}, r2Found, found);
+          if (r2Found) {
+            found = Object.assign({}, r2Found, found, {
+              memberCode: found.memberCode || r2Found.memberCode,
+              memberName: found.memberName || r2Found.memberName,
+              fields: Object.assign({}, r2Found.fields || {}, found.fields || {})
+            });
+          }
         }
+        delete found.matchedTicket;
 
         currentUnnotedIssue = found;
         const promptText = formatChatboxAiPrompt(found);
@@ -9121,41 +9202,9 @@
         // Kiểm tra xem issue này có đang được xử lý trong nền không
         const isCurrentlyRunning = inFlightAiTicketIssues.has(issueKey);
 
-        // Kiểm tra xem issue này đã có ticket trên Helpdesk chưa
-        let matchedTicket = found.matchedTicket || null;
-        if (!matchedTicket && typeof findMatchedTicket === "function") {
-          const usedTicketIds = new Set();
-          // LUÔN dùng r2Issues để build usedTicketIds theo thứ tự nhất quán với main list
-          // (Không dùng tempNotes vì thứ tự khác nhau sẽ gây gán ticket sai)
-          const issuesForMatching = Array.isArray(r2Issues) ? r2Issues : [];
-          for (const item of issuesForMatching) {
-            if (!item) continue;
-            if (String(item.id) === String(found.id) ||
-                (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(item) === getIssueUniqueKey(found))) break;
-            // Ưu tiên dùng matchedTicket đã tính sẵn trên r2Issues item
-            const prevTicket = item.matchedTicket || findMatchedTicket(item, helpdeskTickets, usedTicketIds);
-            if (prevTicket && prevTicket.id) usedTicketIds.add(prevTicket.id);
-          }
-          // Xây dựng effectiveIssue cho chính item đang xét, ghép data từ r2Issues nếu có
-          let foundEffective = Object.assign({}, found);
-          if (Array.isArray(r2Issues)) {
-            const r2Match = r2Issues.find(r => r && (String(r.id) === String(found.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(found))));
-            if (r2Match) {
-              foundEffective = Object.assign({}, r2Match, found, {
-                memberCode: found.memberCode || r2Match.memberCode,
-                memberName: found.memberName || r2Match.memberName,
-                fields: Object.assign({}, r2Match.fields || {}, found.fields || {})
-              });
-              // Nếu r2Match đã có matchedTicket và chưa bị dùng, ưu tiên dùng luôn
-              if (r2Match.matchedTicket && !usedTicketIds.has(r2Match.matchedTicket.id)) {
-                foundEffective.matchedTicket = r2Match.matchedTicket;
-              } else {
-                foundEffective.matchedTicket = null; // tính lại
-              }
-            }
-          }
-          matchedTicket = foundEffective.matchedTicket || findMatchedTicket(foundEffective, helpdeskTickets, usedTicketIds);
-        }
+        // Khớp ticket chuẩn xác theo thời gian thực (Đồng bộ hoàn toàn với logic Issue / renderStatsPage & Danh sách tạm)
+        // Tuyệt đối không đọc trường matchedTicket lưu tĩnh cũ từ DB
+        const matchedTicket = findDynamicMatchedTicketForIssue(found);
 
 
         if (isCurrentlyRunning) {
@@ -9254,19 +9303,8 @@
           return;
         }
 
-        // Kiểm tra nếu đã có ticket trên Helpdesk rồi thì không tạo nữa
-        let alreadyMatched = found.matchedTicket || null;
-        if (!alreadyMatched && typeof findMatchedTicket === "function") {
-          const usedTicketIds = new Set();
-          if (Array.isArray(r2Issues)) {
-            r2Issues.forEach(item => {
-              if (item && item.id !== found.id && item.matchedTicket && item.matchedTicket.id) {
-                usedTicketIds.add(item.matchedTicket.id);
-              }
-            });
-          }
-          alreadyMatched = findMatchedTicket(found, helpdeskTickets, usedTicketIds);
-        }
+        // Kiểm tra nếu đã có ticket trên Helpdesk rồi thì không tạo nữa (dùng logic findMatchedTicket thời gian thực)
+        const alreadyMatched = findDynamicMatchedTicketForIssue(found);
         if (alreadyMatched) {
           showToast(`Issue này đã có Ticket #${alreadyMatched.id} trên Chatbox AI rồi!`, "fa-circle-check");
           closeUnnotedTicketModal();
