@@ -8703,17 +8703,12 @@
         const usedTicketIds = new Set();
 
         // Pre-seed usedTicketIds từ r2Issues đã được match sẵn
-        // Điều này đảm bảo temp items không "lấy mất" ticket đã thuộc về r2Issues
+        // Luôn block tất cả ticket đã thuộc r2Issues (kể cả item đã đồng bộ sang temp)
+        // để findMatchedTicket của temp item khác không lấy nhầm ticket đó
         if (Array.isArray(r2Issues)) {
           r2Issues.forEach(r => {
             if (r && r.matchedTicket && r.matchedTicket.id) {
-              // Kiểm tra xem issue này có trong tempNotes không
-              // Nếu CÓ trong tempNotes (đã đồng bộ), vẫn để temp tự tính lại
-              const isInTemp = filtered.some(n => String(n.id) === String(r.id) ||
-                (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === getIssueUniqueKey(r)));
-              if (!isInTemp) {
-                usedTicketIds.add(r.matchedTicket.id);
-              }
+              usedTicketIds.add(r.matchedTicket.id);
             }
           });
         }
@@ -8731,13 +8726,12 @@
                     memberName: n.memberName || r2Match.memberName,
                     fields: Object.assign({}, r2Match.fields || {}, n.fields || {})
                   });
-                  // Nếu bên Issue đồng bộ qua (r2Match) đã khớp đúng ticket, ưu tiên dùng luôn
-                  if (r2Match.matchedTicket && !usedTicketIds.has(r2Match.matchedTicket.id)) {
+                  // Nếu bên Issue đã khớp đúng ticket cho item này (r2Match), luôn dùng lại
+                  // Dù ticket.id đã nằm trong usedTicketIds (pre-seed từ chính r2Match này),
+                  // item này vẫn được phép dùng vì nó là chủ sở hữu hợp lệ của ticket đó
+                  if (r2Match.matchedTicket) {
                     r2MatchedTicket = r2Match.matchedTicket;
                     effectiveIssue.matchedTicket = r2Match.matchedTicket;
-                  } else if (r2Match.matchedTicket) {
-                    // ticket đã bị dùng trước đó → reset để findMatchedTicket tính lại
-                    effectiveIssue.matchedTicket = null;
                   }
                 }
               }
@@ -8748,8 +8742,11 @@
               const isPastDate = n.date && todayStr && n.date !== todayStr;
               const isOtrs = isOtrsRaiseCloseTicket(effectiveIssue);
               const isSynced = isTempNoteSynced(n);
+              // Chỉ gọi findMatchedTicket khi r2Match không có sẵn matchedTicket
               const matchedTicket = effectiveIssue.matchedTicket || (typeof findMatchedTicket === "function" ? findMatchedTicket(effectiveIssue, helpdeskTickets, usedTicketIds) : null);
-              if (matchedTicket && matchedTicket.id) usedTicketIds.add(matchedTicket.id);
+              // KHÔNG add vào usedTicketIds nếu matchedTicket đã đến từ r2Match
+              // (đã được pre-seed sẵn); chỉ add khi findMatchedTicket tìm ra ticket mới
+              if (matchedTicket && matchedTicket.id && !r2MatchedTicket) usedTicketIds.add(matchedTicket.id);
               n.matchedTicket = matchedTicket;
               const copyTitle = isOtrs ? "Sao chép Prompt AI (OTRS / Mail Ticket)" : "Sao chép Prompt AI (Hotline Ticket)";
               return `
