@@ -313,13 +313,31 @@ async function syncHelpdeskTickets(force = false, options = {}) {
       console.log(`[Helpdesk Sync] 🚀 Đang cào dữ liệu mới từ Helpdesk AI Assistant (scope=team, category=HELPDESK, project=NVN)...`);
       const result = await fetchLiveTickets(options);
 
-      // Merge vé mới cào được vào danh sách cache cũ trên R2 để không bị mất các vé cũ
+      // Merge vé mới cào được vào danh sách cache cũ trên R2:
+      // Các vé thuộc khoảng ngày vừa cào mà không còn tồn tại trên Helpdesk (đã bị xoá) sẽ được loại bỏ khỏi cache
       const cached = await getCacheFromR2();
       const existingTickets = (cached && Array.isArray(cached.tickets)) ? cached.tickets : [];
+      const liveTicketIds = new Set(result.tickets.map(t => String(t.id)));
+      const fromDate = result.filter?.from_date;
+      const toDate = result.filter?.to_date;
+
       const ticketMap = new Map();
-      existingTickets.forEach(t => { if (t && t.id) ticketMap.set(t.id, t); });
-      result.tickets.forEach(t => { if (t && t.id) ticketMap.set(t.id, t); });
-      const mergedTickets = Array.from(ticketMap.values()).sort((a, b) => b.id - a.id);
+      existingTickets.forEach(t => {
+        if (!t || !t.id) return;
+        const tDate = t.date || (t.createdAt ? String(t.createdAt).slice(0, 10) : "");
+        // Nếu vé cũ nằm trong khoảng ngày được đồng bộ đợt này nhưng không còn trong danh sách live => Đã bị xoá trên Chatbox / Helpdesk
+        const inSyncedRange = fromDate && toDate && tDate && (tDate >= fromDate && tDate <= toDate);
+        if (inSyncedRange && !liveTicketIds.has(String(t.id))) {
+          return; // Bỏ qua không giữ lại vé đã bị xoá
+        }
+        ticketMap.set(String(t.id), t);
+      });
+
+      // Thêm/cập nhật toàn bộ vé còn tồn tại từ Helpdesk vào map
+      result.tickets.forEach(t => {
+        if (t && t.id) ticketMap.set(String(t.id), t);
+      });
+      const mergedTickets = Array.from(ticketMap.values()).sort((a, b) => Number(b.id) - Number(a.id));
 
       const payload = {
         status: "success",

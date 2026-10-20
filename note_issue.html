@@ -5930,17 +5930,64 @@
         return p;
       }
 
+      function isTicketAgentMatch(ticket, issueAgent, issueMemberName) {
+        if (!ticket) return false;
+        if (!issueAgent && !issueMemberName) return true;
+
+        const tAgent = String(ticket.agentId || "").trim().toLowerCase();
+        const tName = String(ticket.agentName || "").trim().toLowerCase();
+
+        // Nếu ticket không có bất kỳ thông tin agent nào (chưa được gán cho ai)
+        if (!tAgent && !tName) return true;
+
+        // 1. So khớp mã nhân viên / agentId
+        if (issueAgent && tAgent) {
+          if (tAgent === issueAgent) return true;
+          if (tAgent.startsWith(issueAgent) || issueAgent.startsWith(tAgent)) return true;
+          const issueParts = issueAgent.split(/[\._-]+/).filter(p => p.length >= 3);
+          const tParts = tAgent.split(/[\._-]+/).filter(p => p.length >= 3);
+          if (issueParts.some(ip => tParts.includes(ip))) return true;
+        }
+
+        // 2. So khớp tên nhân viên (agentName vs issueMemberName / issueAgent)
+        const normTName = typeof normalizeStr === "function" ? normalizeStr(tName) : tName.toLowerCase();
+        if (issueMemberName) {
+          const normIssueName = typeof normalizeStr === "function" ? normalizeStr(issueMemberName) : issueMemberName.toLowerCase();
+          if (normTName && normIssueName) {
+            if (normTName === normIssueName) return true;
+            const wordsIssue = normIssueName.split(" ").filter(w => w.length >= 2);
+            const wordsT = normTName.split(" ").filter(w => w.length >= 2);
+            const commonWords = wordsIssue.filter(w => wordsT.includes(w));
+            if (commonWords.length >= 2 || (wordsIssue.length === 1 && commonWords.length === 1)) return true;
+          }
+        }
+
+        // 3. Nếu tên hiển thị chứa một phần mã nhân viên hoặc ngược lại
+        if (issueAgent && normTName) {
+          const agentMainPart = issueAgent.split(/[\._-]+/)[0];
+          if (agentMainPart && agentMainPart.length >= 3 && normTName.includes(agentMainPart)) return true;
+        }
+
+        // Ticket có agent nhưng không khớp với agent của issue => Khác nhân viên!
+        return false;
+      }
+
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
         if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = getIssueDateNormalized(issue);
         let issueAgent = String(issue.memberCode || "").trim().toLowerCase();
+        let issueMemberName = String(issue.memberName || "").trim().toLowerCase();
         if (!issueAgent && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.code) {
           issueAgent = String(currentSelectedMember.code).trim().toLowerCase();
         }
-        if (!issueAgent && Array.isArray(r2Issues)) {
+        if (!issueMemberName && typeof currentSelectedMember !== "undefined" && currentSelectedMember?.name) {
+          issueMemberName = String(currentSelectedMember.name).trim().toLowerCase();
+        }
+        if ((!issueAgent || !issueMemberName) && Array.isArray(r2Issues)) {
           const r2Found = r2Issues.find(r => r && (String(r.id) === String(issue.id) || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(r) === getIssueUniqueKey(issue))));
-          if (r2Found && r2Found.memberCode) {
-            issueAgent = String(r2Found.memberCode).trim().toLowerCase();
+          if (r2Found) {
+            if (!issueAgent && r2Found.memberCode) issueAgent = String(r2Found.memberCode).trim().toLowerCase();
+            if (!issueMemberName && r2Found.memberName) issueMemberName = String(r2Found.memberName).trim().toLowerCase();
           }
         }
         const issueOtrs = extractOtrsNum(issue.result) || extractOtrsNum(issue.fields?.npp) || extractOtrsNum(issue.fields?.hotline);
@@ -5979,13 +6026,9 @@
           return false;
         });
 
-        // Các ticket cùng Agent trong ngày
+        // Các ticket cùng Agent trong ngày (BẮT BUỘC KHỚP NHÂN VIÊN)
         const agentDateCandidates = sameDateTickets.filter(t => {
-          const tAgent = String(t.agentId || "").trim().toLowerCase();
-          const tName = String(t.agentName || "").trim().toLowerCase();
-          return !issueAgent || tAgent === issueAgent ||
-            (tAgent && issueAgent && (tAgent.startsWith(issueAgent) || issueAgent.startsWith(tAgent))) ||
-            (tName && issueAgent && tName.includes(issueAgent));
+          return isTicketAgentMatch(t, issueAgent, issueMemberName);
         });
 
         // 0. KHỚP CALL DETAIL 100% (Ưu tiên tuyệt đối cao nhất - không match một phần):
@@ -5993,19 +6036,18 @@
         const rawIssueResult = String(issue.result || issue.issue || "").trim();
         const normIssueResult = rawIssueResult.toLowerCase().replace(/\s+/g, " ");
         if (normIssueResult.length > 10) {
-          const poolForExact = agentDateCandidates.length > 0 ? agentDateCandidates :
-            (sameDateTickets.length > 0 ? sameDateTickets : availableTickets.filter(t => {
-              const tAgent = String(t.agentId || "").trim().toLowerCase();
-              return !issueAgent || tAgent === issueAgent || (tAgent && issueAgent && tAgent.startsWith(issueAgent));
-            }));
+          const poolForExact = (issueAgent || issueMemberName) ? agentDateCandidates :
+            (sameDateTickets.length > 0 ? sameDateTickets : availableTickets);
 
           // CHỈ KHỚP 100% - tuyệt đối không match một phần (partial match)
           let exactMatch = poolForExact.find(t => {
+            if ((issueAgent || issueMemberName) && !isTicketAgentMatch(t, issueAgent, issueMemberName)) return false;
+            if (issueDsr && isDsrConflict(issueDsr, extractDsrFromTicket(t))) return false;
+
             const tDesc = String(t.description || "").trim().toLowerCase().replace(/\s+/g, " ");
             if (tDesc === normIssueResult) return true;
 
             const tCall = String(t.callDetails || "").trim().toLowerCase().replace(/\s+/g, " ");
-            // Chỉ khớp khi chuỗi BẰNG NHAU HOÀN TOÀN, không dùng includes() để tránh partial match
             if (tCall === normIssueResult) return true;
 
             return false;
@@ -6021,10 +6063,8 @@
         }
 
         // Nếu không có ticket nào trong cùng ngày và không khớp chuỗi 100% thì kiểm tra OTRS đặc thù trước khi dừng
-        const otrsPool = sameDateTickets.length > 0 ? sameDateTickets : availableTickets.filter(t => {
-          const tAgent = String(t.agentId || "").trim().toLowerCase();
-          return !issueAgent || tAgent === issueAgent || (tAgent && issueAgent && tAgent.startsWith(issueAgent));
-        });
+        const otrsPool = (issueAgent || issueMemberName) && agentDateCandidates.length > 0 ? agentDateCandidates :
+          (sameDateTickets.length > 0 ? sameDateTickets : availableTickets.filter(t => isTicketAgentMatch(t, issueAgent, issueMemberName)));
 
         if (sameDateTickets.length === 0 && !issueOtrs) return null;
 
@@ -6042,8 +6082,6 @@
             // BẮT BUỘC KHỚP SOLUTION/TASK - TUYỆT ĐỐI KHÔNG MATCH MỘT PHẦN KHI KHÁC SOLUTION
             const validCandidates = otrsCandidates.filter(t => {
               const tOtrsTask = typeof getOtrsCvName === "function" ? getOtrsCvName(t) : null;
-              // Nếu cả issue và candidate đều xác định được task OTRS (vd: "Phản hồi mail ticket cho HQ" vs "Raise OTRS Ticket")
-              // thì BẮT BUỘC PHẢI TRÙNG NHAU, tuyệt đối không gán chéo
               if (issueOtrsTask && tOtrsTask && issueOtrsTask !== tOtrsTask) return false;
 
               const tAction = getOtrsActionType(t.solutionCode, t.solutionName, t.description);
@@ -6058,13 +6096,13 @@
             if (validCandidates.length > 0) {
               // Ưu tiên 1: Cùng Agent + cùng Solution Code
               let m = validCandidates.find(t =>
-                (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
+                isTicketAgentMatch(t, issueAgent, issueMemberName) &&
                 String(t.solutionCode || "").trim().toUpperCase() === issueSolCode
               );
               // Ưu tiên 2: Cùng Agent + cùng OTRS Task / Action
               if (!m && (issueOtrsTask || issueAction)) {
                 m = validCandidates.find(t =>
-                  (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
+                  isTicketAgentMatch(t, issueAgent, issueMemberName) &&
                   ((issueOtrsTask && typeof getOtrsCvName === "function" && getOtrsCvName(t) === issueOtrsTask) ||
                    (issueAction && getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction))
                 );
@@ -6090,8 +6128,6 @@
               }
             }
           }
-          // Nếu issue là OTRS Ticket và có mã OTRS xác định nhưng không tìm thấy ticket nào trên Helpdesk có cùng mã OTRS này:
-          // TUYỆT ĐỐI KHÔNG fall through để gán bừa ticket của mã OTRS khác -> Coi là Chưa note (null)
           if (typeof isOtrsRaiseCloseTicket === "function" && isOtrsRaiseCloseTicket(issue)) {
             return null;
           }
@@ -6099,9 +6135,8 @@
 
         // 1.5. OTRS / MAIL KHỚP THEO AGENT + SOLUTION CODE (CHỈ áp dụng khi issue KHÔNG có số OTRS, VD Ticket #12815 Phản hồi mail)
         if (issueSolCode && typeof isOtrsRaiseCloseTicket === "function" && isOtrsRaiseCloseTicket(issue) && !issueOtrs) {
-          const pool = (agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets).filter(t => {
+          const pool = (issueAgent || issueMemberName ? agentDateCandidates : sameDateTickets).filter(t => {
             const full = `${t.distName || ""} ${t.dist_name || ""} ${t.description || ""} ${t.rootCause || ""} ${t.result || ""} ${t.processSteps || ""} ${t.callDetails || ""} ${t.phone || ""}`;
-            // Candidate ticket cũng phải không mang mã OTRS khác
             return !extractOtrsNum(full);
           });
           const solMatches = pool.filter(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode);
@@ -6131,29 +6166,23 @@
 
         // 2. HOTLINE (Số điện thoại): Tìm theo số điện thoại (từ contact_source hoặc description/call_details)
         if (issuePhone && issuePhone.length >= 8) {
-          const phoneCandidates = sameDateTickets.filter(t => getTicketPhone(t) === issuePhone);
+          const phoneCandidates = sameDateTickets.filter(t => {
+            if (getTicketPhone(t) !== issuePhone) return false;
+            // BẮT BUỘC KHỚP NHÂN VIÊN VÀ MÃ DSR (nếu có)
+            if ((issueAgent || issueMemberName) && !isTicketAgentMatch(t, issueAgent, issueMemberName)) return false;
+            if (issueDsr && isDsrConflict(issueDsr, extractDsrFromTicket(t))) return false;
+            return true;
+          });
           if (phoneCandidates.length > 0) {
             // Ưu tiên 1: Cùng Agent + Khớp Solution
             let m = phoneCandidates.find(t =>
-              (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
               issueSolCode && String(t.solutionCode || "").trim().toUpperCase() === issueSolCode
             );
             // Ưu tiên 2: Cùng Agent + Khớp NPP
             if (!m && issueNpp) {
-              m = phoneCandidates.find(t =>
-                (!issueAgent || String(t.agentId || "").toLowerCase().startsWith(issueAgent)) &&
-                isNppMatch(issueNpp, extractNppFromTicket(t))
-              );
-            }
-            // Ưu tiên 3: Cùng Agent
-            if (!m && issueAgent) {
-              m = phoneCandidates.find(t => String(t.agentId || "").toLowerCase().startsWith(issueAgent));
-            }
-            // Ưu tiên 4: Khớp NPP (dù khác agent tài khoản)
-            if (!m && issueNpp) {
               m = phoneCandidates.find(t => isNppMatch(issueNpp, extractNppFromTicket(t)));
             }
-            // Ưu tiên 5: Vé duy nhất trong ngày có SĐT này
+            // Ưu tiên 3: Vé duy nhất trong ngày có SĐT này (đã kiểm tra cùng agent ở trên)
             if (!m && phoneCandidates.length === 1) {
               m = phoneCandidates[0];
             }
@@ -6170,8 +6199,10 @@
 
         // 3. SOLUTION + NPP (Khi không có SĐT hoặc OTRS): Khớp theo Solution Code + NPP
         if (issueSolCode && issueNpp && !isOtrsRaiseCloseTicket(issue)) {
-          const pool = agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets;
+          // BẮT BUỘC chỉ tìm trong agentDateCandidates nếu biết thông tin nhân viên
+          const pool = (issueAgent || issueMemberName) ? agentDateCandidates : sameDateTickets;
           let m = pool.find(t => {
+            if ((issueAgent || issueMemberName) && !isTicketAgentMatch(t, issueAgent, issueMemberName)) return false;
             const tSol = String(t.solutionCode || "").trim().toUpperCase();
             if (tSol !== issueSolCode) return false;
             const tNpp = extractNppFromTicket(t);
@@ -6193,12 +6224,15 @@
 
         // 4. SOLUTION NAME + NPP (phải khớp exact 100%, không match partial một chiều)
         if (issueSolName && issueSolName.length > 5 && issueNpp && !isOtrsRaiseCloseTicket(issue)) {
-          const pool = agentDateCandidates.length > 0 ? agentDateCandidates : sameDateTickets;
+          const pool = (issueAgent || issueMemberName) ? agentDateCandidates : sameDateTickets;
           let m = pool.find(t => {
+            if ((issueAgent || issueMemberName) && !isTicketAgentMatch(t, issueAgent, issueMemberName)) return false;
             const tNpp = extractNppFromTicket(t);
             if (!isNppMatch(issueNpp, tNpp)) return false;
             const tPhone = getTicketPhone(t);
             if (isPhoneConflict(issuePhone, tPhone)) return false;
+            const tDsr = extractDsrFromTicket(t);
+            if (isDsrConflict(issueDsr, tDsr)) return false;
             const tName = String(t.solutionName || t.description || "").trim().toLowerCase();
             // Phải khớp exact (normalize whitespace) hoặc issueSolName là exact substring có nghĩa đầy đủ
             const normIssue = issueSolName.replace(/\s+/g, " ").trim();
