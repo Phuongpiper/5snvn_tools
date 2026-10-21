@@ -12621,7 +12621,12 @@
             const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
               (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
             if (!phoneOk) return false;
-            return isIssueDateMatched(callDateFormatted, iss.date);
+            if (!isIssueDateMatched(callDateFormatted, iss.date)) return false;
+            // BẮT BUỘC: Issue phải thuộc đúng nhân viên nhận/gọi cuộc gọi đó (tránh note nhầm sang người khác)
+            const issMember = String(iss.memberCode || "").trim().toUpperCase();
+            const callMember = String(staff?.code || "").trim().toUpperCase();
+            if (issMember && callMember && issMember !== callMember) return false;
+            return true;
           });
 
           if (matchedR2Issue) {
@@ -12643,7 +12648,12 @@
               const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
                 (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
               if (!phoneOk) return false;
-              return isIssueDateMatched(callDateFormatted, iss.date);
+              if (!isIssueDateMatched(callDateFormatted, iss.date)) return false;
+              // BẮT BUỘC: Issue phải thuộc đúng nhân viên nhận/gọi cuộc gọi đó (tránh note nhầm sang người khác)
+              const issMember = String(iss.memberCode || "").trim().toUpperCase();
+              const callMember = String(staff?.code || "").trim().toUpperCase();
+              if (issMember && callMember && issMember !== callMember) return false;
+              return true;
             });
 
             if (matchedTemp) {
