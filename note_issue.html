@@ -6166,15 +6166,24 @@
 
         // 2. HOTLINE (Số điện thoại): Tìm theo số điện thoại (từ contact_source hoặc description/call_details)
         if (issuePhone && issuePhone.length >= 8) {
-          const phoneCandidates = sameDateTickets.filter(t => {
+          const allPhoneCandidates = sameDateTickets.filter(t => {
             if (getTicketPhone(t) !== issuePhone) return false;
-            // BẮT BUỘC KHỚP NHÂN VIÊN VÀ MÃ DSR (nếu có)
+            // BẮT BUỘC KHỚP NHÂN VIÊN
             if ((issueAgent || issueMemberName) && !isTicketAgentMatch(t, issueAgent, issueMemberName)) return false;
-            if (issueDsr && isDsrConflict(issueDsr, extractDsrFromTicket(t))) return false;
             return true;
           });
-          if (phoneCandidates.length > 0) {
-            // Ưu tiên 1: Cùng Agent + Khớp Solution
+
+          if (allPhoneCandidates.length > 0) {
+            // Bước 1: Ưu tiên ứng viên trùng cả mã DSR/NVBH (nếu có)
+            const nonConflictCandidates = issueDsr
+              ? allPhoneCandidates.filter(t => !isDsrConflict(issueDsr, extractDsrFromTicket(t)))
+              : allPhoneCandidates;
+
+            // Nếu tìm thấy ứng viên khớp DSR thì ưu tiên dùng, nếu không (ví dụ bot Chatbox lưu nhầm mã DSR khác)
+            // thì fallback sang allPhoneCandidates để kiểm tra cùng Solution/NPP hoặc là vé duy nhất của Agent
+            const phoneCandidates = nonConflictCandidates.length > 0 ? nonConflictCandidates : allPhoneCandidates;
+
+            // Ưu tiên 1: Cùng Agent + Khớp Solution Code
             let m = phoneCandidates.find(t =>
               issueSolCode && String(t.solutionCode || "").trim().toUpperCase() === issueSolCode
             );
@@ -6182,7 +6191,7 @@
             if (!m && issueNpp) {
               m = phoneCandidates.find(t => isNppMatch(issueNpp, extractNppFromTicket(t)));
             }
-            // Ưu tiên 3: Vé duy nhất trong ngày có SĐT này (đã kiểm tra cùng agent ở trên)
+            // Ưu tiên 3: Vé duy nhất trong ngày có SĐT này của Agent đó
             if (!m && phoneCandidates.length === 1) {
               m = phoneCandidates[0];
             }
