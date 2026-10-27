@@ -7520,36 +7520,78 @@
       }
 
       // 4. NVBH Validation & Prefix Auto-Padding
-      // Rule: Sau Prefix luôn là 4 số. Vd: 243G0002, 243G0021, 243G0100
+      // Rule: Sau Prefix luôn là 4 số. Vd: 243G0002, 243G0021, 123N0001
       function formatNvbh(raw) {
-        const val = raw.trim();
+        const val = raw ? raw.trim() : "";
         if (!val) return "";
 
-        const prefix = currentNppObj?.prefix || "";
+        let prefix = (currentNppObj?.prefix || "").trim().toUpperCase();
 
-        // Trường hợp chỉ nhập số (VD: 2, 01, 11, 00002, 000021, 100...)
+        // Fallback tìm prefix nếu currentNppObj chưa set nhưng có inputNpp và dtList
+        if (!prefix && typeof inputNpp !== "undefined" && inputNpp?.value?.trim() && Array.isArray(dtList)) {
+          const q = typeof normalizeStr === "function" ? normalizeStr(inputNpp.value.trim()) : inputNpp.value.trim().toLowerCase();
+          const found = dtList.find(d => {
+            const r = typeof normalizeStr === "function" ? normalizeStr((d.issueName || "").replace(/^npp\s+/i, "")) : (d.issueName || "").toLowerCase();
+            const iname = typeof normalizeStr === "function" ? normalizeStr(d.issueName || "") : (d.issueName || "").toLowerCase();
+            const dcode = typeof normalizeStr === "function" ? normalizeStr(d.code || "") : (d.code || "").toLowerCase();
+            const dpfx = typeof normalizeStr === "function" ? normalizeStr(d.prefix || "") : (d.prefix || "").toLowerCase();
+            return r === q || iname === q || dcode === q || dpfx === q;
+          }) || dtList.find(d => {
+            const iname = typeof normalizeStr === "function" ? normalizeStr(d.issueName || "") : (d.issueName || "").toLowerCase();
+            const dname = typeof normalizeStr === "function" ? normalizeStr(d.name || "") : (d.name || "").toLowerCase();
+            return iname.includes(q) || dname.includes(q);
+          });
+          if (found && found.prefix) {
+            prefix = String(found.prefix).trim().toUpperCase();
+          }
+        }
+
+        // Fallback tìm theo setupInputMaNpp (trong popup Cài máy)
+        if (!prefix && typeof document !== "undefined") {
+          const setupNppEl = document.getElementById("setupInputMaNpp");
+          if (setupNppEl && setupNppEl.value.trim() && Array.isArray(dtList)) {
+            const snVal = setupNppEl.value.trim();
+            const foundDt = dtList.find(d => String(d.code || "").trim() === snVal || String(d.issueName || "").trim().toLowerCase() === snVal.toLowerCase());
+            if (foundDt && foundDt.prefix) prefix = String(foundDt.prefix).trim().toUpperCase();
+          }
+        }
+
+        // Nếu prefix chỉ gồm toàn số (VD: "243") thì mặc định GT thêm "G", nếu đã có ký tự kênh (VD: "123N", "243G") thì giữ nguyên
+        const resolvedPrefix = /^\d+$/.test(prefix) ? prefix + "G" : prefix;
+
+        // Trường hợp 1: Chỉ nhập số (VD: 2, 01, 11, 00002, 000021, 100...)
         if (/^\d+$/.test(val)) {
           const cleanDigits = val.replace(/^0+/, "") || "0";
           const padded = cleanDigits.padStart(4, "0").slice(-4);
 
-          if (prefix) {
-            return prefix.endsWith("G") ? prefix + padded : prefix + "G" + padded;
+          if (resolvedPrefix) {
+            return resolvedPrefix + padded;
           }
           return `[Chưa có Prefix]${padded}`;
         }
 
-        // Trường hợp người dùng gõ kèm G hoặc kèm Prefix (VD: 118G00002, 243G21, G01...)
-        const matchG = val.match(/^(.*G)(\d+)$/i);
-        if (matchG) {
-          const pfxPart = matchG[1].toUpperCase();
-          const cleanG = matchG[2].replace(/^0+/, "") || "0";
-          const paddedG = cleanG.padStart(4, "0").slice(-4);
+        // Trường hợp 2: Người dùng gõ kèm chữ cái hoặc gõ kèm Prefix (VD: 123N01, 123N0001, 243G21, G01, N01, 118G00002...)
+        const match = val.match(/^([A-Za-z0-9]*[A-Za-z])(\d+)$/i);
+        if (match) {
+          const pfxPart = match[1].toUpperCase();
+          const cleanDigits = match[2].replace(/^0+/, "") || "0";
+          const padded = cleanDigits.padStart(4, "0").slice(-4);
 
-          // Nếu chỉ gõ "G01" mà có prefix của NPP ở ô trước
-          if (pfxPart === "G" && prefix) {
-            return prefix.endsWith("G") ? prefix + paddedG : prefix + "G" + paddedG;
+          if (resolvedPrefix) {
+            const lastLetter = resolvedPrefix.slice(-1);
+            // Nếu người dùng gõ đúng prefix của NPP (123N01),
+            // hoặc gõ nhầm thêm G (123NG0001 / 123NG01 -> tự chuẩn hóa về 123N0001),
+            // hoặc chỉ gõ ký tự đuôi của kênh (VD: "N01" khi prefix là 123N, hoặc "G01" theo thói quen)
+            if (
+              pfxPart === resolvedPrefix ||
+              pfxPart === resolvedPrefix + "G" ||
+              pfxPart === lastLetter ||
+              pfxPart === "G"
+            ) {
+              return resolvedPrefix + padded;
+            }
           }
-          return pfxPart + paddedG;
+          return pfxPart + padded;
         }
 
         return val.toUpperCase();
@@ -12115,11 +12157,11 @@
           const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
           let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
 
-          // Tự động format NVBH nếu chỉ nhập số và NPP hiện tại có Prefix
-          if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
-            nvbhVal = formatNvbh(nvbhVal);
-            if (nvbhVal.startsWith("[Chưa có Prefix]")) {
-              nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+          // Tự động format NVBH nếu người dùng nhập số hoặc mã NVBH
+          if (nvbhVal) {
+            const formatted = formatNvbh(nvbhVal);
+            if (formatted && !formatted.startsWith("[Chưa có Prefix]")) {
+              nvbhVal = formatted;
             }
           }
 
@@ -12145,9 +12187,11 @@
 
         const nppVal = (document.getElementById("setupInputMaNpp")?.value || "").trim();
         let nvbhVal = (document.getElementById("setupInputMaNvbh")?.value || "").trim();
-        if (/^\d+$/.test(nvbhVal) && currentNppObj?.prefix) {
-          nvbhVal = formatNvbh(nvbhVal);
-          if (nvbhVal.startsWith("[Chưa có Prefix]")) nvbhVal = nvbhVal.replace("[Chưa có Prefix]", "");
+        if (nvbhVal) {
+          const formatted = formatNvbh(nvbhVal);
+          if (formatted && !formatted.startsWith("[Chưa có Prefix]")) {
+            nvbhVal = formatted;
+          }
         }
         return (nppVal && nvbhVal) ? `${nppVal}_${nvbhVal}` : (document.getElementById("setupDeviceUserId")?.textContent || "");
       }
