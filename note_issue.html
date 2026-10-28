@@ -2355,7 +2355,7 @@
     }
 
     .stats-search-box input {
-      padding: 6px 12px 6px 30px;
+      padding: 6px 28px 6px 30px;
       font-size: 12.5px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -2374,12 +2374,29 @@
 
     .stats-search-box button {
       position: absolute;
-      right: 8px;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
       background: transparent;
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 11px;
+      border-radius: 50%;
+      z-index: 2;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .stats-search-box button:hover {
+      color: var(--danger, #ef4444);
+      background: rgba(239, 68, 68, 0.1);
     }
 
     /* ── KPI Grid ── */
