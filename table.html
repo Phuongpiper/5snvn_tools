@@ -583,9 +583,9 @@
     }
 
     .th-stt, .td-stt {
-      width: 52px;
-      min-width: 52px;
-      max-width: 52px;
+      width: 62px;
+      min-width: 62px;
+      max-width: 72px;
       text-align: center;
       color: var(--text-muted);
       font-family: var(--font-mono);
@@ -945,25 +945,167 @@
       color: var(--text-light);
     }
 
-    /* ── FOOTER / SUMMARY BAR ── */
+    /* ── FOOTER / SUMMARY BAR & PAGINATION ── */
     .summary-footer {
       background: #ffffff;
       border-top: 1px solid var(--border);
-      padding: 8px 20px;
+      padding: 6px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
       flex-shrink: 0;
       font-size: 12.5px;
       color: var(--text-muted);
       z-index: 10;
+      min-height: 44px;
+    }
+
+    .summary-pagination {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+
+    .pagination-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px 4px;
+    }
+
+    .btn-page-nav {
+      background: transparent;
+      border: none;
+      color: #475569;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-page-nav:hover:not(:disabled) {
+      background: #ffffff;
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .btn-page-nav:disabled {
+      opacity: 0.28;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .page-indicator-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: #475569;
+      padding: 0 4px;
+      font-weight: 500;
+    }
+
+    .page-input {
+      width: 44px;
+      height: 24px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #ffffff;
+      padding: 0 2px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    .page-input::-webkit-outer-spin-button,
+    .page-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .page-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .page-size-selector {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .page-size-select {
+      height: 28px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    .page-size-select:hover {
+      background: #ffffff;
+      border-color: #cbd5e1;
+    }
+
+    .page-size-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+      background: #ffffff;
+    }
+
+    .page-range-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .page-range-pill strong {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+      .summary-footer {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        padding: 6px 12px;
+      }
+      .summary-left, .summary-pagination, .summary-right {
+        justify-content: center;
+      }
     }
 
     .summary-left {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     .stat-pill {
@@ -2105,13 +2247,21 @@
 
       <!-- Bulk Selection Actions -->
       <div id="bulkActionsGroup" style="display: none; align-items: center; gap: 6px;">
+        <button class="btn btn-subtle" id="btnSelectAllFiltered" style="color: var(--primary);" title="Chọn toàn bộ các dòng theo bộ lọc">
+          <i class="fa-solid fa-check-double"></i>
+          <span>Chọn toàn bộ (<span id="totalFilteredCountBadge">0</span>)</span>
+        </button>
+        <button class="btn btn-subtle" id="btnClearSelection" style="color: var(--text-muted);" title="Bỏ chọn tất cả">
+          <i class="fa-solid fa-xmark"></i>
+          <span>Bỏ chọn</span>
+        </button>
         <button class="btn btn-subtle" id="btnHighlightSelected" style="color: #eab308;" title="Tô màu highlight các dòng đã chọn">
           <i class="fa-solid fa-highlighter"></i>
-          <span>Tô màu dòng</span>
+          <span>Tô màu</span>
         </button>
         <button class="btn btn-subtle" id="btnLockSelected" style="color: #d97706;" title="Khoá các dòng đã chọn">
           <i class="fa-solid fa-lock"></i>
-          <span>Khoá dòng (<span id="lockCountBadge">0</span>)</span>
+          <span>Khoá (<span id="lockCountBadge">0</span>)</span>
         </button>
         <button class="btn btn-subtle" id="btnUnockSelected" style="color: var(--primary);" title="Mở khoá các dòng đã chọn">
           <i class="fa-solid fa-lock-open"></i>
@@ -2178,12 +2328,52 @@
     </div>
   </div>
 
-  <!-- ── 4. SUMMARY BAR ── -->
+  <!-- ── 4. SUMMARY BAR & PAGINATION ── -->
   <div class="summary-footer">
     <div class="summary-left">
       <span class="stat-pill"><i class="fa-solid fa-bars-staggered"></i> Tổng số: <strong id="totalRowsCount">0</strong> dòng</span>
-      <span class="stat-pill" id="filteredRowsStat" style="display: none;"><i class="fa-solid fa-filter"></i> Hiển thị: <strong id="filteredRowsCount">0</strong></span>
+      <span class="stat-pill" id="filteredRowsStat" style="display: none;"><i class="fa-solid fa-filter"></i> Lọc: <strong id="filteredRowsCount">0</strong></span>
       <span class="stat-pill" id="numericStatsPill" style="display: none;"><i class="fa-solid fa-calculator"></i> <span id="numericStatsText">Tổng: 0</span></span>
+    </div>
+
+    <!-- ── Center: Table Pagination ── -->
+    <div class="summary-pagination" id="tablePaginationWrap">
+      <div class="pagination-controls">
+        <button class="btn-page-nav" id="btnFirstPage" title="Trang đầu tiên">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+        <button class="btn-page-nav" id="btnPrevPage" title="Trang trước">
+          <i class="fa-solid fa-angle-left"></i>
+        </button>
+
+        <div class="page-indicator-wrap">
+          <span>Trang</span>
+          <input type="number" id="pageNumberInput" class="page-input" min="1" value="1" title="Nhập số trang và nhấn Enter để chuyển nhanh" />
+          <span>/ <strong id="totalPagesDisplay">1</strong></span>
+        </div>
+
+        <button class="btn-page-nav" id="btnNextPage" title="Trang sau">
+          <i class="fa-solid fa-angle-right"></i>
+        </button>
+        <button class="btn-page-nav" id="btnLastPage" title="Trang cuối cùng">
+          <i class="fa-solid fa-angles-right"></i>
+        </button>
+      </div>
+
+      <div class="page-size-selector">
+        <select id="pageSizeSelect" class="page-size-select" title="Số dòng mỗi trang">
+          <option value="20" selected>20 dòng / trang</option>
+          <option value="50">50 dòng / trang</option>
+          <option value="100">100 dòng / trang</option>
+          <option value="200">200 dòng / trang</option>
+          <option value="0">Tất cả (không phân trang)</option>
+        </select>
+      </div>
+
+      <div class="page-range-pill" id="pageRangePill" title="Phạm vi dòng đang hiển thị trên trang">
+        <i class="fa-regular fa-eye" style="color: var(--primary); font-size: 11px;"></i>
+        <span id="pageRangeText">1 - 20</span>
+      </div>
     </div>
 
     <div class="summary-right">
@@ -2838,6 +3028,9 @@
     let historyStack = [];
     let historyIndex = -1;
     let selectedRowIds = new Set();
+    let currentPage = 1;
+    let pageSize = parseInt(localStorage.getItem("DMS_TABLE_PAGE_SIZE") || "20", 10);
+    if (isNaN(pageSize) || pageSize < 0) pageSize = 20;
     let currentContextColId = null;
     let currentContextSheetId = null;
     let currentContextRowId = null;
@@ -3509,6 +3702,7 @@
       if (appData.activeSheetId === sheetId) return;
       appData.activeSheetId = sheetId;
       selectedRowIds.clear();
+      currentPage = 1;
       saveState(false);
       renderAll();
     }
@@ -3631,12 +3825,12 @@
       attachColResizers();
       attachColDragAndDrop();
 
-      // Select all checkbox binding
+      // Select all checkbox binding (toggles visible rows on current page)
       const selectAllCb = document.getElementById("selectAllCheckbox");
       selectAllCb.addEventListener("change", (e) => {
         const isChecked = e.target.checked;
-        const visibleRows = getFilteredRows();
-        visibleRows.forEach(r => {
+        const pageInfo = getPaginationInfo();
+        pageInfo.pageRows.forEach(r => {
           if (isChecked) selectedRowIds.add(r.id);
           else selectedRowIds.delete(r.id);
         });
@@ -3648,15 +3842,130 @@
       renderTableRowsOnly();
     }
 
+    /* ── PAGINATION LOGIC & UTILITIES ── */
+    function getPaginationInfo() {
+      const filteredRows = getFilteredRows();
+      const total = filteredRows.length;
+      const effectivePageSize = pageSize > 0 ? pageSize : total;
+      const totalPages = Math.max(1, Math.ceil(total / (effectivePageSize || 1)));
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const isPaginated = pageSize > 0 && total > pageSize;
+      const startIdx = isPaginated ? (currentPage - 1) * pageSize : 0;
+      const endIdx = isPaginated ? Math.min(startIdx + pageSize, total) : total;
+      const pageRows = isPaginated ? filteredRows.slice(startIdx, endIdx) : filteredRows;
+
+      return {
+        total,
+        pageSize,
+        totalPages,
+        currentPage,
+        isPaginated,
+        startIdx,
+        endIdx,
+        pageRows,
+        filteredRows
+      };
+    }
+
+    function updatePaginationUI() {
+      const pageInfo = getPaginationInfo();
+      const { total, totalPages, currentPage, isPaginated, startIdx, endIdx, pageSize, pageRows } = pageInfo;
+
+      const btnFirst = document.getElementById("btnFirstPage");
+      const btnPrev = document.getElementById("btnPrevPage");
+      const btnNext = document.getElementById("btnNextPage");
+      const btnLast = document.getElementById("btnLastPage");
+      const pageInput = document.getElementById("pageNumberInput");
+      const totalPagesDisplay = document.getElementById("totalPagesDisplay");
+      const pageRangeText = document.getElementById("pageRangeText");
+      const pageSizeSelect = document.getElementById("pageSizeSelect");
+
+      if (totalPagesDisplay) totalPagesDisplay.textContent = totalPages;
+      if (pageInput) {
+        pageInput.value = currentPage;
+        pageInput.max = totalPages;
+        pageInput.disabled = totalPages <= 1;
+      }
+      if (pageSizeSelect && String(pageSizeSelect.value) !== String(pageSize)) {
+        pageSizeSelect.value = String(pageSize);
+      }
+
+      if (pageRangeText) {
+        if (total === 0) {
+          pageRangeText.innerHTML = `<strong>0</strong> dòng`;
+        } else if (pageSize === 0 || !isPaginated) {
+          pageRangeText.innerHTML = `<strong>1 - ${total.toLocaleString('vi-VN')}</strong> (${total.toLocaleString('vi-VN')} dòng)`;
+        } else {
+          pageRangeText.innerHTML = `<strong>${(startIdx + 1).toLocaleString('vi-VN')} - ${endIdx.toLocaleString('vi-VN')}</strong> / <strong>${total.toLocaleString('vi-VN')}</strong> dòng`;
+        }
+      }
+
+      const hasPrev = currentPage > 1;
+      const hasNext = currentPage < totalPages;
+
+      if (btnFirst) btnFirst.disabled = !hasPrev;
+      if (btnPrev) btnPrev.disabled = !hasPrev;
+      if (btnNext) btnNext.disabled = !hasNext;
+      if (btnLast) btnLast.disabled = !hasNext;
+
+      // Update selectAllCheckbox status for current page
+      const selectAllCb = document.getElementById("selectAllCheckbox");
+      if (selectAllCb) {
+        if (pageRows.length > 0) {
+          const allSelected = pageRows.every(r => selectedRowIds.has(r.id));
+          const someSelected = pageRows.some(r => selectedRowIds.has(r.id));
+          selectAllCb.checked = allSelected;
+          selectAllCb.indeterminate = !allSelected && someSelected;
+        } else {
+          selectAllCb.checked = false;
+          selectAllCb.indeterminate = false;
+        }
+      }
+    }
+
+    function goToPage(page) {
+      const pageInfo = getPaginationInfo();
+      let targetPage = parseInt(page, 10);
+      if (isNaN(targetPage)) targetPage = 1;
+      if (targetPage < 1) targetPage = 1;
+      if (targetPage > pageInfo.totalPages) targetPage = pageInfo.totalPages;
+
+      if (currentPage !== targetPage) {
+        currentPage = targetPage;
+        renderTableRowsOnly();
+        updateFooterStats();
+
+        const scrollArea = document.getElementById("tableScrollArea");
+        if (scrollArea) scrollArea.scrollTop = 0;
+      } else {
+        const pageInput = document.getElementById("pageNumberInput");
+        if (pageInput) pageInput.value = currentPage;
+      }
+    }
+
+    function changePageSize(newSize) {
+      pageSize = parseInt(newSize, 10);
+      if (isNaN(pageSize) || pageSize < 0) pageSize = 20;
+      try {
+        localStorage.setItem("DMS_TABLE_PAGE_SIZE", String(pageSize));
+      } catch (e) {}
+      currentPage = 1;
+      renderTableRowsOnly();
+      updateFooterStats();
+    }
+
     function renderTableRowsOnly() {
       const sheet = getActiveSheet();
       const tbody = document.getElementById("tableBody");
       const emptyState = document.getElementById("tableEmptyState");
       if (!sheet) return;
 
-      const filteredRows = getFilteredRows();
+      const pageInfo = getPaginationInfo();
+      const { pageRows, startIdx, total } = pageInfo;
 
-      if (filteredRows.length === 0) {
+      if (total === 0) {
         const colCount = (sheet.columns ? sheet.columns.length : 0) + 3;
         tbody.innerHTML = `
           <tr>
@@ -3669,12 +3978,14 @@
           </tr>
         `;
         if (emptyState) emptyState.style.display = "none";
+        updatePaginationUI();
         return;
       }
       if (emptyState) emptyState.style.display = "none";
 
       let tbodyHtml = "";
-      filteredRows.forEach((row, idx) => {
+      pageRows.forEach((row, i) => {
+        const idx = startIdx + i;
         const isSelected = selectedRowIds.has(row.id);
         const isLocked = !!row.locked;
         const rowHighlight = row.highlight || "";
@@ -3731,6 +4042,7 @@
 
       tbody.innerHTML = tbodyHtml;
       attachCellEventListeners();
+      updatePaginationUI();
     }
 
     function renderCellContent(col, val, rowId, isLocked = false) {
@@ -4657,6 +4969,10 @@
 
       sheet.rows.push(newRow); // Thêm vào dưới cùng của bảng
       saveState(true);
+      if (pageSize > 0) {
+        const filtered = getFilteredRows();
+        currentPage = Math.max(1, Math.ceil(filtered.length / pageSize));
+      }
       renderTableRowsOnly();
       updateFooterStats();
 
@@ -4804,6 +5120,8 @@
       sheet.rows.splice(rowIdx, 1);
       selectedRowIds.delete(rowId);
       saveState(true);
+      const totalPagesAfterDel = Math.max(1, Math.ceil(getFilteredRows().length / (pageSize || 1)));
+      if (currentPage > totalPagesAfterDel) currentPage = totalPagesAfterDel;
       renderTableRowsOnly();
       updateFooterStats();
 
@@ -4842,6 +5160,8 @@
           sheet.rows = sheet.rows.filter(r => !deletableIds.includes(r.id));
           deletableIds.forEach(id => selectedRowIds.delete(id));
           saveState(true);
+          const totalPagesAfterBulk = Math.max(1, Math.ceil(getFilteredRows().length / (pageSize || 1)));
+          if (currentPage > totalPagesAfterBulk) currentPage = totalPagesAfterBulk;
           renderTableRowsOnly();
           updateFooterStats();
 
@@ -7357,30 +7677,37 @@
       const totalRows = sheet.rows.length;
       const filteredRows = getFilteredRows();
       
-      document.getElementById("totalRowsCount").textContent = totalRows;
+      const totalRowsEl = document.getElementById("totalRowsCount");
+      if (totalRowsEl) totalRowsEl.textContent = totalRows.toLocaleString('vi-VN');
 
       const filteredStatEl = document.getElementById("filteredRowsStat");
-      if (filteredRows.length !== totalRows) {
-        filteredStatEl.style.display = "inline-flex";
-        document.getElementById("filteredRowsCount").textContent = `${filteredRows.length}/${totalRows}`;
-      } else {
-        filteredStatEl.style.display = "none";
+      if (filteredStatEl) {
+        if (filteredRows.length !== totalRows) {
+          filteredStatEl.style.display = "inline-flex";
+          const filteredCountEl = document.getElementById("filteredRowsCount");
+          if (filteredCountEl) filteredCountEl.textContent = `${filteredRows.length.toLocaleString('vi-VN')}/${totalRows.toLocaleString('vi-VN')}`;
+        } else {
+          filteredStatEl.style.display = "none";
+        }
       }
 
       // Selected rows action buttons
       const bulkActionsGroup = document.getElementById("bulkActionsGroup");
       const selCountBadge = document.getElementById("selectedCountBadge");
       const lockCountBadge = document.getElementById("lockCountBadge");
+      const totalFilteredBadge = document.getElementById("totalFilteredCountBadge");
       const fabCaptureBtn = document.getElementById("btnCaptureExcelImage");
       const fabBadge = document.getElementById("fabMainBadge");
       const fabText = fabCaptureBtn ? fabCaptureBtn.querySelector(".fab-text") : null;
 
+      if (totalFilteredBadge) totalFilteredBadge.textContent = filteredRows.length.toLocaleString('vi-VN');
+
       if (selectedRowIds.size > 0) {
         if (bulkActionsGroup) bulkActionsGroup.style.display = "inline-flex";
-        if (selCountBadge) selCountBadge.textContent = selectedRowIds.size;
-        if (lockCountBadge) lockCountBadge.textContent = selectedRowIds.size;
+        if (selCountBadge) selCountBadge.textContent = selectedRowIds.size.toLocaleString('vi-VN');
+        if (lockCountBadge) lockCountBadge.textContent = selectedRowIds.size.toLocaleString('vi-VN');
         if (fabText && fabCaptureBtn && !fabCaptureBtn.classList.contains("loading")) {
-          fabText.textContent = `Chụp ảnh (${selectedRowIds.size} dòng)`;
+          fabText.textContent = `Chụp ảnh (${selectedRowIds.size.toLocaleString('vi-VN')} dòng)`;
         }
         if (fabBadge) fabBadge.textContent = "Đã chọn";
       } else {
@@ -7410,6 +7737,8 @@
       } else {
         numStatPill.style.display = "none";
       }
+
+      updatePaginationUI();
     }
 
     function getTodayIso() {
@@ -7527,10 +7856,67 @@
       on("btnSaveSheetRename", "click", saveSheetRename);
 
       // Bulk Actions
+      on("btnSelectAllFiltered", "click", () => {
+        const rows = getFilteredRows();
+        rows.forEach(r => selectedRowIds.add(r.id));
+        renderTableRowsOnly();
+        updateFooterStats();
+        toast(`Đã chọn toàn bộ ${rows.length.toLocaleString('vi-VN')} dòng theo bộ lọc`, "info");
+      });
+      on("btnClearSelection", "click", () => {
+        selectedRowIds.clear();
+        renderTableRowsOnly();
+        updateFooterStats();
+        toast("Đã bỏ chọn tất cả", "info");
+      });
       on("btnHighlightSelected", "click", (e) => openHighlightPalette(e, 'row'));
       on("btnLockSelected", "click", () => lockSelectedRows(true));
       on("btnUnockSelected", "click", () => lockSelectedRows(false));
       on("btnDeleteSelected", "click", deleteSelectedRows);
+
+      // Pagination Controls
+      on("btnFirstPage", "click", () => goToPage(1));
+      on("btnPrevPage", "click", () => goToPage(currentPage - 1));
+      on("btnNextPage", "click", () => goToPage(currentPage + 1));
+      on("btnLastPage", "click", () => goToPage(Infinity));
+      on("pageSizeSelect", "change", (e) => changePageSize(e.target.value));
+      const pageInp = document.getElementById("pageNumberInput");
+      if (pageInp) {
+        pageInp.addEventListener("change", (e) => goToPage(e.target.value));
+        pageInp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            goToPage(e.target.value);
+            pageInp.blur();
+          }
+        });
+      }
+
+      // Page Navigation Keyboard Shortcuts (Alt + Left/Right, PageUp/PageDown)
+      window.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") {
+          return;
+        }
+        if (e.altKey && e.key === "ArrowLeft") {
+          e.preventDefault();
+          goToPage(currentPage - 1);
+        } else if (e.altKey && e.key === "ArrowRight") {
+          e.preventDefault();
+          goToPage(currentPage + 1);
+        } else if (e.key === "PageUp") {
+          e.preventDefault();
+          goToPage(currentPage - 1);
+        } else if (e.key === "PageDown") {
+          e.preventDefault();
+          goToPage(currentPage + 1);
+        } else if (e.key === "Home" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          goToPage(1);
+        } else if (e.key === "End" && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          goToPage(Infinity);
+        }
+      });
 
       // Highlight Menu Button
       on("btnHighlightMenu", "click", (e) => openHighlightPalette(e));
@@ -7578,6 +7964,7 @@
       if (searchInp) {
         searchInp.addEventListener("input", () => {
           if (clearBtn) clearBtn.style.display = searchInp.value ? "block" : "none";
+          currentPage = 1;
           renderTableRowsOnly();
           updateFooterStats();
         });
@@ -7585,6 +7972,7 @@
           if (e.key === "Escape") {
             searchInp.value = "";
             if (clearBtn) clearBtn.style.display = "none";
+            currentPage = 1;
             renderTableRowsOnly();
             updateFooterStats();
           }
@@ -7594,6 +7982,7 @@
         clearBtn.addEventListener("click", () => {
           searchInp.value = "";
           clearBtn.style.display = "none";
+          currentPage = 1;
           renderTableRowsOnly();
           updateFooterStats();
         });
@@ -7601,14 +7990,17 @@
 
       // Filter Selects
       on("filterMemberSelect", "change", () => {
+        currentPage = 1;
         renderTableRowsOnly();
         updateFooterStats();
       });
       on("filterProjectSelect", "change", () => {
+        currentPage = 1;
         renderTableRowsOnly();
         updateFooterStats();
       });
       on("filterStatusSelect", "change", () => {
+        currentPage = 1;
         renderTableRowsOnly();
         updateFooterStats();
       });
