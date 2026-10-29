@@ -272,17 +272,37 @@
       box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
     }
 
-    /* ── Filter chips layout ── */
-    .filter-row {
+    /* ── Search header & Inputs layout ── */
+    .search-top-header {
       display: flex;
-      gap: 10px;
-      align-items: flex-end;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      min-height: 28px;
+    }
+
+    .search-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .filter-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
     }
 
     .filter-block {
-      flex: 1;
-      min-width: 140px;
+      min-width: 0;
+    }
+
+    .date-top-spacer {
+      height: 28px;
+      margin-bottom: 8px;
     }
 
     .filter-block label.field-label {
@@ -344,18 +364,18 @@
     .clear-all-btn {
       display: none;
       align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
+      gap: 5px;
+      padding: 4px 10px;
       border: 1px solid #fca5a5;
       border-radius: var(--radius-sm);
       background: #fff5f5;
       color: #dc2626;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.15s ease;
-      align-self: flex-end;
+      line-height: 1.4;
     }
 
     .clear-all-btn:hover {
@@ -369,12 +389,12 @@
       border: 1px solid var(--accent-border);
       border-radius: 999px;
       color: var(--accent-dark);
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
-      padding: 8px 14px;
+      padding: 4px 10px;
       white-space: nowrap;
       flex-shrink: 0;
-      align-self: flex-end;
+      line-height: 1.4;
     }
 
     /* ── Table ── */
@@ -602,17 +622,18 @@
       background: #fef2f2;
       border: 1px solid #fecaca;
       color: #dc2626;
-      font-size: 12px;
-      font-weight: 600;
+      font-size: 11.5px;
+      font-weight: 700;
       border-radius: var(--radius-sm);
-      padding: 6px 12px;
+      padding: 4px 10px;
       cursor: pointer;
-      display: inline-flex;
+      display: none;
       align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
+      gap: 5px;
+      transition: all 0.15s ease;
       box-shadow: var(--shadow-sm);
       white-space: nowrap;
+      line-height: 1.4;
     }
 
     .delete-filtered-btn:hover {
@@ -958,7 +979,7 @@
     }
 
     /* ── Responsive ── */
-    @media (max-width: 800px) {
+    @media (max-width: 900px) {
       .control-layout {
         grid-template-columns: 1fr;
       }
@@ -967,13 +988,29 @@
         grid-template-columns: 1fr;
       }
 
-      .filter-row {
-        flex-direction: column;
-        align-items: stretch;
+      .filter-inputs-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .result-badge {
-        align-self: flex-start;
+      .date-top-spacer {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .filter-inputs-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .search-top-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .search-actions-bar {
+        justify-content: flex-start;
+        width: 100%;
       }
     }
   </style>
@@ -1027,14 +1064,26 @@
     <div class="card" id="controlPanel" style="display: none">
       <div class="control-layout">
         <div>
-          <div class="section-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            Tìm kiếm
+          <div class="search-top-header">
+            <div class="section-label" style="margin-bottom:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              Tìm kiếm
+            </div>
+            <div class="search-actions-bar">
+              <div class="result-badge" id="countBadge">0 kết quả</div>
+              <button type="button" class="clear-all-btn" id="clearAllSearchBtn" title="Xoá tất cả tìm kiếm">
+                <i class="fa-solid fa-broom"></i> Xoá tất cả
+              </button>
+              <button type="button" class="delete-filtered-btn" id="deleteFilteredBtn" style="display:none;"
+                title="Xóa toàn bộ các dòng đang hiển thị theo bộ lọc khỏi hệ thống">
+                <i class="fa-solid fa-trash-can"></i> Xóa kết quả lọc (<span id="deleteFilteredCount">0</span>)
+              </button>
+            </div>
           </div>
-          <div class="filter-row">
+          <div class="filter-inputs-grid">
             <div class="filter-block">
               <label class="field-label" for="nppSearchInput">NPP</label>
               <div class="search-input-wrap">
@@ -1071,17 +1120,10 @@
                 </button>
               </div>
             </div>
-            <button type="button" class="clear-all-btn" id="clearAllSearchBtn" title="Xoá tất cả tìm kiếm">
-              <i class="fa-solid fa-broom"></i> Xoá tất cả
-            </button>
-            <div class="result-badge" id="countBadge">0 kết quả</div>
-            <button type="button" class="delete-filtered-btn" id="deleteFilteredBtn" style="display:none;"
-              title="Xóa toàn bộ các dòng đang hiển thị theo bộ lọc khỏi hệ thống">
-              <i class="fa-solid fa-trash-can"></i> Xóa kết quả lọc (<span id="deleteFilteredCount">0</span>)
-            </button>
           </div>
         </div>
         <div>
+          <div class="date-top-spacer"></div>
           <label class="field-label" for="dateRangeSelect">
             <i class="fa-regular fa-calendar-days" style="color:var(--accent-dark);"></i> Lọc theo ngày
           </label>
