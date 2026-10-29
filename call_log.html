@@ -1816,6 +1816,12 @@
     }
 
     /* ─── Search index ─── */
+    function extractNppFromCallDetails(value) {
+      const text = String(value || "").trim();
+      const m = text.match(/_NPP\s+([^_]+?)(?=_|$)/i);
+      return m ? m[1].trim() : "";
+    }
+
     function buildCallLogIndex(row) {
       const distNameCol = findColumn("dist name");
       const distCodeCol = findColumn("dist code");
@@ -1826,8 +1832,9 @@
       const extracted = extractUserCodeFromCallDetails(detailsVal);
       const userCodeVal = extracted || (userCodeCol && row[userCodeCol]) || "";
       const solutionFromDetails = extractSolutionFromCallDetails(detailsVal);
+      const nppFromDetails = extractNppFromCallDetails(detailsVal);
       return {
-        npp: buildSearchText([row[distNameCol], detailsVal].join(" ")),
+        npp: buildSearchText([row[distNameCol], nppFromDetails ? ('NPP ' + nppFromDetails) : '', nppFromDetails].join(" ")),
         nppCode: buildSearchText(String(row[distCodeCol] || "")),
         nvbh: buildSearchText([userCodeVal, row[userCodeCol], extracted].join(" ")),
         hotline: buildSearchText(
@@ -2091,6 +2098,37 @@
       return escapeHTML(value);
     }
 
+    function findNppRanges(plain, tokens) {
+      if (!tokens.length) return [];
+      const text = String(plain || "");
+      const ranges = [];
+      const nppRegex = /_NPP\s+([^_]+?)(?=_|$)/gi;
+      let m;
+      while ((m = nppRegex.exec(text)) !== null) {
+        const fullMatch = m[0];
+        const nppName = m[1];
+        const offsetInMatch = fullMatch.indexOf(nppName);
+        const nppStart = m.index + offsetInMatch;
+        const nppEnd = nppStart + nppName.length;
+
+        const pattern = /[A-Za-zÀ-ỹ0-9]+/g;
+        pattern.lastIndex = m.index;
+        let match;
+        while ((match = pattern.exec(text)) !== null) {
+          if (match.index >= nppEnd) break;
+          const part = match[0];
+          const normalizedPart = normalizeForSearch(part);
+          tokens.forEach((token) => {
+            const index = normalizedPart.indexOf(token);
+            if (index !== -1) {
+              ranges.push([match.index + index, match.index + index + token.length]);
+            }
+          });
+        }
+      }
+      return ranges;
+    }
+
     function highlightCallDetails(value, row) {
       const plain = String(value || "");
       const ranges = [];
@@ -2107,7 +2145,7 @@
           if (end > start) ranges.push([start, end]);
         }
       } else {
-        ranges.push(...findTokenRanges(plain, getSearchTokens(nppValue)));
+        ranges.push(...findNppRanges(plain, getSearchTokens(nppValue)));
       }
       ranges.push(...findNvbhRanges(plain, getSearchTokens(nvbhInput.value)));
       ranges.push(...findSolutionRanges(plain, getSearchTokens(solutionInput.value)));
