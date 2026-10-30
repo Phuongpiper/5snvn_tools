@@ -1312,7 +1312,7 @@
       { id: "col_prefix", name: "PREFIX", type: "text", width: 120 }
     ];
 
-    // Sample Rows extracted directly from user's image
+    // Sample Rows for initial NVN fallback only
     const SAMPLE_ROWS = [
       { id: "row_1", col_dt_code: "6243208", col_npp_name: "Cong ty TNHH DT va TM Dich Vu Phuc Hung", col_issue_name: "NPP Phuc Hung", col_prefix: "243G" },
       { id: "row_2", col_dt_code: "6243223", col_npp_name: "Cong ty TNHH Gia Phat", col_issue_name: "NPP Gia Phat 244", col_prefix: "244G" },
@@ -1341,7 +1341,7 @@
 
     let dtData = {
       columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)),
-      rows: JSON.parse(JSON.stringify(SAMPLE_ROWS))
+      rows: []
     };
 
     let historyStack = [];
@@ -1354,48 +1354,44 @@
     let pendingImportRows = [];
 
     // Cloud sync state
-    let dtApiBaseOverride = null;
     let dtSyncIntervalId = null;
     let currentDtEtag = localStorage.getItem("r2_dt_etag_" + currentDtProject.toUpperCase()) || "";
     let cloudSaveTimer = null;
     let isCloudSaving = false;
     let isCloudFetching = false;
+    let lastLocalEditTime = 0;
     const dtBroadcast = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("DMS_DT_SYNC") : null;
 
     if (dtBroadcast) {
       dtBroadcast.onmessage = async (e) => {
         if (e.data && e.data.type === "DT_UPDATED") {
+          // Only refresh if update is for the project currently viewed
+          if (e.data.project && e.data.project !== currentDtProject) return;
+          // Ignore if local edits occurred recently
+          if (Date.now() - lastLocalEditTime < 2500) return;
+
           if (e.data.etag && e.data.etag !== currentDtEtag) {
             currentDtEtag = e.data.etag;
             localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), currentDtEtag);
           }
-          await fetchDtFromCloud(true);
+          await fetchDtFromCloud(true, currentDtProject);
         }
       };
     }
 
-    function getDtApiEndpoint() {
-      let base = dtApiBaseOverride;
-      if (base === null) {
-        if (window.location.protocol === "file:") {
-          base = "https://5snvn-tools.vercel.app";
-        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-          if (window.location.port !== "3000") {
-            base = "http://localhost:3000";
-          } else {
-            base = "";
-          }
-        } else {
-          base = "";
-        }
+    function getDtApiEndpoint(proj) {
+      const p = proj || currentDtProject;
+      let base = "";
+      if (window.location.protocol === "file:") {
+        base = "https://dms-hub-tools.vercel.app";
       }
-      return base + "/api/r2-dt?project=" + encodeURIComponent(currentDtProject);
+      return base + "/api/r2-dt?project=" + encodeURIComponent(p);
     }
 
     function initApp() {
       loadState();
       renderTable();
-      fetchDtFromCloud();
+      fetchDtFromCloud(false, currentDtProject);
       startDtAutoSync();
       setupEventListeners();
       loadDtProjectsAndRenderTabs();
@@ -1410,12 +1406,7 @@
 
       try {
         let base = "";
-        if (window.location.protocol === "file:") {
-          base = "https://5snvn-tools.vercel.app";
-        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-          if (window.location.port !== "3000") base = "http://localhost:3000";
-          else base = "";
-        }
+        if (window.location.protocol === "file:") base = "https://dms-hub-tools.vercel.app";
         const tasksApi = base + "/api/r2-tasks?action=read_projects";
         const res = await fetch(tasksApi, { cache: "no-cache" });
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1426,7 +1417,6 @@
         let apiNames = rawList.map(p => (typeof p === "string" ? p : p.name)).filter(Boolean);
         if (apiNames.length === 0) apiNames = [...SYSTEM_DEFAULT_PROJECTS];
         
-        // Ensure defaults are present
         SYSTEM_DEFAULT_PROJECTS.forEach(n => {
           if (!apiNames.includes(n)) apiNames.push(n);
         });
@@ -1459,7 +1449,7 @@
       addBtn.title = "Thêm dự án mới vào hệ thống";
       addBtn.style.cssText = "color:var(--primary); border-style:dashed; margin-left:4px;";
       addBtn.onclick = async () => {
-        const newName = prompt("Nhập tên dự án mới cần thêm vào hệ thống (VD: LVN, CPTH, Asian Shine...):");
+        const newName = prompt("Nhập tên dự án mới cần thêm vào hệ thống (VD: Asian Shine, Khoa...):");
         if (!newName || !newName.trim()) return;
         const trimmed = newName.trim();
         if (names.includes(trimmed)) {
@@ -1470,7 +1460,7 @@
         // Save to system project management API
         try {
           let base = "";
-          if (window.location.protocol === "file:") base = "https://5snvn-tools.vercel.app";
+          if (window.location.protocol === "file:") base = "https://dms-hub-tools.vercel.app";
           await fetch(base + "/api/r2-tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1489,9 +1479,16 @@
 
     function switchDtProject(projectName) {
       if (projectName === currentDtProject) return;
-      // Save current state before switching
-      const key = getStorageKeyForProject(currentDtProject);
-      try { localStorage.setItem(key, JSON.stringify(dtData)); } catch(_) {}
+
+      // Cancel any pending debounced save of previous project
+      if (cloudSaveTimer) {
+        clearTimeout(cloudSaveTimer);
+        cloudSaveTimer = null;
+      }
+
+      // Save previous project state locally
+      const prevKey = getStorageKeyForProject(currentDtProject);
+      try { localStorage.setItem(prevKey, JSON.stringify(dtData)); } catch(_) {}
 
       currentDtProject = projectName;
       localStorage.setItem("DMS_DT_CURRENT_PROJECT", projectName);
@@ -1500,6 +1497,7 @@
       // Reset data for new project
       dtData = { columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)), rows: [] };
       historyStack = []; historyIndex = -1;
+      selectedRowIds.clear();
 
       // Update tabs UI
       document.querySelectorAll(".dt-project-tab").forEach(tab => {
@@ -1513,7 +1511,7 @@
       loadState();
       renderTable();
       if (dtSyncIntervalId) { clearInterval(dtSyncIntervalId); dtSyncIntervalId = null; }
-      fetchDtFromCloud();
+      fetchDtFromCloud(false, projectName);
       startDtAutoSync();
       toast(`Đã chuyển sang dự án ${projectName}`, "info");
     }
@@ -1524,14 +1522,20 @@
       initApp();
     }
 
-    window.addEventListener("pageshow", () => fetchDtFromCloud(true));
-    window.addEventListener("focus", () => fetchDtFromCloud(true));
+    function safeWindowSync() {
+      if (Date.now() - lastLocalEditTime < 2500) return;
+      if (cloudSaveTimer || isCloudSaving) return;
+      fetchDtFromCloud(true, currentDtProject);
+    }
+
+    window.addEventListener("pageshow", safeWindowSync);
+    window.addEventListener("focus", safeWindowSync);
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") fetchDtFromCloud(true);
+      if (document.visibilityState === "visible") safeWindowSync();
     });
     window.addEventListener("message", (e) => {
       if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
-        fetchDtFromCloud(true);
+        safeWindowSync();
       }
     });
 
@@ -1543,12 +1547,19 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.rows)) {
-            dtData = parsed;
+            // Self-healing: if non-NVN project has leaked NVN data (Khanh Vy 7674110), purge it
+            if (currentDtProject !== "NVN" && parsed.rows.some(r => r.col_dt_code === "7674110")) {
+              console.log("Phát hiện data NVN rò rỉ trong project " + currentDtProject + ", đang làm sạch...");
+              dtData = { columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)), rows: [] };
+              localStorage.setItem(key, JSON.stringify(dtData));
+            } else {
+              dtData = parsed;
+            }
           } else {
             dtData = { columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)), rows: [] };
           }
         } else {
-          // For NVN use sample rows as fallback, other projects start empty
+          // For NVN use sample rows as fallback, other projects start strictly empty
           dtData = {
             columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)),
             rows: currentDtProject === "NVN" ? JSON.parse(JSON.stringify(SAMPLE_ROWS)) : []
@@ -1562,6 +1573,7 @@
     }
 
     function saveState(markDirty = true) {
+      lastLocalEditTime = Date.now();
       const key = getStorageKeyForProject(currentDtProject);
       try {
         localStorage.setItem(key, JSON.stringify(dtData));
@@ -1617,59 +1629,39 @@
     function scheduleCloudSave() {
       if (cloudSaveTimer) clearTimeout(cloudSaveTimer);
       showAutoSaveIndicator("saving");
-      cloudSaveTimer = setTimeout(pushDtToCloud, 400);
+      const targetProj = currentDtProject;
+      cloudSaveTimer = setTimeout(() => {
+        pushDtToCloud(targetProj);
+      }, 400);
     }
 
-    async function pushDtToCloud() {
+    async function pushDtToCloud(targetProj) {
+      const proj = targetProj || currentDtProject;
       if (isCloudSaving) return;
       isCloudSaving = true;
       try {
-        let endpoint = getDtApiEndpoint();
+        const endpoint = getDtApiEndpoint(proj);
         const payload = {
+          project: proj,
           columns: dtData.columns,
           rows: dtData.rows,
           updatedAt: Date.now()
         };
-        let res;
-        try {
-          res = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-        } catch (fetchErr) {
-          if (!endpoint.includes("5snvn-tools.vercel.app")) {
-            dtApiBaseOverride = "https://5snvn-tools.vercel.app";
-            endpoint = getDtApiEndpoint();
-            res = await fetch(endpoint, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
-          } else {
-            throw fetchErr;
-          }
-        }
-
-        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("5snvn-tools.vercel.app")) {
-          dtApiBaseOverride = "https://5snvn-tools.vercel.app";
-          endpoint = getDtApiEndpoint();
-          res = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-        }
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
 
         if (res && res.ok) {
           const json = await res.json();
           const newEtag = res.headers.get("ETag") || json.etag || String(json.updatedAt || Date.now());
           currentDtEtag = newEtag;
-          localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
+          localStorage.setItem("r2_dt_etag_" + proj.toUpperCase(), newEtag);
           showAutoSaveIndicator("saved");
           if (dtBroadcast) {
             try {
-              dtBroadcast.postMessage({ type: "DT_UPDATED", etag: newEtag, timestamp: Date.now() });
+              dtBroadcast.postMessage({ type: "DT_UPDATED", project: proj, etag: newEtag, timestamp: Date.now() });
             } catch (_) {}
           }
         } else {
@@ -1684,57 +1676,42 @@
       }
     }
 
-    async function fetchDtFromCloud(silent = false) {
+    async function fetchDtFromCloud(silent = false, targetProj) {
+      const proj = targetProj || currentDtProject;
       if (isCloudFetching) return;
       isCloudFetching = true;
       try {
         if (!silent) showAutoSaveIndicator("saving");
-        let endpoint = getDtApiEndpoint();
+        const endpoint = getDtApiEndpoint(proj);
         const sep = endpoint.includes("?") ? "&" : "?";
-        let res;
-        try {
-          res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
-        } catch (fetchErr) {
-          if (!endpoint.includes("5snvn-tools.vercel.app")) {
-            dtApiBaseOverride = "https://5snvn-tools.vercel.app";
-            endpoint = getDtApiEndpoint();
-            const sep2 = endpoint.includes("?") ? "&" : "?";
-            res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
-          } else {
-            throw fetchErr;
-          }
-        }
-
-        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("5snvn-tools.vercel.app")) {
-          dtApiBaseOverride = "https://5snvn-tools.vercel.app";
-          endpoint = getDtApiEndpoint();
-          const sep2 = endpoint.includes("?") ? "&" : "?";
-          res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
-        }
+        const res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
 
         if (!res || !res.ok) {
           if (!silent) showAutoSaveIndicator("saved");
           return;
         }
+
+        // Project guard: if user switched away, ignore response
+        if (proj !== currentDtProject) return;
+
         const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
         if (newEtag) {
           currentDtEtag = newEtag;
-          localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
+          localStorage.setItem("r2_dt_etag_" + proj.toUpperCase(), newEtag);
         }
         const data = await res.json();
         if (data && Array.isArray(data.rows)) {
           const currentJson = JSON.stringify(dtData);
-          const incomingJson = JSON.stringify({ columns: data.columns || dtData.columns, rows: data.rows });
+          const incomingCols = (data.columns && data.columns.length > 0) ? data.columns : dtData.columns;
+          const incomingJson = JSON.stringify({ columns: incomingCols, rows: data.rows });
           if (currentJson !== incomingJson) {
             const activeTag = document.activeElement ? document.activeElement.tagName : "";
             const isEditing = activeTag === "INPUT" || activeTag === "TEXTAREA" || activeTag === "SELECT";
-            if (silent && isEditing) {
-              return;
-            }
+            if (silent && isEditing) return;
 
-            dtData.columns = data.columns || dtData.columns;
+            dtData.columns = incomingCols;
             dtData.rows = data.rows;
-            localStorage.setItem(getStorageKeyForProject(currentDtProject), JSON.stringify(dtData));
+            localStorage.setItem(getStorageKeyForProject(proj), JSON.stringify(dtData));
 
             const scrollArea = document.getElementById("tableScrollArea");
             const prevTop = scrollArea ? scrollArea.scrollTop : 0;
@@ -1746,9 +1723,8 @@
             }
           }
         } else if (data && data.status === "not_found") {
-          // Only push default sample data for NVN if it was never created on cloud
-          if (currentDtProject === "NVN" && dtData && Array.isArray(dtData.rows) && dtData.rows.length > 0) {
-            pushDtToCloud();
+          if (proj === "NVN" && dtData && Array.isArray(dtData.rows) && dtData.rows.length > 0) {
+            pushDtToCloud("NVN");
           }
         }
         showAutoSaveIndicator("saved");
@@ -1765,25 +1741,18 @@
       dtSyncIntervalId = setInterval(async () => {
         try {
           if (cloudSaveTimer || isCloudSaving || isCloudFetching) return;
-          let endpoint = getDtApiEndpoint();
+          if (Date.now() - lastLocalEditTime < 2500) return;
+          const proj = currentDtProject;
+          const endpoint = getDtApiEndpoint(proj);
           const sep = endpoint.includes("?") ? "&" : "?";
-          let res;
-          try {
-            res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
-          } catch (e) {
-            if (!endpoint.includes("5snvn-tools.vercel.app")) {
-              dtApiBaseOverride = "https://5snvn-tools.vercel.app";
-              endpoint = getDtApiEndpoint();
-              const sep2 = endpoint.includes("?") ? "&" : "?";
-              res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
-            }
-          }
+          const res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
           if (!res || !res.ok) return;
+          if (proj !== currentDtProject) return;
           const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
           if (newEtag && newEtag !== currentDtEtag) {
             currentDtEtag = newEtag;
-            localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
-            await fetchDtFromCloud(true);
+            localStorage.setItem("r2_dt_etag_" + proj.toUpperCase(), newEtag);
+            await fetchDtFromCloud(true, proj);
           }
         } catch (_) {}
       }, 3000);
@@ -1792,8 +1761,8 @@
     async function forceSyncWithCloud() {
       showAutoSaveIndicator("saving");
       toast("Đang đồng bộ dữ liệu đám mây...", "info");
-      await pushDtToCloud();
-      await fetchDtFromCloud(false);
+      await pushDtToCloud(currentDtProject);
+      await fetchDtFromCloud(false, currentDtProject);
       toast("Đã đồng bộ dữ liệu thành công!", "success");
     }
 
@@ -1824,7 +1793,6 @@
       }
     }
 
-    /* ── RENDERING ── */
     function renderTable() {
       renderTableHeader();
       renderTableBody();
@@ -2847,10 +2815,13 @@
         ? `Bạn có chắc chắn muốn xoá ${count} dòng đã chọn (bao gồm các dòng đang bị khoá)?`
         : `Bạn có chắc chắn muốn xoá ${count} dòng đã chọn không?`;
       if (confirm(confirmMsg)) {
+        lastLocalEditTime = Date.now();
         dtData.rows = dtData.rows.filter(r => !selectedRowIds.has(r.id));
         selectedRowIds.clear();
-        saveState(true);
+        saveState(false);
         renderTableBody();
+        if (cloudSaveTimer) { clearTimeout(cloudSaveTimer); cloudSaveTimer = null; }
+        pushDtToCloud(currentDtProject);
         toast(`Đã xoá ${count} dòng đã chọn`, "info");
       }
     }
