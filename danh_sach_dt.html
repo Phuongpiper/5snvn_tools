@@ -2620,42 +2620,20 @@
     function processImportData(rawJson) {
       const headers = rawJson[0].map(h => String(h || "").trim());
       const rowsData = rawJson.slice(1);
+      const colLetters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
 
-      // Intelligent mapping for the 4 core columns
-      let dtColIdx = -1;
-      let nppColIdx = -1;
-      let issueColIdx = -1;
-      let prefixColIdx = -1;
-
-      headers.forEach((h, idx) => {
-        const lower = h.toLowerCase();
-        if (dtColIdx === -1 && (lower.includes("dt code") || lower.includes("mã dt") || lower === "dt" || lower === "code")) {
-          dtColIdx = idx;
-        } else if (nppColIdx === -1 && (lower.includes("npp") || lower.includes("nhà phân phối") || lower.includes("tên npp") || lower.includes("công ty"))) {
-          nppColIdx = idx;
-        } else if (issueColIdx === -1 && (lower.includes("issue") || lower.includes("tên đặt issue") || lower.includes("tên issue"))) {
-          issueColIdx = idx;
-        } else if (prefixColIdx === -1 && (lower.includes("prefix") || lower.includes("tiền tố"))) {
-          prefixColIdx = idx;
-        }
-      });
-
-      // Fallback by index if headers didn't match (0: DT, 1: NPP, 2: Issue, 3: Prefix)
-      if (dtColIdx === -1 && headers.length >= 1) dtColIdx = 0;
-      if (nppColIdx === -1 && headers.length >= 2) nppColIdx = 1;
-      if (issueColIdx === -1 && headers.length >= 3) issueColIdx = 2;
-      if (prefixColIdx === -1 && headers.length >= 4) prefixColIdx = 3;
-
+      // Map strictly by sequence A, B, C, D... directly to table columns in order
       const newRows = [];
       rowsData.forEach(rowArr => {
         if (!rowArr || rowArr.length === 0 || rowArr.every(val => val === undefined || val === null || String(val).trim() === "")) return;
         const rowObj = {
-          id: "row_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-          col_dt_code: dtColIdx !== -1 ? String(rowArr[dtColIdx] || "").trim() : "",
-          col_npp_name: nppColIdx !== -1 ? String(rowArr[nppColIdx] || "").trim() : "",
-          col_issue_name: issueColIdx !== -1 ? String(rowArr[issueColIdx] || "").trim() : "",
-          col_prefix: prefixColIdx !== -1 ? String(rowArr[prefixColIdx] || "").trim() : ""
+          id: "row_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5)
         };
+        dtData.columns.forEach((col, idx) => {
+          rowObj[col.id] = (idx < rowArr.length && rowArr[idx] !== undefined && rowArr[idx] !== null)
+            ? String(rowArr[idx]).trim()
+            : "";
+        });
         newRows.push(rowObj);
       });
 
@@ -2666,15 +2644,16 @@
 
       pendingImportRows = newRows;
 
-      // Populate summary modal
+      // Populate summary modal showing 1:1 mapping by A, B, C, D...
       document.getElementById("importFileRowCount").textContent = `${newRows.length} dòng`;
       const summaryBox = document.getElementById("importColMappingSummary");
-      summaryBox.innerHTML = `
-        <div style="margin-bottom: 4px;">• Cột <strong>DT code</strong> ➔ Cột [${dtColIdx + 1}]: <em>"${escapeHtml(headers[dtColIdx] || 'Không xác định')}"</em></div>
-        <div style="margin-bottom: 4px;">• Cột <strong>TÊN NPP</strong> ➔ Cột [${nppColIdx + 1}]: <em>"${escapeHtml(headers[nppColIdx] || 'Không xác định')}"</em></div>
-        <div style="margin-bottom: 4px;">• Cột <strong>Tên đặt issue</strong> ➔ Cột [${issueColIdx + 1}]: <em>"${escapeHtml(headers[issueColIdx] || 'Không xác định')}"</em></div>
-        <div>• Cột <strong>PREFIX</strong> ➔ Cột [${prefixColIdx + 1}]: <em>"${escapeHtml(headers[prefixColIdx] || 'Không xác định')}"</em></div>
-      `;
+      let summaryHtml = "";
+      dtData.columns.forEach((col, idx) => {
+        const letter = colLetters[idx] || (idx + 1);
+        const headerName = headers[idx] ? `"${escapeHtml(headers[idx])}"` : `Cột ${letter}`;
+        summaryHtml += `<div style="margin-bottom: 4px;">• Cột [<strong>${letter}</strong>] (<em>${headerName}</em>) ➔ Cột: <strong>${escapeHtml(col.name)}</strong></div>`;
+      });
+      summaryBox.innerHTML = summaryHtml;
 
       document.getElementById("importModal").classList.add("active");
     }
