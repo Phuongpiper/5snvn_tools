@@ -6937,6 +6937,11 @@
           const solMatches = pool.filter(t => String(t.solutionCode || "").trim().toUpperCase() === issueSolCode);
           if (solMatches.length === 1) {
             let m = solMatches[0];
+            // Kiểm tra không xung đột NPP (nếu cả 2 đều có NPP)
+            const onlyNpp = extractNppFromTicket(m);
+            if (issueNpp && onlyNpp && !isNppMatch(issueNpp, onlyNpp)) {
+              return null; // NPP khác nhau -> không phải cùng một issue
+            }
             if (usedTicketIds) {
               usedTicketIds.add(m.id);
               usedTicketIds.add(String(m.id));
@@ -6974,21 +6979,30 @@
               ? allPhoneCandidates.filter(t => !isDsrConflict(issueDsr, extractDsrFromTicket(t)))
               : allPhoneCandidates;
 
-            // Nếu tìm thấy ứng viên khớp DSR thì ưu tiên dùng, nếu không (ví dụ bot Chatbox lưu nhầm mã DSR khác)
-            // thì fallback sang allPhoneCandidates để kiểm tra cùng Solution/NPP hoặc là vé duy nhất của Agent
+            // Nếu có ứng viên không xung đột DSR thì ưu tiên; ngược lại dùng toàn bộ (bot có thể lưu sai DSR)
             const phoneCandidates = nonConflictCandidates.length > 0 ? nonConflictCandidates : allPhoneCandidates;
 
-            // Ưu tiên 1: Cùng Agent + Khớp Solution Code
+            // Ưu tiên 1: Cùng Agent + Khớp Solution Code (PHẢI có mã solution khớp chính xác)
             let m = phoneCandidates.find(t =>
               issueSolCode && String(t.solutionCode || "").trim().toUpperCase() === issueSolCode
             );
-            // Ưu tiên 2: Cùng Agent + Khớp NPP
+            // Ưu tiên 2: Cùng Agent + Khớp NPP (PHẢI có NPP khớp)
             if (!m && issueNpp) {
               m = phoneCandidates.find(t => isNppMatch(issueNpp, extractNppFromTicket(t)));
             }
-            // Ưu tiên 3: Vé duy nhất trong ngày có SĐT này của Agent đó
+            // Ưu tiên 3: Vé duy nhất - CHỈ gán khi không có conflict giữa các trường quan trọng
+            // TUYỆT ĐỐI KHÔNG gán nếu solution code hoặc NPP của issue khác với ticket (dù là vé duy nhất)
             if (!m && phoneCandidates.length === 1) {
-              m = phoneCandidates[0];
+              const only = phoneCandidates[0];
+              const onlySolCode = String(only.solutionCode || "").trim().toUpperCase();
+              const onlyNpp = extractNppFromTicket(only);
+              // Phải không xung đột sol code (nếu cả 2 đều có)
+              const solConflict = issueSolCode && onlySolCode && issueSolCode !== onlySolCode;
+              // Phải không xung đột NPP (nếu cả 2 đều có)
+              const nppConflict = issueNpp && onlyNpp && !isNppMatch(issueNpp, onlyNpp);
+              if (!solConflict && !nppConflict) {
+                m = only;
+              }
             }
 
             if (m) {
