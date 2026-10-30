@@ -5598,7 +5598,7 @@
       const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbyGQa4TbzVZEkf3IkqktgeZrJdh0pQ2eNLz-9K2_sy_uiDDWeEc6I4J7oCqwLKtY8-a/exec";
       const R2_DT_API_URL = "https://5snvn-tools.vercel.app/api/r2-dt";
       const R2_ISSUES_API_URL = "https://5snvn-tools.vercel.app/api/r2-issues";
-      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V3";
+      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V4";
       const LS_DT_KEY = "DMS_DT_LIST_DATA_V1";
       const LS_TEMP_KEY = "DMS_NOTE_ISSUE_TEMP_V1";
       const LS_CURRENT_MEMBER_KEY = "dms_current_member";
@@ -6155,14 +6155,14 @@
                 .map(d => {
                   const code = String(d.columnB || d.Code || d.code || "").trim();
                   const proj = String(d.project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
-                  // Tên Solution: ưu tiên columnG ("Tài khoản đã khóa..."), fallback columnE ("Admin không đăng nhập...")
-                  const solName = String((d.columnG && d.columnG.trim()) ? d.columnG : (d.columnE || "")).trim();
+                  // Cột E là Tên Solution chuẩn xác
+                  const solName = String(d.columnE || d["Tên Solution"] || d.name || "").trim();
                   // Hướng giải quyết / Solution: columnJ (NVN) hoặc columnH (LVN, CPTH)
                   const solSteps = String(d.columnJ || d.columnH || d.Solution || d.solution || "").trim();
                   return {
                     project: proj,
                     code: code,
-                    type: (d.columnD || "").trim().toUpperCase() === "DC" ? "DC" : "HH",
+                    type: (d.columnD || "").trim().toUpperCase().includes("DC") ? "DC" : "HH",
                     name: solName,
                     issue: String(d.columnG || d.columnE || "").trim(),
                     solution: solSteps,

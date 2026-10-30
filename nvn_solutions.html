@@ -1105,7 +1105,7 @@
       currentFilteredRows = [];
     // CATEGORY_MAP removed per request
     const MAX_RENDER_ROWS = 200;
-    const CACHE_KEY = "dms_solutions_multi_cache_v3";
+    const CACHE_KEY = "dms_solutions_multi_cache_v4";
     let activeSolutionProject = "ALL";
     let availableProjects = [];
     let projectCounts = {};
@@ -2330,7 +2330,7 @@
         })
         .map((r) => {
           const code = String(r.__col_1 || r.columnB || r.Code || r.code || r.solution_code || "").trim();
-          const name = String(r.__col_4 || r.columnG || r.columnE || r["Tên Solution"] || r.name || r.solution_name || "").trim();
+          const name = String(r.__col_4 || r.columnE || r["Tên Solution"] || r.name || r.solution_name || "").trim();
           const proj = String(r.__col_project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
           const content = String(r.__col_9 || r.columnJ || r.columnH || r.Solution || r.solution || r.content || "").trim();
           return [proj, code, name, content];
@@ -2431,24 +2431,24 @@
       headers = [
         "__col_1",
         "__col_4",
-        "__col_5",
-        "__col_6",
         "__col_9",
+        "__col_6",
+        "__col_5",
       ];
       columnLabels = {
         __col_1: "Mã giải pháp (Code)",
         __col_4: "Tên Solution",
-        __col_5: "Thông báo lỗi / Ngôn ngữ (Cột F)",
-        __col_6: "Phân loại / Tên chung (Cột E)",
         __col_9: "Solution (Hướng xử lý - Cột J/H)",
+        __col_6: "Thông tin cần kiểm tra (Cột G)",
+        __col_5: "Thông báo lỗi / Ngôn ngữ (Cột F)",
       };
 
       return list
         .map((item) => {
           const code = String(item.columnB || item.Code || item.code || item.solution_code || "").trim();
           const proj = String(item.project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
-          // Tên Solution đổi thành columnG ("Tài khoản đã khóa..."), fallback columnE ("Admin không đăng nhập...")
-          const solName = String((item.columnG && item.columnG.trim()) ? item.columnG : (item.columnE || item["Tên Solution"] || item.name || "")).trim();
+          // Cột E là Tên Solution chuẩn xác
+          const solName = String(item.columnE || item["Tên Solution"] || item.name || item.solution_name || "").trim();
           // Solution / Hướng xử lý: columnJ (NVN) hoặc columnH (LVN, CPTH)
           const solutionText = String(item.columnJ || item.columnH || item.Solution || item.solution || item.content || "").trim();
           return {
@@ -2456,7 +2456,7 @@
             __col_1: code,
             __col_4: solName,
             __col_5: item.columnF || item["Thông báo lỗi của hệ thống"] || "",
-            __col_6: item.columnE || "",
+            __col_6: item.columnG || item["Thông tin cần kiểm tra trước khi giải quyết issue"] || "",
             __col_9: solutionText,
           };
         })
