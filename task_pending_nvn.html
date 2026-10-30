@@ -1671,8 +1671,9 @@
       </div>
       <div class="modal-body">
         <div style="display:flex; gap:8px; margin-bottom:12px;">
-          <input type="text" class="fc" id="newProjectName" placeholder="Nhập tên dự án mới..." style="flex:1;"
+          <input type="text" class="fc" id="newProjectName" placeholder="Tên dự án..." style="flex:1;"
             onkeydown="if(event.key==='Enter'){event.preventDefault();addProject();}" />
+          <input type="text" class="fc" id="newProjectSystem" placeholder="Hệ thống (VD: DMS1, DMS)..." style="width:140px;" />
           <button class="btn-primary" onclick="addProject()" style="padding:8px 14px; white-space:nowrap;"><i
               class="fa-solid fa-folder-plus"></i> Thêm</button>
         </div>
@@ -2794,7 +2795,11 @@
         const li = document.createElement("li");
         li.className = "member-list-item";
         li.innerHTML = `
-      <span class="member-name"><i class="fa-solid fa-folder" style="color:var(--accent);margin-right:6px;"></i>${esc(p.name)}</span>
+      <span class="member-name" style="min-width:100px;"><i class="fa-solid fa-folder" style="color:var(--accent);margin-right:6px;"></i>${esc(p.name)}</span>
+      <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; gap:6px; margin:0 8px;">
+        <span style="font-size:11px; color:var(--text-muted);">Hệ thống:</span>
+        <input type="text" class="fc" value="${esc(p.system || '')}" placeholder="DMS1, DMS, FPIT" style="width:120px; font-size:12px; padding:3px 6px; font-family:monospace; font-weight:700;" onchange="updateProjectSystem('${esc(p.name)}', this.value)" />
+      </div>
       <div class="member-actions">
         <button class="btn-danger btn-sm" data-name="${esc(p.name)}" onclick="deleteProject(this.dataset.name)" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
       </div>
@@ -2803,15 +2808,30 @@
       });
     }
 
+    async function updateProjectSystem(name, system) {
+      try {
+        const res = await apiPost({ action: "update_project", name, system: system.trim() });
+        if (res.status === "success") {
+          const p = allProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
+          if (p) p.system = system.trim();
+          try { localStorage.setItem("app_projects_data", JSON.stringify(allProjects)); } catch (e) { }
+          toast(`Đã cập nhật hệ thống cho "${name}"!`, "s");
+        }
+      } catch (_) {}
+    }
+
     async function addProject() {
       const input = document.getElementById("newProjectName");
+      const inputSys = document.getElementById("newProjectSystem");
       const name = input.value.trim();
+      const system = inputSys ? inputSys.value.trim() : "";
       if (!name) { toast("Nhập tên dự án!", "w"); return; }
       try {
-        const res = await apiPost({ action: "add_project", name });
+        const res = await apiPost({ action: "add_project", name, system });
         if (res.status === "success") {
           toast(`Đã thêm dự án "${name}"!`, "s");
           input.value = "";
+          if (inputSys) inputSys.value = "";
           loadProjects();
         } else { toast("Lỗi: " + (res.message || "không rõ"), "e"); }
       } catch { toast("Lỗi kết nối!", "e"); }

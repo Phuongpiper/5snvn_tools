@@ -173,9 +173,18 @@ module.exports = async function handler(req, res) {
           data: data.members || []
         });
       } else if (action === "read_projects") {
+        const projs = (data.projects || []).map(p => {
+          if (!p.system) {
+            const up = (p.name || "").toUpperCase();
+            if (up === "NVN") p.system = "DMS1";
+            else if (up === "LVN") p.system = "DMS";
+            else if (up === "CPTH") p.system = "FPIT";
+          }
+          return p;
+        });
         return res.status(200).json({
           status: "success",
-          data: data.projects || []
+          data: projs
         });
       } else {
         // Trả về toàn bộ dữ liệu mặc định
@@ -374,13 +383,34 @@ module.exports = async function handler(req, res) {
 
       if (action === "add_project") {
         const name = (payload.name || "").trim();
+        const system = (payload.system !== undefined ? payload.system : "").trim();
         if (!name) return res.status(400).json({ status: "error", message: "Tên dự án không được để trống" });
         if (!currentData.projects) currentData.projects = [];
         
         const exists = currentData.projects.some(p => p.name.toLowerCase() === name.toLowerCase());
         if (exists) return res.status(400).json({ status: "error", message: "Dự án đã tồn tại" });
         
-        currentData.projects.push({ name });
+        currentData.projects.push({ name, system });
+        await saveTasksData(currentData);
+        return res.status(200).json({ status: "success" });
+      }
+
+      if (action === "update_project") {
+        const name = (payload.name || "").trim();
+        const system = (payload.system !== undefined ? payload.system : "").trim();
+        const newName = (payload.newName || "").trim();
+        if (!name) return res.status(400).json({ status: "error", message: "Tên dự án không được để trống" });
+        if (!currentData.projects) currentData.projects = [];
+        
+        let proj = currentData.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
+        if (!proj) {
+          // If project didn't exist yet, create it
+          proj = { name, system };
+          currentData.projects.push(proj);
+        } else {
+          if (newName) proj.name = newName;
+          proj.system = system;
+        }
         await saveTasksData(currentData);
         return res.status(200).json({ status: "success" });
       }

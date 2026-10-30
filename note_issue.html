@@ -5373,6 +5373,52 @@
         return (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
       }
 
+      function getProjectObject(projectName) {
+        if (!projectName) projectName = getSelectedProject();
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const found = list.find(p => {
+                const n = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
+                return n.toLowerCase() === projectName.toLowerCase();
+              });
+              if (found) {
+                const pObj = typeof found === "string" ? { name: found, system: "" } : found;
+                return pObj;
+              }
+            }
+          }
+        } catch (_) {}
+        const pUp = projectName.toUpperCase();
+        if (pUp === "NVN") return { name: "NVN", system: "DMS1" };
+        if (pUp === "LVN") return { name: "LVN", system: "DMS" };
+        if (pUp === "CPTH") return { name: "CPTH", system: "FPIT" };
+        if (pUp.includes("NOI BO") || pUp.includes("NỘI BỘ")) return { name: "Nội bộ", system: "" };
+        return { name: projectName, system: "" };
+      }
+
+      function getProjectPrefix(projectName, type = "HH") {
+        const pObj = getProjectObject(projectName);
+        const name = pObj.name || projectName || "NVN";
+        let system = (pObj.system || "").trim();
+
+        // Fallback mặc định theo quy chuẩn hệ thống nếu chưa điền
+        if (!system) {
+          const nUp = name.toUpperCase();
+          if (nUp === "NVN") system = "DMS1";
+          else if (nUp === "LVN") system = "DMS";
+          else if (nUp === "CPTH") system = "FPIT";
+        }
+
+        const isNoiBo = (typeof normalizeStr === "function" ? normalizeStr(name) : name.toLowerCase()).includes("noi bo");
+        if (isNoiBo) {
+          return system ? `[Nội bộ-${system}]-[${type}]` : `[Nội bộ]-[${type}]`;
+        }
+        return system ? `[${name}-${system}]-[${type}]` : `[${name}]-[${type}]`;
+      }
+
       function setSelectedProject(proj) {
         if (!proj) proj = "NVN";
         try {
@@ -5386,22 +5432,50 @@
       function populateHeaderProjects() {
         const sel = document.getElementById("headerProjectSelect");
         if (!sel) return;
-        const projects = getSystemProjects();
+        let rawList = [];
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) rawList = JSON.parse(raw);
+        } catch (_) {}
+        if (!Array.isArray(rawList) || rawList.length === 0) {
+          rawList = [
+            { name: "NVN", system: "DMS1" },
+            { name: "LVN", system: "DMS" },
+            { name: "CPTH", system: "FPIT" },
+            { name: "FNB", system: "" },
+            { name: "Nội bộ", system: "" },
+            { name: "Asian Shine", system: "" },
+            { name: "Syngenta", system: "" },
+            { name: "Haleon", system: "" }
+          ];
+        }
+
         const savedProj = (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
         const currentVal = sel.value || savedProj;
         sel.innerHTML = "";
-        projects.forEach(p => {
+        rawList.forEach(p => {
+          const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
+          let pSys = typeof p === "object" && p.system ? p.system.trim() : "";
+          if (!pSys) {
+            const up = pName.toUpperCase();
+            if (up === "NVN") pSys = "DMS1";
+            else if (up === "LVN") pSys = "DMS";
+            else if (up === "CPTH") pSys = "FPIT";
+          }
+          if (!pName) return;
           const opt = document.createElement("option");
-          opt.value = p;
-          opt.textContent = p;
+          opt.value = pName;
+          opt.textContent = pSys ? `${pName} (${pSys})` : pName;
           sel.appendChild(opt);
         });
-        if (projects.includes(currentVal)) {
+
+        const availableNames = rawList.map(p => typeof p === "string" ? p.trim() : (p?.name || "").trim());
+        if (availableNames.includes(currentVal)) {
           sel.value = currentVal;
-        } else if (projects.includes(savedProj)) {
+        } else if (availableNames.includes(savedProj)) {
           sel.value = savedProj;
         } else {
-          sel.value = projects[0] || "NVN";
+          sel.value = availableNames[0] || "NVN";
         }
       }
 
@@ -8448,8 +8522,7 @@
       function generateResultParts() {
         const type = currentType || "HH";
         const proj = getSelectedProject();
-        const isNoiBo = typeof normalizeStr === "function" ? normalizeStr(proj).includes("noi bo") : proj.toLowerCase().includes("nội bộ");
-        const pPrefix = isNoiBo ? `[Nội bộ]-[${type}]` : `[${proj}-DMS]-[${type}]`;
+        const pPrefix = getProjectPrefix(proj, type);
 
         let pSolution = "";
         if (currentSolutionObj) {
@@ -8549,9 +8622,8 @@
 
         if (!hasAnyInput) {
           const curProj = getSelectedProject();
-          const curPrefix = (typeof normalizeStr === "function" ? normalizeStr(curProj).includes("noi bo") : curProj.toLowerCase().includes("nội bộ"))
-            ? "[Nội bộ]" : `[${curProj}-DMS]`;
-          resultSyntaxDisplay.innerHTML = `<span style="color:#64748b;">${curPrefix}-[HH]_Kiểm tra thông tin KHT_NPP Tuan Viet_ADMIN_Hotline 0909280969</span>`;
+          const curPrefix = getProjectPrefix(curProj, "HH");
+          resultSyntaxDisplay.innerHTML = `<span style="color:#64748b;">${curPrefix}_Kiểm tra thông tin KHT_NPP Tuan Viet_ADMIN_Hotline 0909280969</span>`;
           if (typeof syncInputClearButtons === "function") syncInputClearButtons();
           return;
         }
@@ -13791,7 +13863,7 @@
 
         const tempItem = {
           id: "note_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-          result: `[${getSelectedProject()}-DMS]-[HH]_Hỗ trợ cuộc gọi_NPP..._Hotline ${hotline}`,
+          result: `${getProjectPrefix(getSelectedProject(), "HH")}_Hỗ trợ cuộc gọi_NPP..._Hotline ${hotline}`,
           project: getSelectedProject(),
           date: dateStr,
           time: timeStr,

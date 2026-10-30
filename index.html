@@ -2672,7 +2672,8 @@
         </div>
         <div class="topbar-modal-body">
           <div style="display:flex; gap:8px; margin-bottom:14px;">
-            <input type="text" class="topbar-input" id="topNewProjectName" placeholder="Nhập tên dự án mới..." style="flex:1;" />
+            <input type="text" class="topbar-input" id="topNewProjectName" placeholder="Tên dự án (VD: NVN, LVN, CPTH)..." style="flex:1;" />
+            <input type="text" class="topbar-input" id="topNewProjectSystem" placeholder="Hệ thống (VD: DMS1, DMS, FPIT)..." style="width:160px;" />
             <button class="topbar-btn-primary" id="btnTopAddProject">
               <i class="fa-solid fa-folder-plus"></i> Thêm
             </button>
@@ -2853,29 +2854,57 @@
           const li = document.createElement("li");
           li.className = "topbar-list-item";
           li.innerHTML = `
-            <span style="font-weight:600; font-size:13.5px; color:#1e293b; display:flex; align-items:center; gap:8px;">
+            <span style="font-weight:600; font-size:13.5px; color:#1e293b; display:flex; align-items:center; gap:8px; min-width:110px;">
               <i class="fa-solid fa-folder" style="color:#6366f1;"></i> ${esc(p.name)}
             </span>
+            <div style="display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; margin:0 8px;">
+              <span style="font-size:11px; font-weight:700; color:#64748b; white-space:nowrap;">Hệ thống:</span>
+              <input type="text" class="topbar-project-system-input" value="${esc(p.system || '')}" placeholder="VD: DMS1, DMS, FPIT" title="Điền hệ thống của dự án (VD: DMS1, DMS, FPIT)" style="width:130px; font-size:12px; padding:4px 8px; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-family:monospace; font-weight:700; color:#4338ca;" />
+            </div>
             <div class="topbar-actions-btns">
               <button type="button" class="topbar-icon-action-btn delete" title="Xóa dự án">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
           `;
+          const sysInput = li.querySelector(".topbar-project-system-input");
+          if (sysInput) {
+            sysInput.addEventListener("change", () => updateProjectSystem(p.name, sysInput.value));
+          }
           li.querySelector(".delete")?.addEventListener("click", () => deleteProject(p.name));
           list.appendChild(li);
         });
       }
 
+      async function updateProjectSystem(name, system) {
+        try {
+          const res = await apiPost({ action: "update_project", name, system: system.trim() });
+          if (res.status === "success") {
+            const p = gProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
+            if (p) p.system = system.trim();
+            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) {}
+            showHubToast(`Đã cập nhật hệ thống cho dự án "${name}"`, "success");
+            notifyOtherTabs("projects");
+          } else {
+            showHubToast(res.message || "Lỗi cập nhật hệ thống", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
       async function addProject() {
-        const input = document.getElementById("topNewProjectName");
-        const name = (input ? input.value : "").trim();
+        const inputName = document.getElementById("topNewProjectName");
+        const inputSystem = document.getElementById("topNewProjectSystem");
+        const name = (inputName ? inputName.value : "").trim();
+        const system = (inputSystem ? inputSystem.value : "").trim();
         if (!name) return;
         try {
-          const res = await apiPost({ action: "add_project", name });
+          const res = await apiPost({ action: "add_project", name, system });
           if (res.status === "success") {
             showHubToast(`Đã thêm dự án "${name}"`, "success");
-            input.value = "";
+            inputName.value = "";
+            if (inputSystem) inputSystem.value = "";
             await loadProjectsList();
             notifyOtherTabs("projects");
           } else {
