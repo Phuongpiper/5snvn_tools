@@ -6,7 +6,12 @@ const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.e
 const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "";
 const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.env.R2_SECRET_ACCESS_KEY || "";
 const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "";
-const R2_OBJECT_KEY        = "dms_dt_list.json";
+// R2_OBJECT_KEY is now dynamic per project — resolved in handler from ?project= query param
+function getR2ObjectKey(projectName) {
+  if (!projectName || projectName.toUpperCase() === "NVN") return "dms_dt_list.json"; // backward compat
+  const safe = projectName.replace(/[^a-zA-Z0-9_\-]/g, "").toLowerCase();
+  return "dms_dt_list_" + safe + ".json";
+}
 
 function hmacSha256(key, msg, enc) {
   return crypto.createHmac("sha256", key).update(msg, "utf8").digest(enc);
@@ -16,10 +21,11 @@ function sha256hex(msg) {
   return crypto.createHash("sha256").update(buf).digest("hex");
 }
 
-function buildR2Request(method, body) {
+function buildR2Request(method, body, objectKey) {
+  objectKey = objectKey || "dms_dt_list.json";
   const bodyBuf = body ? (Buffer.isBuffer(body) ? body : Buffer.from(String(body), "utf8")) : Buffer.alloc(0);
   const host      = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
-  const uriPath   = "/" + R2_BUCKET_NAME + "/" + R2_OBJECT_KEY;
+  const uriPath   = "/" + R2_BUCKET_NAME + "/" + objectKey;
   const now       = new Date();
   const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
   const amzDate   = now.toISOString().replace(/[:-]/g, "").replace(/\.\d+/, "");
@@ -60,10 +66,11 @@ function buildR2Request(method, body) {
   return { host: host, path: uriPath, headers: headers, bodyBuf: bodyBuf };
 }
 
-function r2Fetch(method, body) {
+function r2Fetch(method, body, objectKey) {
   body = body || "";
+  objectKey = objectKey || "dms_dt_list.json";
   return new Promise(function(resolve, reject) {
-    const info = buildR2Request(method, body);
+    const info = buildR2Request(method, body, objectKey);
     const options = { hostname: info.host, path: info.path, method: method, headers: info.headers };
     const req = https.request(options, function(res) {
       const chunks = [];
@@ -98,9 +105,13 @@ module.exports = async function handler(req, res) {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 
+  // Resolve object key from ?project= query param (default = NVN = dms_dt_list.json)
+  const projectParam = (req.query && req.query.project) || (req.url && new URL("http://x" + req.url).searchParams.get("project")) || "NVN";
+  const objectKey = getR2ObjectKey(projectParam);
+
   try {
     if (req.method === "HEAD") {
-      const r2Res = await r2Fetch("HEAD", "");
+      const r2Res = await r2Fetch("HEAD", "", objectKey);
       if (r2Res.headers) {
         const etag = r2Res.headers["etag"] || r2Res.headers["ETag"] || "";
         const lm = r2Res.headers["last-modified"] || r2Res.headers["Last-Modified"] || "";
@@ -111,7 +122,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "GET") {
-      const r2Res = await r2Fetch("GET", "");
+      const r2Res = await r2Fetch("GET", "", objectKey);
       if (r2Res.headers) {
         const etag = r2Res.headers["etag"] || r2Res.headers["ETag"] || "";
         const lm = r2Res.headers["last-modified"] || r2Res.headers["Last-Modified"] || "";
@@ -151,7 +162,7 @@ module.exports = async function handler(req, res) {
       bodyData.updatedAt = Date.now();
 
       const putBody = JSON.stringify(bodyData);
-      const putR = await r2Fetch("PUT", putBody);
+      const putR = await r2Fetch("PUT", putBody, objectKey);
 
       if (putR.statusCode >= 200 && putR.statusCode < 300) {
         let etag = "";

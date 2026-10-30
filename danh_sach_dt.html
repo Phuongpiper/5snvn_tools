@@ -1040,6 +1040,41 @@
     </div>
   </header>
 
+  <!-- ── PROJECT TABS ── -->
+  <div class="project-tab-bar" id="dtProjectTabBar" style="
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    min-height: 40px;
+    overflow-x: auto;
+  ">
+    <!-- Tabs rendered by JS via renderDtProjectTabs() -->
+    <span id="dtTabLoading" style="font-size:12px;color:var(--text-muted);padding:8px 0;">Đang tải dự án...</span>
+  </div>
+
+  <style>
+    .dt-project-tab {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 6px 6px 0 0;
+      font-size: 12.5px; font-weight: 500; cursor: pointer;
+      border: 1px solid transparent; border-bottom: none;
+      color: var(--text-muted); background: transparent;
+      transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
+    }
+    .dt-project-tab:hover { background: var(--surface-hover); color: var(--text); }
+    .dt-project-tab.active {
+      background: var(--primary-light); color: var(--primary);
+      border-color: var(--primary-border); font-weight: 600;
+    }
+    .dt-project-tab .tab-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.6;
+    }
+  </style>
+
   <!-- ── TOOLBAR / BULK CONTROLS ── -->
   <div class="toolbar-bar">
     <div class="toolbar-left">
@@ -1250,7 +1285,13 @@
     /* ──────────────────────────────────────────────────────────────────────────
        DATA MODEL & STATE
     ────────────────────────────────────────────────────────────────────────── */
-    const STORAGE_KEY = "DMS_DT_LIST_DATA_V1";
+    // Active project for DT list — persisted across reloads
+    let currentDtProject = localStorage.getItem("DMS_DT_CURRENT_PROJECT") || "NVN";
+
+    function getStorageKeyForProject(proj) {
+      return "DMS_DT_LIST_DATA_V1_" + (proj || "NVN").toUpperCase();
+    }
+    const STORAGE_KEY = getStorageKeyForProject(currentDtProject);
 
     const HIGHLIGHT_COLORS = [
       { name: "Vàng", bg: "#fef9c3", border: "#fde047" },
@@ -1315,7 +1356,7 @@
     // Cloud sync state
     let dtApiBaseOverride = null;
     let dtSyncIntervalId = null;
-    let currentDtEtag = localStorage.getItem("r2_dt_etag") || "";
+    let currentDtEtag = localStorage.getItem("r2_dt_etag_" + currentDtProject.toUpperCase()) || "";
     let cloudSaveTimer = null;
     let isCloudSaving = false;
     let isCloudFetching = false;
@@ -1326,7 +1367,7 @@
         if (e.data && e.data.type === "DT_UPDATED") {
           if (e.data.etag && e.data.etag !== currentDtEtag) {
             currentDtEtag = e.data.etag;
-            localStorage.setItem("r2_dt_etag", currentDtEtag);
+            localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), currentDtEtag);
           }
           await fetchDtFromCloud(true);
         }
@@ -1348,7 +1389,7 @@
           base = "";
         }
       }
-      return base + "/api/r2-dt";
+      return base + "/api/r2-dt?project=" + encodeURIComponent(currentDtProject);
     }
 
     function initApp() {
@@ -1357,6 +1398,80 @@
       fetchDtFromCloud();
       startDtAutoSync();
       setupEventListeners();
+      loadDtProjectsAndRenderTabs();
+    }
+
+    /* ── PROJECT TABS FOR DT LIST ── */
+    async function loadDtProjectsAndRenderTabs() {
+      const bar = document.getElementById("dtProjectTabBar");
+      const loading = document.getElementById("dtTabLoading");
+      try {
+        // Reuse getApiBase from parent frame or fallback
+        let base = "";
+        if (window.location.protocol === "file:") {
+          base = "https://5snvn-tools.vercel.app";
+        } else if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+          base = "";
+        }
+        const tasksApi = base + "/api/r2-tasks?action=read_projects";
+        const res = await fetch(tasksApi, { cache: "no-cache" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const json = await res.json();
+        const projects = Array.isArray(json.projects) ? json.projects : (Array.isArray(json) ? json : []);
+        if (loading) loading.remove();
+        renderDtProjectTabs(bar, projects);
+      } catch (e) {
+        // Fallback: show only NVN tab
+        if (loading) loading.remove();
+        renderDtProjectTabs(bar, [{ name: "NVN" }]);
+      }
+    }
+
+    function renderDtProjectTabs(bar, projects) {
+      bar.innerHTML = "";
+      // Always include NVN first if not present
+      const names = projects.map(p => (typeof p === "string" ? p : p.name));
+      if (!names.includes("NVN")) names.unshift("NVN");
+
+      names.forEach(name => {
+        const tab = document.createElement("button");
+        tab.className = "dt-project-tab" + (name === currentDtProject ? " active" : "");
+        tab.innerHTML = `<span class="tab-dot"></span>${name}`;
+        tab.title = "Xem danh sách DT của dự án " + name;
+        tab.onclick = () => switchDtProject(name);
+        bar.appendChild(tab);
+      });
+    }
+
+    function switchDtProject(projectName) {
+      if (projectName === currentDtProject) return;
+      // Save current state before switching
+      const key = getStorageKeyForProject(currentDtProject);
+      try { localStorage.setItem(key, JSON.stringify(dtData)); } catch(_) {}
+
+      currentDtProject = projectName;
+      localStorage.setItem("DMS_DT_CURRENT_PROJECT", projectName);
+      currentDtEtag = localStorage.getItem("r2_dt_etag_" + currentDtProject.toUpperCase()) || "";
+
+      // Reset data for new project
+      dtData = { columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)), rows: [] };
+      historyStack = []; historyIndex = -1;
+
+      // Update tabs UI
+      document.querySelectorAll(".dt-project-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.textContent.trim() === projectName);
+      });
+
+      // Update page title badge
+      const badge = document.querySelector(".mode-pill");
+      if (badge) badge.textContent = projectName;
+
+      loadState();
+      renderTable();
+      if (dtSyncIntervalId) { clearInterval(dtSyncIntervalId); dtSyncIntervalId = null; }
+      fetchDtFromCloud();
+      startDtAutoSync();
+      toast(`Đã chuyển sang dự án ${projectName}`, "info");
     }
 
     if (document.readyState === "loading") {
@@ -1378,23 +1493,34 @@
 
     /* ── STATE MANAGEMENT & HISTORY ── */
     function loadState() {
+      const key = getStorageKeyForProject(currentDtProject);
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(key);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (parsed && Array.isArray(parsed.columns) && Array.isArray(parsed.rows)) {
             dtData = parsed;
+          } else {
+            dtData = { columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)), rows: [] };
           }
+        } else {
+          // For NVN use sample rows as fallback, other projects start empty
+          dtData = {
+            columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)),
+            rows: currentDtProject === "NVN" ? JSON.parse(JSON.stringify(SAMPLE_ROWS)) : []
+          };
         }
       } catch (e) {
         console.warn("Lỗi đọc localStorage:", e);
+        dtData = { columns: JSON.parse(JSON.stringify(DEFAULT_COLUMNS)), rows: [] };
       }
       recordHistory(false);
     }
 
     function saveState(markDirty = true) {
+      const key = getStorageKeyForProject(currentDtProject);
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dtData));
+        localStorage.setItem(key, JSON.stringify(dtData));
         showAutoSaveIndicator("saving");
         if (markDirty) {
           recordHistory(true);
@@ -1495,7 +1621,7 @@
           const json = await res.json();
           const newEtag = res.headers.get("ETag") || json.etag || String(json.updatedAt || Date.now());
           currentDtEtag = newEtag;
-          localStorage.setItem("r2_dt_etag", newEtag);
+          localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
           showAutoSaveIndicator("saved");
           if (dtBroadcast) {
             try {
@@ -1549,7 +1675,7 @@
         const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
         if (newEtag) {
           currentDtEtag = newEtag;
-          localStorage.setItem("r2_dt_etag", newEtag);
+          localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
         }
         const data = await res.json();
         if (data && Array.isArray(data.rows) && data.rows.length > 0) {
@@ -1564,7 +1690,7 @@
 
             dtData.columns = data.columns || dtData.columns;
             dtData.rows = data.rows;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(dtData));
+            localStorage.setItem(getStorageKeyForProject(currentDtProject), JSON.stringify(dtData));
 
             const scrollArea = document.getElementById("tableScrollArea");
             const prevTop = scrollArea ? scrollArea.scrollTop : 0;
@@ -1611,7 +1737,7 @@
           const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
           if (newEtag && newEtag !== currentDtEtag) {
             currentDtEtag = newEtag;
-            localStorage.setItem("r2_dt_etag", newEtag);
+            localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
             await fetchDtFromCloud(true);
           }
         } catch (_) {}
@@ -2788,3 +2914,4 @@
   </script>
 </body>
 </html>
+
