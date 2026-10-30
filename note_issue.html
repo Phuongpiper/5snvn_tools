@@ -6769,6 +6769,16 @@
         // Call details: Ưu tiên raw result của issue hoặc description/solutionName của ticket
         const callDetails = (matchedIssue ? matchedIssue.result : "") || t.description || t.solutionName || "Hỗ trợ DMS";
 
+        // Lấy project từ issue.project hoặc parse [XXX-DMS] từ callDetails, fallback getSelectedProject()
+        function _extractProject(cd, issue) {
+          if (issue && issue.project) return String(issue.project).toUpperCase();
+          const m = String(cd || "").match(/\[([A-Z]+)-DMS\]/i) || String(cd || "").match(/^\[([A-Z]+)\]/i);
+          if (m) return m[1].toUpperCase();
+          return (typeof getSelectedProject === "function" ? getSelectedProject() : "NVN").toUpperCase();
+        }
+        const _projLabelClose = _extractProject(callDetails, matchedIssue);
+
+
         // Tên Solution:
         let solName = t.solutionName || t.description || (matchedIssue ? (matchedIssue.fields?.solution || matchedIssue.result) : "") || "Hỗ trợ DMS";
 
@@ -6789,7 +6799,7 @@
         }
 
         return [
-          `Close ticker Ticket ${t.id} với thông tin: Project NVN`,
+          `Close ticker Ticket ${t.id} với thông tin: Project ${_projLabelClose}`,
           `- Call Details: ${callDetails}`,
           `- Tên Solution: ${solName}`,
           `- Gán Solution: ${solCode}`,
@@ -7043,7 +7053,7 @@
             promptText = formatIssueCopyText(matchedIssue);
           } else {
             promptText = [
-              `Tạo mới Ticket với thông tin: Project NVN`,
+              `Tạo mới Ticket với thông tin: Project ${(() => { const _m = String(t.description||t.solutionName||"").match(/\[([A-Z]+)-DMS\]/i); return _m ? _m[1].toUpperCase() : (typeof getSelectedProject==="function"?getSelectedProject():"NVN").toUpperCase(); })()}`,
               `- Call Details: ${t.description || t.solutionName || 'Hỗ trợ DMS'}`,
               `- Tên Solution: ${t.solutionName || 'Hỗ trợ DMS'}`,
               `- Gán Solution: ${t.solutionCode || 'NVN-074'}`,
@@ -9382,8 +9392,9 @@
             }
           }
 
+          const _proj3 = (() => { if (item && item.project) return String(item.project).toUpperCase(); const _rm = String(resultText||"").match(/\[([A-Z]+)-DMS\]/i); return _rm ? _rm[1].toUpperCase() : (typeof getSelectedProject==="function"?getSelectedProject():"NVN").toUpperCase(); })();
           const promptLines = [
-            `Tạo mới Ticket với thông tin: Project NVN`,
+            `Tạo mới Ticket với thông tin: Project ${_proj3}`,
             `- Call Details: ${resultText}`,
             `- Tên Solution: ${solutionName}`,
             `- Gán Solution: ${solCode}`,
@@ -9486,7 +9497,7 @@
 
         // 5. Tạo prompt hoàn chỉnh
         let promptLines = [
-          `Tạo mới Ticket với thông tin: Project NVN`,
+          `Tạo mới Ticket với thông tin: Project ${(() => { if (item && item.project) return String(item.project).toUpperCase(); const _rm4 = String(callDetail||"").match(/\[([A-Z]+)-DMS\]/i); return _rm4 ? _rm4[1].toUpperCase() : (typeof getSelectedProject==="function"?getSelectedProject():"NVN").toUpperCase(); })()}`,
           `- Call Details: ${callDetail}`,
           `- Tên Solution: ${solutionName}`,
           `- Gán Solution: ${solCode || "NVN-..."}`,
