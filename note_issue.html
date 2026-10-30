@@ -217,15 +217,22 @@
       display: none !important;
     }
 
-    /* ── PROJECT SELECTOR CHIP IN HEADER ── */
+    /* ── PROJECT SELECTOR CHIP & DROPDOWN IN HEADER (Stitch Design) ── */
+    .project-picker-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
     .user-project-chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
       padding: 5px 12px 5px 10px;
       background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
       border: 1.5px solid #bae6fd;
       border-radius: var(--radius-full);
+      cursor: pointer;
+      user-select: none;
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: var(--shadow-sm);
     }
@@ -237,9 +244,15 @@
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
     }
 
+    .project-picker-wrapper.is-open .user-project-chip {
+      border-color: #0284c7;
+      background: #e0f2fe;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2), 0 4px 12px rgba(2, 132, 199, 0.15);
+    }
+
     .user-project-chip .user-chip-icon {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.32);
+      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
       color: #fff;
       width: 26px;
       height: 26px;
@@ -247,8 +260,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11.5px;
       flex-shrink: 0;
+      transition: background 0.2s ease;
     }
 
     .user-project-chip .user-chip-code {
@@ -261,24 +275,272 @@
       margin-bottom: 2px;
     }
 
-    .header-project-select {
-      background: transparent;
-      border: none;
-      outline: none;
-      font-size: 13px;
-      font-weight: 800;
-      color: #0f172a;
-      cursor: pointer;
-      padding: 0 2px 0 0;
-      font-family: inherit;
+    .user-chip-name-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
       line-height: 1.2;
     }
 
-    .header-project-select option {
-      background: #ffffff;
+    .user-chip-name-row .user-chip-name {
+      font-size: 13px;
+      font-weight: 800;
       color: #0f172a;
+    }
+
+    .user-chip-name-row .user-chip-sys {
+      font-size: 10px;
+      font-weight: 700;
+      color: #0284c7;
+      background: rgba(2, 132, 199, 0.12);
+      border: 1px solid rgba(2, 132, 199, 0.2);
+      padding: 1px 6px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .user-chip-arrow {
+      font-size: 10px;
+      color: #0369a1;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-left: 2px;
+    }
+
+    .project-picker-wrapper.is-open .user-chip-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* ── Floating Dropdown Card (Stitch design) ── */
+    .project-dropdown-card {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 300px;
+      background: #ffffff;
+      border: 1px solid rgba(226, 232, 240, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 20px 45px -10px rgba(15, 23, 42, 0.2), 0 8px 20px -4px rgba(15, 23, 42, 0.08);
+      z-index: 1050;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px) scale(0.97);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .project-picker-wrapper.is-open .project-dropdown-card {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .project-dropdown-header {
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid #f1f5f9;
+      background: #ffffff;
+    }
+
+    .project-search-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      transition: all 0.15s ease;
+    }
+
+    .project-search-box:focus-within {
+      background: #ffffff;
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2.5px rgba(79, 70, 229, 0.12);
+    }
+
+    .project-search-box i {
+      color: #94a3b8;
+      font-size: 11.5px;
+    }
+
+    .project-search-box input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 12.5px;
+      color: #1e293b;
+      width: 100%;
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .project-search-clear {
+      cursor: pointer;
+      color: #94a3b8;
+      font-size: 16px;
+      line-height: 1;
+      display: none;
+    }
+
+    .project-search-clear:hover {
+      color: #475569;
+    }
+
+    .project-dropdown-list {
+      max-height: 310px;
+      overflow-y: auto;
+      padding: 6px;
+    }
+
+    .project-dropdown-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .project-dropdown-list::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    .project-group-divider {
+      display: flex;
+      align-items: center;
+      margin: 8px 6px 4px;
+      padding-top: 6px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .project-group-divider span {
+      font-size: 9.5px;
+      font-weight: 800;
+      color: #94a3b8;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .project-dropdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      margin-bottom: 2px;
+    }
+
+    .project-dropdown-item:hover {
+      background: #f1f5f9;
+    }
+
+    .project-dropdown-item.is-selected {
+      background: #4f46e5 !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+    }
+
+    .project-item-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .project-item-badge {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .project-dropdown-item.is-selected .project-item-badge {
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+    }
+
+    .project-item-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      line-height: 1.2;
+    }
+
+    .project-dropdown-item.is-selected .project-item-name {
+      color: #ffffff;
+    }
+
+    .project-item-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .project-item-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      color: #64748b;
+      line-height: 1.2;
+    }
+
+    .project-dropdown-item.is-selected .project-item-tag {
+      background: rgba(255, 255, 255, 0.22);
+      color: #ffffff;
+    }
+
+    .project-item-check {
+      font-size: 11px;
+      color: #ffffff;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .project-dropdown-item.is-selected .project-item-check {
+      opacity: 1;
+    }
+
+    .project-dropdown-empty {
+      padding: 24px 12px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .project-dropdown-empty i {
+      font-size: 18px;
+      display: block;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    .project-dropdown-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border-top: 1px solid #f1f5f9;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .project-dropdown-count {
       font-weight: 600;
-      padding: 4px;
+    }
+
+    .project-dropdown-manage-link {
+      color: #4f46e5;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    .project-dropdown-manage-link:hover {
+      color: #4338ca;
+      text-decoration: underline;
     }
 
     /* ── USER EMPLOYEE CHIP IN HEADER ── */
@@ -3543,14 +3805,43 @@
     </div>
 
     <div class="header-actions">
-      <!-- Project Selector Chip -->
-      <div class="user-project-chip" id="userProjectChip" title="Chọn dự án đang làm việc">
-        <span class="user-chip-icon"><i class="fa-solid fa-diagram-project"></i></span>
-        <div class="user-chip-text">
-          <span class="user-chip-code">DỰ ÁN</span>
-          <select id="headerProjectSelect" class="header-project-select" title="Chọn dự án đang làm việc">
-            <option value="NVN">NVN</option>
-          </select>
+      <!-- Project Selector Chip & Dropdown (Stitch Design) -->
+      <div class="project-picker-wrapper" id="projectPickerWrapper">
+        <div class="user-project-chip" id="userProjectChip" role="button" tabindex="0" title="Bấm để chọn dự án đang làm việc">
+          <span class="user-chip-icon" id="userProjChipIcon"><i class="fa-solid fa-diagram-project"></i></span>
+          <div class="user-chip-text">
+            <span class="user-chip-code">DỰ ÁN</span>
+            <div class="user-chip-name-row">
+              <span class="user-chip-name" id="userProjChipName">NVN</span>
+              <span class="user-chip-sys" id="userProjChipSys">DMS1</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-down user-chip-arrow" id="userProjChipArrow"></i>
+        </div>
+
+        <!-- Hidden select to keep 100% backward compatibility -->
+        <select id="headerProjectSelect" class="header-project-select" style="display: none;" title="Chọn dự án đang làm việc">
+          <option value="NVN">NVN</option>
+        </select>
+
+        <!-- Floating Dropdown Card (Stitch design) -->
+        <div class="project-dropdown-card" id="projectDropdownCard">
+          <div class="project-dropdown-header">
+            <div class="project-search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="projectSearchInput" placeholder="Tìm dự án..." autocomplete="off" />
+              <span class="project-search-clear" id="projectSearchClear" title="Xóa tìm kiếm">&times;</span>
+            </div>
+          </div>
+
+          <div class="project-dropdown-list" id="projectDropdownList">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div class="project-dropdown-footer">
+            <span class="project-dropdown-count" id="projectDropdownCount">8 dự án</span>
+            <a href="javascript:void(0)" class="project-dropdown-manage-link" id="btnManageProjects">Quản lý dự án &rarr;</a>
+          </div>
         </div>
       </div>
 
@@ -5419,6 +5710,150 @@
         return system ? `[${name}-${system}]-[${type}]` : `[${name}]-[${type}]`;
       }
 
+      const PROJECT_COLOR_MAP = {
+        "NVN": "#4F46E5",
+        "LVN": "#2563EB",
+        "CPTH": "#059669",
+        "FNB": "#EA580C",
+        "NỘI BỘ": "#9333EA",
+        "NOI BO": "#9333EA",
+        "ASIAN SHINE": "#0D9488",
+        "SYNGENTA": "#0D9488",
+        "HALEON": "#2563EB"
+      };
+
+      function getProjectColor(projectName) {
+        if (!projectName) return "#4F46E5";
+        const clean = (typeof normalizeStr === "function" ? normalizeStr(projectName) : projectName).toUpperCase().trim();
+        return PROJECT_COLOR_MAP[clean] || PROJECT_COLOR_MAP[projectName.toUpperCase().trim()] || "#0284c7";
+      }
+
+      function toggleProjectDropdown() {
+        const wrapper = document.getElementById("projectPickerWrapper");
+        if (!wrapper) return;
+        if (wrapper.classList.contains("is-open")) {
+          closeProjectDropdown();
+        } else {
+          openProjectDropdown();
+        }
+      }
+
+      function openProjectDropdown() {
+        const wrapper = document.getElementById("projectPickerWrapper");
+        if (!wrapper) return;
+        wrapper.classList.add("is-open");
+        const searchInput = document.getElementById("projectSearchInput");
+        if (searchInput) {
+          searchInput.value = "";
+          filterProjectItems("");
+          setTimeout(() => searchInput.focus(), 60);
+        }
+      }
+
+      function closeProjectDropdown() {
+        const wrapper = document.getElementById("projectPickerWrapper");
+        if (wrapper) wrapper.classList.remove("is-open");
+      }
+
+      function filterProjectItems(query) {
+        const q = (query || "").trim().toLowerCase();
+        const items = document.querySelectorAll(".project-dropdown-item");
+        const dividers = document.querySelectorAll(".project-group-divider");
+        const clearBtn = document.getElementById("projectSearchClear");
+        if (clearBtn) clearBtn.style.display = q ? "block" : "none";
+
+        let visibleCount = 0;
+        items.forEach(item => {
+          const name = (item.getAttribute("data-proj-name") || "").toLowerCase();
+          const sys = (item.getAttribute("data-proj-sys") || "").toLowerCase();
+          const match = !q || name.includes(q) || sys.includes(q);
+          item.style.display = match ? "flex" : "none";
+          if (match) visibleCount++;
+        });
+
+        dividers.forEach(div => {
+          div.style.display = q ? "none" : "flex";
+        });
+
+        const container = document.getElementById("projectDropdownList");
+        let emptyEl = document.getElementById("projectDropdownEmpty");
+        if (visibleCount === 0) {
+          if (!emptyEl && container) {
+            emptyEl = document.createElement("div");
+            emptyEl.id = "projectDropdownEmpty";
+            emptyEl.className = "project-dropdown-empty";
+            emptyEl.innerHTML = `<i class="fa-solid fa-folder-open"></i>Không tìm thấy dự án phù hợp`;
+            container.appendChild(emptyEl);
+          }
+          if (emptyEl) emptyEl.style.display = "block";
+        } else {
+          if (emptyEl) emptyEl.style.display = "none";
+        }
+      }
+
+      function renderCustomProjectList(list, currentSelected) {
+        const container = document.getElementById("projectDropdownList");
+        const countEl = document.getElementById("projectDropdownCount");
+        if (!container) return;
+
+        container.innerHTML = "";
+        if (countEl) countEl.textContent = `${list.length} dự án`;
+
+        const internalNames = ["NVN", "LVN", "CPTH", "FNB", "NỘI BỘ", "NOI BO"];
+        let hasDivider = false;
+
+        list.forEach((p, idx) => {
+          const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
+          let pSys = typeof p === "object" && p.system ? p.system.trim() : "";
+          if (!pSys) {
+            const up = pName.toUpperCase();
+            if (up === "NVN") pSys = "DMS1";
+            else if (up === "LVN") pSys = "DMS";
+            else if (up === "CPTH") pSys = "FPIT";
+            else if (up === "FNB") pSys = "FNB";
+            else if (up.includes("NOI BO") || up.includes("NỘI BỘ")) pSys = "NB";
+            else if (up.includes("ASIAN") || up.includes("SYNGENTA")) pSys = "WSM";
+            else if (up.includes("HALEON")) pSys = "DMS";
+          }
+          if (!pName) return;
+
+          const isInternal = internalNames.some(inName => pName.toUpperCase().includes(inName));
+          if (!isInternal && !hasDivider && idx > 0) {
+            hasDivider = true;
+            const divider = document.createElement("div");
+            divider.className = "project-group-divider";
+            divider.innerHTML = `<span>ĐỐI TÁC & KHÁCH HÀNG</span>`;
+            container.appendChild(divider);
+          }
+
+          const isSelected = pName.toLowerCase() === (currentSelected || "").toLowerCase();
+          const pColor = getProjectColor(pName);
+
+          const item = document.createElement("div");
+          item.className = `project-dropdown-item ${isSelected ? "is-selected" : ""}`;
+          item.setAttribute("data-proj-name", pName);
+          item.setAttribute("data-proj-sys", pSys);
+
+          item.innerHTML = `
+            <div class="project-item-left">
+              <span class="project-item-badge" style="background: ${pColor};"></span>
+              <span class="project-item-name">${escapeHTML(pName)}</span>
+            </div>
+            <div class="project-item-right">
+              ${pSys ? `<span class="project-item-tag">${escapeHTML(pSys)}</span>` : ""}
+              <i class="fa-solid fa-check project-item-check"></i>
+            </div>
+          `;
+
+          item.addEventListener("click", () => {
+            setSelectedProject(pName);
+            closeProjectDropdown();
+          });
+
+          container.appendChild(item);
+        });
+      }
+
       function setSelectedProject(proj) {
         if (!proj) proj = "NVN";
         const prevProj = (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
@@ -5427,6 +5862,49 @@
         } catch (_) {}
         const sel = document.getElementById("headerProjectSelect");
         if (sel && sel.value !== proj) sel.value = proj;
+
+        // Update trigger chip UI
+        const pObj = getProjectObject(proj);
+        const pName = pObj.name || proj;
+        let pSys = (pObj.system || "").trim();
+        if (!pSys) {
+          const up = pName.toUpperCase();
+          if (up === "NVN") pSys = "DMS1";
+          else if (up === "LVN") pSys = "DMS";
+          else if (up === "CPTH") pSys = "FPIT";
+          else if (up === "FNB") pSys = "FNB";
+          else if (up.includes("NOI BO") || up.includes("NỘI BỘ")) pSys = "NB";
+          else if (up.includes("ASIAN") || up.includes("SYNGENTA")) pSys = "WSM";
+          else if (up.includes("HALEON")) pSys = "DMS";
+        }
+
+        const elName = document.getElementById("userProjChipName");
+        const elSys = document.getElementById("userProjChipSys");
+        const elIcon = document.getElementById("userProjChipIcon");
+
+        if (elName) elName.textContent = pName;
+        if (elSys) {
+          if (pSys) {
+            elSys.textContent = pSys;
+            elSys.style.display = "inline-block";
+          } else {
+            elSys.style.display = "none";
+          }
+        }
+        if (elIcon) {
+          const pColor = getProjectColor(pName);
+          elIcon.style.background = `linear-gradient(135deg, ${pColor} 0%, ${pColor}dd 100%)`;
+          elIcon.style.boxShadow = `0 2px 6px ${pColor}55`;
+        }
+
+        // Highlight selected in custom dropdown list
+        document.querySelectorAll(".project-dropdown-item").forEach(item => {
+          if ((item.getAttribute("data-proj-name") || "").toLowerCase() === pName.toLowerCase()) {
+            item.classList.add("is-selected");
+          } else {
+            item.classList.remove("is-selected");
+          }
+        });
 
         if (proj.toUpperCase() !== prevProj.toUpperCase()) {
           if (typeof clearSolutionField === "function") clearSolutionField();
@@ -5438,7 +5916,6 @@
 
       function populateHeaderProjects() {
         const sel = document.getElementById("headerProjectSelect");
-        if (!sel) return;
         let rawList = [];
         try {
           const raw = localStorage.getItem("app_projects_data");
@@ -5449,41 +5926,49 @@
             { name: "NVN", system: "DMS1" },
             { name: "LVN", system: "DMS" },
             { name: "CPTH", system: "FPIT" },
-            { name: "FNB", system: "" },
-            { name: "Nội bộ", system: "" },
-            { name: "Asian Shine", system: "" },
-            { name: "Syngenta", system: "" },
-            { name: "Haleon", system: "" }
+            { name: "FNB", system: "FNB" },
+            { name: "Nội bộ", system: "NB" },
+            { name: "Asian Shine", system: "WSM" },
+            { name: "Syngenta", system: "WSM" },
+            { name: "Haleon", system: "DMS" }
           ];
         }
 
         const savedProj = (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
-        const currentVal = sel.value || savedProj;
-        sel.innerHTML = "";
-        rawList.forEach(p => {
-          const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
-          let pSys = typeof p === "object" && p.system ? p.system.trim() : "";
-          if (!pSys) {
-            const up = pName.toUpperCase();
-            if (up === "NVN") pSys = "DMS1";
-            else if (up === "LVN") pSys = "DMS";
-            else if (up === "CPTH") pSys = "FPIT";
-          }
-          if (!pName) return;
-          const opt = document.createElement("option");
-          opt.value = pName;
-          opt.textContent = pSys ? `${pName} (${pSys})` : pName;
-          sel.appendChild(opt);
-        });
+        const currentVal = (sel ? sel.value : "") || savedProj;
 
-        const availableNames = rawList.map(p => typeof p === "string" ? p.trim() : (p?.name || "").trim());
-        if (availableNames.includes(currentVal)) {
-          sel.value = currentVal;
-        } else if (availableNames.includes(savedProj)) {
-          sel.value = savedProj;
-        } else {
-          sel.value = availableNames[0] || "NVN";
+        // Keep hidden select synced
+        if (sel) {
+          sel.innerHTML = "";
+          rawList.forEach(p => {
+            const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
+            let pSys = typeof p === "object" && p.system ? p.system.trim() : "";
+            if (!pSys) {
+              const up = pName.toUpperCase();
+              if (up === "NVN") pSys = "DMS1";
+              else if (up === "LVN") pSys = "DMS";
+              else if (up === "CPTH") pSys = "FPIT";
+            }
+            if (!pName) return;
+            const opt = document.createElement("option");
+            opt.value = pName;
+            opt.textContent = pSys ? `${pName} (${pSys})` : pName;
+            sel.appendChild(opt);
+          });
+
+          const availableNames = rawList.map(p => typeof p === "string" ? p.trim() : (p?.name || "").trim());
+          if (availableNames.includes(currentVal)) {
+            sel.value = currentVal;
+          } else if (availableNames.includes(savedProj)) {
+            sel.value = savedProj;
+          } else {
+            sel.value = availableNames[0] || "NVN";
+          }
         }
+
+        const activeProj = sel ? sel.value : savedProj;
+        renderCustomProjectList(rawList, activeProj);
+        setSelectedProject(activeProj);
       }
 
       async function syncProjectsFromCloud() {
@@ -14056,7 +14541,69 @@
         }
       };
 
-      // Listen for project dropdown changes
+      // Listen for project dropdown events (Stitch Dropdown)
+      const chipTrigger = document.getElementById("userProjectChip");
+      if (chipTrigger) {
+        chipTrigger.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggleProjectDropdown();
+        });
+        chipTrigger.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleProjectDropdown();
+          }
+        });
+      }
+
+      const searchInput = document.getElementById("projectSearchInput");
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          filterProjectItems(e.target.value);
+        });
+        searchInput.addEventListener("click", (e) => e.stopPropagation());
+      }
+
+      const clearSearchBtn = document.getElementById("projectSearchClear");
+      if (clearSearchBtn) {
+        clearSearchBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (searchInput) {
+            searchInput.value = "";
+            filterProjectItems("");
+            searchInput.focus();
+          }
+        });
+      }
+
+      const btnManageProj = document.getElementById("btnManageProjects");
+      if (btnManageProj) {
+        btnManageProj.addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeProjectDropdown();
+          if (window.parent && window.parent.document && window.parent.document.getElementById("btnTopProjects")) {
+            window.parent.document.getElementById("btnTopProjects").click();
+          } else {
+            showToast("Vui lòng vào mục Quản lý Dự án ở thanh menu bên trái!", "fa-diagram-project");
+          }
+        });
+      }
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (e) => {
+        const wrapper = document.getElementById("projectPickerWrapper");
+        if (wrapper && !wrapper.contains(e.target)) {
+          closeProjectDropdown();
+        }
+      });
+
+      // Close on Escape key
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeProjectDropdown();
+        }
+      });
+
       const headerProjSel = document.getElementById("headerProjectSelect");
       if (headerProjSel) {
         headerProjSel.addEventListener("change", (e) => {
