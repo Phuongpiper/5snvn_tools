@@ -217,6 +217,70 @@
       display: none !important;
     }
 
+    /* ── PROJECT SELECTOR CHIP IN HEADER ── */
+    .user-project-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px 5px 10px;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1.5px solid #bae6fd;
+      border-radius: var(--radius-full);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .user-project-chip:hover {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+      border-color: #38bdf8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.18);
+    }
+
+    .user-project-chip .user-chip-icon {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.32);
+      color: #fff;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .user-project-chip .user-chip-code {
+      color: #0369a1;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      display: block;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .header-project-select {
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      cursor: pointer;
+      padding: 0 2px 0 0;
+      font-family: inherit;
+      line-height: 1.2;
+    }
+
+    .header-project-select option {
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 600;
+      padding: 4px;
+    }
+
     /* ── USER EMPLOYEE CHIP IN HEADER ── */
     .user-employee-chip {
       display: inline-flex;
@@ -3479,6 +3543,17 @@
     </div>
 
     <div class="header-actions">
+      <!-- Project Selector Chip -->
+      <div class="user-project-chip" id="userProjectChip" title="Chọn dự án đang làm việc">
+        <span class="user-chip-icon"><i class="fa-solid fa-diagram-project"></i></span>
+        <div class="user-chip-text">
+          <span class="user-chip-code">DỰ ÁN</span>
+          <select id="headerProjectSelect" class="header-project-select" title="Chọn dự án đang làm việc">
+            <option value="NVN">NVN</option>
+          </select>
+        </div>
+      </div>
+
       <!-- Current Employee Chip (Single Interactive Action Button) -->
       <div class="user-employee-chip" id="userEmployeeChip"
         onclick="window.openSelectMemberModal && window.openSelectMemberModal(true)" role="button" tabindex="0"
@@ -5271,6 +5346,81 @@
         return `${memberKey}__${dateKey}__${textKey}`;
       }
 
+      // Project State & Helpers
+      let cachedSystemProjects = null;
+
+      function getSystemProjects() {
+        if (cachedSystemProjects && cachedSystemProjects.length > 0) return cachedSystemProjects;
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list) && list.length > 0) {
+              cachedSystemProjects = list
+                .map(p => typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : ""))
+                .filter(Boolean);
+              if (cachedSystemProjects.length > 0) return cachedSystemProjects;
+            }
+          }
+        } catch (_) {}
+        cachedSystemProjects = ["NVN", "LVN", "CPTH", "FNB", "Nội bộ", "Asian Shine", "Syngenta", "Haleon"];
+        return cachedSystemProjects;
+      }
+
+      function getSelectedProject() {
+        const sel = document.getElementById("headerProjectSelect");
+        if (sel && sel.value) return sel.value.trim();
+        return (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
+      }
+
+      function setSelectedProject(proj) {
+        if (!proj) proj = "NVN";
+        try {
+          localStorage.setItem("note_issue_selected_project", proj);
+        } catch (_) {}
+        const sel = document.getElementById("headerProjectSelect");
+        if (sel && sel.value !== proj) sel.value = proj;
+        if (typeof updateResultDisplay === "function") updateResultDisplay();
+      }
+
+      function populateHeaderProjects() {
+        const sel = document.getElementById("headerProjectSelect");
+        if (!sel) return;
+        const projects = getSystemProjects();
+        const savedProj = (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
+        const currentVal = sel.value || savedProj;
+        sel.innerHTML = "";
+        projects.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p;
+          opt.textContent = p;
+          sel.appendChild(opt);
+        });
+        if (projects.includes(currentVal)) {
+          sel.value = currentVal;
+        } else if (projects.includes(savedProj)) {
+          sel.value = savedProj;
+        } else {
+          sel.value = projects[0] || "NVN";
+        }
+      }
+
+      async function syncProjectsFromCloud() {
+        try {
+          const ep = (window.location.protocol === "file:" ? "https://5snvn-tools.vercel.app" : "") + "/api/r2-tasks?action=read_projects";
+          const res = await fetch(ep);
+          if (res.ok) {
+            const json = await res.json();
+            const list = json.data || json.projects;
+            if (Array.isArray(list) && list.length > 0) {
+              localStorage.setItem("app_projects_data", JSON.stringify(list));
+              cachedSystemProjects = null;
+              populateHeaderProjects();
+            }
+          }
+        } catch (_) {}
+      }
+
       // Employee State
       let currentSelectedMember = null;
       let modalTempSelectedMember = null;
@@ -6024,7 +6174,7 @@
         const issueDsr = extractDsrFromIssue(issue);
 
         if (!issueSolName && issue.result) {
-          const sm = issue.result.match(/\[NVN-DMS\]-\[[A-Z]+\]_([^_]+)/i);
+          const sm = issue.result.match(/^\[[^\]]+\]-\[[^\]]+\]_([^_]+)/i);
           if (sm) issueSolName = sm[1].trim().toLowerCase();
         }
         if (!issueSolCode && issueSolName && typeof getSolutionCodeByName === "function") {
@@ -7092,15 +7242,17 @@
 
         try {
           const endpoint = getIssuesApiEndpoint();
+          const curProj = getSelectedProject();
           const cleanedTempNotes = tempNotes.map(n => {
             const clone = Object.assign({}, n);
             delete clone.matchedTicket;
+            if (!clone.project) clone.project = curProj;
             return clone;
           });
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "sync_issues", issues: cleanedTempNotes })
+            body: JSON.stringify({ action: "sync_issues", issues: cleanedTempNotes, project: curProj })
           });
           if (res.ok) {
             const json = await res.json();
@@ -7159,10 +7311,12 @@
       async function saveIssueToR2(item) {
         try {
           const endpoint = getIssuesApiEndpoint();
+          const curProj = item.project || getSelectedProject();
+          item.project = curProj;
           const res = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "add_issue", issue: item })
+            body: JSON.stringify({ action: "add_issue", issue: item, project: curProj })
           });
           if (res.ok) {
             const json = await res.json();
@@ -8293,7 +8447,9 @@
       ────────────────────────────────────────────────────────────────────────── */
       function generateResultParts() {
         const type = currentType || "HH";
-        const pPrefix = `[NVN-DMS]-[${type}]`;
+        const proj = getSelectedProject();
+        const isNoiBo = typeof normalizeStr === "function" ? normalizeStr(proj).includes("noi bo") : proj.toLowerCase().includes("nội bộ");
+        const pPrefix = isNoiBo ? `[Nội bộ]-[${type}]` : `[${proj}-DMS]-[${type}]`;
 
         let pSolution = "";
         if (currentSolutionObj) {
@@ -8392,7 +8548,10 @@
         );
 
         if (!hasAnyInput) {
-          resultSyntaxDisplay.innerHTML = `<span style="color:#64748b;">[NVN-DMS]-[HH]_Kiểm tra thông tin KHT_NPP Tuan Viet_ADMIN_Hotline 0909280969</span>`;
+          const curProj = getSelectedProject();
+          const curPrefix = (typeof normalizeStr === "function" ? normalizeStr(curProj).includes("noi bo") : curProj.toLowerCase().includes("nội bộ"))
+            ? "[Nội bộ]" : `[${curProj}-DMS]`;
+          resultSyntaxDisplay.innerHTML = `<span style="color:#64748b;">${curPrefix}-[HH]_Kiểm tra thông tin KHT_NPP Tuan Viet_ADMIN_Hotline 0909280969</span>`;
           if (typeof syncInputClearButtons === "function") syncInputClearButtons();
           return;
         }
@@ -8626,6 +8785,7 @@
           if (found && found.code) nppDistCode = found.code;
         }
 
+        const curProj = getSelectedProject();
         const item = {
           id: "note_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6),
           result: text,
@@ -8635,7 +8795,9 @@
           memberCode: currentSelectedMember?.code || "",
           memberName: currentSelectedMember?.name || "",
           distCode: nppDistCode,
+          project: curProj,
           fields: {
+            project: curProj,
             solution: currentSolutionObj?.name || inputSolution.value.trim(),
             solutionCode: currentSolutionObj?.code || "",
             type: currentType,
@@ -10422,7 +10584,7 @@
           // Solution name extraction: ưu tiên parse từ result string (chứa tên đầy đủ)
           let sol = "";
           if (n.result) {
-            const m = n.result.match(/\[NVN-DMS\]-\[[A-Z]+\]_([^_]+)/);
+            const m = n.result.match(/^\[[^\]]+\]-\[[^\]]+\]_([^_]+)/);
             if (m) sol = m[1].trim();
           }
           // Fallback về fields.solution nếu chưa parse được
@@ -10689,7 +10851,7 @@
 
             let sol = "";
             if (n.result) {
-              const m = n.result.match(/\[NVN-DMS\]-\[[A-Z]+\]_([^_]+)/);
+              const m = n.result.match(/^\[[^\]]+\]-\[[^\]]+\]_([^_]+)/);
               if (m) sol = m[1].trim();
             }
             if (!sol) sol = (n.fields?.solution || "").trim();
@@ -13629,7 +13791,8 @@
 
         const tempItem = {
           id: "note_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
-          result: `[NVN-DMS]-[HH]_Hỗ trợ cuộc gọi_NPP..._Hotline ${hotline}`,
+          result: `[${getSelectedProject()}-DMS]-[HH]_Hỗ trợ cuộc gọi_NPP..._Hotline ${hotline}`,
+          project: getSelectedProject(),
           date: dateStr,
           time: timeStr,
           createdAt: Date.now(),
@@ -13757,7 +13920,23 @@
         }
       };
 
+      // Listen for project dropdown changes
+      const headerProjSel = document.getElementById("headerProjectSelect");
+      if (headerProjSel) {
+        headerProjSel.addEventListener("change", (e) => {
+          setSelectedProject(e.target.value);
+        });
+      }
+      window.addEventListener("storage", (e) => {
+        if (e.key === "app_projects_data") {
+          cachedSystemProjects = null;
+          populateHeaderProjects();
+        }
+      });
+
       async function init() {
+        populateHeaderProjects();
+        syncProjectsFromCloud();
         initDateInputs();
         if (typeof updateExcludedPhonesBadge === "function") updateExcludedPhonesBadge();
         if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();

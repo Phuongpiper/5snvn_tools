@@ -84,7 +84,7 @@ function r2Fetch(method, body, objectKey = R2_OBJECT_KEY) {
 /**
  * Trích xuất và định dạng một Issue thành dòng Call Log hợp lệ
  */
-function buildCallLogRow(issue, dtRows = []) {
+function buildCallLogRow(issue, dtRows = [], defaultProject = "") {
   const resultText = String(issue.result || "").trim();
   const dateStr = String(issue.date || "").trim();
 
@@ -127,20 +127,29 @@ function buildCallLogRow(issue, dtRows = []) {
     if (m) hotline = m[1].trim();
   }
 
+  // 4. Project (ưu tiên issue.project, defaultProject, hoặc parse từ resultText)
+  let project = (issue.project || (issue.fields && issue.fields.project) || defaultProject || "").trim();
+  if (!project && resultText) {
+    const m = resultText.match(/^\[([^\]\-]+)/);
+    if (m && m[1]) project = m[1].trim();
+  }
+  if (!project) project = "NVN";
+
   return {
     "Dist code": distCode,
     "User Code": userCode,
     "User code": userCode,
     "Hotline": hotline,
     "Date": dateStr,
-    "Call Details": resultText
+    "Call Details": resultText,
+    "Project": project
   };
 }
 
 /**
  * Ghi nhận một Issue mới vào Call Log trên R2
  */
-async function appendIssueToCallLog(issue) {
+async function appendIssueToCallLog(issue, defaultProject = "") {
   if (!issue || !issue.result) return false;
   try {
     const CALL_LOG_KEY = "dms_call_log.json";
@@ -185,7 +194,7 @@ async function appendIssueToCallLog(issue) {
       } catch (_) {}
     }
 
-    const newRow = buildCallLogRow(issue, dtRows);
+    const newRow = buildCallLogRow(issue, dtRows, defaultProject);
 
     // Chèn lên đầu danh sách để hiển thị mới nhất
     rows.unshift(newRow);
@@ -204,7 +213,7 @@ async function appendIssueToCallLog(issue) {
 /**
  * Đồng bộ danh sách Issue vào Call Log
  */
-async function syncIssuesToCallLog(issuesList) {
+async function syncIssuesToCallLog(issuesList, defaultProject = "") {
   if (!Array.isArray(issuesList) || issuesList.length === 0) return 0;
   try {
     const CALL_LOG_KEY = "dms_call_log.json";
@@ -244,7 +253,7 @@ async function syncIssuesToCallLog(issuesList) {
       });
       if (exists) continue;
 
-      const row = buildCallLogRow(iss, dtRows);
+      const row = buildCallLogRow(iss, dtRows, defaultProject);
       rows.unshift(row);
       addedCount++;
     }
@@ -465,16 +474,17 @@ module.exports = async function handler(req, res) {
         res.setHeader("ETag", etag);
 
         // Nếu là sync_issues -> Đồng bộ tất cả sang Call Log
+        const defaultProj = (bodyData.project || (bodyData.issue && bodyData.issue.project) || "NVN").trim();
         let callLogRecorded = false;
         if (action === "add_issue" && bodyData.issue) {
           try {
-            callLogRecorded = await appendIssueToCallLog(bodyData.issue);
+            callLogRecorded = await appendIssueToCallLog(bodyData.issue, defaultProj);
           } catch (e) {
             console.error("Lỗi khi ghi nhận Call Log:", e);
           }
         } else if (action === "sync_issues") {
           try {
-            const synced = await syncIssuesToCallLog(cleanIssues);
+            const synced = await syncIssuesToCallLog(cleanIssues, defaultProj);
             callLogRecorded = synced > 0;
           } catch (e) {
             console.error("Lỗi khi sync Call Log:", e);
