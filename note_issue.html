@@ -5307,7 +5307,7 @@
       const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbyGQa4TbzVZEkf3IkqktgeZrJdh0pQ2eNLz-9K2_sy_uiDDWeEc6I4J7oCqwLKtY8-a/exec";
       const R2_DT_API_URL = "https://5snvn-tools.vercel.app/api/r2-dt";
       const R2_ISSUES_API_URL = "https://5snvn-tools.vercel.app/api/r2-issues";
-      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V2";
+      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V3";
       const LS_DT_KEY = "DMS_DT_LIST_DATA_V1";
       const LS_TEMP_KEY = "DMS_NOTE_ISSUE_TEMP_V1";
       const LS_CURRENT_MEMBER_KEY = "dms_current_member";
@@ -5421,11 +5421,18 @@
 
       function setSelectedProject(proj) {
         if (!proj) proj = "NVN";
+        const prevProj = (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
         try {
           localStorage.setItem("note_issue_selected_project", proj);
         } catch (_) {}
         const sel = document.getElementById("headerProjectSelect");
         if (sel && sel.value !== proj) sel.value = proj;
+
+        if (proj.toUpperCase() !== prevProj.toUpperCase()) {
+          if (typeof clearSolutionField === "function") clearSolutionField();
+          if (typeof clearNppField === "function") clearNppField();
+          if (typeof loadDtList === "function") loadDtList(false, proj);
+        }
         if (typeof updateResultDisplay === "function") updateResultDisplay();
       }
 
@@ -5659,18 +5666,23 @@
             const list = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
             if (list.length > 0) {
               const valid = list
-                .filter(d => (d.columnB && d.columnB !== "Code") || d.columnE)
+                .filter(d => (d.columnB && d.columnB !== "Code") || d.columnE || d.columnG)
                 .map(d => {
                   const code = String(d.columnB || d.Code || d.code || "").trim();
                   const proj = String(d.project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
-                  const sol = String(d.columnJ || d.columnH || d.Solution || d.solution || "").trim();
+                  // Tên Solution: ưu tiên columnG ("Tài khoản đã khóa..."), fallback columnE ("Admin không đăng nhập...")
+                  const solName = String((d.columnG && d.columnG.trim()) ? d.columnG : (d.columnE || "")).trim();
+                  // Hướng giải quyết / Solution: columnJ (NVN) hoặc columnH (LVN, CPTH)
+                  const solSteps = String(d.columnJ || d.columnH || d.Solution || d.solution || "").trim();
                   return {
                     project: proj,
                     code: code,
                     type: (d.columnD || "").trim().toUpperCase() === "DC" ? "DC" : "HH",
-                    name: String(d.columnE || "").trim(),
-                    issue: String(d.columnG || "").trim(),
-                    solution: sol
+                    name: solName,
+                    issue: String(d.columnG || d.columnE || "").trim(),
+                    solution: solSteps,
+                    rawE: String(d.columnE || "").trim(),
+                    rawG: String(d.columnG || "").trim()
                   };
                 });
               if (valid.length > 0) {
@@ -5691,59 +5703,80 @@
         }
       }
 
-      async function loadDtList(force = false) {
-        if (txtDtStatus) txtDtStatus.textContent = "NPP: Đang nạp...";
+      async function loadDtList(force = false, targetProj = null) {
+        const proj = (targetProj || getSelectedProject() || "NVN").trim().toUpperCase();
+        if (txtDtStatus) txtDtStatus.textContent = `NPP (${proj}): Đang nạp...`;
         if (pillDtStatus) pillDtStatus.classList.remove("active");
 
-        // Read from local DT list
+        let rows = [];
+        // 1. Đọc từ localStorage theo đúng dự án
         try {
-          const raw = localStorage.getItem(LS_DT_KEY);
+          const key = "DMS_DT_LIST_DATA_V1_" + proj;
+          let raw = localStorage.getItem(key);
+          if (!raw && proj === "NVN") {
+            raw = localStorage.getItem("DMS_DT_LIST_DATA_V1");
+          }
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.rows) && parsed.rows.length > 0) {
-              dtList = parsed.rows.map(r => ({
-                code: String(r.col_dt_code || "").trim(),
-                name: String(r.col_npp_name || "").trim(),
-                issueName: String(r.col_issue_name || "").trim(),
-                prefix: String(r.col_prefix || "").trim().toUpperCase()
-              }));
-              if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục`;
-              if (pillDtStatus) pillDtStatus.classList.add("active");
+              rows = parsed.rows;
             }
           }
         } catch (_) { }
 
-        // Fetch Cloud R2 if empty or force
-        if (dtList.length === 0 || force) {
+        // 2. Tải từ Cloud R2 theo đúng dự án nếu chưa có hoặc yêu cầu force
+        if (rows.length === 0 || force) {
           try {
-            const res = await fetch(R2_DT_API_URL + "?t=" + Date.now());
+            const endpoint = `/api/r2-dt?project=${encodeURIComponent(proj)}&t=${Date.now()}`;
+            const res = await fetch(endpoint);
             if (res.ok) {
               const data = await res.json();
               if (data && Array.isArray(data.rows) && data.rows.length > 0) {
-                dtList = data.rows.map(r => ({
-                  code: String(r.col_dt_code || "").trim(),
-                  name: String(r.col_npp_name || "").trim(),
-                  issueName: String(r.col_issue_name || "").trim(),
-                  prefix: String(r.col_prefix || "").trim().toUpperCase()
-                }));
-                if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục`;
-                if (pillDtStatus) pillDtStatus.classList.add("active");
+                rows = data.rows;
+                localStorage.setItem("DMS_DT_LIST_DATA_V1_" + proj, JSON.stringify(data));
               }
             }
           } catch (_) { }
         }
 
-        // Fallback sample
-        if (dtList.length === 0) {
+        // 3. Map vào dtList
+        dtList = rows
+          .filter(r => r.col_dt_code || r.col_npp_name || r.col_issue_name)
+          .map(r => ({
+            code: String(r.col_dt_code || "").trim(),
+            name: String(r.col_npp_name || "").trim(),
+            issueName: String(r.col_issue_name || "").trim(),
+            prefix: String(r.col_prefix || "").trim().toUpperCase(),
+            project: proj
+          }));
+
+        // Fallback mẫu chỉ khi là NVN và không có dữ liệu
+        if (dtList.length === 0 && proj === "NVN") {
           dtList = [
-            { code: "6920259", name: "Cong ty TNHH Thuong Mai Tong Hop Tuan Viet", issueName: "NPP Tuan Viet", prefix: "286G" },
-            { code: "6736235", name: "Cong ty TNHH MTV Van Anh Vinh Long", issueName: "NPP Van Anh", prefix: "278G" },
-            { code: "6243208", name: "Cong ty TNHH DT va TM Dich Vu Phuc Hung", issueName: "NPP Phuc Hung", prefix: "243G" },
-            { code: "6243223", name: "Cong ty TNHH Gia Phat", issueName: "NPP Gia Phat 244", prefix: "244G" }
+            { code: "6920259", name: "Cong ty TNHH Thuong Mai Tong Hop Tuan Viet", issueName: "NPP Tuan Viet", prefix: "286G", project: "NVN" },
+            { code: "6736235", name: "Cong ty TNHH MTV Van Anh Vinh Long", issueName: "NPP Van Anh", prefix: "278G", project: "NVN" },
+            { code: "6243208", name: "Cong ty TNHH DT va TM Dich Vu Phuc Hung", issueName: "NPP Phuc Hung", prefix: "243G", project: "NVN" },
+            { code: "6243223", name: "Cong ty TNHH Gia Phat", issueName: "NPP Gia Phat 244", prefix: "244G", project: "NVN" }
           ];
-          if (txtDtStatus) txtDtStatus.textContent = `NPP: ${dtList.length} mục (Mẫu)`;
-          if (pillDtStatus) pillDtStatus.classList.add("active");
         }
+
+        if (txtDtStatus) txtDtStatus.textContent = `NPP (${proj}): ${dtList.length} mục`;
+        if (pillDtStatus) pillDtStatus.classList.toggle("active", dtList.length > 0);
+      }
+
+      // Lắng nghe BroadcastChannel từ tab Danh sách ĐT khi có thay đổi
+      if (typeof BroadcastChannel !== "undefined") {
+        try {
+          const dtChan = new BroadcastChannel("DMS_DT_SYNC");
+          dtChan.onmessage = (e) => {
+            if (e.data && e.data.type === "DT_UPDATED") {
+              const curProj = getSelectedProject().toUpperCase();
+              if (!e.data.project || e.data.project.toUpperCase() === curProj) {
+                loadDtList(true, curProj);
+              }
+            }
+          };
+        } catch (_) {}
       }
 
       if (typeof BroadcastChannel !== "undefined") {
@@ -7497,14 +7530,13 @@
 
         const q = normalizeStr(val);
         const curProj = (typeof getSelectedProject === "function" ? getSelectedProject() : "NVN").trim().toUpperCase();
-        const matchesWithScore = solutionsList
-          .map(s => {
-            let score = scoreSolution(s, q);
-            if (score > 0 && s.project && s.project.toUpperCase() === curProj) {
-              score += 15; // Boost solution matching active project
-            }
-            return { item: s, score };
-          })
+        
+        // CHỈ GỢI Ý SOLUTION CỦA ĐÚNG DỰ ÁN ĐANG CHỌN
+        const projSolutions = solutionsList.filter(s => (s.project || "NVN").toUpperCase() === curProj);
+        const pool = projSolutions.length > 0 ? projSolutions : solutionsList;
+
+        const matchesWithScore = pool
+          .map(s => ({ item: s, score: scoreSolution(s, q) }))
           .filter(m => m.score > 0)
           .sort((a, b) => b.score - a.score);
 
@@ -14044,7 +14076,7 @@
         if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
         if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
         await loadSolutions();
-        await loadDtList();
+        await loadDtList(false, getSelectedProject());
         // Kiểm tra xem có dữ liệu issue chờ nạp từ Call Log không
         checkPendingPrefillIssue();
         // Tự động tải cuộc gọi mới nhất từ R2 (chạy ngầm, không block giao diện)
