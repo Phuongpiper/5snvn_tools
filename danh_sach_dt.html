@@ -1402,12 +1402,11 @@
     }
 
     /* ── PROJECT TABS FOR DT LIST ── */
+    const SYSTEM_DEFAULT_PROJECTS = ["NVN", "LVN", "CPTH", "FNB", "Nội bộ", "Asian Shine", "Syngenta", "Haleon"];
+
     async function loadDtProjectsAndRenderTabs() {
       const bar = document.getElementById("dtProjectTabBar");
       const loading = document.getElementById("dtTabLoading");
-
-      // Default known projects — always show at minimum
-      const DEFAULT_PROJECTS = ["NVN", "LVN", "CPTH", "FNB", "Nội bộ"];
 
       try {
         let base = "";
@@ -1421,16 +1420,21 @@
         const res = await fetch(tasksApi, { cache: "no-cache" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const json = await res.json();
-        const projects = Array.isArray(json.projects) ? json.projects : (Array.isArray(json) ? json : []);
+        const rawList = Array.isArray(json) ? json : (json.data || json.projects || []);
         if (loading) loading.remove();
-        // Merge API projects with defaults (API takes priority, then add any missing defaults)
-        const apiNames = projects.map(p => (typeof p === "string" ? p : p.name)).filter(Boolean);
-        const merged = [...apiNames];
-        DEFAULT_PROJECTS.forEach(n => { if (!merged.includes(n)) merged.push(n); });
-        renderDtProjectTabs(bar, merged);
+        
+        let apiNames = rawList.map(p => (typeof p === "string" ? p : p.name)).filter(Boolean);
+        if (apiNames.length === 0) apiNames = [...SYSTEM_DEFAULT_PROJECTS];
+        
+        // Ensure defaults are present
+        SYSTEM_DEFAULT_PROJECTS.forEach(n => {
+          if (!apiNames.includes(n)) apiNames.push(n);
+        });
+
+        renderDtProjectTabs(bar, apiNames);
       } catch (e) {
         if (loading) loading.remove();
-        renderDtProjectTabs(bar, DEFAULT_PROJECTS);
+        renderDtProjectTabs(bar, SYSTEM_DEFAULT_PROJECTS);
       }
     }
 
@@ -1448,20 +1452,34 @@
         bar.appendChild(tab);
       });
 
-      // Add "+" button to add custom project tab
+      // Add "+" button to add custom project tab & persist to system
       const addBtn = document.createElement("button");
       addBtn.className = "dt-project-tab";
       addBtn.innerHTML = `<i class="fa-solid fa-plus" style="font-size:11px;"></i> Thêm dự án`;
-      addBtn.title = "Thêm tab dự án mới";
+      addBtn.title = "Thêm dự án mới vào hệ thống";
       addBtn.style.cssText = "color:var(--primary); border-style:dashed; margin-left:4px;";
-      addBtn.onclick = () => {
-        const newName = prompt("Nhập tên dự án mới (VD: LVN, CPTH, Asian Shine...):");
+      addBtn.onclick = async () => {
+        const newName = prompt("Nhập tên dự án mới cần thêm vào hệ thống (VD: LVN, CPTH, Asian Shine...):");
         if (!newName || !newName.trim()) return;
         const trimmed = newName.trim();
         if (names.includes(trimmed)) {
           switchDtProject(trimmed);
           return;
         }
+
+        // Save to system project management API
+        try {
+          let base = "";
+          if (window.location.protocol === "file:") base = "https://5snvn-tools.vercel.app";
+          await fetch(base + "/api/r2-tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "add_project", name: trimmed })
+          });
+        } catch (err) {
+          console.warn("Lưu dự án mới lên đám mây lỗi:", err);
+        }
+
         names.push(trimmed);
         renderDtProjectTabs(bar, names);
         switchDtProject(trimmed);
@@ -1704,7 +1722,7 @@
           localStorage.setItem("r2_dt_etag_" + currentDtProject.toUpperCase(), newEtag);
         }
         const data = await res.json();
-        if (data && Array.isArray(data.rows) && data.rows.length > 0) {
+        if (data && Array.isArray(data.rows)) {
           const currentJson = JSON.stringify(dtData);
           const incomingJson = JSON.stringify({ columns: data.columns || dtData.columns, rows: data.rows });
           if (currentJson !== incomingJson) {
@@ -1727,8 +1745,9 @@
               scrollArea.scrollLeft = prevLeft;
             }
           }
-        } else if (data && (data.status === "not_found" || !data.rows || data.rows.length === 0)) {
-          if (dtData && Array.isArray(dtData.rows) && dtData.rows.length > 0) {
+        } else if (data && data.status === "not_found") {
+          // Only push default sample data for NVN if it was never created on cloud
+          if (currentDtProject === "NVN" && dtData && Array.isArray(dtData.rows) && dtData.rows.length > 0) {
             pushDtToCloud();
           }
         }
@@ -2134,8 +2153,9 @@
       if (e) e.stopPropagation();
       const row = dtData.rows.find(r => r.id === rowId);
       if (row && row.locked) {
-        toast("Dòng này đang bị khoá, không thể xoá!", "warning");
-        return;
+        if (!confirm("Dòng này đang bị khoá. Bạn có chắc chắn muốn xoá không?")) {
+          return;
+        }
       }
       dtData.rows = dtData.rows.filter(r => r.id !== rowId);
       selectedRowIds.delete(rowId);
@@ -2822,12 +2842,16 @@
     function deleteSelectedRows() {
       if (selectedRowIds.size === 0) return;
       const count = selectedRowIds.size;
-      if (confirm(`Bạn có chắc chắn muốn xoá ${count} dòng đã chọn không?`)) {
-        dtData.rows = dtData.rows.filter(r => !selectedRowIds.has(r.id) || r.locked);
+      const hasLocked = dtData.rows.some(r => selectedRowIds.has(r.id) && r.locked);
+      const confirmMsg = hasLocked
+        ? `Bạn có chắc chắn muốn xoá ${count} dòng đã chọn (bao gồm các dòng đang bị khoá)?`
+        : `Bạn có chắc chắn muốn xoá ${count} dòng đã chọn không?`;
+      if (confirm(confirmMsg)) {
+        dtData.rows = dtData.rows.filter(r => !selectedRowIds.has(r.id));
         selectedRowIds.clear();
         saveState(true);
         renderTableBody();
-        toast(`Đã xoá các dòng đã chọn`, "info");
+        toast(`Đã xoá ${count} dòng đã chọn`, "info");
       }
     }
 

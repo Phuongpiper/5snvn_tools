@@ -89,6 +89,17 @@ const CORS = {
 };
 
 // Đọc dữ liệu hiện tại từ R2, fallback về object trống nếu chưa có hoặc lỗi
+const DEFAULT_SYSTEM_PROJECTS = [
+  { name: 'NVN', system: 'DMS1' },
+  { name: 'LVN', system: 'DMS' },
+  { name: 'CPTH', system: 'FPIT' },
+  { name: 'FNB', system: '' },
+  { name: 'Nội bộ', system: '' },
+  { name: 'Asian Shine', system: '' },
+  { name: 'Syngenta', system: '' },
+  { name: 'Haleon', system: '' }
+];
+
 async function getTasksData() {
   const getR = await r2Fetch("GET", "");
   if (getR.statusCode === 200) {
@@ -101,10 +112,10 @@ async function getTasksData() {
       return {
         tasks: data.tasks || [],
         members: members,
-        projects: data.projects || []
+        projects: (data.projects && data.projects.length > 0) ? data.projects : DEFAULT_SYSTEM_PROJECTS
       };
     } catch (e) {
-      return { tasks: [], members: [], projects: [] };
+      return { tasks: [], members: [], projects: DEFAULT_SYSTEM_PROJECTS };
     }
   }
   return { tasks: [], members: [], projects: [] };
