@@ -5304,10 +5304,10 @@
       }
 
       // API & Keys
-      const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbx3m2eFrfAh4xQpGCCdxxnq0ZRPHLCpJ1Xq9RfVcGgz83jivaL-OpnlFm8gOFaQuM1D/exec";
+      const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbyGQa4TbzVZEkf3IkqktgeZrJdh0pQ2eNLz-9K2_sy_uiDDWeEc6I4J7oCqwLKtY8-a/exec";
       const R2_DT_API_URL = "https://5snvn-tools.vercel.app/api/r2-dt";
       const R2_ISSUES_API_URL = "https://5snvn-tools.vercel.app/api/r2-issues";
-      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V1";
+      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V2";
       const LS_DT_KEY = "DMS_DT_LIST_DATA_V1";
       const LS_TEMP_KEY = "DMS_NOTE_ISSUE_TEMP_V1";
       const LS_CURRENT_MEMBER_KEY = "dms_current_member";
@@ -5656,16 +5656,23 @@
           const res = await fetch(SOLUTIONS_API_URL, { cache: "no-cache" });
           if (res.ok) {
             const data = await res.json();
-            if (Array.isArray(data)) {
-              const valid = data
-                .filter(d => d.columnB && d.columnB !== "Code" && d.columnE)
-                .map(d => ({
-                  code: String(d.columnB || "").trim(),
-                  type: (d.columnD || "").trim().toUpperCase() === "DC" ? "DC" : "HH",
-                  name: String(d.columnE || "").trim(),
-                  issue: String(d.columnG || "").trim(),
-                  solution: String(d.columnJ || "").trim()
-                }));
+            const list = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+            if (list.length > 0) {
+              const valid = list
+                .filter(d => (d.columnB && d.columnB !== "Code") || d.columnE)
+                .map(d => {
+                  const code = String(d.columnB || d.Code || d.code || "").trim();
+                  const proj = String(d.project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
+                  const sol = String(d.columnJ || d.columnH || d.Solution || d.solution || "").trim();
+                  return {
+                    project: proj,
+                    code: code,
+                    type: (d.columnD || "").trim().toUpperCase() === "DC" ? "DC" : "HH",
+                    name: String(d.columnE || "").trim(),
+                    issue: String(d.columnG || "").trim(),
+                    solution: sol
+                  };
+                });
               if (valid.length > 0) {
                 solutionsList = valid;
                 localStorage.setItem(LS_SOLUTIONS_KEY, JSON.stringify(valid));
@@ -7489,26 +7496,40 @@
         }
 
         const q = normalizeStr(val);
+        const curProj = (typeof getSelectedProject === "function" ? getSelectedProject() : "NVN").trim().toUpperCase();
         const matchesWithScore = solutionsList
-          .map(s => ({ item: s, score: scoreSolution(s, q) }))
+          .map(s => {
+            let score = scoreSolution(s, q);
+            if (score > 0 && s.project && s.project.toUpperCase() === curProj) {
+              score += 15; // Boost solution matching active project
+            }
+            return { item: s, score };
+          })
           .filter(m => m.score > 0)
           .sort((a, b) => b.score - a.score);
 
-        const matches = matchesWithScore.map(m => m.item).slice(0, 10);
+        const matches = matchesWithScore.map(m => m.item).slice(0, 12);
         currentSolutionMatches = matches;
 
         if (matches.length > 0) {
           dropdownSolution.innerHTML = matches
             .map(
-              (m, idx) => `
+              (m, idx) => {
+                const proj = (m.project || "NVN").toUpperCase();
+                const projBadgeStyle = proj === "NVN" ? "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;" : proj === "LVN" ? "background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;" : "background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;";
+                return `
             <div class="ac-studio-item" data-idx="${idx}" data-code="${escapeHTML(m.code)}">
               <div>
-                <div class="ac-title">${escapeHTML(m.name)}</div>
+                <div class="ac-title" style="display:flex;align-items:center;gap:6px;">
+                  <span style="${projBadgeStyle}font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;">${escapeHTML(proj)}</span>
+                  <span>${escapeHTML(m.name)}</span>
+                </div>
                 <div class="ac-desc">${escapeHTML(m.code)} · ${escapeHTML(m.issue || '')}</div>
               </div>
-              <span class="ac-tag ${m.type.toLowerCase()}">${m.type}</span>
+              <span class="ac-tag ${(m.type || 'HH').toLowerCase()}">${m.type || 'HH'}</span>
             </div>
-          `
+          `;
+              }
             )
             .join("");
           dropdownSolution.style.display = "block";

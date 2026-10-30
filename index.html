@@ -1,381 +1,2193 @@
 <!doctype html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DMS Hub - Operations & Support Portal</title>
-    <!-- Google Font: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <style>
-      * { box-sizing: border-box; }
-      html, body { height: 100%; overflow: hidden; }
-      body {
-        margin: 0;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background: #f0f4f8;
-        color: #0f172a;
-        -webkit-font-smoothing: antialiased;
-      }
 
-      /* ═══════════════════════════════════════════════════════
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DMS Hub - Operations & Support Portal</title>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f4f8;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════════════════════════
          SHELL – flex row: sidebar | main-content
       ═══════════════════════════════════════════════════════ */
-      .shell {
-        display: flex;
-        flex-direction: row;
-        height: 100vh;
-        overflow: hidden;
-      }
+    .shell {
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-      /* ═══════════════════════════════════════════════════════
+    /* ═══════════════════════════════════════════════════════
          LEFT SIDEBAR
       ═══════════════════════════════════════════════════════ */
-      .sidebar {
-        width: 220px;
-        min-width: 220px;
-        height: 100vh;
-        background: #0f1929;
-        display: flex;
-        flex-direction: column;
-        position: fixed;
-        left: 0;
-        top: 0;
-        z-index: 1100;
-        transition: width 0.22s cubic-bezier(0.4,0,0.2,1),
-                    transform 0.22s cubic-bezier(0.4,0,0.2,1);
-        overflow: hidden;
-        box-shadow: 2px 0 16px rgba(0,0,0,0.18);
-      }
-      .sidebar.collapsed {
-        width: 60px;
-        min-width: 60px;
-      }
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      height: 100vh;
+      background: #0f1929;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1100;
+      transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
+    }
 
-      /* ── Sidebar Header (Brand) ── */
-      .sb-header {
-        padding: 18px 14px 14px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border-bottom: 1px solid rgba(255,255,255,0.07);
-        min-height: 64px;
-        flex-shrink: 0;
-      }
-      .sb-logo {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fff;
-        font-size: 15px;
-        flex-shrink: 0;
-        box-shadow: 0 2px 8px rgba(59,130,246,0.35);
-        transition: transform 0.2s ease;
-      }
-      .sb-logo:hover { transform: scale(1.05); }
-      .sb-brand-text {
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-        overflow: hidden;
-        white-space: nowrap;
+    .sidebar.collapsed {
+      width: 60px;
+      min-width: 60px;
+    }
+
+    /* ── Sidebar Header (Brand) ── */
+    .sb-header {
+      padding: 18px 14px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      min-height: 64px;
+      flex-shrink: 0;
+    }
+
+    .sb-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 15px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+      transition: transform 0.2s ease;
+    }
+
+    .sb-logo:hover {
+      transform: scale(1.05);
+    }
+
+    .sb-brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      overflow: hidden;
+      white-space: nowrap;
+      opacity: 1;
+      transition: opacity 0.18s ease;
+    }
+
+    .sb-brand-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .sb-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-radius: 999px;
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      width: fit-content;
+    }
+
+    .sb-badge-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulseDot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes pulseDot {
+
+      0%,
+      100% {
         opacity: 1;
-        transition: opacity 0.18s ease;
-      }
-      .sb-brand-name {
-        font-size: 14px;
-        font-weight: 700;
-        color: #f1f5f9;
-        letter-spacing: -0.02em;
-        line-height: 1;
-      }
-      .sb-brand-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 10px;
-        font-weight: 700;
-        padding: 2px 7px;
-        background: rgba(16,185,129,0.15);
-        color: #34d399;
-        border-radius: 999px;
-        border: 1px solid rgba(52,211,153,0.25);
-        letter-spacing: 0.04em;
-        line-height: 1;
-        width: fit-content;
-      }
-      .sb-badge-dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: #10b981;
-        animation: pulseDot 2s cubic-bezier(0.4,0,0.6,1) infinite;
-      }
-      @keyframes pulseDot {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.35; transform: scale(0.8); }
+        transform: scale(1);
       }
 
-      /* ── Sidebar Nav ── */
-      .sb-nav {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding: 10px 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255,255,255,0.08) transparent;
+      50% {
+        opacity: 0.35;
+        transform: scale(0.8);
       }
-      .sb-nav::-webkit-scrollbar { width: 4px; }
-      .sb-nav::-webkit-scrollbar-track { background: transparent; }
-      .sb-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+    }
 
-      .sb-section-label {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: rgba(148,163,184,0.55);
-        padding: 10px 10px 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        transition: opacity 0.18s ease;
-      }
+    /* ── Sidebar Nav ── */
+    .sb-nav {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+    }
 
-      .tab-button {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 10px;
-        border-radius: 9px;
-        border: none;
-        background: transparent;
-        color: rgba(148,163,184,0.85);
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        text-align: left;
-        white-space: nowrap;
-        overflow: hidden;
-        width: 100%;
-        position: relative;
-        transition: all 0.16s cubic-bezier(0.4,0,0.2,1);
-        font-family: inherit;
-        letter-spacing: -0.01em;
-        flex-shrink: 0;
-        min-width: 0;
-      }
-      .tab-button i {
-        font-size: 14px;
-        width: 18px;
-        text-align: center;
-        flex-shrink: 0;
-        color: rgba(148,163,184,0.65);
-        transition: color 0.16s ease;
-      }
-      .tab-btn-label {
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        opacity: 1;
-        transition: opacity 0.18s ease;
-      }
-      .tab-button:hover {
-        background: rgba(255,255,255,0.07);
-        color: #f1f5f9;
-      }
-      .tab-button:hover i { color: #60a5fa; }
-      .tab-button.active {
-        background: rgba(59,130,246,0.18) !important;
-        color: #93c5fd !important;
-        font-weight: 600;
-      }
-      .tab-button.active i { color: #60a5fa !important; }
-      .tab-button.active::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 60%;
-        background: #3b82f6;
-        border-radius: 0 3px 3px 0;
-      }
-      .tab-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #f87171;
-        flex-shrink: 0;
-        margin-left: auto;
-        display: block;
-      }
+    .sb-nav::-webkit-scrollbar {
+      width: 4px;
+    }
 
-      /* ── More / Overflow Section ── */
-      .sb-more-section {
-        border-top: 1px solid rgba(255,255,255,0.07);
-        padding: 6px 8px;
-        flex-shrink: 0;
-      }
-      .sb-more-toggle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 9px 10px;
-        border-radius: 9px;
-        border: none;
-        background: transparent;
-        color: rgba(148,163,184,0.7);
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-        text-align: left;
-        white-space: nowrap;
-        width: 100%;
-        transition: all 0.16s ease;
-        font-family: inherit;
-        letter-spacing: 0.01em;
-      }
-      .sb-more-toggle i { font-size: 13px; width: 18px; text-align: center; flex-shrink: 0; color: rgba(148,163,184,0.55); }
-      .sb-more-toggle:hover { background: rgba(255,255,255,0.07); color: #e2e8f0; }
-      .sb-more-chevron {
-        margin-left: auto;
-        font-size: 10px;
-        color: rgba(148,163,184,0.4);
-        transition: transform 0.2s ease;
-        flex-shrink: 0;
-      }
-      .sb-more-toggle.open .sb-more-chevron { transform: rotate(180deg); }
-      .sb-more-label {
-        opacity: 1;
-        transition: opacity 0.18s ease;
-      }
-      .sb-more-content {
-        display: none;
-        flex-direction: column;
-        gap: 2px;
-        padding: 2px 0 4px;
-      }
-      .sb-more-content.open { display: flex; }
+    .sb-nav::-webkit-scrollbar-track {
+      background: transparent;
+    }
 
-      /* ── Sidebar Bottom ── */
-      .sb-bottom {
-        border-top: 1px solid rgba(255,255,255,0.07);
-        padding: 8px;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        flex-shrink: 0;
-      }
-      .sb-icon-btn {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: none;
-        background: transparent;
-        color: rgba(148,163,184,0.7);
-        font-size: 12.5px;
-        font-weight: 500;
-        cursor: pointer;
-        text-align: left;
-        width: 100%;
-        transition: all 0.15s ease;
-        font-family: inherit;
-        white-space: nowrap;
-        overflow: hidden;
-      }
-      .sb-icon-btn i { font-size: 13px; width: 18px; text-align: center; flex-shrink: 0; }
-      .sb-icon-btn:hover { background: rgba(255,255,255,0.07); color: #e2e8f0; }
-      .sb-icon-btn span {
-        opacity: 1;
-        transition: opacity 0.18s ease;
-        overflow: hidden;
-        white-space: nowrap;
-      }
+    .sb-nav::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
 
-      /* collapse toggle */
-      .sb-collapse-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: none;
-        background: rgba(255,255,255,0.05);
-        color: rgba(148,163,184,0.65);
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        width: 100%;
-        transition: all 0.15s ease;
-        font-family: inherit;
-        margin-top: 2px;
-      }
-      .sb-collapse-btn:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
-      .sb-collapse-btn i { font-size: 12px; transition: transform 0.2s ease; }
-      .sb-collapse-label {
-        font-size: 12px;
-        opacity: 1;
-        transition: opacity 0.18s ease;
-        white-space: nowrap;
-      }
+    .sb-section-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(148, 163, 184, 0.55);
+      padding: 10px 10px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity 0.18s ease;
+    }
 
-      /* ═══════════════════════════════════════════════════════
+    .tab-button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: rgba(148, 163, 184, 0.85);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      width: 100%;
+      position: relative;
+      transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: inherit;
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+
+    .tab-button i {
+      font-size: 14px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+      color: rgba(148, 163, 184, 0.65);
+      transition: color 0.16s ease;
+    }
+
+    .tab-btn-label {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      opacity: 1;
+      transition: opacity 0.18s ease;
+    }
+
+    .tab-button:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #f1f5f9;
+    }
+
+    .tab-button:hover i {
+      color: #60a5fa;
+    }
+
+    .tab-button.active {
+      background: rgba(59, 130, 246, 0.18) !important;
+      color: #93c5fd !important;
+      font-weight: 600;
+    }
+
+    .tab-button.active i {
+      color: #60a5fa !important;
+    }
+
+    .tab-button.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 60%;
+      background: #3b82f6;
+      border-radius: 0 3px 3px 0;
+    }
+
+    .tab-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f87171;
+      flex-shrink: 0;
+      margin-left: auto;
+      display: block;
+    }
+
+    /* ── More / Overflow Section ── */
+    .sb-more-section {
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 6px 8px;
+      flex-shrink: 0;
+    }
+
+    .sb-more-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: rgba(148, 163, 184, 0.7);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      white-space: nowrap;
+      width: 100%;
+      transition: all 0.16s ease;
+      font-family: inherit;
+      letter-spacing: 0.01em;
+    }
+
+    .sb-more-toggle i {
+      font-size: 13px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+      color: rgba(148, 163, 184, 0.55);
+    }
+
+    .sb-more-toggle:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #e2e8f0;
+    }
+
+    .sb-more-chevron {
+      margin-left: auto;
+      font-size: 10px;
+      color: rgba(148, 163, 184, 0.4);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .sb-more-toggle.open .sb-more-chevron {
+      transform: rotate(180deg);
+    }
+
+    .sb-more-label {
+      opacity: 1;
+      transition: opacity 0.18s ease;
+    }
+
+    .sb-more-content {
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      padding: 2px 0 4px;
+    }
+
+    .sb-more-content.open {
+      display: flex;
+    }
+
+    /* ── Sidebar Bottom ── */
+    .sb-bottom {
+      border-top: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+
+    .sb-icon-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: rgba(148, 163, 184, 0.7);
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .sb-icon-btn i {
+      font-size: 13px;
+      width: 18px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .sb-icon-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #e2e8f0;
+    }
+
+    .sb-icon-btn span {
+      opacity: 1;
+      transition: opacity 0.18s ease;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    /* collapse toggle */
+    .sb-collapse-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(148, 163, 184, 0.65);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      margin-top: 2px;
+    }
+
+    .sb-collapse-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+    }
+
+    .sb-collapse-btn i {
+      font-size: 12px;
+      transition: transform 0.2s ease;
+    }
+
+    .sb-collapse-label {
+      font-size: 12px;
+      opacity: 1;
+      transition: opacity 0.18s ease;
+      white-space: nowrap;
+    }
+
+    /* ═══════════════════════════════════════════════════════
          MASTER COLLAPSED SIDEBAR RULES (60px)
       ═══════════════════════════════════════════════════════ */
-      .sidebar.collapsed {
+    .sidebar.collapsed {
+      width: 60px;
+      min-width: 60px;
+    }
+
+    .sidebar.collapsed .sb-header {
+      padding: 14px 0;
+      justify-content: center;
+    }
+
+    .sidebar.collapsed .sb-brand-text,
+    .sidebar.collapsed .sb-section-label,
+    .sidebar.collapsed .tab-btn-label,
+    .sidebar.collapsed .sb-more-label,
+    .sidebar.collapsed .sb-more-chevron,
+    .sidebar.collapsed .sb-collapse-label,
+    .sidebar.collapsed .sb-icon-btn span {
+      display: none !important;
+    }
+
+    .sidebar.collapsed .tab-button {
+      justify-content: center !important;
+      padding: 10px 0 !important;
+      width: 100% !important;
+      position: relative !important;
+    }
+
+    .sidebar.collapsed .tab-button i {
+      margin: 0 !important;
+      font-size: 15px !important;
+      width: 20px !important;
+      text-align: center !important;
+    }
+
+    .sidebar.collapsed .tab-button.active::before {
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 22px;
+      border-radius: 0 3px 3px 0;
+    }
+
+    .sidebar.collapsed .tab-dot {
+      position: absolute !important;
+      top: 6px !important;
+      right: 14px !important;
+      margin: 0 !important;
+      width: 6px !important;
+      height: 6px !important;
+      border: 1.5px solid #0f1929;
+      border-radius: 50%;
+    }
+
+    .sidebar.collapsed .sb-more-section {
+      padding: 6px 0;
+    }
+
+    .sidebar.collapsed .sb-more-toggle {
+      justify-content: center !important;
+      padding: 10px 0 !important;
+      width: 100% !important;
+    }
+
+    .sidebar.collapsed .sb-more-toggle i {
+      margin: 0 !important;
+      font-size: 14px !important;
+      width: 20px !important;
+      text-align: center !important;
+    }
+
+    .sidebar.collapsed .sb-more-content {
+      display: none !important;
+    }
+
+    .sidebar.collapsed .sb-bottom {
+      padding: 10px 6px 12px;
+      align-items: center;
+    }
+
+    .sidebar.collapsed .sb-icon-btn {
+      justify-content: center !important;
+      padding: 10px 0 !important;
+      width: 100% !important;
+    }
+
+    .sidebar.collapsed .sb-icon-btn i {
+      margin: 0 !important;
+      font-size: 15px !important;
+      width: 20px !important;
+      text-align: center !important;
+    }
+
+    .sidebar.collapsed .sb-collapse-btn {
+      justify-content: center !important;
+      padding: 10px 0 !important;
+      width: 100% !important;
+    }
+
+    .sidebar.collapsed .sb-collapse-label {
+      display: none !important;
+    }
+
+    .sidebar.collapsed .sb-collapse-btn i {
+      margin: 0 !important;
+      font-size: 13px !important;
+      transform: rotate(180deg) !important;
+      color: #94a3b8 !important;
+      display: inline-block !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+         MAIN CONTENT AREA
+      ═══════════════════════════════════════════════════════ */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      margin-left: 220px;
+      transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .main-content.sidebar-collapsed {
+      margin-left: 60px;
+    }
+
+    /* ── Workspace Top Header ── */
+    .workspace-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0 18px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      z-index: 100;
+    }
+
+    .workspace-title {
+      flex: 1;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .workspace-title i {
+      font-size: 13px;
+      color: #3b82f6;
+      flex-shrink: 0;
+    }
+
+    .workspace-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .wh-icon-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .wh-icon-btn:hover,
+    .wh-icon-btn.active {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #e2e8f0;
+    }
+
+    .wh-icon-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Sync Button – standalone, mandatory far right */
+    .top-sync-btn {
+      background: #2563eb;
+      border: none;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+      cursor: pointer;
+      display: inline-flex !important;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25), 0 2px 6px rgba(37, 99, 235, 0.15);
+      font-family: inherit;
+      white-space: nowrap;
+      flex-shrink: 0 !important;
+      user-select: none;
+    }
+
+    .top-sync-btn:hover {
+      background: #1d4ed8;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+      transform: translateY(-0.5px);
+    }
+
+    .top-sync-btn:active {
+      transform: scale(0.97);
+    }
+
+    .top-sync-btn i {
+      font-size: 13px;
+      color: #fff;
+      transition: transform 0.25s ease;
+    }
+
+    .top-sync-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ── Tab frames ── */
+    .tab-frame {
+      border: 0;
+      display: none;
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+
+    .tab-frame.active {
+      display: block;
+    }
+
+    .frame-area {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+         DROPDOWN COMPONENTS (Search, Bell, Upcoming, Apps)
+      ═══════════════════════════════════════════════════════ */
+    @keyframes dropdownSlideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Search */
+    .search-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .search-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+      z-index: 10001;
+      padding: 10px;
+      animation: dropdownSlideDown 0.15s ease-out;
+    }
+
+    .search-dropdown.show {
+      display: block;
+    }
+
+    .search-input-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0 10px;
+      height: 38px;
+      transition: all 0.15s ease;
+    }
+
+    .search-input-box:focus-within {
+      border-color: #2563eb;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .search-input-box input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      font-size: 13px;
+      font-family: inherit;
+      color: #0f172a;
+    }
+
+    .search-esc-hint {
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      background: #f1f5f9;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Notifications group */
+    .topbar-notif-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Upcoming Tasks */
+    .upcoming-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .upcoming-btn {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #6366f1;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.16s ease;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .upcoming-btn:hover {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: #4f46e5;
+      transform: translateY(-0.5px);
+    }
+
+    .upcoming-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #6366f1;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 999px;
+      min-width: 15px;
+      height: 15px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      border: 1.5px solid #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      font-family: 'Inter', sans-serif;
+      line-height: 1;
+    }
+
+    .upcoming-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 410px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.08);
+      z-index: 10001;
+      overflow: hidden;
+    }
+
+    .upcoming-dropdown.show {
+      display: block;
+    }
+
+    .upcoming-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #f3f4f6;
+      background: #f8fafc;
+    }
+
+    .upcoming-hdr h4 {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .upcoming-count-badge {
+      background: #e0e7ff;
+      color: #4338ca;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+
+    .upcoming-list {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .upcoming-item {
+      display: flex;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background-color 0.15s;
+      text-decoration: none;
+      color: inherit;
+      align-items: flex-start;
+    }
+
+    .upcoming-item:last-child {
+      border-bottom: none;
+    }
+
+    .upcoming-item:hover {
+      background-color: #f8fafc;
+    }
+
+    .upcoming-time-box {
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      color: #6366f1;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      min-width: 58px;
+    }
+
+    .upcoming-time-box i {
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    .upcoming-item-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .upcoming-item-title {
+      font-weight: 600;
+      font-size: 13.5px;
+      color: #1f2937;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .upcoming-item-note {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .upcoming-item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: #6b7280;
+    }
+
+    .upcoming-empty {
+      padding: 32px 20px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 13.5px;
+    }
+
+    /* Bell */
+    .bell-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .bell-btn {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #059669;
+      cursor: pointer;
+      padding: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.16s ease;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .bell-btn:hover {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #047857;
+      transform: translateY(-0.5px);
+    }
+
+    .bell-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 999px;
+      min-width: 15px;
+      height: 15px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0 3px;
+      border: 1.5px solid #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      font-family: 'Inter', sans-serif;
+      line-height: 1;
+    }
+
+    .bell-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      width: 400px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.08);
+      z-index: 10001;
+      overflow: hidden;
+    }
+
+    .bell-dropdown.show {
+      display: block;
+    }
+
+    .bell-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid #f3f4f6;
+      background: #f8fafc;
+    }
+
+    .bell-hdr h4 {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .bell-mark-all {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .bell-mark-all:hover {
+      text-decoration: underline;
+    }
+
+    .bell-list {
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    .bell-item {
+      display: flex;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background-color 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .bell-item:last-child {
+      border-bottom: none;
+    }
+
+    .bell-item:hover {
+      background-color: #f1f5f9;
+    }
+
+    .bell-item.unread {
+      background-color: #eff6ff;
+    }
+
+    .bell-item-icon {
+      font-size: 19px;
+      margin-top: 2px;
+    }
+
+    .bell-item-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bell-item-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1f2937;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .bell-item-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .bell-item-p-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 800;
+      font-size: 10.5px;
+    }
+
+    .bell-item-p-badge.p1 {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    .bell-item-p-badge.p2 {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .bell-item-p-badge.p3 {
+      background: #ede9fe;
+      color: #4c1d95;
+    }
+
+    .bell-empty {
+      padding: 28px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 13.5px;
+    }
+
+    /* Utilities Dropdown */
+    .utilities-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .utilities-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 260px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+      z-index: 10001;
+      padding: 8px;
+      overflow: hidden;
+      animation: dropdownSlideDown 0.15s ease-out;
+    }
+
+    .utilities-dropdown.show {
+      display: block;
+    }
+
+    .util-dropdown-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      padding: 6px 10px 4px;
+    }
+
+    .util-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .util-menu-item:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .util-menu-item i {
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+    }
+
+    .util-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 6px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+         GLOBAL PRIORITY TOAST SYSTEM
+      ═══════════════════════════════════════════════════════ */
+    #gNotifyBox {
+      position: fixed;
+      bottom: 26px;
+      left: 26px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 12px;
+      max-width: 432px;
+    }
+
+    .g-toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: #1e1b4b;
+      color: #f0f4ff;
+      padding: 16px 20px;
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, .28);
+      font-size: 16px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      line-height: 1.5;
+      max-width: 432px;
+      opacity: 0;
+      transform: translateX(-28px);
+      animation: gSlideIn .3s forwards, gFadeOut .35s 6.65s forwards;
+      pointer-events: none;
+    }
+
+    .g-toast-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .g-toast-body {
+      flex: 1;
+    }
+
+    .g-toast-priority {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .g-toast.p1 {
+      border-left: 5px solid #ef4444;
+    }
+
+    .g-toast.p1 .g-toast-priority {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .g-toast.p2 {
+      border-left: 5px solid #f59e0b;
+    }
+
+    .g-toast.p2 .g-toast-priority {
+      background: #f59e0b;
+      color: #1f2937;
+    }
+
+    .g-toast.p3 {
+      border-left: 5px solid #8b5cf6;
+    }
+
+    .g-toast.p3 .g-toast-priority {
+      background: #8b5cf6;
+      color: #fff;
+    }
+
+    .g-toast-title {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    .g-toast-sub {
+      font-size: 14px;
+      color: #a5b4fc;
+    }
+
+    @keyframes gSlideIn {
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes gFadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(-16px);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+         MODAL SYSTEM (Settings / Auth / Projects / Members)
+      ═══════════════════════════════════════════════════════ */
+    .settings-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 20000;
+      padding: 16px;
+      animation: fadeInOverlay 0.18s ease-out;
+    }
+
+    @keyframes fadeInOverlay {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Auth Card */
+    .settings-auth-card {
+      background: #fff;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25);
+      padding: 28px 24px;
+      text-align: center;
+      animation: scaleInCard 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes scaleInCard {
+      from {
+        transform: scale(0.92) translateY(10px);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .settings-auth-card.shake {
+      animation: authShake 0.4s ease-in-out;
+    }
+
+    @keyframes authShake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20%,
+      60% {
+        transform: translateX(-9px);
+      }
+
+      40%,
+      80% {
+        transform: translateX(9px);
+      }
+    }
+
+    .auth-icon-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+      color: #4f46e5;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+    }
+
+    .auth-card-header h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .auth-card-header p {
+      margin: 0 0 20px;
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .auth-input-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .auth-input-icon {
+      position: absolute;
+      left: 14px;
+      color: #94a3b8;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .auth-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 42px 0 40px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 14.5px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.18s ease;
+      background: #f8fafc;
+      ime-mode: disabled;
+    }
+
+    .auth-input:focus {
+      border-color: #4f46e5;
+      background: #fff;
+      box-shadow: 0 0 0 3.5px rgba(79, 70, 229, 0.15);
+    }
+
+    .auth-eye-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+
+    .auth-eye-btn:hover {
+      color: #475569;
+    }
+
+    .auth-error-msg {
+      color: #ef4444;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      animation: fadeInOverlay 0.15s ease;
+    }
+
+    .auth-card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .btn-auth-cancel {
+      flex: 1;
+      height: 40px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #475569;
+      font-size: 13.5px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-auth-cancel:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .btn-auth-submit {
+      flex: 1.3;
+      height: 40px;
+      border: none;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+      transition: all 0.15s ease;
+    }
+
+    .btn-auth-submit:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+    }
+
+    /* Config Modal Card */
+    .settings-config-card {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.3);
+      display: flex;
+      flex-direction: column;
+      max-height: 88vh;
+      overflow: hidden;
+      animation: scaleInCard 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .config-card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+    }
+
+    .config-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .config-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+      color: #4f46e5;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .config-card-header h3 {
+      margin: 0 0 3px;
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .config-card-header p {
+      margin: 0;
+      font-size: 12.5px;
+      color: #64748b;
+    }
+
+    .config-close-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+    }
+
+    .config-close-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .config-toolbar {
+      padding: 12px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .config-stat {
+      font-size: 12.5px;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .config-stat strong {
+      color: #4f46e5;
+    }
+
+    .config-quick-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-quick-action {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-quick-action:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+
+    .config-tabs-list {
+      padding: 14px 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: calc(88vh - 210px);
+    }
+
+    .config-tab-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+      transition: all 0.18s ease;
+    }
+
+    .config-tab-item:hover {
+      border-color: #cbd5e1;
+      background: #fbfcfe;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    .config-tab-item.is-hidden {
+      background: #f8fafc;
+      opacity: 0.72;
+      border-style: dashed;
+    }
+
+    .config-tab-item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .config-tab-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      color: #4f46e5;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .config-tab-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .config-tab-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .config-tab-desc {
+      font-size: 11.5px;
+      color: #64748b;
+    }
+
+    .config-tab-item-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tab-status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .tab-status-pill.visible {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .tab-status-pill.hidden {
+      background: #f1f5f9;
+      color: #64748b;
+    }
+
+    /* iOS Switch */
+    .ios-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .ios-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .ios-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #cbd5e1;
+      transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 24px;
+    }
+
+    .ios-slider:before {
+      position: absolute;
+      content: '';
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: #fff;
+      transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .ios-switch input:checked+.ios-slider {
+      background: #4f46e5;
+    }
+
+    .ios-switch input:checked+.ios-slider:before {
+      transform: translateX(20px);
+    }
+
+    .config-card-footer {
+      padding: 14px 24px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .config-footer-hint {
+      font-size: 12px;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .config-footer-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-config-secondary {
+      height: 38px;
+      padding: 0 16px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-config-secondary:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .btn-config-primary {
+      height: 38px;
+      padding: 0 18px;
+      border: none;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+      transition: all 0.15s ease;
+    }
+
+    .btn-config-primary:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+    }
+
+    /* Topbar Management Modals */
+    .topbar-modal-card {
+      background: #fff;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.3);
+      display: flex;
+      flex-direction: column;
+      max-height: 88vh;
+      overflow: hidden;
+      animation: scaleInCard 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .topbar-modal-card.wide {
+      max-width: 600px;
+    }
+
+    .topbar-modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-modal-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-modal-icon-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: #eef2ff;
+      color: #4f46e5;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .topbar-modal-header h3 {
+      margin: 0;
+      font-size: 16.5px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .topbar-modal-header p {
+      margin: 2px 0 0;
+      font-size: 12.5px;
+      color: #64748b;
+    }
+
+    .topbar-modal-close-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 16px;
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-modal-close-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .topbar-modal-body {
+      padding: 20px 24px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .topbar-modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .topbar-form-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .topbar-form-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .topbar-input {
+      height: 38px;
+      padding: 0 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .topbar-btn-primary {
+      height: 38px;
+      padding: 0 16px;
+      border: none;
+      background: #4f46e5;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-btn-primary:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+    }
+
+    .topbar-btn-secondary {
+      height: 36px;
+      padding: 0 16px;
+      border: 1.5px solid #cbd5e1;
+      background: #fff;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-btn-secondary:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .topbar-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .topbar-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-list-item:hover {
+      background: #fff;
+      border-color: #cbd5e1;
+      box-shadow: 0 2px 5px rgba(15, 23, 42, 0.04);
+    }
+
+    .topbar-member-code {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 11.5px;
+      background: #eef2ff;
+      color: #4f46e5;
+      border: 1px solid #c7d2fe;
+      padding: 2px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .topbar-member-ext {
+      font-family: monospace;
+      font-weight: 600;
+      font-size: 11px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+      padding: 2px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .topbar-actions-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .topbar-icon-action-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #64748b;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-icon-action-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .topbar-icon-action-btn.delete:hover {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #ef4444;
+    }
+
+    /* Settings Toast */
+    .settings-toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      z-index: 25000;
+      animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .settings-toast.success i {
+      color: #22c55e;
+    }
+
+    .settings-toast.warning i {
+      color: #f59e0b;
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        transform: translateY(-16px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+         RESPONSIVE
+      ═══════════════════════════════════════════════════════ */
+    /* Tablet: auto-collapse sidebar only on screens <= 860px */
+    @media (max-width: 860px) {
+      .sidebar {
         width: 60px;
         min-width: 60px;
       }
-      .sidebar.collapsed .sb-header {
+
+      .sidebar .sb-header {
         padding: 14px 0;
         justify-content: center;
       }
-      .sidebar.collapsed .sb-brand-text,
-      .sidebar.collapsed .sb-section-label,
-      .sidebar.collapsed .tab-btn-label,
-      .sidebar.collapsed .sb-more-label,
-      .sidebar.collapsed .sb-more-chevron,
-      .sidebar.collapsed .sb-collapse-label,
-      .sidebar.collapsed .sb-icon-btn span {
+
+      .sidebar .sb-brand-text,
+      .sidebar .sb-section-label,
+      .sidebar .tab-btn-label,
+      .sidebar .sb-more-label,
+      .sidebar .sb-more-chevron,
+      .sidebar .sb-collapse-label,
+      .sidebar .sb-icon-btn span {
         display: none !important;
       }
 
-      .sidebar.collapsed .tab-button {
+      .sidebar .tab-button {
         justify-content: center !important;
         padding: 10px 0 !important;
         width: 100% !important;
         position: relative !important;
       }
-      .sidebar.collapsed .tab-button i {
+
+      .sidebar .tab-button i {
         margin: 0 !important;
         font-size: 15px !important;
         width: 20px !important;
         text-align: center !important;
       }
-      .sidebar.collapsed .tab-button.active::before {
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 22px;
-        border-radius: 0 3px 3px 0;
-      }
-      .sidebar.collapsed .tab-dot {
+
+      .sidebar .tab-dot {
         position: absolute !important;
         top: 6px !important;
         right: 14px !important;
@@ -386,1281 +2198,579 @@
         border-radius: 50%;
       }
 
-      .sidebar.collapsed .sb-more-section {
+      .sidebar .sb-more-section {
         padding: 6px 0;
       }
-      .sidebar.collapsed .sb-more-toggle {
+
+      .sidebar .sb-more-toggle {
         justify-content: center !important;
         padding: 10px 0 !important;
         width: 100% !important;
       }
-      .sidebar.collapsed .sb-more-toggle i {
+
+      .sidebar .sb-more-toggle i {
         margin: 0 !important;
         font-size: 14px !important;
         width: 20px !important;
         text-align: center !important;
       }
-      .sidebar.collapsed .sb-more-content {
+
+      .sidebar .sb-more-content {
         display: none !important;
       }
 
-      .sidebar.collapsed .sb-bottom {
+      .sidebar .sb-bottom {
         padding: 10px 6px 12px;
         align-items: center;
       }
-      .sidebar.collapsed .sb-icon-btn {
+
+      .sidebar .sb-icon-btn {
         justify-content: center !important;
         padding: 10px 0 !important;
         width: 100% !important;
       }
-      .sidebar.collapsed .sb-icon-btn i {
+
+      .sidebar .sb-icon-btn i {
         margin: 0 !important;
         font-size: 15px !important;
         width: 20px !important;
         text-align: center !important;
       }
 
-      .sidebar.collapsed .sb-collapse-btn {
+      .sidebar .sb-collapse-btn {
         justify-content: center !important;
         padding: 10px 0 !important;
         width: 100% !important;
       }
-      .sidebar.collapsed .sb-collapse-label { display: none !important; }
-      .sidebar.collapsed .sb-collapse-btn i {
+
+      .sidebar .sb-collapse-btn i {
         margin: 0 !important;
         font-size: 13px !important;
         transform: rotate(180deg) !important;
         color: #94a3b8 !important;
-        display: inline-block !important;
       }
 
-      /* ═══════════════════════════════════════════════════════
-         MAIN CONTENT AREA
-      ═══════════════════════════════════════════════════════ */
       .main-content {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-        overflow: hidden;
-        margin-left: 220px;
-        transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1);
-      }
-      .main-content.sidebar-collapsed {
         margin-left: 60px;
       }
+    }
 
-      /* ── Workspace Top Header ── */
-      .workspace-header {
-        background: #ffffff;
-        border-bottom: 1px solid #e2e8f0;
-        padding: 0 18px;
-        height: 54px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-shrink: 0;
-        box-shadow: 0 1px 3px rgba(15,23,42,0.04);
-        z-index: 100;
+    /* Mobile: sidebar becomes a drawer */
+    @media (max-width: 640px) {
+      .sidebar {
+        width: 220px;
+        min-width: 220px;
+        transform: translateX(-100%);
       }
-      .workspace-title {
-        flex: 1;
-        font-size: 13.5px;
-        font-weight: 600;
-        color: #334155;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-      .workspace-title i {
-        font-size: 13px;
-        color: #3b82f6;
-        flex-shrink: 0;
-      }
-      .workspace-right {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-shrink: 0;
-      }
-      .wh-icon-btn {
-        background: transparent;
-        border: 1px solid transparent;
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        font-size: 14px;
-        color: #64748b;
-        cursor: pointer;
-        padding: 0;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s cubic-bezier(0.4,0,0.2,1);
-      }
-      .wh-icon-btn:hover, .wh-icon-btn.active {
-        background: #f1f5f9;
-        color: #0f172a;
-        border-color: #e2e8f0;
-      }
-      .wh-icon-btn:active { transform: scale(0.96); }
 
-      /* Sync Button – standalone, mandatory far right */
+      .sidebar.mobile-open {
+        transform: translateX(0);
+      }
+
+      .sidebar .sb-brand-text,
+      .sidebar .tab-btn-label,
+      .sidebar .sb-more-label,
+      .sidebar .sb-collapse-label,
+      .sidebar .sb-icon-btn span,
+      .sidebar .sb-section-label {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+      }
+
+      .sidebar .tab-button {
+        justify-content: flex-start !important;
+        padding: 9px 10px !important;
+      }
+
+      .sidebar .sb-more-toggle {
+        justify-content: flex-start !important;
+        padding: 9px 10px !important;
+      }
+
+      .sidebar .sb-icon-btn {
+        justify-content: flex-start !important;
+        padding: 8px 10px !important;
+      }
+
+      .sidebar .sb-collapse-btn {
+        justify-content: center !important;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .mobile-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1099;
+      }
+
+      .mobile-overlay.show {
+        display: block;
+      }
+
+      .mob-menu-btn {
+        display: flex !important;
+      }
+
+      .top-sync-btn span {
+        display: none;
+      }
+
       .top-sync-btn {
-        background: #2563eb;
-        border: none;
-        height: 36px;
-        padding: 0 14px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #ffffff;
-        cursor: pointer;
-        display: inline-flex !important;
-        align-items: center;
-        gap: 7px;
-        transition: all 0.16s cubic-bezier(0.4,0,0.2,1);
-        box-shadow: 0 1px 3px rgba(37,99,235,0.25), 0 2px 6px rgba(37,99,235,0.15);
-        font-family: inherit;
-        white-space: nowrap;
-        flex-shrink: 0 !important;
-        user-select: none;
+        padding: 0 12px;
       }
-      .top-sync-btn:hover {
-        background: #1d4ed8;
-        box-shadow: 0 3px 10px rgba(37,99,235,0.35);
-        transform: translateY(-0.5px);
-      }
-      .top-sync-btn:active { transform: scale(0.97); }
-      .top-sync-btn i { font-size: 13px; color: #fff; transition: transform 0.25s ease; }
-      .top-sync-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none !important; }
+    }
 
-      /* ── Tab frames ── */
-      .tab-frame {
-        border: 0;
-        display: none;
-        flex: 1;
-        width: 100%;
-        height: 100%;
-      }
-      .tab-frame.active { display: block; }
-      .frame-area {
-        flex: 1;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
+    .mob-menu-btn {
+      display: none;
+    }
+  </style>
+</head>
 
-      /* ═══════════════════════════════════════════════════════
-         DROPDOWN COMPONENTS (Search, Bell, Upcoming, Apps)
-      ═══════════════════════════════════════════════════════ */
-      @keyframes dropdownSlideDown {
-        from { opacity: 0; transform: translateY(-6px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+<body>
+  <!-- Mobile overlay for sidebar drawer -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
 
-      /* Search */
-      .search-container { position: relative; display: inline-block; }
-      .search-dropdown {
-        display: none;
-        position: absolute;
-        top: calc(100% + 8px);
-        right: 0;
-        width: 320px;
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        box-shadow: 0 12px 28px rgba(15,23,42,0.12);
-        z-index: 10001;
-        padding: 10px;
-        animation: dropdownSlideDown 0.15s ease-out;
-      }
-      .search-dropdown.show { display: block; }
-      .search-input-box {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        background: #f8fafc;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 0 10px;
-        height: 38px;
-        transition: all 0.15s ease;
-      }
-      .search-input-box:focus-within {
-        border-color: #2563eb;
-        background: #fff;
-        box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
-      }
-      .search-input-box input {
-        border: none; outline: none; background: transparent;
-        width: 100%; font-size: 13px; font-family: inherit; color: #0f172a;
-      }
-      .search-esc-hint {
-        font-size: 10px; font-weight: 700; color: #94a3b8;
-        background: #f1f5f9; padding: 2px 5px; border-radius: 4px;
-        border: 1px solid #e2e8f0;
-      }
-
-      /* Notifications group */
-      .topbar-notif-group { display: flex; align-items: center; gap: 4px; }
-
-      /* Upcoming Tasks */
-      .upcoming-container { position: relative; display: inline-block; }
-      .upcoming-btn {
-        background: #f8fafc; border: 1px solid #e2e8f0;
-        width: 34px; height: 34px; border-radius: 8px;
-        font-size: 13px; color: #6366f1; cursor: pointer; padding: 0;
-        position: relative; display: flex; align-items: center; justify-content: center;
-        transition: all 0.16s ease; box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-      }
-      .upcoming-btn:hover {
-        background: #eef2ff; border-color: #c7d2fe; color: #4f46e5;
-        transform: translateY(-0.5px);
-      }
-      .upcoming-badge {
-        position: absolute; top: -3px; right: -3px;
-        background: #6366f1; color: #fff; font-size: 9px; font-weight: 700;
-        border-radius: 999px; min-width: 15px; height: 15px;
-        display: none; align-items: center; justify-content: center;
-        padding: 0 3px; border: 1.5px solid #fff;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-        font-family: 'Inter', sans-serif; line-height: 1;
-      }
-      .upcoming-dropdown {
-        display: none; position: absolute;
-        top: calc(100% + 10px); right: 0; width: 410px;
-        background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
-        box-shadow: 0 12px 30px -5px rgba(0,0,0,0.12), 0 8px 12px -6px rgba(0,0,0,0.08);
-        z-index: 10001; overflow: hidden;
-      }
-      .upcoming-dropdown.show { display: block; }
-      .upcoming-hdr {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 14px 18px; border-bottom: 1px solid #f3f4f6; background: #f8fafc;
-      }
-      .upcoming-hdr h4 {
-        margin: 0; font-size: 14.5px; font-weight: 700; color: #1f2937;
-        display: flex; align-items: center; gap: 7px;
-      }
-      .upcoming-count-badge {
-        background: #e0e7ff; color: #4338ca;
-        font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
-      }
-      .upcoming-list { max-height: 360px; overflow-y: auto; }
-      .upcoming-item {
-        display: flex; gap: 12px; padding: 14px 18px;
-        border-bottom: 1px solid #f3f4f6; cursor: pointer;
-        transition: background-color 0.15s; text-decoration: none; color: inherit;
-        align-items: flex-start;
-      }
-      .upcoming-item:last-child { border-bottom: none; }
-      .upcoming-item:hover { background-color: #f8fafc; }
-      .upcoming-time-box {
-        background: #f5f3ff; border: 1px solid #ddd6fe; color: #6366f1;
-        font-weight: 700; font-size: 12px; padding: 5px 8px;
-        border-radius: 8px; display: flex; flex-direction: column;
-        align-items: center; justify-content: center; white-space: nowrap; min-width: 58px;
-      }
-      .upcoming-time-box i { font-size: 11px; margin-bottom: 2px; }
-      .upcoming-item-body { flex: 1; min-width: 0; }
-      .upcoming-item-title {
-        font-weight: 600; font-size: 13.5px; color: #1f2937; margin-bottom: 4px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .upcoming-item-note {
-        font-size: 12px; color: #6b7280; margin-bottom: 5px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .upcoming-item-meta {
-        display: flex; flex-wrap: wrap; align-items: center;
-        gap: 6px; font-size: 11.5px; color: #6b7280;
-      }
-      .upcoming-empty {
-        padding: 32px 20px; text-align: center; color: #9ca3af; font-size: 13.5px;
-      }
-
-      /* Bell */
-      .bell-container { position: relative; display: inline-block; }
-      .bell-btn {
-        background: #f8fafc; border: 1px solid #e2e8f0;
-        width: 34px; height: 34px; border-radius: 8px;
-        font-size: 13px; color: #059669; cursor: pointer; padding: 0;
-        position: relative; display: flex; align-items: center; justify-content: center;
-        transition: all 0.16s ease; box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-      }
-      .bell-btn:hover {
-        background: #ecfdf5; border-color: #a7f3d0; color: #047857;
-        transform: translateY(-0.5px);
-      }
-      .bell-badge {
-        position: absolute; top: -3px; right: -3px;
-        background: #ef4444; color: #fff; font-size: 9px; font-weight: 700;
-        border-radius: 999px; min-width: 15px; height: 15px;
-        display: none; align-items: center; justify-content: center;
-        padding: 0 3px; border: 1.5px solid #fff;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15); font-family: 'Inter',sans-serif; line-height: 1;
-      }
-      .bell-dropdown {
-        display: none; position: absolute;
-        top: calc(100% + 10px); right: 0; width: 400px;
-        background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
-        box-shadow: 0 12px 30px -5px rgba(0,0,0,0.12), 0 8px 12px -6px rgba(0,0,0,0.08);
-        z-index: 10001; overflow: hidden;
-      }
-      .bell-dropdown.show { display: block; }
-      .bell-hdr {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 14px 18px; border-bottom: 1px solid #f3f4f6; background: #f8fafc;
-      }
-      .bell-hdr h4 { margin: 0; font-size: 14.5px; font-weight: 700; color: #1f2937; }
-      .bell-mark-all {
-        background: none; border: none; color: #2563eb;
-        font-size: 12px; font-weight: 600; cursor: pointer; padding: 0;
-      }
-      .bell-mark-all:hover { text-decoration: underline; }
-      .bell-list { max-height: 340px; overflow-y: auto; }
-      .bell-item {
-        display: flex; gap: 12px; padding: 14px 18px;
-        border-bottom: 1px solid #f3f4f6; cursor: pointer;
-        transition: background-color 0.15s; text-decoration: none; color: inherit;
-      }
-      .bell-item:last-child { border-bottom: none; }
-      .bell-item:hover { background-color: #f1f5f9; }
-      .bell-item.unread { background-color: #eff6ff; }
-      .bell-item-icon { font-size: 19px; margin-top: 2px; }
-      .bell-item-body { flex: 1; min-width: 0; }
-      .bell-item-title {
-        font-weight: 600; font-size: 14px; color: #1f2937; margin-bottom: 3px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .bell-item-meta {
-        display: flex; align-items: center;
-        justify-content: space-between; font-size: 12px; color: #6b7280;
-      }
-      .bell-item-p-badge {
-        display: inline-block; padding: 2px 7px; border-radius: 4px;
-        font-weight: 800; font-size: 10.5px;
-      }
-      .bell-item-p-badge.p1 { background: #fee2e2; color: #b91c1c; }
-      .bell-item-p-badge.p2 { background: #fef3c7; color: #92400e; }
-      .bell-item-p-badge.p3 { background: #ede9fe; color: #4c1d95; }
-      .bell-empty { padding: 28px; text-align: center; color: #9ca3af; font-size: 13.5px; }
-
-      /* Utilities Dropdown */
-      .utilities-container { position: relative; display: inline-block; }
-      .utilities-dropdown {
-        display: none; position: absolute;
-        top: calc(100% + 8px); right: 0; width: 260px;
-        background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-        box-shadow: 0 12px 30px rgba(15,23,42,0.12);
-        z-index: 10001; padding: 8px; overflow: hidden;
-        animation: dropdownSlideDown 0.15s ease-out;
-      }
-      .utilities-dropdown.show { display: block; }
-      .util-dropdown-header {
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.05em; color: #94a3b8; padding: 6px 10px 4px;
-      }
-      .util-menu-item {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 8px 10px; border-radius: 8px; border: none;
-        background: transparent; color: #334155; font-size: 13px;
-        font-weight: 500; cursor: pointer; text-align: left;
-        transition: all 0.15s ease; font-family: inherit;
-      }
-      .util-menu-item:hover { background: #f1f5f9; color: #0f172a; }
-      .util-menu-item i { font-size: 14px; width: 20px; text-align: center; }
-      .util-divider { height: 1px; background: #e2e8f0; margin: 6px 0; }
-
-      /* ═══════════════════════════════════════════════════════
-         GLOBAL PRIORITY TOAST SYSTEM
-      ═══════════════════════════════════════════════════════ */
-      #gNotifyBox {
-        position: fixed; bottom: 26px; left: 26px; z-index: 9999;
-        display: flex; flex-direction: column-reverse; gap: 12px; max-width: 432px;
-      }
-      .g-toast {
-        display: flex; align-items: flex-start; gap: 14px;
-        background: #1e1b4b; color: #f0f4ff; padding: 16px 20px;
-        border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.28);
-        font-size: 16px; font-family: 'Segoe UI', Arial, sans-serif;
-        line-height: 1.5; max-width: 432px;
-        opacity: 0; transform: translateX(-28px);
-        animation: gSlideIn .3s forwards, gFadeOut .35s 6.65s forwards;
-        pointer-events: none;
-      }
-      .g-toast-icon { font-size: 24px; flex-shrink: 0; margin-top: 1px; }
-      .g-toast-body { flex: 1; }
-      .g-toast-priority {
-        display: inline-block; padding: 2px 10px; border-radius: 24px;
-        font-size: 13px; font-weight: 800; margin-bottom: 5px;
-      }
-      .g-toast.p1 { border-left: 5px solid #ef4444; }
-      .g-toast.p1 .g-toast-priority { background: #ef4444; color: #fff; }
-      .g-toast.p2 { border-left: 5px solid #f59e0b; }
-      .g-toast.p2 .g-toast-priority { background: #f59e0b; color: #1f2937; }
-      .g-toast.p3 { border-left: 5px solid #8b5cf6; }
-      .g-toast.p3 .g-toast-priority { background: #8b5cf6; color: #fff; }
-      .g-toast-title { font-weight: 700; font-size: 16px; margin-bottom: 2px; }
-      .g-toast-sub { font-size: 14px; color: #a5b4fc; }
-      @keyframes gSlideIn { to { opacity: 1; transform: translateX(0); } }
-      @keyframes gFadeOut { to { opacity: 0; transform: translateX(-16px); } }
-
-      /* ═══════════════════════════════════════════════════════
-         MODAL SYSTEM (Settings / Auth / Projects / Members)
-      ═══════════════════════════════════════════════════════ */
-      .settings-modal-overlay {
-        position: fixed; inset: 0; background: rgba(15,23,42,0.6);
-        backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 20000; padding: 16px;
-        animation: fadeInOverlay 0.18s ease-out;
-      }
-      @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
-
-      /* Auth Card */
-      .settings-auth-card {
-        background: #fff; border-radius: 18px; width: 100%; max-width: 380px;
-        box-shadow: 0 20px 40px -10px rgba(15,23,42,0.25);
-        padding: 28px 24px; text-align: center;
-        animation: scaleInCard 0.2s cubic-bezier(0.16,1,0.3,1);
-      }
-      @keyframes scaleInCard {
-        from { transform: scale(0.92) translateY(10px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
-      }
-      .settings-auth-card.shake { animation: authShake 0.4s ease-in-out; }
-      @keyframes authShake {
-        0%, 100% { transform: translateX(0); }
-        20%, 60% { transform: translateX(-9px); }
-        40%, 80% { transform: translateX(9px); }
-      }
-      .auth-icon-circle {
-        width: 54px; height: 54px; border-radius: 16px;
-        background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
-        color: #4f46e5; font-size: 24px;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 16px; box-shadow: 0 4px 12px rgba(79,70,229,0.15);
-      }
-      .auth-card-header h3 { margin: 0 0 6px; font-size: 18px; font-weight: 800; color: #0f172a; }
-      .auth-card-header p { margin: 0 0 20px; font-size: 13px; color: #64748b; line-height: 1.4; }
-      .auth-input-group {
-        position: relative; display: flex; align-items: center; margin-bottom: 12px;
-      }
-      .auth-input-icon { position: absolute; left: 14px; color: #94a3b8; font-size: 14px; pointer-events: none; }
-      .auth-input {
-        width: 100%; height: 44px; padding: 0 42px 0 40px;
-        border: 1.5px solid #cbd5e1; border-radius: 10px;
-        font-size: 14.5px; font-family: inherit; outline: none;
-        transition: all 0.18s ease; background: #f8fafc;
-        ime-mode: disabled;
-      }
-      .auth-input:focus {
-        border-color: #4f46e5; background: #fff;
-        box-shadow: 0 0 0 3.5px rgba(79,70,229,0.15);
-      }
-      .auth-eye-btn {
-        position: absolute; right: 10px; background: none; border: none;
-        color: #94a3b8; cursor: pointer; padding: 6px;
-        border-radius: 6px; font-size: 14px; transition: color 0.15s;
-      }
-      .auth-eye-btn:hover { color: #475569; }
-      .auth-error-msg {
-        color: #ef4444; font-size: 12.5px; font-weight: 600;
-        margin-bottom: 14px; display: flex; align-items: center;
-        justify-content: center; gap: 6px;
-        animation: fadeInOverlay 0.15s ease;
-      }
-      .auth-card-actions { display: flex; gap: 10px; margin-top: 8px; }
-      .btn-auth-cancel {
-        flex: 1; height: 40px; border: 1px solid #e2e8f0;
-        background: #fff; color: #475569; font-size: 13.5px;
-        font-weight: 600; border-radius: 10px; cursor: pointer;
-        transition: all 0.15s ease;
-      }
-      .btn-auth-cancel:hover { background: #f1f5f9; color: #0f172a; }
-      .btn-auth-submit {
-        flex: 1.3; height: 40px; border: none; background: #4f46e5;
-        color: #fff; font-size: 13.5px; font-weight: 700;
-        border-radius: 10px; cursor: pointer;
-        display: flex; align-items: center; justify-content: center; gap: 7px;
-        box-shadow: 0 2px 8px rgba(79,70,229,0.35);
-        transition: all 0.15s ease;
-      }
-      .btn-auth-submit:hover {
-        background: #4338ca;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(79,70,229,0.4);
-      }
-
-      /* Config Modal Card */
-      .settings-config-card {
-        background: #fff; border-radius: 20px; width: 100%; max-width: 580px;
-        box-shadow: 0 25px 50px -12px rgba(15,23,42,0.3);
-        display: flex; flex-direction: column; max-height: 88vh; overflow: hidden;
-        animation: scaleInCard 0.2s cubic-bezier(0.16,1,0.3,1);
-      }
-      .config-card-header {
-        padding: 20px 24px; border-bottom: 1px solid #e2e8f0;
-        display: flex; align-items: center; justify-content: space-between;
-        background: #fff;
-      }
-      .config-header-left { display: flex; align-items: center; gap: 14px; }
-      .config-icon-badge {
-        width: 44px; height: 44px; border-radius: 12px;
-        background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-        color: #4f46e5; font-size: 20px;
-        display: flex; align-items: center; justify-content: center;
-      }
-      .config-card-header h3 { margin: 0 0 3px; font-size: 17px; font-weight: 800; color: #0f172a; }
-      .config-card-header p { margin: 0; font-size: 12.5px; color: #64748b; }
-      .config-close-btn {
-        background: none; border: none; color: #94a3b8;
-        font-size: 18px; cursor: pointer; padding: 6px; border-radius: 8px;
-        transition: all 0.15s ease;
-      }
-      .config-close-btn:hover { background: #f1f5f9; color: #0f172a; }
-      .config-toolbar {
-        padding: 12px 24px; background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      }
-      .config-stat { font-size: 12.5px; color: #475569; display: flex; align-items: center; gap: 6px; }
-      .config-stat strong { color: #4f46e5; }
-      .config-quick-btns { display: flex; gap: 8px; }
-      .btn-quick-action {
-        background: #fff; border: 1px solid #cbd5e1; padding: 4px 10px;
-        border-radius: 6px; font-size: 11.5px; font-weight: 600; color: #475569;
-        cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
-        transition: all 0.15s ease;
-      }
-      .btn-quick-action:hover { background: #f1f5f9; color: #0f172a; border-color: #94a3b8; }
-      .config-tabs-list {
-        padding: 14px 24px; overflow-y: auto; display: flex;
-        flex-direction: column; gap: 8px;
-        max-height: calc(88vh - 210px);
-      }
-      .config-tab-item {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
-        background: #fff; transition: all 0.18s ease;
-      }
-      .config-tab-item:hover { border-color: #cbd5e1; background: #fbfcfe; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
-      .config-tab-item.is-hidden { background: #f8fafc; opacity: 0.72; border-style: dashed; }
-      .config-tab-item-left { display: flex; align-items: center; gap: 12px; }
-      .config-tab-icon {
-        width: 34px; height: 34px; border-radius: 8px;
-        background: #f1f5f9; color: #4f46e5; font-size: 15px;
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      }
-      .config-tab-info { display: flex; flex-direction: column; }
-      .config-tab-name { font-size: 13.5px; font-weight: 700; color: #1e293b; }
-      .config-tab-desc { font-size: 11.5px; color: #64748b; }
-      .config-tab-item-right { display: flex; align-items: center; gap: 12px; }
-      .tab-status-pill {
-        font-size: 11px; font-weight: 700; padding: 2px 8px;
-        border-radius: 6px; text-transform: uppercase; letter-spacing: 0.3px;
-      }
-      .tab-status-pill.visible { background: #dcfce7; color: #15803d; }
-      .tab-status-pill.hidden { background: #f1f5f9; color: #64748b; }
-      /* iOS Switch */
-      .ios-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
-      .ios-switch input { opacity: 0; width: 0; height: 0; }
-      .ios-slider {
-        position: absolute; cursor: pointer; inset: 0;
-        background: #cbd5e1; transition: 0.22s cubic-bezier(0.4,0,0.2,1);
-        border-radius: 24px;
-      }
-      .ios-slider:before {
-        position: absolute; content: ''; height: 18px; width: 18px;
-        left: 3px; bottom: 3px; background: #fff;
-        transition: 0.22s cubic-bezier(0.4,0,0.2,1);
-        border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-      }
-      .ios-switch input:checked + .ios-slider { background: #4f46e5; }
-      .ios-switch input:checked + .ios-slider:before { transform: translateX(20px); }
-      .config-card-footer {
-        padding: 14px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0;
-        display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      }
-      .config-footer-hint { font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px; }
-      .config-footer-actions { display: flex; align-items: center; gap: 10px; }
-      .btn-config-secondary {
-        height: 38px; padding: 0 16px; border: 1px solid #cbd5e1;
-        background: #fff; color: #334155; font-size: 13px; font-weight: 600;
-        border-radius: 9px; cursor: pointer; transition: all 0.15s ease;
-      }
-      .btn-config-secondary:hover { background: #f1f5f9; color: #0f172a; }
-      .btn-config-primary {
-        height: 38px; padding: 0 18px; border: none; background: #4f46e5;
-        color: #fff; font-size: 13px; font-weight: 700; border-radius: 9px;
-        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-        box-shadow: 0 2px 6px rgba(79,70,229,0.3); transition: all 0.15s ease;
-      }
-      .btn-config-primary:hover { background: #4338ca; transform: translateY(-1px); }
-
-      /* Topbar Management Modals */
-      .topbar-modal-card {
-        background: #fff; border-radius: 20px; width: 100%; max-width: 520px;
-        box-shadow: 0 25px 50px -12px rgba(15,23,42,0.3);
-        display: flex; flex-direction: column; max-height: 88vh; overflow: hidden;
-        animation: scaleInCard 0.2s cubic-bezier(0.16,1,0.3,1);
-      }
-      .topbar-modal-card.wide { max-width: 600px; }
-      .topbar-modal-header {
-        padding: 18px 24px; border-bottom: 1px solid #e2e8f0;
-        display: flex; align-items: center; justify-content: space-between;
-      }
-      .topbar-modal-header-left { display: flex; align-items: center; gap: 12px; }
-      .topbar-modal-icon-badge {
-        width: 40px; height: 40px; border-radius: 12px;
-        background: #eef2ff; color: #4f46e5; font-size: 18px;
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      }
-      .topbar-modal-header h3 { margin: 0; font-size: 16.5px; font-weight: 700; color: #0f172a; }
-      .topbar-modal-header p { margin: 2px 0 0; font-size: 12.5px; color: #64748b; }
-      .topbar-modal-close-btn {
-        background: none; border: none; color: #94a3b8;
-        font-size: 16px; cursor: pointer; width: 32px; height: 32px;
-        border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        transition: all 0.15s ease;
-      }
-      .topbar-modal-close-btn:hover { background: #f1f5f9; color: #0f172a; }
-      .topbar-modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
-      .topbar-modal-footer {
-        padding: 14px 24px; border-top: 1px solid #e2e8f0;
-        background: #f8fafc; display: flex; align-items: center; justify-content: flex-end;
-      }
-      .topbar-form-card {
-        background: #f8fafc; border: 1px solid #e2e8f0;
-        border-radius: 12px; padding: 14px; margin-bottom: 16px;
-      }
-      .topbar-form-title {
-        font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;
-        display: flex; align-items: center; gap: 6px;
-        text-transform: uppercase; letter-spacing: 0.3px;
-      }
-      .topbar-input {
-        height: 38px; padding: 0 12px; border: 1.5px solid #cbd5e1;
-        border-radius: 8px; font-size: 13px; font-family: inherit;
-        outline: none; background: #fff; transition: all 0.15s ease;
-      }
-      .topbar-input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.12); }
-      .topbar-btn-primary {
-        height: 38px; padding: 0 16px; border: none; background: #4f46e5;
-        color: #fff; font-size: 13px; font-weight: 600; border-radius: 8px;
-        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-        white-space: nowrap; transition: all 0.15s ease;
-      }
-      .topbar-btn-primary:hover { background: #4338ca; transform: translateY(-1px); }
-      .topbar-btn-secondary {
-        height: 36px; padding: 0 16px; border: 1.5px solid #cbd5e1;
-        background: #fff; color: #334155; font-size: 13px;
-        font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.15s ease;
-      }
-      .topbar-btn-secondary:hover { background: #f1f5f9; color: #0f172a; }
-      .topbar-list {
-        list-style: none; padding: 0; margin: 0;
-        max-height: 320px; overflow-y: auto;
-        display: flex; flex-direction: column; gap: 6px;
-      }
-      .topbar-list-item {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 10px 14px; background: #f8fafc;
-        border: 1px solid #e2e8f0; border-radius: 10px; transition: all 0.15s ease;
-      }
-      .topbar-list-item:hover { background: #fff; border-color: #cbd5e1; box-shadow: 0 2px 5px rgba(15,23,42,0.04); }
-      .topbar-member-code {
-        font-family: monospace; font-weight: 700; font-size: 11.5px;
-        background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe;
-        padding: 2px 7px; border-radius: 6px; white-space: nowrap;
-      }
-      .topbar-member-ext {
-        font-family: monospace; font-weight: 600; font-size: 11px;
-        background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
-        padding: 2px 6px; border-radius: 6px; white-space: nowrap;
-      }
-      .topbar-actions-btns { display: flex; align-items: center; gap: 6px; }
-      .topbar-icon-action-btn {
-        width: 28px; height: 28px; border: 1px solid #e2e8f0;
-        background: #fff; border-radius: 6px; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 12px; color: #64748b; transition: all 0.15s ease;
-      }
-      .topbar-icon-action-btn:hover { background: #f1f5f9; color: #0f172a; }
-      .topbar-icon-action-btn.delete:hover { background: #fef2f2; border-color: #fecaca; color: #ef4444; }
-
-      /* Settings Toast */
-      .settings-toast {
-        position: fixed; top: 20px; right: 20px; background: #0f172a;
-        color: #fff; padding: 12px 18px; border-radius: 10px;
-        font-size: 13.5px; font-weight: 600; display: flex;
-        align-items: center; gap: 10px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 25000;
-        animation: toastSlideIn 0.25s cubic-bezier(0.16,1,0.3,1);
-        border: 1px solid rgba(255,255,255,0.1);
-      }
-      .settings-toast.success i { color: #22c55e; }
-      .settings-toast.warning i { color: #f59e0b; }
-      @keyframes toastSlideIn { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-      /* ═══════════════════════════════════════════════════════
-         RESPONSIVE
-      ═══════════════════════════════════════════════════════ */
-      /* Tablet: auto-collapse sidebar only on screens <= 860px */
-      @media (max-width: 860px) {
-        .sidebar { width: 60px; min-width: 60px; }
-        .sidebar .sb-header { padding: 14px 0; justify-content: center; }
-        .sidebar .sb-brand-text,
-        .sidebar .sb-section-label,
-        .sidebar .tab-btn-label,
-        .sidebar .sb-more-label,
-        .sidebar .sb-more-chevron,
-        .sidebar .sb-collapse-label,
-        .sidebar .sb-icon-btn span { display: none !important; }
-        .sidebar .tab-button { justify-content: center !important; padding: 10px 0 !important; width: 100% !important; position: relative !important; }
-        .sidebar .tab-button i { margin: 0 !important; font-size: 15px !important; width: 20px !important; text-align: center !important; }
-        .sidebar .tab-dot {
-          position: absolute !important;
-          top: 6px !important;
-          right: 14px !important;
-          margin: 0 !important;
-          width: 6px !important;
-          height: 6px !important;
-          border: 1.5px solid #0f1929;
-          border-radius: 50%;
-        }
-        .sidebar .sb-more-section { padding: 6px 0; }
-        .sidebar .sb-more-toggle { justify-content: center !important; padding: 10px 0 !important; width: 100% !important; }
-        .sidebar .sb-more-toggle i { margin: 0 !important; font-size: 14px !important; width: 20px !important; text-align: center !important; }
-        .sidebar .sb-more-content { display: none !important; }
-        .sidebar .sb-bottom { padding: 10px 6px 12px; align-items: center; }
-        .sidebar .sb-icon-btn { justify-content: center !important; padding: 10px 0 !important; width: 100% !important; }
-        .sidebar .sb-icon-btn i { margin: 0 !important; font-size: 15px !important; width: 20px !important; text-align: center !important; }
-        .sidebar .sb-collapse-btn { justify-content: center !important; padding: 10px 0 !important; width: 100% !important; }
-        .sidebar .sb-collapse-btn i { margin: 0 !important; font-size: 13px !important; transform: rotate(180deg) !important; color: #94a3b8 !important; }
-        .main-content { margin-left: 60px; }
-      }
-      /* Mobile: sidebar becomes a drawer */
-      @media (max-width: 640px) {
-        .sidebar {
-          width: 220px; min-width: 220px;
-          transform: translateX(-100%);
-        }
-        .sidebar.mobile-open {
-          transform: translateX(0);
-        }
-        .sidebar .sb-brand-text,
-        .sidebar .tab-btn-label,
-        .sidebar .sb-more-label,
-        .sidebar .sb-collapse-label,
-        .sidebar .sb-icon-btn span,
-        .sidebar .sb-section-label { opacity: 1 !important; pointer-events: auto !important; }
-        .sidebar .tab-button { justify-content: flex-start !important; padding: 9px 10px !important; }
-        .sidebar .sb-more-toggle { justify-content: flex-start !important; padding: 9px 10px !important; }
-        .sidebar .sb-icon-btn { justify-content: flex-start !important; padding: 8px 10px !important; }
-        .sidebar .sb-collapse-btn { justify-content: center !important; }
-        .main-content { margin-left: 0; }
-        .mobile-overlay {
-          display: none;
-          position: fixed; inset: 0; background: rgba(0,0,0,0.4);
-          z-index: 1099;
-        }
-        .mobile-overlay.show { display: block; }
-        .mob-menu-btn { display: flex !important; }
-        .top-sync-btn span { display: none; }
-        .top-sync-btn { padding: 0 12px; }
-      }
-      .mob-menu-btn { display: none; }
-    </style>
-  </head>
-  <body>
-    <!-- Mobile overlay for sidebar drawer -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
-
-    <div class="shell">
-      <!-- ═══ LEFT SIDEBAR ═══ -->
-      <aside class="sidebar" id="mainSidebar" aria-label="Điều hướng chính">
-        <!-- Brand Header -->
-        <div class="sb-header">
-          <div class="sb-logo"><i class="fa-solid fa-shapes"></i></div>
-          <div class="sb-brand-text">
-            <span class="sb-brand-name">DMS Hub</span>
-            <span class="sb-brand-badge">
-              <span class="sb-badge-dot"></span>
-              PROD
-            </span>
-          </div>
-        </div>
-
-        <!-- Primary Navigation -->
-        <nav class="sb-nav">
-          <div class="sb-section-label">Điều hướng</div>
-
-          <button class="tab-button active" type="button" title="Note Issue" data-frame-target="noteIssueFrame">
-            <i class="fa-solid fa-note-sticky"></i>
-            <span class="tab-btn-label">Note Issue</span>
-          </button>
-
-          <button class="tab-button" type="button" title="Task Pending NVN" data-frame-target="taskPendingFrame">
-            <i class="fa-solid fa-list-check"></i>
-            <span class="tab-btn-label">Task Pending NVN</span>
-            <span class="tab-dot" title="Có công việc cần theo dõi"></span>
-          </button>
-
-          <button class="tab-button" type="button" title="NVN Solutions" data-frame-target="nvnSolutionsFrame">
-            <i class="fa-solid fa-lightbulb"></i>
-            <span class="tab-btn-label">NVN Solutions</span>
-          </button>
-
-          <button class="tab-button" type="button" title="Call Log" data-frame-target="callLogFrame">
-            <i class="fa-solid fa-headset"></i>
-            <span class="tab-btn-label">Call Log</span>
-          </button>
-
-          <button class="tab-button" type="button" title="Summary Ticket" data-frame-target="sumaryticketFrame">
-            <i class="fa-solid fa-ticket"></i>
-            <span class="tab-btn-label">Summary Ticket</span>
-          </button>
-
-          <button class="tab-button" type="button" title="Văn mẫu NVN" data-frame-target="vanMauNVNFrame">
-            <i class="fa-solid fa-file-signature"></i>
-            <span class="tab-btn-label">Văn mẫu NVN</span>
-          </button>
-
-          <button class="tab-button" type="button" title="Table" data-frame-target="tableFrame">
-            <i class="fa-solid fa-table"></i>
-            <span class="tab-btn-label">Table</span>
-          </button>
-        </nav>
-
-        <!-- More / Overflow Section -->
-        <div class="sb-more-section" id="sbMoreSection">
-          <button class="sb-more-toggle" id="btnSbMore" type="button" title="Danh mục mở rộng">
-            <i class="fa-solid fa-ellipsis"></i>
-            <span class="sb-more-label">Danh mục mở rộng</span>
-            <i class="fa-solid fa-chevron-down sb-more-chevron"></i>
-          </button>
-          <div class="sb-more-content" id="sbMoreContent">
-            <button class="tab-button nav-more-item" type="button" title="DMS1 Report" data-frame-target="dms1ReportFrame">
-              <i class="fa-solid fa-chart-simple"></i>
-              <span class="tab-btn-label">DMS1 Report</span>
-            </button>
-            <button class="tab-button nav-more-item" type="button" title="Danh sách ĐT" data-frame-target="dtListFrame">
-              <i class="fa-solid fa-address-book"></i>
-              <span class="tab-btn-label">Danh sách ĐT</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Bottom Actions -->
-        <div class="sb-bottom">
-          <button class="sb-icon-btn" id="btnTopProjects" type="button" title="Quản lý dự án">
-            <i class="fa-solid fa-diagram-project" style="color:#818cf8;"></i>
-            <span>Quản lý Dự án</span>
-          </button>
-          <button class="sb-icon-btn" id="btnTopMembers" type="button" title="Quản lý nhân viên">
-            <i class="fa-solid fa-users" style="color:#38bdf8;"></i>
-            <span>Quản lý Nhân viên</span>
-          </button>
-          <button class="sb-icon-btn" id="btnOpenSettings" type="button" title="Cài đặt & Quản lý Tabs">
-            <i class="fa-solid fa-gear" style="color:#fbbf24;"></i>
-            <span>Cài đặt</span>
-          </button>
-          <!-- Collapse Toggle -->
-          <button class="sb-collapse-btn" id="btnSidebarCollapse" type="button" title="Thu gọn / Mở rộng sidebar">
-            <i class="fa-solid fa-chevron-left"></i>
-            <span class="sb-collapse-label">Thu gọn</span>
-          </button>
-        </div>
-      </aside>
-
-      <!-- ═══ MAIN CONTENT ═══ -->
-      <div class="main-content" id="mainContent">
-        <!-- Workspace Header -->
-        <header class="workspace-header">
-          <!-- Mobile hamburger -->
-          <button class="wh-icon-btn mob-menu-btn" id="btnMobileMenu" type="button" title="Menu">
-            <i class="fa-solid fa-bars"></i>
-          </button>
-
-          <!-- Active tab title -->
-          <div class="workspace-title" id="workspaceTitle">
-            <i class="fa-solid fa-note-sticky"></i>
-            <span id="workspaceTitleText">Note Issue</span>
-          </div>
-
-          <!-- Right side utilities -->
-          <div class="workspace-right">
-            <!-- Search -->
-            <div class="search-container" id="topbarSearchContainer">
-              <button class="wh-icon-btn" id="topbarSearchBtn" type="button" title="Tìm kiếm nhanh">
-                <i class="fa-solid fa-magnifying-glass"></i>
-              </button>
-              <div class="search-dropdown" id="topbarSearchDropdown">
-                <div class="search-input-box">
-                  <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8; font-size:13px;"></i>
-                  <input type="text" id="topbarSearchInput" placeholder="Tìm nhanh giải pháp, NPP, số ĐT..." autocomplete="off" />
-                  <span class="search-esc-hint">ESC</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Notifications -->
-            <div class="topbar-notif-group">
-              <!-- Upcoming Tasks -->
-              <div class="upcoming-container" id="upcomingContainer">
-                <button class="wh-icon-btn upcoming-btn" id="upcomingBtn" type="button" title="Task sắp thông báo hôm nay">
-                  <i class="fa-regular fa-clock"></i>
-                  <span class="upcoming-badge" id="upcomingBadge">0</span>
-                </button>
-                <div class="upcoming-dropdown" id="upcomingDropdown">
-                  <div class="upcoming-hdr">
-                    <h4><i class="fa-regular fa-clock" style="color:#2563eb;"></i> Sắp thông báo hôm nay</h4>
-                    <span class="upcoming-count-badge" id="upcomingCountBadge">0 task</span>
-                  </div>
-                  <div class="upcoming-list" id="upcomingList"></div>
-                </div>
-              </div>
-
-              <!-- Bell Notification -->
-              <div class="bell-container" id="bellContainer">
-                <button class="wh-icon-btn bell-btn" id="bellBtn" type="button" title="Thông báo khẩn cấp">
-                  <i class="fa-solid fa-bell"></i>
-                  <span class="bell-badge" id="bellBadge">0</span>
-                </button>
-                <div class="bell-dropdown" id="bellDropdown">
-                  <div class="bell-hdr">
-                    <h4>Thông báo khẩn cấp</h4>
-                    <button class="bell-mark-all" id="bellMarkAllBtn"><i class="fa-solid fa-check-double"></i> Đánh dấu tất cả đã đọc</button>
-                  </div>
-                  <div class="bell-list" id="bellList"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- App Utilities -->
-            <div class="utilities-container" id="topbarUtilitiesContainer">
-              <button class="wh-icon-btn" id="topbarAppsBtn" type="button" title="Tiện ích & Quản trị">
-                <i class="fa-solid fa-table-cells"></i>
-              </button>
-              <div class="utilities-dropdown" id="topbarAppsDropdown">
-                <div class="util-dropdown-header">Hệ thống</div>
-                <button class="util-menu-item" id="btnAppHardReload" type="button" title="Tải lại toàn bộ hệ thống">
-                  <i class="fa-solid fa-arrows-rotate" style="color:#10b981;"></i>
-                  <span>Tải lại trang (Reload)</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Divider -->
-            <div style="width:1px; height:22px; background:#e2e8f0; flex-shrink:0;"></div>
-
-            <!-- ★ STANDALONE SYNC BUTTON – MANDATORY FAR RIGHT ★ -->
-            <button class="top-sync-btn" id="btnGlobalSync" type="button" title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
-              <i class="fa-solid fa-arrows-rotate"></i>
-              <span>Đồng bộ</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- Iframe Frame Area -->
-        <div class="frame-area">
-
-      <iframe
-        class="tab-frame"
-        id="nvnSolutionsFrame"
-        src="nvn_solutions.html"
-        title="NVN Solutions"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="callLogFrame"
-        src="call_log.html"
-        title="Call Log"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="sumaryticketFrame"
-        src="sumary_ticket.html"
-        title="Sumary Ticket"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="vanMauNVNFrame"
-        src="van_mau_nvn.html"
-        title="Văn mẫu NVN"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="dms1ReportFrame"
-        src="dms1_report.html"
-        title="DMS1 Report"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="taskPendingFrame"
-        src="task_pending_nvn.html"
-        title="Task Pending NVN"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="tableFrame"
-        src="table.html"
-        title="Table"
-      ></iframe>
-      <iframe
-        class="tab-frame"
-        id="dtListFrame"
-        src="danh_sach_dt.html"
-        title="Danh sách DT"
-      ></iframe>
-      <iframe
-        class="tab-frame active"
-        id="noteIssueFrame"
-        src="note_issue.html"
-        title="Note Issue"
-      ></iframe>
-    </div>
+  <div class="shell">
+    <!-- ═══ LEFT SIDEBAR ═══ -->
+    <aside class="sidebar" id="mainSidebar" aria-label="Điều hướng chính">
+      <!-- Brand Header -->
+      <div class="sb-header">
+        <div class="sb-logo"><i class="fa-solid fa-shapes"></i></div>
+        <div class="sb-brand-text">
+          <span class="sb-brand-name">DMS Hub</span>
+          <span class="sb-brand-badge">
+            <span class="sb-badge-dot"></span>
+            PROD
+          </span>
         </div>
       </div>
+
+      <!-- Primary Navigation -->
+      <nav class="sb-nav">
+        <div class="sb-section-label">Điều hướng</div>
+
+        <button class="tab-button active" type="button" title="Note Issue" data-frame-target="noteIssueFrame">
+          <i class="fa-solid fa-note-sticky"></i>
+          <span class="tab-btn-label">Note Issue</span>
+        </button>
+
+        <button class="tab-button" type="button" title="Task Pending NVN" data-frame-target="taskPendingFrame">
+          <i class="fa-solid fa-list-check"></i>
+          <span class="tab-btn-label">Task Pending NVN</span>
+          <span class="tab-dot" title="Có công việc cần theo dõi"></span>
+        </button>
+
+        <button class="tab-button" type="button" title="Solutions" data-frame-target="nvnSolutionsFrame">
+          <i class="fa-solid fa-lightbulb"></i>
+          <span class="tab-btn-label">Solutions</span>
+        </button>
+
+        <button class="tab-button" type="button" title="Call Log" data-frame-target="callLogFrame">
+          <i class="fa-solid fa-headset"></i>
+          <span class="tab-btn-label">Call Log</span>
+        </button>
+
+        <button class="tab-button" type="button" title="Summary Ticket" data-frame-target="sumaryticketFrame">
+          <i class="fa-solid fa-ticket"></i>
+          <span class="tab-btn-label">Summary Ticket</span>
+        </button>
+
+        <button class="tab-button" type="button" title="Văn mẫu NVN" data-frame-target="vanMauNVNFrame">
+          <i class="fa-solid fa-file-signature"></i>
+          <span class="tab-btn-label">Văn mẫu NVN</span>
+        </button>
+
+        <button class="tab-button" type="button" title="Table" data-frame-target="tableFrame">
+          <i class="fa-solid fa-table"></i>
+          <span class="tab-btn-label">Table</span>
+        </button>
+      </nav>
+
+      <!-- More / Overflow Section -->
+      <div class="sb-more-section" id="sbMoreSection">
+        <button class="sb-more-toggle" id="btnSbMore" type="button" title="Danh mục mở rộng">
+          <i class="fa-solid fa-ellipsis"></i>
+          <span class="sb-more-label">Danh mục mở rộng</span>
+          <i class="fa-solid fa-chevron-down sb-more-chevron"></i>
+        </button>
+        <div class="sb-more-content" id="sbMoreContent">
+          <button class="tab-button nav-more-item" type="button" title="DMS1 Report"
+            data-frame-target="dms1ReportFrame">
+            <i class="fa-solid fa-chart-simple"></i>
+            <span class="tab-btn-label">DMS1 Report</span>
+          </button>
+          <button class="tab-button nav-more-item" type="button" title="Danh sách ĐT" data-frame-target="dtListFrame">
+            <i class="fa-solid fa-address-book"></i>
+            <span class="tab-btn-label">Danh sách ĐT</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="sb-bottom">
+        <button class="sb-icon-btn" id="btnTopProjects" type="button" title="Quản lý dự án">
+          <i class="fa-solid fa-diagram-project" style="color:#818cf8;"></i>
+          <span>Quản lý Dự án</span>
+        </button>
+        <button class="sb-icon-btn" id="btnTopMembers" type="button" title="Quản lý nhân viên">
+          <i class="fa-solid fa-users" style="color:#38bdf8;"></i>
+          <span>Quản lý Nhân viên</span>
+        </button>
+        <button class="sb-icon-btn" id="btnOpenSettings" type="button" title="Cài đặt & Quản lý Tabs">
+          <i class="fa-solid fa-gear" style="color:#fbbf24;"></i>
+          <span>Cài đặt</span>
+        </button>
+        <!-- Collapse Toggle -->
+        <button class="sb-collapse-btn" id="btnSidebarCollapse" type="button" title="Thu gọn / Mở rộng sidebar">
+          <i class="fa-solid fa-chevron-left"></i>
+          <span class="sb-collapse-label">Thu gọn</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <div class="main-content" id="mainContent">
+      <!-- Workspace Header -->
+      <header class="workspace-header">
+        <!-- Mobile hamburger -->
+        <button class="wh-icon-btn mob-menu-btn" id="btnMobileMenu" type="button" title="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <!-- Active tab title -->
+        <div class="workspace-title" id="workspaceTitle">
+          <i class="fa-solid fa-note-sticky"></i>
+          <span id="workspaceTitleText">Note Issue</span>
+        </div>
+
+        <!-- Right side utilities -->
+        <div class="workspace-right">
+          <!-- Search -->
+          <div class="search-container" id="topbarSearchContainer">
+            <button class="wh-icon-btn" id="topbarSearchBtn" type="button" title="Tìm kiếm nhanh">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+            <div class="search-dropdown" id="topbarSearchDropdown">
+              <div class="search-input-box">
+                <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8; font-size:13px;"></i>
+                <input type="text" id="topbarSearchInput" placeholder="Tìm nhanh giải pháp, NPP, số ĐT..."
+                  autocomplete="off" />
+                <span class="search-esc-hint">ESC</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notifications -->
+          <div class="topbar-notif-group">
+            <!-- Upcoming Tasks -->
+            <div class="upcoming-container" id="upcomingContainer">
+              <button class="wh-icon-btn upcoming-btn" id="upcomingBtn" type="button"
+                title="Task sắp thông báo hôm nay">
+                <i class="fa-regular fa-clock"></i>
+                <span class="upcoming-badge" id="upcomingBadge">0</span>
+              </button>
+              <div class="upcoming-dropdown" id="upcomingDropdown">
+                <div class="upcoming-hdr">
+                  <h4><i class="fa-regular fa-clock" style="color:#2563eb;"></i> Sắp thông báo hôm nay</h4>
+                  <span class="upcoming-count-badge" id="upcomingCountBadge">0 task</span>
+                </div>
+                <div class="upcoming-list" id="upcomingList"></div>
+              </div>
+            </div>
+
+            <!-- Bell Notification -->
+            <div class="bell-container" id="bellContainer">
+              <button class="wh-icon-btn bell-btn" id="bellBtn" type="button" title="Thông báo khẩn cấp">
+                <i class="fa-solid fa-bell"></i>
+                <span class="bell-badge" id="bellBadge">0</span>
+              </button>
+              <div class="bell-dropdown" id="bellDropdown">
+                <div class="bell-hdr">
+                  <h4>Thông báo khẩn cấp</h4>
+                  <button class="bell-mark-all" id="bellMarkAllBtn"><i class="fa-solid fa-check-double"></i> Đánh dấu
+                    tất cả đã đọc</button>
+                </div>
+                <div class="bell-list" id="bellList"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- App Utilities -->
+          <div class="utilities-container" id="topbarUtilitiesContainer">
+            <button class="wh-icon-btn" id="topbarAppsBtn" type="button" title="Tiện ích & Quản trị">
+              <i class="fa-solid fa-table-cells"></i>
+            </button>
+            <div class="utilities-dropdown" id="topbarAppsDropdown">
+              <div class="util-dropdown-header">Hệ thống</div>
+              <button class="util-menu-item" id="btnAppHardReload" type="button" title="Tải lại toàn bộ hệ thống">
+                <i class="fa-solid fa-arrows-rotate" style="color:#10b981;"></i>
+                <span>Tải lại trang (Reload)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Divider -->
+          <div style="width:1px; height:22px; background:#e2e8f0; flex-shrink:0;"></div>
+
+          <!-- ★ STANDALONE SYNC BUTTON – MANDATORY FAR RIGHT ★ -->
+          <button class="top-sync-btn" id="btnGlobalSync" type="button"
+            title="Đồng bộ / Tải lại dữ liệu mới nhất (Alt+S)">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Đồng bộ</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Iframe Frame Area -->
+      <div class="frame-area">
+
+        <iframe class="tab-frame" id="nvnSolutionsFrame" src="nvn_solutions.html" title="Solutions"></iframe>
+        <iframe class="tab-frame" id="callLogFrame" src="call_log.html" title="Call Log"></iframe>
+        <iframe class="tab-frame" id="sumaryticketFrame" src="sumary_ticket.html" title="Sumary Ticket"></iframe>
+        <iframe class="tab-frame" id="vanMauNVNFrame" src="van_mau_nvn.html" title="Văn mẫu NVN"></iframe>
+        <iframe class="tab-frame" id="dms1ReportFrame" src="dms1_report.html" title="DMS1 Report"></iframe>
+        <iframe class="tab-frame" id="taskPendingFrame" src="task_pending_nvn.html" title="Task Pending NVN"></iframe>
+        <iframe class="tab-frame" id="tableFrame" src="table.html" title="Table"></iframe>
+        <iframe class="tab-frame" id="dtListFrame" src="danh_sach_dt.html" title="Danh sách DT"></iframe>
+        <iframe class="tab-frame active" id="noteIssueFrame" src="note_issue.html" title="Note Issue"></iframe>
+      </div>
     </div>
+  </div>
+  </div>
 
-    <script>
-      const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
-      const tabFrames = Array.from(document.querySelectorAll(".tab-frame"));
-      const mainSidebar = document.getElementById("mainSidebar");
-      const mainContent = document.getElementById("mainContent");
-      const mobileOverlay = document.getElementById("mobileOverlay");
-      const btnSidebarCollapse = document.getElementById("btnSidebarCollapse");
-      const btnMobileMenu = document.getElementById("btnMobileMenu");
-      const btnSbMore = document.getElementById("btnSbMore");
-      const sbMoreContent = document.getElementById("sbMoreContent");
-      const workspaceTitle = document.getElementById("workspaceTitle");
-      const workspaceTitleText = document.getElementById("workspaceTitleText");
+  <script>
+    const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+    const tabFrames = Array.from(document.querySelectorAll(".tab-frame"));
+    const mainSidebar = document.getElementById("mainSidebar");
+    const mainContent = document.getElementById("mainContent");
+    const mobileOverlay = document.getElementById("mobileOverlay");
+    const btnSidebarCollapse = document.getElementById("btnSidebarCollapse");
+    const btnMobileMenu = document.getElementById("btnMobileMenu");
+    const btnSbMore = document.getElementById("btnSbMore");
+    const sbMoreContent = document.getElementById("sbMoreContent");
+    const workspaceTitle = document.getElementById("workspaceTitle");
+    const workspaceTitleText = document.getElementById("workspaceTitleText");
 
-      // Tab icons & labels for workspace title
-      const TAB_METADATA = {
-        noteIssueFrame: { icon: "fa-note-sticky", label: "Note Issue" },
-        taskPendingFrame: { icon: "fa-list-check", label: "Task Pending NVN" },
-        nvnSolutionsFrame: { icon: "fa-lightbulb", label: "NVN Solutions" },
-        callLogFrame: { icon: "fa-headset", label: "Call Log" },
-        sumaryticketFrame: { icon: "fa-ticket", label: "Summary Ticket" },
-        vanMauNVNFrame: { icon: "fa-file-signature", label: "Văn mẫu NVN" },
-        tableFrame: { icon: "fa-table", label: "Table" },
-        dms1ReportFrame: { icon: "fa-chart-simple", label: "DMS1 Report" },
-        dtListFrame: { icon: "fa-address-book", label: "Danh sách ĐT" }
-      };
+    // Tab icons & labels for workspace title
+    const TAB_METADATA = {
+      noteIssueFrame: { icon: "fa-note-sticky", label: "Note Issue" },
+      taskPendingFrame: { icon: "fa-list-check", label: "Task Pending NVN" },
+      nvnSolutionsFrame: { icon: "fa-lightbulb", label: "Solutions" },
+      callLogFrame: { icon: "fa-headset", label: "Call Log" },
+      sumaryticketFrame: { icon: "fa-ticket", label: "Summary Ticket" },
+      vanMauNVNFrame: { icon: "fa-file-signature", label: "Văn mẫu NVN" },
+      tableFrame: { icon: "fa-table", label: "Table" },
+      dms1ReportFrame: { icon: "fa-chart-simple", label: "DMS1 Report" },
+      dtListFrame: { icon: "fa-address-book", label: "Danh sách ĐT" }
+    };
 
-      function updateWorkspaceTitle(targetId) {
-        const meta = TAB_METADATA[targetId];
-        if (!meta) return;
-        if (workspaceTitleText) workspaceTitleText.textContent = meta.label;
-        if (workspaceTitle) {
-          const iconEl = workspaceTitle.querySelector("i");
-          if (iconEl) iconEl.className = `fa-solid ${meta.icon}`;
-        }
+    function updateWorkspaceTitle(targetId) {
+      const meta = TAB_METADATA[targetId];
+      if (!meta) return;
+      if (workspaceTitleText) workspaceTitleText.textContent = meta.label;
+      if (workspaceTitle) {
+        const iconEl = workspaceTitle.querySelector("i");
+        if (iconEl) iconEl.className = `fa-solid ${meta.icon}`;
       }
+    }
 
-      function updateMoreHighlight(activeButton) {
-        if (!btnSbMore || !sbMoreContent) return;
-        const isInsideMore = sbMoreContent.contains(activeButton);
-        btnSbMore.classList.toggle("has-active-child", isInsideMore);
-      }
+    function updateMoreHighlight(activeButton) {
+      if (!btnSbMore || !sbMoreContent) return;
+      const isInsideMore = sbMoreContent.contains(activeButton);
+      btnSbMore.classList.toggle("has-active-child", isInsideMore);
+    }
 
-      tabButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const targetId = button.dataset.frameTarget;
-          tabButtons.forEach((item) => {
-            item.classList.toggle("active", item === button);
-          });
-
-          updateMoreHighlight(button);
-          updateWorkspaceTitle(targetId);
-
-          // Close mobile drawer on selection if in mobile view
-          if (window.innerWidth <= 640 && mainSidebar && mainSidebar.classList.contains("mobile-open")) {
-            mainSidebar.classList.remove("mobile-open");
-            if (mobileOverlay) mobileOverlay.classList.remove("show");
-          }
-
-          tabFrames.forEach((frame) => {
-            const isActive = frame.id === targetId;
-            frame.classList.toggle("active", isActive);
-            if (isActive && frame.contentWindow) {
-              try {
-                frame.contentWindow.postMessage({ type: "TAB_ACTIVATED" }, "*");
-              } catch (e) {}
-            }
-          });
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const targetId = button.dataset.frameTarget;
+        tabButtons.forEach((item) => {
+          item.classList.toggle("active", item === button);
         });
-      });
 
-      // ── Tab Switching via postMessage & BroadcastChannel (e.g. from Call Log) ──
-      function switchTabTo(targetId) {
-        if (!targetId) return;
-        const targetBtn = document.querySelector(`.tab-button[data-frame-target="${targetId}"]`);
-        if (targetBtn) {
-          targetBtn.click();
-        }
-      }
+        updateMoreHighlight(button);
+        updateWorkspaceTitle(targetId);
 
-      window.addEventListener("message", (e) => {
-        if (!e.data) return;
-        if (e.data.type === "SWITCH_TAB" || e.data.type === "NAVIGATE_TAB" || e.data.type === "OPEN_TAB") {
-          const targetId = e.data.target || e.data.targetId || e.data.frameTarget;
-          switchTabTo(targetId);
-        }
-      });
-
-      if (typeof BroadcastChannel !== "undefined") {
-        try {
-          const tabBc = new BroadcastChannel("DMS_SWITCH_TAB");
-          tabBc.onmessage = (e) => {
-            if (e.data && (e.data.target || e.data.targetId)) {
-              switchTabTo(e.data.target || e.data.targetId);
-            }
-          };
-        } catch (_) {}
-      }
-
-      // ── Sidebar Collapse / Expand Toggle ──
-      const LS_SIDEBAR_COLLAPSED = "dms_sidebar_collapsed_v1";
-      function applySidebarCollapse(collapsed) {
-        if (!mainSidebar || !mainContent) return;
-        mainSidebar.classList.toggle("collapsed", collapsed);
-        mainContent.classList.toggle("sidebar-collapsed", collapsed);
-        try { localStorage.setItem(LS_SIDEBAR_COLLAPSED, collapsed ? "1" : "0"); } catch (_) {}
-      }
-
-      if (btnSidebarCollapse) {
-        btnSidebarCollapse.addEventListener("click", () => {
-          const isCollapsed = mainSidebar.classList.contains("collapsed");
-          applySidebarCollapse(!isCollapsed);
-        });
-      }
-
-      // Restore collapse preference on load
-      try {
-        if (localStorage.getItem(LS_SIDEBAR_COLLAPSED) === "1") {
-          applySidebarCollapse(true);
-        }
-      } catch (_) {}
-
-      // ── Sidebar More Section (Accordion) ──
-      if (btnSbMore && sbMoreContent) {
-        btnSbMore.addEventListener("click", () => {
-          sbMoreContent.classList.toggle("open");
-          btnSbMore.classList.toggle("open");
-        });
-      }
-
-      // ── Mobile Drawer Toggle ──
-      if (btnMobileMenu && mainSidebar) {
-        btnMobileMenu.addEventListener("click", () => {
-          mainSidebar.classList.toggle("mobile-open");
-          if (mobileOverlay) mobileOverlay.classList.toggle("show");
-        });
-      }
-      if (mobileOverlay && mainSidebar) {
-        mobileOverlay.addEventListener("click", () => {
+        // Close mobile drawer on selection if in mobile view
+        if (window.innerWidth <= 640 && mainSidebar && mainSidebar.classList.contains("mobile-open")) {
           mainSidebar.classList.remove("mobile-open");
-          mobileOverlay.classList.remove("show");
-        });
-      }
+          if (mobileOverlay) mobileOverlay.classList.remove("show");
+        }
 
-      // ── Xử lý nút Đồng bộ trên topbar ──
-      const btnGlobalSync = document.getElementById("btnGlobalSync");
-      if (btnGlobalSync) {
-        btnGlobalSync.addEventListener("click", () => {
-          const icon = btnGlobalSync.querySelector("i");
-          if (icon) icon.classList.add("fa-spin");
-          btnGlobalSync.disabled = true;
-
-          const activeFrame = document.querySelector(".tab-frame.active");
-          if (activeFrame && activeFrame.contentWindow) {
+        tabFrames.forEach((frame) => {
+          const isActive = frame.id === targetId;
+          frame.classList.toggle("active", isActive);
+          if (isActive && frame.contentWindow) {
             try {
-              // 1. Broadcast event
-              activeFrame.contentWindow.postMessage({ type: "GLOBAL_SYNC_CLICKED" }, "*");
-
-              // 2. Kích hoạt trực tiếp các hàm hoặc nút đồng bộ bên trong frame nếu cùng domain
-              try {
-                if (typeof activeFrame.contentWindow.forceSyncTableWithCloud === "function") {
-                  activeFrame.contentWindow.forceSyncTableWithCloud();
-                }
-                if (typeof activeFrame.contentWindow.forceSyncWithCloud === "function") {
-                  activeFrame.contentWindow.forceSyncWithCloud();
-                }
-              } catch (_) {}
-
-              const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
-              if (doc) {
-                const targetBtn =
-                  doc.getElementById("btnRefreshData") ||
-                  doc.getElementById("btnSyncR2") ||
-                  doc.getElementById("btnSyncTable") ||
-                  doc.getElementById("btnVoipReloadAll") ||
-                  doc.querySelector(".btn-sync");
-                if (targetBtn && typeof targetBtn.click === "function") {
-                  targetBtn.click();
-                }
-              }
-            } catch (err) {
-              console.warn("Lỗi gọi đồng bộ frame:", err);
-            }
-          }
-
-          setTimeout(() => {
-            if (icon) icon.classList.remove("fa-spin");
-            btnGlobalSync.disabled = false;
-          }, 1200);
-        });
-
-        // Phím tắt Alt+S
-        window.addEventListener("keydown", (e) => {
-          if (e.altKey && (e.key === "s" || e.key === "S")) {
-            e.preventDefault();
-            btnGlobalSync.click();
+              frame.contentWindow.postMessage({ type: "TAB_ACTIVATED" }, "*");
+            } catch (e) { }
           }
         });
+      });
+    });
+
+    // ── Tab Switching via postMessage & BroadcastChannel (e.g. from Call Log) ──
+    function switchTabTo(targetId) {
+      if (!targetId) return;
+      const targetBtn = document.querySelector(`.tab-button[data-frame-target="${targetId}"]`);
+      if (targetBtn) {
+        targetBtn.click();
       }
-    </script>
-    <div id="gNotifyBox"></div>
-    <script>
-    (function() {
+    }
+
+    window.addEventListener("message", (e) => {
+      if (!e.data) return;
+      if (e.data.type === "SWITCH_TAB" || e.data.type === "NAVIGATE_TAB" || e.data.type === "OPEN_TAB") {
+        const targetId = e.data.target || e.data.targetId || e.data.frameTarget;
+        switchTabTo(targetId);
+      }
+    });
+
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        const tabBc = new BroadcastChannel("DMS_SWITCH_TAB");
+        tabBc.onmessage = (e) => {
+          if (e.data && (e.data.target || e.data.targetId)) {
+            switchTabTo(e.data.target || e.data.targetId);
+          }
+        };
+      } catch (_) { }
+    }
+
+    // ── Sidebar Collapse / Expand Toggle ──
+    const LS_SIDEBAR_COLLAPSED = "dms_sidebar_collapsed_v1";
+    function applySidebarCollapse(collapsed) {
+      if (!mainSidebar || !mainContent) return;
+      mainSidebar.classList.toggle("collapsed", collapsed);
+      mainContent.classList.toggle("sidebar-collapsed", collapsed);
+      try { localStorage.setItem(LS_SIDEBAR_COLLAPSED, collapsed ? "1" : "0"); } catch (_) { }
+    }
+
+    if (btnSidebarCollapse) {
+      btnSidebarCollapse.addEventListener("click", () => {
+        const isCollapsed = mainSidebar.classList.contains("collapsed");
+        applySidebarCollapse(!isCollapsed);
+      });
+    }
+
+    // Restore collapse preference on load
+    try {
+      if (localStorage.getItem(LS_SIDEBAR_COLLAPSED) === "1") {
+        applySidebarCollapse(true);
+      }
+    } catch (_) { }
+
+    // ── Sidebar More Section (Accordion) ──
+    if (btnSbMore && sbMoreContent) {
+      btnSbMore.addEventListener("click", () => {
+        sbMoreContent.classList.toggle("open");
+        btnSbMore.classList.toggle("open");
+      });
+    }
+
+    // ── Mobile Drawer Toggle ──
+    if (btnMobileMenu && mainSidebar) {
+      btnMobileMenu.addEventListener("click", () => {
+        mainSidebar.classList.toggle("mobile-open");
+        if (mobileOverlay) mobileOverlay.classList.toggle("show");
+      });
+    }
+    if (mobileOverlay && mainSidebar) {
+      mobileOverlay.addEventListener("click", () => {
+        mainSidebar.classList.remove("mobile-open");
+        mobileOverlay.classList.remove("show");
+      });
+    }
+
+    // ── Xử lý nút Đồng bộ trên topbar ──
+    const btnGlobalSync = document.getElementById("btnGlobalSync");
+    if (btnGlobalSync) {
+      btnGlobalSync.addEventListener("click", () => {
+        const icon = btnGlobalSync.querySelector("i");
+        if (icon) icon.classList.add("fa-spin");
+        btnGlobalSync.disabled = true;
+
+        const activeFrame = document.querySelector(".tab-frame.active");
+        if (activeFrame && activeFrame.contentWindow) {
+          try {
+            // 1. Broadcast event
+            activeFrame.contentWindow.postMessage({ type: "GLOBAL_SYNC_CLICKED" }, "*");
+
+            // 2. Kích hoạt trực tiếp các hàm hoặc nút đồng bộ bên trong frame nếu cùng domain
+            try {
+              if (typeof activeFrame.contentWindow.forceSyncTableWithCloud === "function") {
+                activeFrame.contentWindow.forceSyncTableWithCloud();
+              }
+              if (typeof activeFrame.contentWindow.forceSyncWithCloud === "function") {
+                activeFrame.contentWindow.forceSyncWithCloud();
+              }
+            } catch (_) { }
+
+            const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
+            if (doc) {
+              const targetBtn =
+                doc.getElementById("btnRefreshData") ||
+                doc.getElementById("btnSyncR2") ||
+                doc.getElementById("btnSyncTable") ||
+                doc.getElementById("btnVoipReloadAll") ||
+                doc.querySelector(".btn-sync");
+              if (targetBtn && typeof targetBtn.click === "function") {
+                targetBtn.click();
+              }
+            }
+          } catch (err) {
+            console.warn("Lỗi gọi đồng bộ frame:", err);
+          }
+        }
+
+        setTimeout(() => {
+          if (icon) icon.classList.remove("fa-spin");
+          btnGlobalSync.disabled = false;
+        }, 1200);
+      });
+
+      // Phím tắt Alt+S
+      window.addEventListener("keydown", (e) => {
+        if (e.altKey && (e.key === "s" || e.key === "S")) {
+          e.preventDefault();
+          btnGlobalSync.click();
+        }
+      });
+    }
+  </script>
+  <div id="gNotifyBox"></div>
+  <script>
+    (function () {
       /* ── Config ── */
       // Frequency map: key → milliseconds
       const FREQ_MS = {
-        "once":    0,
-        "1_day":   86400000,
-        "3_days":  259200000,
-        "1_week":  604800000,
+        "once": 0,
+        "1_day": 86400000,
+        "3_days": 259200000,
+        "1_week": 604800000,
         "2_weeks": 1209600000,
         "1_month": 2592000000
       };
       // Fallback intervals by priority (if no alert_frequency set)
       const PRIORITY_INTERVALS = { P1: 3600000, P2: 10800000, P3: 86400000 };
 
-      const LS_TASKS_KEY    = "app_tasks_data";
+      const LS_TASKS_KEY = "app_tasks_data";
       const LS_NOTIFIED_KEY = "task_last_notified";
-      const CHECK_INTERVAL  = 60000; // check every 1 min
+      const CHECK_INTERVAL = 60000; // check every 1 min
 
-      const ICONS  = { P1: "🚨", P2: "⚠️", P3: "📣" };
+      const ICONS = { P1: "🚨", P2: "⚠️", P3: "📣" };
       const LABELS = { P1: "🔴 P1 – Khẩn cấp", P2: "🟡 P2 – Cao", P3: "🟣 P3 – Thường" };
 
       function loadTimestamps() {
         try { return JSON.parse(localStorage.getItem(LS_NOTIFIED_KEY) || "{}"); }
-        catch(e) { return {}; }
+        catch (e) { return {}; }
       }
       function saveTimestamps(ts) {
-        try { localStorage.setItem(LS_NOTIFIED_KEY, JSON.stringify(ts)); } catch(e) {}
+        try { localStorage.setItem(LS_NOTIFIED_KEY, JSON.stringify(ts)); } catch (e) { }
       }
 
       const DAY_LABELS = { mon: "Thứ 2", tue: "Thứ 3", wed: "Thứ 4", thu: "Thứ 5", fri: "Thứ 6", sat: "Thứ 7" };
@@ -1710,7 +2820,7 @@
         try {
           _notifPermission = await Notification.requestPermission();
           return _notifPermission === "granted";
-        } catch(e) { return false; }
+        } catch (e) { return false; }
       }
 
       function sendOsNotification(task) {
@@ -1728,7 +2838,7 @@
             silent: false
           });
           n.onclick = () => { window.focus(); n.close(); };
-        } catch(e) {}
+        } catch (e) { }
       }
 
       /* ── Tab-title blink when hidden ── */
@@ -1755,7 +2865,7 @@
 
       function escHtml(s) {
         return String(s || "")
-          .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
       function formatDate(dateStr) {
@@ -1805,7 +2915,7 @@
         const am = parseInt(parts[1] || "0", 10) || 0;
 
         const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-        const targetTotalMinutes  = ah * 60 + am;
+        const targetTotalMinutes = ah * 60 + am;
 
         // Chưa đến giờ cảnh báo trong ngày hôm nay -> Chưa thông báo
         if (currentTotalMinutes < targetTotalMinutes) return false;
@@ -1814,8 +2924,8 @@
         if (lastMs) {
           const lastDate = new Date(lastMs);
           if (lastDate.getFullYear() === now.getFullYear() &&
-              lastDate.getMonth() === now.getMonth() &&
-              lastDate.getDate() === now.getDate()) {
+            lastDate.getMonth() === now.getMonth() &&
+            lastDate.getDate() === now.getDate()) {
             return false;
           }
         }
@@ -1829,7 +2939,7 @@
 
         const createdDate = new Date(createdMs);
         const createdDayStart = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate()).getTime();
-        const todayDayStart   = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayDayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         const daysSinceCreation = Math.max(0, Math.round((todayDayStart - createdDayStart) / 86400000));
 
         // 4. Nếu task tạo HÔM NAY:
@@ -1884,7 +2994,7 @@
 
           if (lastMs) {
             const minDays = (freq === "2_weeks") ? 13 : 6;
-            const lastDayStart = new Date(new Date(lastMs).setHours(0,0,0,0)).getTime();
+            const lastDayStart = new Date(new Date(lastMs).setHours(0, 0, 0, 0)).getTime();
             const daysSinceLast = Math.round((todayDayStart - lastDayStart) / 86400000);
             if (daysSinceLast < minDays) return false;
           }
@@ -1929,15 +3039,15 @@
       function checkAndNotify() {
         let tasks;
         try { tasks = JSON.parse(localStorage.getItem(LS_TASKS_KEY) || "[]"); }
-        catch(e) { return; }
+        catch (e) { return; }
 
         const nowMs = Date.now();
-        const ts    = loadTimestamps();
+        const ts = loadTimestamps();
         let updated = false;
 
         const LS_READ_KEY = "task_alerts_read";
         let readIds = [];
-        try { readIds = JSON.parse(localStorage.getItem(LS_READ_KEY) || "[]"); } catch(e) {}
+        try { readIds = JSON.parse(localStorage.getItem(LS_READ_KEY) || "[]"); } catch (e) { }
         let readUpdated = false;
 
         tasks.forEach(task => {
@@ -1969,7 +3079,7 @@
         if (updated || readUpdated) {
           saveTimestamps(ts);
           if (readUpdated) {
-            try { localStorage.setItem(LS_READ_KEY, JSON.stringify(readIds)); } catch(e) {}
+            try { localStorage.setItem(LS_READ_KEY, JSON.stringify(readIds)); } catch (e) { }
           }
           if (typeof window.updateBellUI === "function") {
             window.updateBellUI();
@@ -1988,27 +3098,27 @@
         setInterval(checkAndNotify, CHECK_INTERVAL);
       });
     })();
-    </script>
+  </script>
 
-    <!-- ── Notification Bell Controller ── -->
-    <script>
-    (function() {
-      const LS_TASKS_KEY    = "app_tasks_data";
-      const LS_READ_KEY     = "task_alerts_read";
+  <!-- ── Notification Bell Controller ── -->
+  <script>
+    (function () {
+      const LS_TASKS_KEY = "app_tasks_data";
+      const LS_READ_KEY = "task_alerts_read";
       const LS_NOTIFIED_KEY = "task_last_notified";
 
       function loadTasks() {
         try { return JSON.parse(localStorage.getItem(LS_TASKS_KEY) || "[]"); }
-        catch(e) { return []; }
+        catch (e) { return []; }
       }
 
       function loadReadTaskIds() {
         try { return JSON.parse(localStorage.getItem(LS_READ_KEY) || "[]"); }
-        catch(e) { return []; }
+        catch (e) { return []; }
       }
 
       function saveReadTaskIds(ids) {
-        try { localStorage.setItem(LS_READ_KEY, JSON.stringify(ids)); } catch(e) {}
+        try { localStorage.setItem(LS_READ_KEY, JSON.stringify(ids)); } catch (e) { }
       }
 
       const DAY_LABELS = { mon: "Thứ 2", tue: "Thứ 3", wed: "Thứ 4", thu: "Thứ 5", fri: "Thứ 6", sat: "Thứ 7" };
@@ -2030,7 +3140,7 @@
 
       function loadTimestamps() {
         try { return JSON.parse(localStorage.getItem(LS_NOTIFIED_KEY) || "{}"); }
-        catch(e) { return {}; }
+        catch (e) { return {}; }
       }
 
       function parseToIsoDate(dateStr) {
@@ -2063,7 +3173,7 @@
         const todayIsoStr = `${currentYear}-${currentMonth}-${currentDate}`;
 
         // P3 chỉ xuất hiện trong chuông nếu đã có tần suất cụ thể hoặc quá hạn
-        const FREQ_MS_BELL = {"once": 0, "1_day":86400000,"3_days":259200000,"1_week":604800000,"2_weeks":1209600000,"1_month":2592000000};
+        const FREQ_MS_BELL = { "once": 0, "1_day": 86400000, "3_days": 259200000, "1_week": 604800000, "2_weeks": 1209600000, "1_month": 2592000000 };
         return tasks.filter(t => {
           if (t.status === "Done") return false;
           const deadlineIso = parseToIsoDate(t.deadline);
@@ -2079,7 +3189,7 @@
         const readIds = loadReadTaskIds().map(Number);
 
         const unreadAlerts = activeAlerts.filter(t => !readIds.includes(Number(t.id)));
-        
+
         const badge = document.getElementById("bellBadge");
         if (badge) {
           badge.textContent = unreadAlerts.length;
@@ -2150,12 +3260,12 @@
           item.addEventListener("click", () => {
             const taskId = Number(item.dataset.taskId);
             markAsRead(taskId);
-            
+
             const pendingBtn = document.querySelector('[data-frame-target="taskPendingFrame"]');
             if (pendingBtn) {
               pendingBtn.click();
             }
-            
+
             document.getElementById("bellDropdown").classList.remove("show");
           });
         });
@@ -2178,7 +3288,7 @@
 
       function escHtml(s) {
         return String(s || "")
-          .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+          .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
       function markAsRead(taskId) {
@@ -2205,7 +3315,7 @@
         const freq = task.alert_frequency;
 
         // Mức P3: chỉ cảnh báo nếu có cài đặt alert_frequency
-        const FREQ_MS_UPCOMING = {"once": 0, "1_day":86400000,"3_days":259200000,"1_week":604800000,"2_weeks":1209600000,"1_month":2592000000};
+        const FREQ_MS_UPCOMING = { "once": 0, "1_day": 86400000, "3_days": 259200000, "1_week": 604800000, "2_weeks": 1209600000, "1_month": 2592000000 };
         if ((task.priority || "P3") === "P3" && FREQ_MS_UPCOMING[freq] === undefined) return false;
 
         // 1. Phân tích giờ cảnh báo (alert_time)
@@ -2215,7 +3325,7 @@
         const am = parseInt(parts[1] || "0", 10) || 0;
 
         const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-        const targetTotalMinutes  = ah * 60 + am;
+        const targetTotalMinutes = ah * 60 + am;
 
         // CHỈ lấy các task có giờ cảnh báo SAU thời điểm hiện tại hôm nay
         if (targetTotalMinutes <= currentTotalMinutes) return false;
@@ -2224,8 +3334,8 @@
         if (lastMs) {
           const lastDate = new Date(lastMs);
           if (lastDate.getFullYear() === now.getFullYear() &&
-              lastDate.getMonth() === now.getMonth() &&
-              lastDate.getDate() === now.getDate()) {
+            lastDate.getMonth() === now.getMonth() &&
+            lastDate.getDate() === now.getDate()) {
             return false;
           }
         }
@@ -2239,7 +3349,7 @@
 
         const createdDate = new Date(createdMs);
         const createdDayStart = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate()).getTime();
-        const todayDayStart   = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const todayDayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
         const daysSinceCreation = Math.max(0, Math.round((todayDayStart - createdDayStart) / 86400000));
 
         // 4. Nếu task tạo HÔM NAY:
@@ -2294,7 +3404,7 @@
 
           if (lastMs) {
             const minDays = (freq === "2_weeks") ? 13 : 6;
-            const lastDayStart = new Date(new Date(lastMs).setHours(0,0,0,0)).getTime();
+            const lastDayStart = new Date(new Date(lastMs).setHours(0, 0, 0, 0)).getTime();
             const daysSinceLast = Math.round((todayDayStart - lastDayStart) / 86400000);
             if (daysSinceLast < minDays) return false;
           }
@@ -2490,7 +3600,7 @@
                       searchInput.focus();
                     }
                   }
-                } catch (_) {}
+                } catch (_) { }
               }
               topbarSearchDropdown?.classList.remove("show");
               topbarSearchBtn?.classList.remove("active");
@@ -2526,7 +3636,7 @@
                   if (bellDropdown) bellDropdown.classList.remove("show");
                   if (upcomingDropdown) upcomingDropdown.classList.remove("show");
                 });
-              } catch(e) {}
+              } catch (e) { }
             };
             attach();
             frame.addEventListener("load", attach);
@@ -2560,185 +3670,187 @@
         }, 5000);
       });
     })();
-    </script>
+  </script>
 
-    <div class="settings-modal-overlay" id="settingsAuthModal" style="display: none;">
-      <div class="settings-auth-card" id="settingsAuthCard">
-        <div class="auth-card-header">
-          <div class="auth-icon-circle">
-            <i class="fa-solid fa-lock"></i>
-          </div>
-          <h3>Xác thực Quản trị</h3>
-          <p>Vui lòng nhập mật khẩu quản trị để truy cập Cài đặt hệ thống</p>
+  <div class="settings-modal-overlay" id="settingsAuthModal" style="display: none;">
+    <div class="settings-auth-card" id="settingsAuthCard">
+      <div class="auth-card-header">
+        <div class="auth-icon-circle">
+          <i class="fa-solid fa-lock"></i>
         </div>
-        <form id="settingsAuthForm">
-          <div class="auth-input-group">
-            <span class="auth-input-icon"><i class="fa-solid fa-key"></i></span>
-            <input
-              type="password"
-              id="settingsPasswordInput"
-              class="auth-input"
-              placeholder="Nhập mật khẩu..."
-              autocomplete="off"
-              spellcheck="false"
-              lang="en"
-              inputmode="latin"
-              autocapitalize="none"
-              autocorrect="off"
-            />
-            <button type="button" class="auth-eye-btn" id="btnToggleAuthPwd" title="Hiện/ẩn mật khẩu">
-              <i class="fa-regular fa-eye" id="authEyeIcon"></i>
-            </button>
-          </div>
-          <div class="auth-error-msg" id="settingsAuthError" style="display: none;">
-            <i class="fa-solid fa-circle-exclamation"></i> Mật khẩu không chính xác, vui lòng thử lại!
-          </div>
-          <div class="auth-card-actions">
-            <button type="button" class="btn-auth-cancel" id="btnCancelSettingsAuth">Huỷ bỏ</button>
-            <button type="submit" class="btn-auth-submit" id="btnSubmitSettingsAuth">
-              <i class="fa-solid fa-arrow-right-to-bracket"></i> Xác nhận
-            </button>
-          </div>
-        </form>
+        <h3>Xác thực Quản trị</h3>
+        <p>Vui lòng nhập mật khẩu quản trị để truy cập Cài đặt hệ thống</p>
       </div>
-    </div>
-
-    <!-- ── Settings Tab Visibility Configuration Modal ── -->
-    <div class="settings-modal-overlay" id="settingsConfigModal" style="display: none;">
-      <div class="settings-config-card">
-        <div class="config-card-header">
-          <div class="config-header-left">
-            <div class="config-icon-badge">
-              <i class="fa-solid fa-sliders"></i>
-            </div>
-            <div>
-              <h3>Cài đặt hiển thị Tabs</h3>
-              <p>Tuỳ chỉnh ẩn hoặc hiện các Tabs trên thanh điều hướng</p>
-            </div>
-          </div>
-          <button type="button" class="config-close-btn" id="btnCloseSettingsConfig" title="Đóng">
-            <i class="fa-solid fa-xmark"></i>
+      <form id="settingsAuthForm">
+        <div class="auth-input-group">
+          <span class="auth-input-icon"><i class="fa-solid fa-key"></i></span>
+          <input type="password" id="settingsPasswordInput" class="auth-input" placeholder="Nhập mật khẩu..."
+            autocomplete="off" spellcheck="false" lang="en" inputmode="latin" autocapitalize="none" autocorrect="off" />
+          <button type="button" class="auth-eye-btn" id="btnToggleAuthPwd" title="Hiện/ẩn mật khẩu">
+            <i class="fa-regular fa-eye" id="authEyeIcon"></i>
           </button>
         </div>
-
-        <div class="config-toolbar">
-          <div class="config-stat" id="configTabStats">
-            <i class="fa-solid fa-circle-info"></i> Đang hiển thị <strong id="visibleTabsCount">8/8</strong> Tabs
-          </div>
-          <div class="config-quick-btns">
-            <button type="button" class="btn-quick-action" id="btnQuickShowAll" title="Bật hiển thị tất cả các tabs">
-              <i class="fa-solid fa-eye"></i> Hiện tất cả
-            </button>
-            <button type="button" class="btn-quick-action" id="btnQuickResetDefault" title="Khôi phục trạng thái mặc định ban đầu">
-              <i class="fa-solid fa-rotate-left"></i> Mặc định
-            </button>
-          </div>
+        <div class="auth-error-msg" id="settingsAuthError" style="display: none;">
+          <i class="fa-solid fa-circle-exclamation"></i> Mật khẩu không chính xác, vui lòng thử lại!
         </div>
-
-        <div class="config-tabs-list" id="configTabsList">
-          <!-- Dynamic Tab Toggle Items -->
-        </div>
-
-        <div class="config-card-footer">
-          <div class="config-footer-hint">
-            <i class="fa-regular fa-floppy-disk"></i> Cấu hình được lưu tự động trên trình duyệt này
-          </div>
-          <div class="config-footer-actions">
-            <button type="button" class="btn-config-secondary" id="btnCancelConfig">Đóng</button>
-            <button type="button" class="btn-config-primary" id="btnSaveConfig">
-              <i class="fa-solid fa-check"></i> Lưu & Áp dụng
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Modal: Quản lý Dự án (Toàn cục Topbar) ── -->
-    <div class="settings-modal-overlay" id="topbarProjectsModal" style="display: none;">
-      <div class="topbar-modal-card">
-        <div class="topbar-modal-header">
-          <div class="topbar-modal-header-left">
-            <div class="topbar-modal-icon-badge">
-              <i class="fa-solid fa-diagram-project"></i>
-            </div>
-            <div>
-              <h3>Quản lý Dự án</h3>
-              <p>Danh sách các dự án &amp; phân loại công việc</p>
-            </div>
-          </div>
-          <button type="button" class="topbar-modal-close-btn" id="btnCloseTopProjects" title="Đóng">
-            <i class="fa-solid fa-xmark"></i>
+        <div class="auth-card-actions">
+          <button type="button" class="btn-auth-cancel" id="btnCancelSettingsAuth">Huỷ bỏ</button>
+          <button type="submit" class="btn-auth-submit" id="btnSubmitSettingsAuth">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Xác nhận
           </button>
         </div>
-        <div class="topbar-modal-body">
-          <div style="display:flex; gap:8px; margin-bottom:14px;">
-            <input type="text" class="topbar-input" id="topNewProjectName" placeholder="Tên dự án (VD: NVN, LVN, CPTH)..." style="flex:1;" />
-            <input type="text" class="topbar-input" id="topNewProjectSystem" placeholder="Hệ thống (VD: DMS1, DMS, FPIT)..." style="width:160px;" />
-            <button class="topbar-btn-primary" id="btnTopAddProject">
-              <i class="fa-solid fa-folder-plus"></i> Thêm
-            </button>
-          </div>
-          <ul class="topbar-list" id="topProjectList">
-            <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
-          </ul>
-        </div>
-        <div class="topbar-modal-footer">
-          <button type="button" class="topbar-btn-secondary" id="btnFooterCloseTopProjects">Đóng</button>
-        </div>
-      </div>
+      </form>
     </div>
+  </div>
 
-    <!-- ── Modal: Quản lý Nhân viên (Toàn cục Topbar) ── -->
-    <div class="settings-modal-overlay" id="topbarMembersModal" style="display: none;">
-      <div class="topbar-modal-card wide">
-        <div class="topbar-modal-header">
-          <div class="topbar-modal-header-left">
-            <div class="topbar-modal-icon-badge">
-              <i class="fa-solid fa-users-gear"></i>
-            </div>
-            <div>
-              <h3>Quản lý Nhân viên</h3>
-              <p>Danh sách thành viên, mã nhân viên &amp; số máy nhánh</p>
-            </div>
+  <!-- ── Settings Tab Visibility Configuration Modal ── -->
+  <div class="settings-modal-overlay" id="settingsConfigModal" style="display: none;">
+    <div class="settings-config-card">
+      <div class="config-card-header">
+        <div class="config-header-left">
+          <div class="config-icon-badge">
+            <i class="fa-solid fa-sliders"></i>
           </div>
-          <button type="button" class="topbar-modal-close-btn" id="btnCloseTopMembers" title="Đóng">
-            <i class="fa-solid fa-xmark"></i>
+          <div>
+            <h3>Cài đặt hiển thị Tabs</h3>
+            <p>Tuỳ chỉnh ẩn hoặc hiện các Tabs trên thanh điều hướng</p>
+          </div>
+        </div>
+        <button type="button" class="config-close-btn" id="btnCloseSettingsConfig" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="config-toolbar">
+        <div class="config-stat" id="configTabStats">
+          <i class="fa-solid fa-circle-info"></i> Đang hiển thị <strong id="visibleTabsCount">8/8</strong> Tabs
+        </div>
+        <div class="config-quick-btns">
+          <button type="button" class="btn-quick-action" id="btnQuickShowAll" title="Bật hiển thị tất cả các tabs">
+            <i class="fa-solid fa-eye"></i> Hiện tất cả
+          </button>
+          <button type="button" class="btn-quick-action" id="btnQuickResetDefault"
+            title="Khôi phục trạng thái mặc định ban đầu">
+            <i class="fa-solid fa-rotate-left"></i> Mặc định
           </button>
         </div>
-        <div class="topbar-modal-body">
-          <div class="topbar-form-card">
-            <div class="topbar-form-title">
-              <i class="fa-solid fa-user-plus" style="color:#4f46e5;"></i> Thêm thành viên mới
-            </div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <input type="text" class="topbar-input" id="topNewMemberCode" placeholder="Mã NV *" style="width:120px; text-transform:uppercase; font-family:monospace; font-weight:700;" title="Mã nhân viên (bắt buộc)" />
-              <input type="text" class="topbar-input" id="topNewMemberName" placeholder="Tên nhân viên *" style="flex:1; min-width:130px;" title="Tên nhân viên (bắt buộc)" />
-              <input type="text" class="topbar-input" id="topNewMemberExt" placeholder="Máy nhánh" style="width:100px; font-family:monospace;" title="Số máy nhánh nội bộ (tuỳ chọn)" />
-              <button class="topbar-btn-primary" id="btnTopAddMember">
-                <i class="fa-solid fa-plus"></i> Thêm
-              </button>
-            </div>
-            <div style="font-size:11.5px; color:#64748b; margin-top:8px;">
-              <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...) · Máy nhánh tuỳ chọn
-            </div>
-          </div>
+      </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh sách nhân viên</span>
-            <span id="topMemberCountBadge" style="font-size:11.5px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 8px; border-radius:12px; color:#475569; font-weight:600;">0 thành viên</span>
-          </div>
+      <div class="config-tabs-list" id="configTabsList">
+        <!-- Dynamic Tab Toggle Items -->
+      </div>
 
-          <ul class="topbar-list" id="topMemberList">
-            <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
-          </ul>
+      <div class="config-card-footer">
+        <div class="config-footer-hint">
+          <i class="fa-regular fa-floppy-disk"></i> Cấu hình được lưu tự động trên trình duyệt này
         </div>
-        <div class="topbar-modal-footer">
-          <button type="button" class="topbar-btn-secondary" id="btnFooterCloseTopMembers">Đóng</button>
+        <div class="config-footer-actions">
+          <button type="button" class="btn-config-secondary" id="btnCancelConfig">Đóng</button>
+          <button type="button" class="btn-config-primary" id="btnSaveConfig">
+            <i class="fa-solid fa-check"></i> Lưu & Áp dụng
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-    <script>
+  <!-- ── Modal: Quản lý Dự án (Toàn cục Topbar) ── -->
+  <div class="settings-modal-overlay" id="topbarProjectsModal" style="display: none;">
+    <div class="topbar-modal-card">
+      <div class="topbar-modal-header">
+        <div class="topbar-modal-header-left">
+          <div class="topbar-modal-icon-badge">
+            <i class="fa-solid fa-diagram-project"></i>
+          </div>
+          <div>
+            <h3>Quản lý Dự án</h3>
+            <p>Danh sách các dự án &amp; phân loại công việc</p>
+          </div>
+        </div>
+        <button type="button" class="topbar-modal-close-btn" id="btnCloseTopProjects" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="topbar-modal-body">
+        <div style="display:flex; gap:8px; margin-bottom:14px;">
+          <input type="text" class="topbar-input" id="topNewProjectName" placeholder="Tên dự án (VD: NVN, LVN, CPTH)..."
+            style="flex:1;" />
+          <input type="text" class="topbar-input" id="topNewProjectSystem"
+            placeholder="Hệ thống (VD: DMS1, DMS, FPIT)..." style="width:160px;" />
+          <button class="topbar-btn-primary" id="btnTopAddProject">
+            <i class="fa-solid fa-folder-plus"></i> Thêm
+          </button>
+        </div>
+        <ul class="topbar-list" id="topProjectList">
+          <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
+        </ul>
+      </div>
+      <div class="topbar-modal-footer">
+        <button type="button" class="topbar-btn-secondary" id="btnFooterCloseTopProjects">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Quản lý Nhân viên (Toàn cục Topbar) ── -->
+  <div class="settings-modal-overlay" id="topbarMembersModal" style="display: none;">
+    <div class="topbar-modal-card wide">
+      <div class="topbar-modal-header">
+        <div class="topbar-modal-header-left">
+          <div class="topbar-modal-icon-badge">
+            <i class="fa-solid fa-users-gear"></i>
+          </div>
+          <div>
+            <h3>Quản lý Nhân viên</h3>
+            <p>Danh sách thành viên, mã nhân viên &amp; số máy nhánh</p>
+          </div>
+        </div>
+        <button type="button" class="topbar-modal-close-btn" id="btnCloseTopMembers" title="Đóng">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="topbar-modal-body">
+        <div class="topbar-form-card">
+          <div class="topbar-form-title">
+            <i class="fa-solid fa-user-plus" style="color:#4f46e5;"></i> Thêm thành viên mới
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input type="text" class="topbar-input" id="topNewMemberCode" placeholder="Mã NV *"
+              style="width:120px; text-transform:uppercase; font-family:monospace; font-weight:700;"
+              title="Mã nhân viên (bắt buộc)" />
+            <input type="text" class="topbar-input" id="topNewMemberName" placeholder="Tên nhân viên *"
+              style="flex:1; min-width:130px;" title="Tên nhân viên (bắt buộc)" />
+            <input type="text" class="topbar-input" id="topNewMemberExt" placeholder="Máy nhánh"
+              style="width:100px; font-family:monospace;" title="Số máy nhánh nội bộ (tuỳ chọn)" />
+            <button class="topbar-btn-primary" id="btnTopAddMember">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
+          <div style="font-size:11.5px; color:#64748b; margin-top:8px;">
+            <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...) · Máy
+            nhánh tuỳ chọn
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span
+            style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Danh
+            sách nhân viên</span>
+          <span id="topMemberCountBadge"
+            style="font-size:11.5px; background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 8px; border-radius:12px; color:#475569; font-weight:600;">0
+            thành viên</span>
+        </div>
+
+        <ul class="topbar-list" id="topMemberList">
+          <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
+        </ul>
+      </div>
+      <div class="topbar-modal-footer">
+        <button type="button" class="topbar-btn-secondary" id="btnFooterCloseTopMembers">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
     /* ── Global Projects & Members Management Controller ── */
     (function initTopbarProjectsAndMembers() {
       let gProjects = [];
@@ -2796,7 +3908,7 @@
             const ch = new BroadcastChannel("DMS_MEMBERS_SYNC");
             ch.postMessage({ type });
           }
-        } catch (_) {}
+        } catch (_) { }
 
         document.querySelectorAll(".tab-frame").forEach(frame => {
           try {
@@ -2809,7 +3921,7 @@
                 frame.contentWindow.loadMembers();
               }
             }
-          } catch (_) {}
+          } catch (_) { }
         });
       }
 
@@ -2834,7 +3946,7 @@
           const res = await apiGet("read_projects");
           if (res.status === "success") {
             gProjects = res.data || res.projects || [];
-            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) {}
+            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) { }
             renderProjects();
           }
         } catch (err) {
@@ -2882,7 +3994,7 @@
           if (res.status === "success") {
             const p = gProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
             if (p) p.system = system.trim();
-            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) {}
+            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) { }
             showHubToast(`Đã cập nhật hệ thống cho dự án "${name}"`, "success");
             notifyOtherTabs("projects");
           } else {
@@ -2957,7 +4069,7 @@
               if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
               return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
             });
-            try { localStorage.setItem("app_members_data", JSON.stringify(gMembers)); } catch (_) {}
+            try { localStorage.setItem("app_members_data", JSON.stringify(gMembers)); } catch (_) { }
             renderMembers();
           }
         } catch (err) {
@@ -3156,9 +4268,9 @@
         setupEvents();
       }
     })();
-    </script>
+  </script>
 
-    <script>
+  <script>
     /* ── Settings & Tab Visibility Controller ── */
     (function initSettingsModule() {
       const SETTINGS_AUTH_PASS = "DUNGSAI";
@@ -3213,19 +4325,19 @@
             const parsed = JSON.parse(raw);
             if (Array.isArray(parsed)) return parsed;
           }
-        } catch (_) {}
+        } catch (_) { }
         return [];
       }
 
       // Save to localStorage AND push to R2 for cross-browser sync
       function saveHiddenTabs(arr) {
-        try { localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(arr)); } catch (_) {}
+        try { localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(arr)); } catch (_) { }
         // Push to R2 (fire-and-forget)
         fetch(getSettingsApiEndpoint(), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ hiddenTabs: arr })
-        }).catch(() => {});
+        }).catch(() => { });
       }
 
       // Load settings from R2, update localStorage, then apply
@@ -3235,10 +4347,10 @@
           if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data.hiddenTabs)) {
-              try { localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(data.hiddenTabs)); } catch (_) {}
+              try { localStorage.setItem(LS_HIDDEN_TABS_KEY, JSON.stringify(data.hiddenTabs)); } catch (_) { }
             }
           }
-        } catch (_) {}
+        } catch (_) { }
         applyHiddenTabsConfig();
       }
 
@@ -3376,7 +4488,7 @@
 
       // Tab description metadata map for prettier display in Config modal
       const TAB_META = {
-        nvnSolutionsFrame: { subtitle: "nvn_solutions.html · Quản lý giải pháp & checklist NVN" },
+        nvnSolutionsFrame: { subtitle: "nvn_solutions.html · Quản lý giải pháp & checklist đa dự án (NVN, LVN, CPTH)" },
         callLogFrame: { subtitle: "call_log.html · Nhật ký cuộc gọi hỗ trợ NPP & Sales" },
         sumaryticketFrame: { subtitle: "sumary_ticket.html · Tổng hợp và phân tích ticket hỗ trợ" },
         vanMauNVNFrame: { subtitle: "van_mau_nvn.html · Mẫu văn bản & quy trình trả lời nhanh" },
@@ -3533,6 +4645,7 @@
       applyHiddenTabsConfig();
       loadHiddenTabsFromR2();
     })();
-    </script>
-  </body>
+  </script>
+</body>
+
 </html>
