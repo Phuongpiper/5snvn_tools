@@ -6709,32 +6709,58 @@
         // Nếu ticket không có bất kỳ thông tin agent nào (chưa được gán cho ai)
         if (!tAgent && !tName) return true;
 
-        // 1. So khớp mã nhân viên / agentId
-        if (issueAgent && tAgent) {
-          if (tAgent === issueAgent) return true;
-          if (tAgent.startsWith(issueAgent) || issueAgent.startsWith(tAgent)) return true;
-          const issueParts = issueAgent.split(/[\._-]+/).filter(p => p.length >= 3);
-          const tParts = tAgent.split(/[\._-]+/).filter(p => p.length >= 3);
-          if (issueParts.some(ip => tParts.includes(ip))) return true;
-        }
-
-        // 2. So khớp tên nhân viên (agentName vs issueMemberName / issueAgent)
+        const normIssueAgent = String(issueAgent || "").trim().toLowerCase();
+        const normIssueName = typeof normalizeStr === "function" ? normalizeStr(issueMemberName || "") : (issueMemberName || "").toLowerCase();
         const normTName = typeof normalizeStr === "function" ? normalizeStr(tName) : tName.toLowerCase();
-        if (issueMemberName) {
-          const normIssueName = typeof normalizeStr === "function" ? normalizeStr(issueMemberName) : issueMemberName.toLowerCase();
-          if (normTName && normIssueName) {
-            if (normTName === normIssueName) return true;
-            const wordsIssue = normIssueName.split(" ").filter(w => w.length >= 2);
-            const wordsT = normTName.split(" ").filter(w => w.length >= 2);
-            const commonWords = wordsIssue.filter(w => wordsT.includes(w));
-            if (commonWords.length >= 2 || (wordsIssue.length === 1 && commonWords.length === 1)) return true;
+
+        // 1. So khớp mã nhân viên / agentId (STRICT: phải khớp số nhân viên cuối hoặc exact match)
+        if (normIssueAgent && tAgent) {
+          if (tAgent === normIssueAgent) return true;
+          if (tAgent.startsWith(normIssueAgent) || normIssueAgent.startsWith(tAgent)) return true;
+
+          // So sánh số nhân viên (4-6 chữ số cuối cùng, VD: 3811, 0750) - nếu khác số thì CHẮC CHẮN khác người
+          const issueNumMatch = normIssueAgent.match(/(\d{3,6})(?:[._-]|$)/g);
+          const ticketNumMatch = tAgent.match(/(\d{3,6})(?:[._-]|$)/g);
+          const issueNums = issueNumMatch ? issueNumMatch.map(s => s.replace(/[._-]/g, "")) : [];
+          const ticketNums = ticketNumMatch ? ticketNumMatch.map(s => s.replace(/[._-]/g, "")) : [];
+          if (issueNums.length > 0 && ticketNums.length > 0) {
+            // Nếu có số nhân viên mà không khớp nhau -> chắc chắn khác người
+            if (!issueNums.some(n => ticketNums.includes(n))) return false;
+            return true;
+          }
+
+          // So sánh phần đầu username (VD: "tanh" vs "phuong") - nếu khác nhau -> khác người
+          const issueFirst = normIssueAgent.split(/[\._-]+/)[0];
+          const ticketFirst = tAgent.split(/[\._-]+/)[0];
+          if (issueFirst && ticketFirst && issueFirst.length >= 3 && ticketFirst.length >= 3) {
+            if (issueFirst !== ticketFirst) return false;
+            return true;
           }
         }
 
-        // 3. Nếu tên hiển thị chứa một phần mã nhân viên hoặc ngược lại
-        if (issueAgent && normTName) {
-          const agentMainPart = issueAgent.split(/[\._-]+/)[0];
+        // 2. So khớp tên nhân viên (agentName vs issueMemberName)
+        // Dùng "tên đơn" (first name / last word) để phân biệt: Tánh ≠ Phương
+        if (normIssueName && normTName) {
+          if (normIssueName === normTName) return true;
+          const wordsIssue = normIssueName.split(" ").filter(w => w.length >= 2);
+          const wordsT = normTName.split(" ").filter(w => w.length >= 2);
+          // So sánh tên riêng cuối (first name trong tên tiếng Việt), nếu khác -> khác người
+          const lastWordIssue = wordsIssue[wordsIssue.length - 1];
+          const lastWordT = wordsT[wordsT.length - 1];
+          if (lastWordIssue && lastWordT && lastWordIssue !== lastWordT) return false;
+          const commonWords = wordsIssue.filter(w => wordsT.includes(w));
+          if (commonWords.length >= 2 || (wordsIssue.length === 1 && commonWords.length === 1)) return true;
+        }
+
+        // 3. So khớp chéo: tên agent của issue chứa username đầu của ticket hoặc ngược lại
+        if (normIssueAgent && normTName) {
+          const agentMainPart = normIssueAgent.split(/[\._-]+/)[0];
           if (agentMainPart && agentMainPart.length >= 3 && normTName.includes(agentMainPart)) return true;
+        }
+        if (normIssueName && tAgent) {
+          const wordsIssue = normIssueName.split(" ").filter(w => w.length >= 2);
+          const lastWordIssue = wordsIssue[wordsIssue.length - 1];
+          if (lastWordIssue && lastWordIssue.length >= 3 && tAgent.includes(lastWordIssue)) return true;
         }
 
         // Ticket có agent nhưng không khớp với agent của issue => Khác nhân viên!
@@ -6832,8 +6858,11 @@
         }
 
         // Nếu không có ticket nào trong cùng ngày và không khớp chuỗi 100% thì kiểm tra OTRS đặc thù trước khi dừng
-        const otrsPool = (issueAgent || issueMemberName) && agentDateCandidates.length > 0 ? agentDateCandidates :
-          (sameDateTickets.length > 0 ? sameDateTickets : availableTickets.filter(t => isTicketAgentMatch(t, issueAgent, issueMemberName)));
+        // BẮT BUỘC: Nếu biết agent thì TUYỆT ĐỐI chỉ dùng agentDateCandidates (ticket của chính nhân viên đó).
+        // KHÔNG BAO GIỜ fallback sang sameDateTickets (ticket của toàn bộ nhân viên) để tránh lấy nhầm ticket của người khác.
+        const otrsPool = (issueAgent || issueMemberName)
+          ? agentDateCandidates
+          : (sameDateTickets.length > 0 ? sameDateTickets : availableTickets);
 
         if (sameDateTickets.length === 0 && !issueOtrs) return null;
 
@@ -6863,6 +6892,9 @@
             });
 
             if (validCandidates.length > 0) {
+              // BẮT BUỘC: Mọi ưu tiên đều phải kiểm tra isTicketAgentMatch khi biết agent của issue.
+              // TUYỆT ĐỐI KHÔNG có fallback "bất kể tài khoản" - nếu không có ticket nào khớp agent thì return null.
+
               // Ưu tiên 1: Cùng Agent + cùng Solution Code
               let m = validCandidates.find(t =>
                 isTicketAgentMatch(t, issueAgent, issueMemberName) &&
@@ -6876,17 +6908,11 @@
                    (issueAction && getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction))
                 );
               }
-              // Ưu tiên 3: Cùng OTRS Task hoặc Cùng Action (bất kể tài khoản)
-              if (!m && (issueOtrsTask || issueAction)) {
-                m = validCandidates.find(t =>
-                  (issueOtrsTask && typeof getOtrsCvName === "function" && getOtrsCvName(t) === issueOtrsTask) ||
-                  (issueAction && getOtrsActionType(t.solutionCode, t.solutionName, t.description) === issueAction)
-                );
-              }
-              // CHÚ Ý: Nếu issue có xác định Solution/Action/Task nhưng candidate không khớp -> TUYỆT ĐỐI KHÔNG GÁN BỪA!
+              // Ưu tiên 3: Cùng Agent + không ràng buộc Task/Action/Sol (CHỈ khi agent đã xác nhận và không có conflict)
               if (!m && !issueOtrsTask && !issueAction && !issueSolCode) {
-                m = validCandidates[0];
+                m = validCandidates.find(t => isTicketAgentMatch(t, issueAgent, issueMemberName));
               }
+              // CHÚ Ý: Không còn fallback "bất kể tài khoản" (Ưu tiên 3 cũ) và không còn validCandidates[0] bừa bãi.
 
               if (m) {
                 if (usedTicketIds) {
