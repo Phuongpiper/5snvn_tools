@@ -292,7 +292,7 @@
 
     .filter-inputs-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: 140px repeat(4, minmax(0, 1fr));
       gap: 10px;
     }
 
@@ -360,6 +360,20 @@
       background: #fee2e2;
       color: #ef4444;
     }
+
+    /* Project column & pill */
+    .project-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+    td.col-project { white-space: nowrap; text-align: center; width: 110px; }
+    th.col-project { text-align: center; width: 110px; }
 
     .clear-all-btn {
       display: none;
@@ -1085,6 +1099,12 @@
           </div>
           <div class="filter-inputs-grid">
             <div class="filter-block">
+              <label class="field-label" for="projectFilterSelect">Dự án</label>
+              <select id="projectFilterSelect" title="Lọc theo dự án" style="height:38px;padding:8px 10px;font-size:13px;font-weight:600;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);cursor:pointer;outline:none;">
+                <option value="">Tất cả dự án</option>
+              </select>
+            </div>
+            <div class="filter-block">
               <label class="field-label" for="nppSearchInput">NPP</label>
               <div class="search-input-wrap">
                 <input id="nppSearchInput" type="text" placeholder="Tên / mã NPP..." />
@@ -1501,7 +1521,8 @@
 
     const clearAllSearchBtn = document.getElementById("clearAllSearchBtn");
     function updateClearAllVisibility() {
-      const hasAny = [nppInput, nvbhInput, solutionInput, hotlineInput].some(inp => inp && inp.value);
+      const hasAny = [nppInput, nvbhInput, solutionInput, hotlineInput].some(inp => inp && inp.value)
+        || !!(document.getElementById("projectFilterSelect")?.value || "");
       if (clearAllSearchBtn) clearAllSearchBtn.style.display = hasAny ? "inline-flex" : "none";
     }
     [nppInput, nvbhInput, solutionInput, hotlineInput].forEach(inp => {
@@ -1515,6 +1536,8 @@
             inp.dispatchEvent(new Event("input", { bubbles: true }));
           }
         });
+        const projSel = document.getElementById("projectFilterSelect");
+        if (projSel) { projSel.value = ""; projSel.dispatchEvent(new Event("change", { bubbles: true })); }
         updateClearAllVisibility();
       });
     }
@@ -1522,6 +1545,22 @@
     filterInputs.forEach((inp) =>
       inp.addEventListener("input", scheduleRender),
     );
+    const projectFilterSelectEl = document.getElementById("projectFilterSelect");
+    if (projectFilterSelectEl) {
+      projectFilterSelectEl.addEventListener("change", scheduleRender);
+      projectFilterSelectEl.addEventListener("change", updateClearAllVisibility);
+    }
+    // Re-populate dropdown if projects list changes in another tab
+    window.addEventListener("storage", (e) => {
+      if (e.key === "app_projects_data") {
+        cachedProjectsList = null;
+        populateProjectFilter();
+        if (rows && rows.length && searchIndex && searchIndex.length) {
+          searchIndex = rows.map((row) => buildCallLogIndex(row));
+          scheduleRender();
+        }
+      }
+    });
 
     dateRangeSelect.addEventListener("change", () => {
       const val = dateRangeSelect.value;
@@ -1573,6 +1612,8 @@
       }
     });
 
+    populateProjectFilter();
+    syncProjectsFromCloud();
     restoreCachedData().then(async () => {
       // Tải dữ liệu mới nhất từ Cloud R2 (nếu đã có cache thì tải ngầm)
       const hasCachedRows = Array.isArray(rows) && rows.length > 0;
@@ -1686,6 +1727,8 @@
       dateColumn =
         headers.find((h) => normalizeForSearch(h) === "date") || "";
       searchIndex = rows.map((row) => buildCallLogIndex(row));
+      cachedProjectsList = null; // reset cache so dropdown reflects latest data
+      populateProjectFilter();
       controlPanel.style.display = "block";
       tableWrap.style.display = "block";
       emptyBox.style.display = "none";
@@ -1797,7 +1840,7 @@
     function findDisplayColumns() {
       /* BUG FIX: use partial-match fallback so columns are found even with spacing/case differences */
       const targets = ["dist code", "user code", "hotline", "date", "call details"];
-      return targets
+      const cols = targets
         .map((target) => {
           let col = headers.find((h) => normalizeForSearch(h) === target);
           if (!col)
@@ -1805,6 +1848,9 @@
           return col;
         })
         .filter(Boolean);
+      // Put virtual __project__ as the FIRST column before Dist code
+      cols.unshift("__project__");
+      return cols;
     }
 
     function findColumn(name) {
@@ -1822,6 +1868,124 @@
       return m ? m[1].trim() : "";
     }
 
+    /* ─── Project detection & sync ─── */
+    let cachedProjectsList = null;
+
+    function getProjectsList() {
+      if (cachedProjectsList && cachedProjectsList.length > 0) return cachedProjectsList;
+      try {
+        const raw = localStorage.getItem("app_projects_data");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedProjectsList = parsed
+              .map(p => typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : ""))
+              .filter(Boolean);
+            if (cachedProjectsList.length > 0) return cachedProjectsList;
+          }
+        }
+      } catch (_) {}
+      cachedProjectsList = ["NVN", "LVN", "CPTH", "FNB", "Nội bộ", "Asian Shine", "Syngenta", "Haleon"];
+      return cachedProjectsList;
+    }
+
+    function detectCallLogProject(row) {
+      if (row["Project"] || row["project"] || row["Dự án"]) {
+        return String(row["Project"] || row["project"] || row["Dự án"]).trim();
+      }
+      if (row["__project__"]) return row["__project__"];
+      const cd = String(row["Call Details"] || row.columnN || "").trim();
+      if (!cd) return "";
+
+      const projects = getProjectsList();
+
+      // No bracket = internal / Nội bộ
+      if (!cd.startsWith("[")) {
+        const noiBo = projects.find(p => {
+          const n = normalizeForSearch(p);
+          return n === "noi bo" || n.includes("noi bo");
+        });
+        return noiBo || "Nội bộ";
+      }
+
+      // Check first bracket: e.g. [NVN-DMS], [LVN-DMS], [CPTH], [DC], [HH]
+      const m = cd.match(/^\[([^\]]+)\]/);
+      if (m) {
+        const inside = m[1].trim();
+        const token = inside.split(/[-_\s]/)[0];
+        const matchProj = projects.find(p => p.toUpperCase() === token.toUpperCase());
+        if (matchProj) return matchProj;
+
+        // Historical tickets in NVN: [DC], [HH], [OTRS]
+        if (inside === "DC" || inside === "HH" || inside === "OTRS") {
+          return "NVN";
+        }
+      }
+
+      // Check if any project name is explicitly contained in Call Details
+      for (const p of projects) {
+        const pNorm = normalizeForSearch(p);
+        if (pNorm.length >= 2 && pNorm !== "noi bo") {
+          if (normalizeForSearch(cd).includes(pNorm)) return p;
+        }
+      }
+
+      return "NVN"; // Default fallback
+    }
+
+    function populateProjectFilter() {
+      const sel = document.getElementById("projectFilterSelect");
+      if (!sel) return;
+      const projects = getProjectsList();
+      const current = sel.value;
+      sel.innerHTML = '<option value="">Tất cả dự án</option>';
+      projects.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p;
+        opt.textContent = p;
+        sel.appendChild(opt);
+      });
+      if (current) sel.value = current;
+    }
+
+    function getTasksApiEndpoint(queryParam = "") {
+      let base = callLogApiBaseOverride;
+      if (base === null) {
+        if (window.location.protocol === "file:") {
+          base = "https://5snvn-tools.vercel.app";
+        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+          if (window.location.port !== "3000") {
+            base = "http://localhost:3000";
+          } else {
+            base = "";
+          }
+        } else {
+          base = "";
+        }
+      }
+      const sep = queryParam ? (queryParam.startsWith("?") ? "" : "?") : "";
+      return base + "/api/r2-tasks" + (queryParam ? sep + queryParam : "");
+    }
+
+    async function syncProjectsFromCloud() {
+      try {
+        const res = await fetch(getTasksApiEndpoint("?action=read_projects"));
+        if (res.ok) {
+          const json = await res.json();
+          const list = json.data || json.projects;
+          if (Array.isArray(list) && list.length > 0) {
+            localStorage.setItem("app_projects_data", JSON.stringify(list));
+            cachedProjectsList = null;
+            populateProjectFilter();
+            if (rows && rows.length && searchIndex && searchIndex.length) {
+              searchIndex = rows.map((row) => buildCallLogIndex(row));
+              scheduleRender();
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     function buildCallLogIndex(row) {
       const distNameCol = findColumn("dist name");
       const distCodeCol = findColumn("dist code");
@@ -1833,6 +1997,7 @@
       const userCodeVal = extracted || (userCodeCol && row[userCodeCol]) || "";
       const solutionFromDetails = extractSolutionFromCallDetails(detailsVal);
       const nppFromDetails = extractNppFromCallDetails(detailsVal);
+      const projectVal = detectCallLogProject(row);
       return {
         npp: buildSearchText([row[distNameCol], nppFromDetails ? ('NPP ' + nppFromDetails) : '', nppFromDetails].join(" ")),
         nppCode: buildSearchText(String(row[distCodeCol] || "")),
@@ -1841,6 +2006,7 @@
           [row[hotlineCol], detailsVal].join(" "),
         ),
         solution: buildSearchText(solutionFromDetails),
+        project: projectVal,
       };
     }
 
@@ -1979,12 +2145,14 @@
       if (typeof updateClearAllVisibility === "function") updateClearAllVisibility();
       const nppValue = nppInput.value;
       const nppIsNumeric = isNumericQuery(nppValue);
+      const projectFilterVal = (document.getElementById("projectFilterSelect")?.value || "").trim();
       const filters = {
         npp: nppIsNumeric ? [] : getSearchTokens(nppValue),
         nppCode: nppIsNumeric ? getSearchTokens(nppValue) : [],
         nvbh: getSearchTokens(nvbhInput.value),
         hotline: getSearchTokens(hotlineInput.value),
         solution: getSearchTokens(solutionInput.value),
+        project: projectFilterVal ? [projectFilterVal] : [],
       };
       const filtered = searchIndex
         .map((entry, i) => ({ row: rows[i], entry }))
@@ -2000,6 +2168,7 @@
         displayColumns
           .map((col, i) => {
             const cls = getColumnClass(col, i);
+            if (col === "__project__") return `<th class="${cls}">Project</th>`;
             if (normalizeForSearch(col) === "date") {
               const active = dateFilterValue ? " active-filter" : "";
               return `<th class="${cls}${active}" data-date-filter="true"><span class="date-filter-trigger">${escapeHTML(col)} ▾</span></th>`;
@@ -2042,6 +2211,7 @@
     }
 
     function getColumnClass(col, i) {
+      if (col === "__project__") return "col-project";
       const n = normalizeForSearch(col);
       if (n === "date") return "col-date";
       if (n === "dist code" || n.includes("dist code")) return "col-dist";
@@ -2053,6 +2223,17 @@
     }
 
     function highlightCell(row, col) {
+      if (col === "__project__") {
+        const proj = detectCallLogProject(row);
+        if (!proj) return "";
+        const projEscaped = escapeHTML(proj);
+        const isNoiBo = normalizeForSearch(proj).includes("noi bo");
+        const pillStyle = isNoiBo
+          ? "background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;"
+          : "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;";
+        const icon = isNoiBo ? "fa-solid fa-building-user" : "fa-solid fa-diagram-project";
+        return `<span class="project-pill" style="${pillStyle}" title="Dự án: ${projEscaped}"><i class="${icon}" style="font-size:10px;margin-right:4px;"></i>${projEscaped}</span>`;
+      }
       const value = row[col] || "";
       const n = normalizeForSearch(col);
       if (n === "dist code" || n.includes("dist code")) {
@@ -2211,6 +2392,10 @@
         // nppCode: tìm prefix (bắt đầu bằng) để match Dist code chính xác hơn
         if (key === "nppCode") {
           return tokens.every((t) => (entry.nppCode || "").startsWith(t));
+        }
+        // project: exact match (chọn từ dropdown)
+        if (key === "project") {
+          return tokens.some((t) => (entry.project || "").toLowerCase() === t.toLowerCase());
         }
         const text = entry[key] || "";
         return tokens.every((t) => text.includes(t));
