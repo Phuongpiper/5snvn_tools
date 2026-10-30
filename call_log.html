@@ -1234,7 +1234,8 @@
       searchIndex = [],
       dateColumn = "",
       dateFilterValue = "",
-      renderTimer = null;
+      renderTimer = null,
+      cachedProjectsList = null;
     const MAX_RENDER_ROWS = 300;
     const CACHE_KEY = "dms_call_log_cache_v1";
     const CACHE_DB_NAME = "dms_search_cache_db";
@@ -1257,6 +1258,7 @@
     const nvbhInput = document.getElementById("nvbhSearchInput");
     const hotlineInput = document.getElementById("hotlineSearchInput");
     const solutionInput = document.getElementById("solutionSearchInput");
+    const projectFilterSelect = document.getElementById("projectFilterSelect");
     const filterInputs = [nppInput, nvbhInput, hotlineInput, solutionInput];
     const countBadge = document.getElementById("countBadge");
 
@@ -1869,8 +1871,6 @@
     }
 
     /* ─── Project detection & sync ─── */
-    let cachedProjectsList = null;
-
     function getProjectsList() {
       if (cachedProjectsList && cachedProjectsList.length > 0) return cachedProjectsList;
       try {
