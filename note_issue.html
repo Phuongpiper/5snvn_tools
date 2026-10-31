@@ -6106,10 +6106,20 @@
           });
 
           const availableNames = rawList.map(p => typeof p === "string" ? p.trim() : (p?.name || "").trim());
-          if (availableNames.includes(currentVal)) {
-            sel.value = currentVal;
-          } else if (availableNames.includes(savedProj)) {
-            sel.value = savedProj;
+          const availableNamesLower = availableNames.map(n => n.toLowerCase());
+          const findMatch = (val) => {
+            if (!val) return "";
+            const exact = availableNames.find(n => n === val);
+            if (exact) return exact;
+            const ci = availableNames.find(n => n.toLowerCase() === val.toLowerCase());
+            return ci || "";
+          };
+          const matchCurrent = findMatch(currentVal);
+          const matchSaved = findMatch(savedProj);
+          if (matchCurrent) {
+            sel.value = matchCurrent;
+          } else if (matchSaved) {
+            sel.value = matchSaved;
           } else {
             sel.value = availableNames[0] || "NVN";
           }
@@ -13668,7 +13678,9 @@
          VOIP24H CALL HISTORY LOGIC & NOTE ISSUE STATUS MATCHING
       ────────────────────────────────────────────────────────────────────────── */
       let voipCalls = [];
-      let voipCurrentRange = "thisMonth";
+      let voipCurrentRange = (function() {
+        try { return localStorage.getItem("dms_voip_selected_range_v1") || "thisMonth"; } catch(_) { return "thisMonth"; }
+      })();
       let voipLoading = false;
       let allR2TempIssues = [];
       let sugFilterType = "mine"; // "all" | "mine" — mặc định lọc theo nhân viên đang chọn
@@ -13902,27 +13914,55 @@
           sel.appendChild(optAll);
         }
 
-        // Chọn giá trị mặc định hợp lý:
+        // Chọn giá trị mặc định: ưu tiên localStorage, sau đó prevVal, cuối cùng mặc định theo project
+        const savedDid = localStorage.getItem("dms_voip_selected_did_v1") || "";
+
+        function applyDidValue(val) {
+          if (!val) return false;
+          // Kiểm tra value có tồn tại trong dropdown không
+          const exists = Array.from(sel.options).some(o => o.value === val);
+          if (exists) { sel.value = val; return true; }
+          return false;
+        }
+
         if (currentProjDids.length > 0) {
           // Dự án hiện tại có đầu số riêng:
-          if (prevVal && (currentProjDids.includes(prevVal) || (prevVal === "project_all" && currentProjDids.length > 1))) {
-            sel.value = prevVal;
-          } else if (currentProjDids.length > 1) {
-            sel.value = "project_all";
-          } else {
-            sel.value = currentProjDids[0];
+          let applied = false;
+          // 1. Thử savedDid từ localStorage
+          if (savedDid && (currentProjDids.includes(savedDid) || savedDid === "project_all" || savedDid === "all" || addedDids.has(savedDid))) {
+            applied = applyDidValue(savedDid);
+          }
+          // 2. Thử prevVal (giá trị đang chọn hiện tại)
+          if (!applied && prevVal && (currentProjDids.includes(prevVal) || (prevVal === "project_all" && currentProjDids.length > 1))) {
+            applied = applyDidValue(prevVal);
+          }
+          // 3. Mặc định
+          if (!applied) {
+            if (currentProjDids.length > 1) {
+              sel.value = "project_all";
+            } else {
+              sel.value = currentProjDids[0];
+            }
           }
         } else {
           // Dự án null (nhận tất cả):
-          if (prevVal && (prevVal === "all" || addedDids.has(prevVal))) {
-            sel.value = prevVal;
-          } else {
-            sel.value = "all";
+          let applied = false;
+          if (savedDid && (savedDid === "all" || addedDids.has(savedDid))) {
+            applied = applyDidValue(savedDid);
           }
+          if (!applied && prevVal && (prevVal === "all" || addedDids.has(prevVal))) {
+            applied = applyDidValue(prevVal);
+          }
+          if (!applied) { sel.value = "all"; }
         }
       }
 
       window.onVoipDidDropdownChange = function () {
+        // Lưu lựa chọn đầu số vào localStorage
+        const selDid = document.getElementById("voipSelectDid");
+        if (selDid && selDid.value) {
+          try { localStorage.setItem("dms_voip_selected_did_v1", selDid.value); } catch (_) {}
+        }
         if (voipCalls && voipCalls.length > 0) {
           renderVoipTable();
           updateVoipKpiCardsAndBadges();
@@ -14828,6 +14868,7 @@
 
       window.onVoipRangeChange = function (range) {
         voipCurrentRange = range;
+        try { localStorage.setItem("dms_voip_selected_range_v1", range); } catch (_) {}
         const customWrap = document.getElementById("voipCustomDateWrap");
         if (customWrap) {
           customWrap.style.display = range === "custom" ? "inline-flex" : "none";
