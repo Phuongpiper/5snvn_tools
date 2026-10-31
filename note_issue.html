@@ -5679,10 +5679,10 @@
       }
 
       // API & Keys
-      const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbyGQa4TbzVZEkf3IkqktgeZrJdh0pQ2eNLz-9K2_sy_uiDDWeEc6I4J7oCqwLKtY8-a/exec";
+      const SOLUTIONS_API_URL = "https://script.google.com/macros/s/AKfycbxGxGoLUMeSiKBgsBmwKmzXAmSAfzQiHAl_Yxdu9DTAOZEgnqnQtrNxw7HX4A84IgA-/exec";
       const R2_DT_API_URL = "https://5snvn-tools.vercel.app/api/r2-dt";
       const R2_ISSUES_API_URL = "https://5snvn-tools.vercel.app/api/r2-issues";
-      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V4";
+      const LS_SOLUTIONS_KEY = "NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V5";
       const LS_DT_KEY = "DMS_DT_LIST_DATA_V1";
       const LS_TEMP_KEY = "DMS_NOTE_ISSUE_TEMP_V1";
       const LS_CURRENT_MEMBER_KEY = "dms_current_member";
@@ -6217,6 +6217,9 @@
         if (txtSolutionStatus) txtSolutionStatus.textContent = "Solution: Đang nạp...";
         if (pillSolutionStatus) pillSolutionStatus.classList.remove("active");
 
+        // Dọn sạch cache phiên bản cũ V4
+        try { localStorage.removeItem("NVN_SOLUTIONS_CACHE_NOTE_ISSUE_V4"); } catch (_) {}
+
         if (!force) {
           try {
             const cached = localStorage.getItem(LS_SOLUTIONS_KEY);
@@ -6232,7 +6235,18 @@
         }
 
         try {
-          const res = await fetch(SOLUTIONS_API_URL, { cache: "no-cache" });
+          // Lấy URL cấu hình mới nhất từ R2 system_urls nếu có
+          let apiUrl = SOLUTIONS_API_URL;
+          try {
+            const r2UrlRes = await fetch((window.location.protocol === "file:" ? "https://5snvn-tools.vercel.app" : "") + "/api/r2-urls?t=" + Date.now(), { cache: "no-cache" });
+            if (r2UrlRes.ok) {
+              const urls = await r2UrlRes.json();
+              const dynUrl = urls["Solution"] || urls["Solutions"] || urls["NVN Solution"];
+              if (dynUrl && dynUrl.startsWith("http")) apiUrl = dynUrl;
+            }
+          } catch (_) {}
+
+          const res = await fetch(apiUrl, { cache: "no-cache" });
           if (res.ok) {
             const data = await res.json();
             const list = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
@@ -6241,15 +6255,30 @@
                 .filter(d => (d.columnB && d.columnB !== "Code") || d.columnE || d.columnG)
                 .map(d => {
                   const code = String(d.columnB || d.Code || d.code || "").trim();
-                  const proj = String(d.project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
+                  let proj = String(d.project || d.Project || "").trim().toUpperCase();
+                  if (!proj) {
+                    const cUpper = code.toUpperCase();
+                    if (cUpper.startsWith("LVN")) proj = "LVN";
+                    else if (cUpper.startsWith("CPVN")) proj = "CPVN";
+                    else if (cUpper.startsWith("CPTH")) proj = "CPTH";
+                    else if (cUpper.startsWith("FNB")) proj = "FNB";
+                    else if (cUpper.startsWith("WSM") || cUpper.startsWith("ASIAN")) proj = "Asian Shine";
+                    else if (cUpper.startsWith("SYN")) proj = "Syngenta";
+                    else if (cUpper.startsWith("HALEON")) proj = "Haleon";
+                    else {
+                      const m = cUpper.match(/^([A-Z0-9]+)-/);
+                      proj = m ? m[1] : "NVN";
+                    }
+                  }
                   // Cột E là Tên Solution chuẩn xác
                   const solName = String(d.columnE || d["Tên Solution"] || d.name || "").trim();
-                  // Hướng giải quyết / Solution: columnJ (NVN) hoặc columnH (LVN, CPTH)
+                  // Hướng giải quyết / Solution: columnJ (NVN) hoặc columnH (LVN, CPTH, CPVN)
                   const solSteps = String(d.columnJ || d.columnH || d.Solution || d.solution || "").trim();
+                  const rawType = String(d.columnD || d.type || "").trim().toUpperCase();
                   return {
                     project: proj,
                     code: code,
-                    type: (d.columnD || "").trim().toUpperCase().includes("DC") ? "DC" : "HH",
+                    type: rawType.includes("DC") ? "DC" : "HH",
                     name: solName,
                     issue: String(d.columnG || d.columnE || "").trim(),
                     solution: solSteps,
@@ -8153,9 +8182,11 @@
         const q = normalizeStr(val);
         const curProj = (typeof getSelectedProject === "function" ? getSelectedProject() : "NVN").trim().toUpperCase();
         
-        // CHỈ GỢI Ý SOLUTION CỦA ĐÚNG DỰ ÁN ĐANG CHỌN
-        const projSolutions = solutionsList.filter(s => (s.project || "NVN").toUpperCase() === curProj);
-        const pool = projSolutions.length > 0 ? projSolutions : solutionsList;
+        // CHỈ GỢI Ý SOLUTION CỦA ĐÚNG DỰ ÁN ĐANG CHỌN (Tuyệt đối không lấy nhầm dự án khác)
+        const projSolutions = (curProj && curProj !== "ALL")
+          ? solutionsList.filter(s => (s.project || "NVN").toUpperCase() === curProj)
+          : solutionsList;
+        const pool = projSolutions;
 
         const matchesWithScore = pool
           .map(s => ({ item: s, score: scoreSolution(s, q) }))
@@ -8170,7 +8201,11 @@
             .map(
               (m, idx) => {
                 const proj = (m.project || "NVN").toUpperCase();
-                const projBadgeStyle = proj === "NVN" ? "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;" : proj === "LVN" ? "background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;" : "background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;";
+                let projBadgeStyle = "background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe;";
+                if (proj === "NVN") projBadgeStyle = "background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;";
+                else if (proj === "LVN") projBadgeStyle = "background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;";
+                else if (proj === "CPVN") projBadgeStyle = "background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;";
+                else if (proj === "CPTH") projBadgeStyle = "background:#fdf4ff;color:#a21caf;border:1px solid #f0abfc;";
                 return `
             <div class="ac-studio-item" data-idx="${idx}" data-code="${escapeHTML(m.code)}">
               <div>
@@ -9897,11 +9932,18 @@
         return false;
       }
 
-      function getSolutionCodeByName(name) {
+      function getSolutionCodeByName(name, projName = null) {
         if (!name) return "";
         const clean = name.trim().toLowerCase();
+        const curP = (projName || (typeof getSelectedProject === "function" ? getSelectedProject() : "NVN")).trim().toUpperCase();
         if (Array.isArray(solutionsList)) {
-          let item = solutionsList.find(s => s && s.name && s.name.trim().toLowerCase() === clean);
+          // Ưu tiên tìm trong đúng dự án đang chọn
+          let item = solutionsList.find(s => s && (s.project || "").toUpperCase() === curP && s.name && s.name.trim().toLowerCase() === clean);
+          if (item && item.code) return item.code;
+          item = solutionsList.find(s => s && (s.project || "").toUpperCase() === curP && s.name && (s.name.trim().toLowerCase().includes(clean) || clean.includes(s.name.trim().toLowerCase())));
+          if (item && item.code) return item.code;
+          // Fallback toàn bộ
+          item = solutionsList.find(s => s && s.name && s.name.trim().toLowerCase() === clean);
           if (item && item.code) return item.code;
           item = solutionsList.find(s => s && s.name && (s.name.trim().toLowerCase().includes(clean) || clean.includes(s.name.trim().toLowerCase())));
           if (item && item.code) return item.code;

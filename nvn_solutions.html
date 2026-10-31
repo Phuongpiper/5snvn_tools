@@ -816,6 +816,12 @@
       border: 1px solid #ddd6fe;
     }
 
+    .project-pill-cpvn {
+      background: #fff7ed;
+      color: #c2410c;
+      border: 1px solid #fed7aa;
+    }
+
     .project-pill-other {
       background: #f1f5f9;
       color: #475569;
@@ -1105,7 +1111,7 @@
       currentFilteredRows = [];
     // CATEGORY_MAP removed per request
     const MAX_RENDER_ROWS = 200;
-    const CACHE_KEY = "dms_solutions_multi_cache_v4";
+    const CACHE_KEY = "dms_solutions_multi_cache_v5";
     let activeSolutionProject = "ALL";
     let availableProjects = [];
     let projectCounts = {};
@@ -1123,7 +1129,7 @@
     );
 
     // Thiết lập giá trị ban đầu cho các input từ localStorage
-    const defaultJsonUrl = "https://script.google.com/macros/s/AKfycbyGQa4TbzVZEkf3IkqktgeZrJdh0pQ2eNLz-9K2_sy_uiDDWeEc6I4J7oCqwLKtY8-a/exec";
+    const defaultJsonUrl = "https://script.google.com/macros/s/AKfycbxGxGoLUMeSiKBgsBmwKmzXAmSAfzQiHAl_Yxdu9DTAOZEgnqnQtrNxw7HX4A84IgA-/exec";
     const oldUrlPattern = /AKfycbx3m2eFrfAh4xQpGCCdxxnq0ZRPHLCpJ1Xq9RfVcGgz83jivaL-OpnlFm8gOFaQuM1D|script\.googleusercontent\.com/i;
 
     let storedApiUrl = localStorage.getItem("NVN_SOLUTIONS_API_URL");
@@ -1525,7 +1531,7 @@
 
       projects.forEach(p => {
         const isActive = activeSolutionProject === p;
-        const icon = p === "NVN" ? "fa-cube" : p === "LVN" ? "fa-shield-halved" : "fa-laptop-code";
+        const icon = p === "NVN" ? "fa-cube" : p === "LVN" ? "fa-shield-halved" : p === "CPVN" ? "fa-feather" : p === "CPTH" ? "fa-laptop-code" : "fa-folder";
         html += `
           <button type="button" class="project-tab-btn ${isActive ? 'active' : ''}" data-project="${p}">
             <i class="fa-solid ${icon}" style="font-size:10px;"></i>
@@ -1801,7 +1807,7 @@
                   const val = row[col] || "";
                   if (col === "__col_1") {
                     const proj = (row.__col_project || "NVN").toUpperCase();
-                    const pillClass = proj === "NVN" ? "project-pill-nvn" : proj === "LVN" ? "project-pill-lvn" : proj === "CPTH" ? "project-pill-cpth" : "project-pill-other";
+                    const pillClass = proj === "NVN" ? "project-pill-nvn" : proj === "LVN" ? "project-pill-lvn" : proj === "CPVN" ? "project-pill-cpvn" : proj === "CPTH" ? "project-pill-cpth" : "project-pill-other";
                     return `<td><span class="project-pill ${pillClass}">${escapeHTML(proj)}</span>${highlightMany(val, [
                       rawKeyword,
                       col === refineColumn ? rawRefineKeyword : "",
@@ -2069,7 +2075,7 @@
         .map(([label, col]) => [label, col ? row[col] : ""])
         .filter(([, v]) => String(v || "").trim());
       const bestProj = (row.__col_project || "NVN").toUpperCase();
-      const bestPillClass = bestProj === "NVN" ? "project-pill-nvn" : bestProj === "LVN" ? "project-pill-lvn" : bestProj === "CPTH" ? "project-pill-cpth" : "project-pill-other";
+      const bestPillClass = bestProj === "NVN" ? "project-pill-nvn" : bestProj === "LVN" ? "project-pill-lvn" : bestProj === "CPVN" ? "project-pill-cpvn" : bestProj === "CPTH" ? "project-pill-cpth" : "project-pill-other";
       solutionDetail.innerHTML =
         '<div class="detail-card-header"><h2>&#11088; Kết quả phù hợp nhất</h2><div style="display:flex;align-items:center;gap:6px;"><span class="project-pill ' + bestPillClass + '">' + escapeHTML(bestProj) + '</span><span class="detail-badge">Top 1</span></div></div>' +
         '<div class="detail-grid">' +
@@ -2446,7 +2452,18 @@
       return list
         .map((item) => {
           const code = String(item.columnB || item.Code || item.code || item.solution_code || "").trim();
-          const proj = String(item.project || (code.startsWith("LVN") ? "LVN" : (code.startsWith("CPTH") ? "CPTH" : "NVN"))).trim().toUpperCase();
+          let proj = String(item.project || item.Project || "").trim().toUpperCase();
+          if (!proj) {
+            const cUpper = code.toUpperCase();
+            if (cUpper.startsWith("LVN")) proj = "LVN";
+            else if (cUpper.startsWith("CPVN")) proj = "CPVN";
+            else if (cUpper.startsWith("CPTH")) proj = "CPTH";
+            else if (cUpper.startsWith("FNB")) proj = "FNB";
+            else {
+              const m = cUpper.match(/^([A-Z0-9]+)-/);
+              proj = m ? m[1] : "NVN";
+            }
+          }
           // Cột E là Tên Solution chuẩn xác
           const solName = String(item.columnE || item["Tên Solution"] || item.name || item.solution_name || "").trim();
           // Solution / Hướng xử lý: columnJ (NVN) hoặc columnH (LVN, CPTH)
