@@ -9,6 +9,7 @@ const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.e
 const R2_ISSUES_KEY        = "dms_note_issues.json";
 const R2_CALLS_KEY         = "voip24h_calls_cache.json";
 const R2_TASK_KEY          = "task_pending_data.json";
+const R2_SETTINGS_KEY      = "settings_data.json";
 
 function hmacSha256(key, msg, enc) {
   return crypto.createHmac("sha256", key).update(msg, "utf8").digest(enc);
@@ -90,25 +91,21 @@ const CORS = {
 
 /**
  * Chuẩn hoá chuỗi ngày về định dạng DD/MM/YYYY
- * Hỗ trợ: YYYY-MM-DD, DD/MM/YYYY, D/M/YYYY, timestamp số
  */
 function normalizeDate(dateStr) {
   if (!dateStr) return "";
   const s = String(dateStr).trim();
 
-  // Dạng DD/MM/YYYY hoặc D/M/YYYY
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
     const [d, m, y] = s.split("/");
     return d.padStart(2, "0") + "/" + m.padStart(2, "0") + "/" + y;
   }
 
-  // Dạng YYYY-MM-DD (ISO date)
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
     const [y, m, d] = s.slice(0, 10).split("-");
     return d + "/" + m + "/" + y;
   }
 
-  // Timestamp số (milliseconds)
   const ts = Number(s);
   if (!isNaN(ts) && ts > 1000000000000) {
     const dt = new Date(ts);
@@ -122,18 +119,33 @@ function normalizeDate(dateStr) {
 }
 
 /**
- * Tổng hợp số lượng Issue theo ngày và nhân viên
- * @param {Array}  issues  - Danh sách issues từ R2
- * @param {Object} filters - { date, memberCode, dateFrom, dateTo }
- * @returns {{ rows: Array, total: number, groupedByDate: Object }}
+ * Lấy mã dự án của một Issue
  */
-function aggregateIssueStats(issues, filters) {
+function getIssueProject(iss) {
+  if (!iss) return "NVN";
+  if (iss.project && typeof iss.project === "string" && iss.project.trim()) {
+    return iss.project.trim().toUpperCase();
+  }
+  const str = iss.result || iss.description || (iss.fields && iss.fields.solution) || "";
+  const m = String(str).match(/^\[([A-Za-z0-9_-]+?)(?:-[^\]]+)?\]/);
+  if (m) return m[1].toUpperCase();
+  const m2 = String(str).match(/\[([A-Za-z0-9_-]+?)(?:-[^\]]+)?\]/);
+  if (m2) return m2[1].toUpperCase();
+  return "NVN";
+}
+
+/**
+ * Tổng hợp số lượng Issue theo ngày và nhân viên, hỗ trợ lọc theo dự án
+ */
+function aggregateIssueStats(issues, filters, targetProjects, excludedPhones) {
   filters = filters || {};
+  targetProjects = Array.isArray(targetProjects) ? targetProjects : [];
+  excludedPhones = Array.isArray(excludedPhones) ? excludedPhones : [];
+
   if (!Array.isArray(issues) || issues.length === 0) {
     return { rows: [], total: 0, groupedByDate: {} };
   }
 
-  // Parse ngày lọc một lần duy nhất
   function parseDMY(s) {
     const n = normalizeDate(s);
     if (!n) return null;
@@ -146,11 +158,24 @@ function aggregateIssueStats(issues, filters) {
   const filterTo       = filters.dateTo     ? parseDMY(filters.dateTo)    : null;
   const filterMember   = filters.memberCode ? String(filters.memberCode).trim().toUpperCase() : "";
 
-  // Map: "DD/MM/YYYY__MEMBERCODE" -> { date, memberCode, count }
   const countMap = new Map();
 
   for (const issue of issues) {
     if (!issue || !issue.result) continue;
+
+    // 1. Lọc theo Dự án (nếu có chọn)
+    if (targetProjects.length > 0) {
+      const p = getIssueProject(issue);
+      if (!targetProjects.includes(p)) continue;
+    }
+
+    // 2. Lọc bỏ số hotline miễn note
+    if (excludedPhones.length > 0) {
+      const phoneMatch = String(issue.result || "").match(/Hotline\s*([0-9]{9,11})/i) ||
+                         String(issue.result || "").match(/([0-9]{10,11})/);
+      const hotline = phoneMatch ? phoneMatch[1] : "";
+      if (hotline && excludedPhones.includes(hotline)) continue;
+    }
 
     const date       = normalizeDate(issue.date);
     const rawMemberCode = String(issue.memberCode || issue.member || "").trim();
@@ -158,7 +183,7 @@ function aggregateIssueStats(issues, filters) {
 
     if (!date || !memberCode) continue;
 
-    // --- Áp dụng bộ lọc ---
+    // 3. Áp dụng bộ lọc ngày & nhân viên
     if (filterDate && date !== filterDate) continue;
 
     if (filterFrom || filterTo) {
@@ -169,7 +194,6 @@ function aggregateIssueStats(issues, filters) {
     }
 
     if (filterMember && rawMemberCode.toUpperCase() !== filterMember) continue;
-    // ----------------------
 
     const key = date + "__" + memberCode.toUpperCase();
     if (countMap.has(key)) {
@@ -179,7 +203,6 @@ function aggregateIssueStats(issues, filters) {
     }
   }
 
-  // Sắp xếp: ngày mới nhất trước, trong cùng ngày sort theo memberCode A->Z
   const rows = Array.from(countMap.values()).sort(function(a, b) {
     function toTime(s) {
       const [d, m, y] = s.split("/");
@@ -192,7 +215,6 @@ function aggregateIssueStats(issues, filters) {
 
   const total = rows.reduce(function(sum, r) { return sum + r.count; }, 0);
 
-  // Group theo ngày để extension dễ render bảng theo nhóm ngày
   const groupedByDate = {};
   for (const row of rows) {
     if (!groupedByDate[row.date]) groupedByDate[row.date] = [];
@@ -233,10 +255,14 @@ function getVietnamToday() {
 }
 
 /**
- * Tổng hợp số lượng cuộc gọi theo tháng và ngày cho từng nhân viên
+ * Tổng hợp số lượng cuộc gọi theo tháng và ngày cho từng nhân viên, hỗ trợ lọc theo dự án
  */
-function aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth) {
-  // Danh sách nhân viên mặc định nếu không có trên R2
+function aggregateCallStats(calls, members, projectsList, targetProjects, targetDids, excludedPhones, targetIsoDate, targetIsoMonth) {
+  targetProjects = Array.isArray(targetProjects) ? targetProjects : [];
+  targetDids = Array.isArray(targetDids) ? targetDids : [];
+  excludedPhones = Array.isArray(excludedPhones) ? excludedPhones : [];
+
+  // Danh sách nhân viên core mặc định
   const canonicalMembers = [
     { code: "khoa.a.ly.6069", extension: "113" },
     { code: "phuong.h.nguyen.0750", extension: "116" },
@@ -247,13 +273,35 @@ function aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth) {
   const memberMap = new Map();
   canonicalMembers.forEach(m => memberMap.set(m.code.toLowerCase(), { ...m }));
 
+  // Lọc danh sách nhân viên theo dự án mục tiêu
+  let allowedMemberNames = null;
+  if (targetProjects.length > 0 && Array.isArray(projectsList) && projectsList.length > 0) {
+    allowedMemberNames = new Set();
+    projectsList.forEach(p => {
+      const pName = String(p?.name || "").trim().toUpperCase();
+      if (targetProjects.includes(pName)) {
+        (p.members || []).forEach(n => allowedMemberNames.add(String(n).trim().toLowerCase()));
+      }
+    });
+  }
+
   if (Array.isArray(members)) {
     members.forEach(m => {
       const code = String(m.code || "").toLowerCase().trim();
+      const name = String(m.name || "").toLowerCase().trim();
       const ext = String(m.extension || "").trim();
-      if (code && ext && !memberMap.has(code)) {
+      if (!code || !ext) return;
+
+      // Nếu có lọc dự án, chỉ thêm thành viên thuộc dự án đó
+      if (allowedMemberNames && !allowedMemberNames.has(name) && !allowedMemberNames.has(code)) {
+        // Nếu không thuộc dự án, xoá khỏi memberMap (ví dụ CPVN members)
+        memberMap.delete(code);
+        return;
+      }
+
+      if (!memberMap.has(code)) {
         memberMap.set(code, { code, extension: ext });
-      } else if (code && ext && memberMap.has(code) && !memberMap.get(code).extension) {
+      } else if (!memberMap.get(code).extension) {
         memberMap.get(code).extension = ext;
       }
     });
@@ -276,6 +324,19 @@ function aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth) {
         const isExt = String(c.src) === ext || String(c.dst) === ext;
         if (!isExt) continue;
         if (!isCallAnswered(c)) continue;
+
+        // Lọc theo Đầu số (DID) của các dự án đã chọn
+        const cDid = String(c.did || "").trim();
+        if (targetDids.length > 0 && cDid && !targetDids.includes(cDid)) {
+          continue; // Cuộc gọi thuộc đầu số dự án khác -> bỏ qua
+        }
+
+        // Lọc bỏ số miễn note
+        const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
+        const customerPhone = isInbound ? String(c.src || "").trim() : String(c.dst || "").trim();
+        if (customerPhone && excludedPhones.includes(customerPhone) && customerPhone !== ext) {
+          continue;
+        }
 
         const time = String(c.calldate || c.call_date || c.time || "");
         if (targetIsoMonth && time.startsWith(targetIsoMonth)) {
@@ -309,7 +370,6 @@ function aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth) {
 // Handler chính
 // ============================================================
 module.exports = async function handler(req, res) {
-  // CORS preflight
   Object.entries(CORS).forEach(function(e) { res.setHeader(e[0], e[1]); });
   if (req.method === "OPTIONS") return res.status(204).end();
 
@@ -323,10 +383,6 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // ---- Query params ----
-    // ?date=07/10/2026                       -> lọc đúng một ngày
-    // ?dateFrom=01/10/2026&dateTo=07/10/2026 -> lọc khoảng ngày
-    // ?memberCode=khoa.a.ly.6069             -> lọc một nhân viên
     let q = {};
     try {
       const parsedUrl = new URL(req.url, "http://localhost");
@@ -343,6 +399,13 @@ module.exports = async function handler(req, res) {
       memberCode: q.memberCode || q.member || ""
     };
 
+    // Xác định dự án mục tiêu: ?projects=NVN,LVN,Haleon (mặc định: NVN,LVN,Haleon)
+    const rawProjects = q.projects !== undefined ? q.projects : (q.project !== undefined ? q.project : "NVN,LVN,Haleon");
+    const isAllProjects = String(rawProjects).toLowerCase() === "all" || String(rawProjects).trim() === "*";
+    const targetProjects = isAllProjects
+      ? []
+      : String(rawProjects).split(/[,;]+/).map(p => p.trim().toUpperCase()).filter(Boolean);
+
     // Xác định ngày và tháng mục tiêu cho cuộc gọi
     const vnToday = getVietnamToday();
     let targetIsoDate = vnToday.isoDate;
@@ -358,15 +421,15 @@ module.exports = async function handler(req, res) {
         targetDisplayDate = `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
       }
     } else {
-      // Mặc định bộ lọc lọc theo ngày hôm nay
       filters.date = targetDisplayDate;
     }
 
     // ---- Lấy song song dữ liệu từ R2 ----
-    const [r2IssuesRes, r2CallsRes, r2TaskRes] = await Promise.all([
+    const [r2IssuesRes, r2CallsRes, r2TaskRes, r2SettingsRes] = await Promise.all([
       r2Fetch("GET", "", R2_ISSUES_KEY).catch(() => ({ statusCode: 500, body: "" })),
       r2Fetch("GET", "", R2_CALLS_KEY).catch(() => ({ statusCode: 500, body: "" })),
-      r2Fetch("GET", "", R2_TASK_KEY).catch(() => ({ statusCode: 500, body: "" }))
+      r2Fetch("GET", "", R2_TASK_KEY).catch(() => ({ statusCode: 500, body: "" })),
+      r2Fetch("GET", "", R2_SETTINGS_KEY).catch(() => ({ statusCode: 500, body: "" }))
     ]);
 
     let issues = [];
@@ -390,15 +453,49 @@ module.exports = async function handler(req, res) {
     }
 
     let members = [];
+    let projectsList = [];
     if (r2TaskRes.statusCode === 200) {
       try {
         const parsed = JSON.parse(r2TaskRes.body);
         members = Array.isArray(parsed.members) ? parsed.members : [];
+        projectsList = Array.isArray(parsed.projects) ? parsed.projects : [];
       } catch (_) {}
     }
 
+    let settings = {};
+    if (r2SettingsRes.statusCode === 200) {
+      try { settings = JSON.parse(r2SettingsRes.body); } catch (_) {}
+    }
+
+    const projectDids = settings.projectDids || {
+      "NVN": ["02873065650"],
+      "LVN": ["02873099980"],
+      "Haleon": ["02873099980", "02873098989"],
+      "CPVN": ["02873095950"]
+    };
+
+    const excludedPhones = (settings.excludedPhones || []).map(p => {
+      return typeof p === "object" ? String(p.phone || "").trim() : String(p || "").trim();
+    }).filter(Boolean);
+
+    // Tập hợp các đầu số DID của dự án đã chọn
+    const targetDids = new Set();
+    if (targetProjects.length > 0) {
+      targetProjects.forEach(p => {
+        for (const [k, v] of Object.entries(projectDids)) {
+          if (k.trim().toUpperCase() === p) {
+            if (Array.isArray(v)) v.forEach(d => d && targetDids.add(String(d).trim()));
+            else if (typeof v === "string" && v.trim()) {
+              v.split(/[,;\s]+/).forEach(d => d && targetDids.add(String(d).trim()));
+            }
+          }
+        }
+      });
+    }
+    const targetDidList = Array.from(targetDids);
+
     // 1. Thống kê Issue
-    const stats = aggregateIssueStats(issues, filters);
+    const stats = aggregateIssueStats(issues, filters, targetProjects, excludedPhones);
 
     const leftRows = (stats.rows || []).map(r => [
       r.date || targetDisplayDate,
@@ -418,10 +515,11 @@ module.exports = async function handler(req, res) {
     };
 
     // 2. Thống kê Cuộc gọi
-    const rightTable = aggregateCallStats(calls, members, targetIsoDate, targetIsoMonth);
+    const rightTable = aggregateCallStats(calls, members, projectsList, targetProjects, targetDidList, excludedPhones, targetIsoDate, targetIsoMonth);
 
     return res.status(200).json({
       status:        "success",
+      projects:      targetProjects.length > 0 ? targetProjects : ["ALL"],
       filters:       filters,
       date:          targetDisplayDate,
       leftTable:     leftTable,
@@ -437,4 +535,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: err.message, stack: err.stack });
   }
 };
-
