@@ -14726,7 +14726,7 @@
           return;
         }
 
-        function renderVoipCallRowHtml(c, idx) {
+        window.renderVoipCallRowHtml = function(c, idx) {
           const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
@@ -14851,7 +14851,7 @@
               </div>
             </td>
           </tr>`;
-        }
+        };
 
         // Lưu filtered vào biến toàn cục để phân trang
         window._voipFilteredCalls = filtered;
