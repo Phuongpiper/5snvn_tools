@@ -13293,7 +13293,8 @@
             const data = await res.json();
             if (data && data.projectDids && typeof data.projectDids === "object") {
               saveVoipDidConfig(data.projectDids, false);
-              populateVoipDidDropdown();
+              if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
+        populateVoipDidDropdown();
               renderVoipTable();
               updateVoipKpiCardsAndBadges();
             }
@@ -14041,6 +14042,39 @@
         }
       }
 
+      function getStaffProjects(staff) {
+        if (!staff) return [];
+        const staffName = String(staff.name || "").trim().toLowerCase();
+        const staffCode = String(staff.code || "").trim().toLowerCase();
+        if (!staffName && !staffCode) return [];
+
+        let projectsList = [];
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) projectsList = parsed;
+          }
+        } catch (_) {}
+
+        const matchedProjects = [];
+        projectsList.forEach(p => {
+          if (!p) return;
+          const pName = typeof p === "string" ? p.trim() : (p.name ? p.name.trim() : "");
+          if (!pName) return;
+          const members = Array.isArray(p.members) ? p.members : [];
+          const isMember = members.some(m => {
+            const mStr = String(m || "").trim().toLowerCase();
+            return (staffName && mStr === staffName) || (staffCode && mStr === staffCode);
+          });
+          if (isMember) {
+            matchedProjects.push(pName);
+          }
+        });
+
+        return matchedProjects;
+      }
+
       function checkCallNoteStatus(call, forceRefresh = false) {
         if (!call) return { status: "unknown" };
         if (!forceRefresh && call._noteStatusCache && (Date.now() - (call._noteStatusCacheTime || 0) < 60000)) {
@@ -14059,31 +14093,69 @@
 
         let result = null;
 
-        // QUY TẮC MỚI: NGHE HỘ ĐẦU SỐ KHÁC DỰ ÁN → MIỄN NOTE cho dự án hiện tại
+        // QUY TẮC: NGHE HỘ ĐẦU SỐ KHÁC DỰ ÁN → MIỄN NOTE
+        // Một cuộc gọi đến (inbound) chỉ tính là "Nghe hộ" khi nhân viên nghe máy KHÔNG THUỘC dự án sở hữu đầu số đó!
+        // Nếu nhân viên thuộc đúng dự án sở hữu đầu số (ví dụ: Nguyên thuộc CPVN nghe đầu số CPVN 02873095950),
+        // thì đây là cuộc gọi chuẩn của dự án nhân viên, KHÔNG PHẢI nghe hộ!
         const callDid = String(call.did || "").trim();
         if (isInbound && callDid) {
-          const _curProj4Did = (typeof getSelectedProject === "function") ? getSelectedProject() : "";
-          const _projDids4Did = (typeof getProjectDidList === "function") ? getProjectDidList(_curProj4Did) : null;
-          if (_projDids4Did && _projDids4Did.length > 0) {
-            if (!_projDids4Did.includes(callDid)) {
-              const _didProjMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
-              const _ownerProjs = _didProjMap[callDid] || [];
-              const _ownerName = _ownerProjs.length > 0 ? _ownerProjs.join("/") : "Dự án khác";
+          const didProjMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+          const ownerProjs = didProjMap[callDid] || [];
+
+          if (ownerProjs.length > 0) {
+            // Xác định nhân viên nghe máy thuộc các dự án nào
+            const staffProjs = (typeof getStaffProjects === "function") ? getStaffProjects(staff) : [];
+
+            let isStaffInOwner = false;
+            if (staffProjs.length > 0) {
+              isStaffInOwner = staffProjs.some(sp =>
+                ownerProjs.some(op => op.trim().toUpperCase() === sp.trim().toUpperCase())
+              );
+            }
+
+            // Nếu nhân viên có trong danh sách nhưng KHÔNG thuộc dự án sở hữu đầu số này -> ĐÚNG LÀ NGHE HỘ!
+            if (staffProjs.length > 0 && !isStaffInOwner) {
+              const ownerName = ownerProjs.join("/");
               result = {
                 status: "other_project",
-                badgeText: "Nghe hộ (" + _ownerName + ")",
+                badgeText: "Nghe hộ (" + ownerName + ")",
                 hotline,
                 ext,
                 staff,
                 isInbound,
                 isAnswered,
                 isOtherProject: true,
-                otherProjectName: _ownerName,
+                otherProjectName: ownerName,
                 callDid
               };
               call._noteStatusCache = result;
               call._noteStatusCacheTime = Date.now();
               return result;
+            }
+
+            // Nếu không xác định được dự án của nhân viên (staff chưa được gán vào dự án nào),
+            // fallback kiểm tra theo dự án đang xem trên giao diện:
+            if (staffProjs.length === 0) {
+              const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "";
+              const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
+              if (projDids && projDids.length > 0 && !projDids.includes(callDid)) {
+                const ownerName = ownerProjs.join("/");
+                result = {
+                  status: "other_project",
+                  badgeText: "Nghe hộ (" + ownerName + ")",
+                  hotline,
+                  ext,
+                  staff,
+                  isInbound,
+                  isAnswered,
+                  isOtherProject: true,
+                  otherProjectName: ownerName,
+                  callDid
+                };
+                call._noteStatusCache = result;
+                call._noteStatusCacheTime = Date.now();
+                return result;
+              }
             }
           }
         }
