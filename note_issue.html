@@ -3661,6 +3661,48 @@
     }
 
     /* ── Report Page Styling ── */
+    .report-project-filter-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+    }
+
+    .report-proj-pill {
+      padding: 4px 11px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.4;
+      user-select: none;
+    }
+
+    .report-proj-pill:hover {
+      border-color: #a5b4fc;
+      color: #4338ca;
+      background: #f5f3ff;
+    }
+
+    .report-proj-pill.active {
+      border-color: #4f46e5;
+      background: #4f46e5;
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.25);
+    }
+
     .report-header-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -4815,7 +4857,25 @@
 
         <div
           style="display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px dashed var(--border); font-size:12px; color:var(--text-muted); flex-wrap:wrap; gap:8px;">
-          <div>
+                  <!-- BỘ LỌC DỰ ÁN CHO BÁO CÁO (CHO PHÉP CHỌN NHIỀU DỰ ÁN) -->
+        <div class="report-project-filter-row">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:700; color:#4f46e5; text-transform:uppercase; display:inline-flex; align-items:center; gap:5px;">
+              <i class="fa-solid fa-layer-group"></i> Lọc Dự án:
+            </span>
+            <div id="reportProjectFilterContainer" style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <!-- Dynamic pills rendered by renderReportProjectFilters() -->
+            </div>
+          </div>
+          <div style="display:inline-flex; align-items:center; gap:8px; font-size:12px;">
+            <span style="color:var(--text-muted); font-size:11.5px;">Đang chọn: <strong id="reportFilterProjectStatusText" style="color:#4f46e5; font-weight:700;">Tất cả dự án</strong></span>
+            <button type="button" id="btnResetReportProjectFilter" onclick="resetReportProjectFilter()" style="display:none; padding:3px 9px; font-size:11px; font-weight:600; color:#ef4444; background:#fef2f2; border:1px solid #fecaca; border-radius:6px; cursor:pointer;" title="Bỏ lọc và xem toàn bộ">
+              <i class="fa-solid fa-rotate-left"></i> Xem tất cả
+            </button>
+          </div>
+        </div>
+
+<div>
             <i class="fa-regular fa-clock"></i> Cập nhật gần nhất: <span id="reportLastUpdatedText"
               style="font-weight:700; color:var(--text-main);">Chưa cập nhật</span>
           </div>
@@ -4834,7 +4894,7 @@
             <div>
               <div class="kpi-label" style="color:#0284c7;"><i class="fa-solid fa-phone-volume"></i> CUỘC GỌI TỔNG ĐÀI
               </div>
-              <div style="font-size:11.5px; color:var(--text-muted);">Tổng đài Hotline</div>
+              <div style="font-size:11.5px; color:var(--text-muted);" id="repVoipSubProj">Tổng đài Hotline</div>
             </div>
             <div class="kpi-icon-wrap" style="background:#e0f2fe; color:#0284c7;">
               <i class="fa-solid fa-headset"></i>
@@ -4883,7 +4943,7 @@
           <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px;">
             <div>
               <div class="kpi-label" style="color:#7c3aed;"><i class="fa-solid fa-bug"></i> ISSUE GHI CHÚ (DMS)</div>
-              <div style="font-size:11.5px; color:var(--text-muted);">Hệ thống lưu trữ</div>
+              <div style="font-size:11.5px; color:var(--text-muted);" id="repIssuesSubProj">Hệ thống lưu trữ</div>
             </div>
             <div class="kpi-icon-wrap" style="background:#ede9fe; color:#7c3aed;">
               <i class="fa-solid fa-clipboard-check"></i>
@@ -11296,6 +11356,9 @@
             requestAnimationFrame(() => {
               if (typeof openReportPage === "function") openReportPage();
             });
+          } else {
+            if (typeof renderReportProjectFilters === "function") renderReportProjectFilters();
+            if (typeof renderReportPage === "function") renderReportPage();
           }
         }
       };
@@ -11331,6 +11394,190 @@
         }
       }
 
+      /* ──────────────────────────────────────────────────────────────────────────
+         REPORT PROJECT MULTI-SELECT FILTER LOGIC
+      ────────────────────────────────────────────────────────────────────────── */
+      let reportSelectedProjects = null;
+
+      function getReportSelectedProjects() {
+        if (Array.isArray(reportSelectedProjects)) return reportSelectedProjects;
+        try {
+          const raw = localStorage.getItem("dms_report_selected_projects_v1");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              reportSelectedProjects = parsed.filter(Boolean);
+              return reportSelectedProjects;
+            }
+          }
+        } catch (_) {}
+        reportSelectedProjects = [];
+        return reportSelectedProjects;
+      }
+
+      function saveReportSelectedProjects(list) {
+        reportSelectedProjects = Array.isArray(list) ? list.filter(Boolean) : [];
+        try {
+          localStorage.setItem("dms_report_selected_projects_v1", JSON.stringify(reportSelectedProjects));
+        } catch (_) {}
+      }
+
+      function getAllReportAvailableProjects() {
+        const set = new Set();
+        // 1. Core projects
+        ["NVN", "CPVN", "CPTH", "LVN", "FNB", "Haleon"].forEach(p => set.add(p));
+        // 2. From System projects
+        if (typeof getSystemProjects === "function") {
+          getSystemProjects().forEach(p => p && set.add(p.trim()));
+        }
+        // 3. From app_projects_data in localStorage
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              list.forEach(p => {
+                const n = typeof p === "string" ? p.trim() : (p?.name || "").trim();
+                if (n) set.add(n);
+              });
+            }
+          }
+        } catch (_) {}
+        // 4. From VoIP DID config
+        if (typeof getVoipDidConfig === "function") {
+          const cfg = getVoipDidConfig();
+          Object.keys(cfg).forEach(k => { if (k && k.trim()) set.add(k.trim()); });
+        }
+        return Array.from(set);
+      }
+
+      function getReportDidsForProjects(projectNames) {
+        const dids = new Set();
+        const config = (typeof getVoipDidConfig === "function") ? getVoipDidConfig() : {};
+        const didMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+
+        projectNames.forEach(p => {
+          const pUp = p.trim().toUpperCase();
+          for (const [k, v] of Object.entries(config)) {
+            if (k.trim().toUpperCase() === pUp) {
+              if (Array.isArray(v)) v.forEach(d => d && dids.add(String(d).trim()));
+              else if (typeof v === "string" && v.trim()) {
+                v.split(/[,;\s]+/).forEach(d => d && dids.add(String(d).trim()));
+              }
+            }
+          }
+          for (const [did, projs] of Object.entries(didMap)) {
+            if (Array.isArray(projs) && projs.some(pr => pr.trim().toUpperCase() === pUp)) {
+              dids.add(String(did).trim());
+            }
+          }
+        });
+        return Array.from(dids);
+      }
+
+      function getIssueProjectName(iss) {
+        if (!iss) return "NVN";
+        if (iss.project && typeof iss.project === "string" && iss.project.trim()) {
+          return iss.project.trim().toUpperCase();
+        }
+        const str = iss.result || iss.description || (iss.fields && iss.fields.solution) || "";
+        const m = String(str).match(/^\[([A-Za-z0-9_-]+?)(?:-[^\]]+)?\]/);
+        if (m) return m[1].toUpperCase();
+        const m2 = String(str).match(/\[([A-Za-z0-9_-]+?)(?:-[^\]]+)?\]/);
+        if (m2) return m2[1].toUpperCase();
+        return "NVN";
+      }
+
+      function isIssueInReportProjects(iss, selectedProjectsUpper) {
+        if (!selectedProjectsUpper || selectedProjectsUpper.length === 0) return true;
+        const p = getIssueProjectName(iss);
+        return selectedProjectsUpper.includes(p);
+      }
+
+      function isCallInReportProjects(call, selectedProjectsUpper, targetDids) {
+        if (!selectedProjectsUpper || selectedProjectsUpper.length === 0) return true;
+        const cDid = String(call?.did || "").trim();
+        if (cDid && targetDids.includes(cDid)) return true;
+
+        if (typeof findStaffByCall === "function" && typeof getStaffProjects === "function") {
+          const staff = findStaffByCall(call);
+          if (staff) {
+            const sProjs = getStaffProjects(staff);
+            if (sProjs.some(p => selectedProjectsUpper.includes(p.trim().toUpperCase()))) {
+              const didMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+              const projsForDid = didMap[cDid] || [];
+              if (projsForDid.length === 0 || projsForDid.some(p => selectedProjectsUpper.includes(p.trim().toUpperCase()))) {
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      }
+
+      function renderReportProjectFilters() {
+        const container = document.getElementById("reportProjectFilterContainer");
+        const statusText = document.getElementById("reportFilterProjectStatusText");
+        const btnReset = document.getElementById("btnResetReportProjectFilter");
+        if (!container) return;
+
+        const currentSelected = getReportSelectedProjects();
+        const isAll = currentSelected.length === 0;
+        const available = getAllReportAvailableProjects();
+
+        // 1. Pill "Tất cả"
+        let html = `<button type="button" class="report-proj-pill ${isAll ? "active" : ""}" onclick="toggleReportProject('all')">
+          ${isAll ? '<i class="fa-solid fa-check" style="font-size:10px;"></i> ' : ''}Tất cả dự án
+        </button>`;
+
+        // 2. Pills cho từng dự án
+        available.forEach(p => {
+          const isSel = currentSelected.some(cp => cp.trim().toUpperCase() === p.trim().toUpperCase());
+          html += `<button type="button" class="report-proj-pill ${isSel ? "active" : ""}" onclick="toggleReportProject('${escapeHTML(p)}')">
+            ${isSel ? '<i class="fa-solid fa-check" style="font-size:10px;"></i> ' : ''}${escapeHTML(p)}
+          </button>`;
+        });
+
+        container.innerHTML = html;
+
+        if (statusText) {
+          if (isAll) {
+            statusText.textContent = "Tất cả dự án";
+          } else {
+            const sCount = currentSelected.length;
+            statusText.textContent = `${currentSelected.join(", ")} (${sCount} dự án)`;
+          }
+        }
+
+        if (btnReset) {
+          btnReset.style.display = isAll ? "none" : "inline-flex";
+        }
+      }
+
+      window.toggleReportProject = function(projName) {
+        let list = getReportSelectedProjects().slice();
+        if (projName === "all") {
+          list = [];
+        } else {
+          const pUp = projName.trim().toUpperCase();
+          const idx = list.findIndex(p => p.trim().toUpperCase() === pUp);
+          if (idx >= 0) {
+            list.splice(idx, 1);
+          } else {
+            list.push(projName.trim());
+          }
+        }
+        saveReportSelectedProjects(list);
+        renderReportProjectFilters();
+        renderReportPage();
+      };
+
+      window.resetReportProjectFilter = function() {
+        saveReportSelectedProjects([]);
+        renderReportProjectFilters();
+        renderReportPage();
+      };
+
       async function openReportPage() {
         // 1. Tải cache nhanh nếu có
         if (!reportEmailData || !reportOtrsData) {
@@ -11340,7 +11587,8 @@
           if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
         }
 
-        // 2. Render ngay lập tức những gì đang có
+        // 2. Render bộ lọc dự án & dữ liệu ngay lập tức
+        renderReportProjectFilters();
         renderReportPage();
 
         // 3. Nếu chưa từng fetch hoặc data rỗng, tự động fetch mới
@@ -11402,6 +11650,7 @@
           reportLastUpdated = new Date();
           saveReportCache();
 
+          renderReportProjectFilters();
           renderReportPage();
           if (force) showToast("Đã cập nhật số liệu Báo cáo mới nhất!", "fa-circle-check");
         } catch (err) {
@@ -11434,10 +11683,28 @@
             : "Chưa cập nhật";
         }
 
-        // 2. TÍNH TOÁN CUỘC GỌI VOIP24H (LOẠI BỎ CÁC SỐ MIỄN NOTE)
+        // Project filter state
+        const selectedProjects = getReportSelectedProjects();
+        const isAllProjects = selectedProjects.length === 0;
+        const selectedProjectsUpper = selectedProjects.map(p => p.trim().toUpperCase());
+        const targetDids = isAllProjects ? [] : getReportDidsForProjects(selectedProjects);
+
+        const elRepVoipSubProj = document.getElementById("repVoipSubProj");
+        const elRepIssuesSubProj = document.getElementById("repIssuesSubProj");
+        const projBadgeText = isAllProjects ? "Toàn bộ dự án" : selectedProjects.join(", ");
+        if (elRepVoipSubProj) elRepVoipSubProj.textContent = `Tổng đài Hotline (${projBadgeText})`;
+        if (elRepIssuesSubProj) elRepIssuesSubProj.textContent = `Hệ thống lưu trữ (${projBadgeText})`;
+
+        // 2. TÍNH TOÁN CUỘC GỌI VOIP24H (LOẠI BỎ CÁC SỐ MIỄN NOTE & LỌC THEO DỰ ÁN)
         const rawCalls = Array.isArray(voipCalls) ? voipCalls : [];
-        const calls = rawCalls.filter(c => typeof isCallExcluded === "function" ? !isCallExcluded(c) : true);
-        const voipMonthTotal = calls.length; // Danh sách VoIP mặc định tải từ 01/tháng đến nay
+        const calls = rawCalls.filter(c => {
+          if (typeof isCallExcluded === "function" && isCallExcluded(c)) return false;
+          if (!isAllProjects) {
+            return isCallInReportProjects(c, selectedProjectsUpper, targetDids);
+          }
+          return true;
+        });
+        const voipMonthTotal = calls.length;
         const voipTodayCalls = calls.filter(c => (c.calldate || "").startsWith(todayYMD));
         const voipTodayTotal = voipTodayCalls.length;
         let voipTodayInbound = 0;
@@ -11458,12 +11725,17 @@
         if (elRepVoipInbound) elRepVoipInbound.textContent = voipTodayInbound.toLocaleString();
         if (elRepVoipOutbound) elRepVoipOutbound.textContent = voipTodayOutbound.toLocaleString();
 
-        // 3. TÍNH TOÁN ISSUE DMS (Cloud R2 - LOẠI TRỪ SỐ MIỄN NOTE)
+        // 3. TÍNH TOÁN ISSUE DMS (Cloud R2 - LOẠI TRỪ SỐ MIỄN NOTE & LỌC THEO DỰ ÁN)
         const rawIssues = Array.isArray(r2Issues) ? r2Issues : [];
         const allIssues = rawIssues.filter(iss => {
-          if (typeof isPhoneExcluded !== "function") return true;
-          const p = typeof extractHotlineFromIssue === "function" ? extractHotlineFromIssue(iss) : "";
-          return !isPhoneExcluded(p);
+          if (typeof isPhoneExcluded === "function") {
+            const p = typeof extractHotlineFromIssue === "function" ? extractHotlineFromIssue(iss) : "";
+            if (isPhoneExcluded(p)) return false;
+          }
+          if (!isAllProjects) {
+            return isIssueInReportProjects(iss, selectedProjectsUpper);
+          }
+          return true;
         });
         const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
         const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
@@ -11509,10 +11781,10 @@
 
         // Quy tắc Issue trong ngày:
         // Hotline = số Issue note trên DMS
-        // Mail = số mail nhận (emailReceived)
+        // Mail = số mail nhận (chỉ tính nếu chọn Tất cả hoặc chọn NVN)
         // Tổng Issue trong ngày = Hotline + Mail
         const issuesTodayHotline = issuesToday.length;
-        const issuesTodayMail = emailReceived;
+        const issuesTodayMail = (isAllProjects || selectedProjectsUpper.includes("NVN")) ? emailReceived : 0;
         const issuesTodayTotal = issuesTodayHotline + issuesTodayMail;
 
         const elRepIssuesMonth = document.getElementById("repIssuesMonthTotal");
@@ -11525,12 +11797,6 @@
         if (elRepIssuesTodayHotline) elRepIssuesTodayHotline.textContent = issuesTodayHotline.toLocaleString();
         if (elRepIssuesTodayMail) elRepIssuesTodayMail.textContent = issuesTodayMail.toLocaleString();
         if (elRepTopStaff) elRepTopStaff.textContent = topStaffName;
-
-        if (elRepEmailTotal) elRepEmailTotal.textContent = emailTotal.toLocaleString();
-        if (elRepEmailRecv) elRepEmailRecv.textContent = emailReceived.toLocaleString();
-        if (elRepEmailSent) elRepEmailSent.textContent = emailSent.toLocaleString();
-        if (elRepEmailDateText) elRepEmailDateText.textContent = emailDateFormatted || "Hôm nay";
-        if (elRepEmailSubDateNote) elRepEmailSubDateNote.textContent = emailDateFormatted ? `Ngày: ${emailDateFormatted}` : "API GAS";
 
         // 5. TÍNH TOÁN TICKET OTRS
         const otrsList = Array.isArray(reportOtrsData) ? reportOtrsData : [];
@@ -11550,16 +11816,28 @@
       }
 
       /* ──────────────────────────────────────────────────────────────────────────
-         COPY REPORT SUMMARY (LẤY BÁO CÁO TỔNG HỢP)
+         COPY REPORT SUMMARY (LẤY BÁO CÁO TỔNG HỢP THEO DỰ ÁN ĐÃ CHỌN)
       ────────────────────────────────────────────────────────────────────────── */
       window.copyReportSummary = function () {
         const now = new Date();
         const pad = n => String(n).padStart(2, "0");
         const todayYMD = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-        // 1. Cuộc gọi tổng đài VoIP24h (LOẠI BỎ CÁC SỐ MIỄN NOTE)
+        // Project filter state
+        const selectedProjects = getReportSelectedProjects();
+        const isAllProjects = selectedProjects.length === 0;
+        const selectedProjectsUpper = selectedProjects.map(p => p.trim().toUpperCase());
+        const targetDids = isAllProjects ? [] : getReportDidsForProjects(selectedProjects);
+
+        // 1. Cuộc gọi tổng đài VoIP24h (LOẠI BỎ CÁC SỐ MIỄN NOTE & LỌC THEO DỰ ÁN)
         const rawCalls = Array.isArray(voipCalls) ? voipCalls : [];
-        const calls = rawCalls.filter(c => typeof isCallExcluded === "function" ? !isCallExcluded(c) : true);
+        const calls = rawCalls.filter(c => {
+          if (typeof isCallExcluded === "function" && isCallExcluded(c)) return false;
+          if (!isAllProjects) {
+            return isCallInReportProjects(c, selectedProjectsUpper, targetDids);
+          }
+          return true;
+        });
         const voipMonthTotal = calls.length;
         const voipTodayCalls = calls.filter(c => (c.calldate || "").startsWith(todayYMD));
         const voipTodayTotal = voipTodayCalls.length;
@@ -11577,19 +11855,24 @@
         const emailReceived = reportEmailData?.received ?? 0;
         const emailSent = reportEmailData?.sent ?? 0;
 
-        // 3. Issue DMS (Quy tắc: Hotline = số Issue note trên DMS, Mail = số mail nhận, Tổng Issue trong ngày = Hotline + Mail - LOẠI TRỪ SỐ MIỄN NOTE)
+        // 3. Issue DMS (LỌC THEO DỰ ÁN)
         const rawIssues = Array.isArray(r2Issues) ? r2Issues : [];
         const allIssues = rawIssues.filter(iss => {
-          if (typeof isPhoneExcluded !== "function") return true;
-          const p = typeof extractHotlineFromIssue === "function" ? extractHotlineFromIssue(iss) : "";
-          return !isPhoneExcluded(p);
+          if (typeof isPhoneExcluded === "function") {
+            const p = typeof extractHotlineFromIssue === "function" ? extractHotlineFromIssue(iss) : "";
+            if (isPhoneExcluded(p)) return false;
+          }
+          if (!isAllProjects) {
+            return isIssueInReportProjects(iss, selectedProjectsUpper);
+          }
+          return true;
         });
         const issuesInMonth = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "month") : true);
         const issuesToday = allIssues.filter(n => typeof matchDateRange === "function" ? matchDateRange(n, "today") : false);
         const issuesMonthTotal = issuesInMonth.length;
 
         const issuesTodayHotline = issuesToday.length;
-        const issuesTodayMail = emailReceived;
+        const issuesTodayMail = (isAllProjects || selectedProjectsUpper.includes("NVN")) ? emailReceived : 0;
         const issuesTodayTotal = issuesTodayHotline + issuesTodayMail;
 
         // 4. Ticket OTRS
@@ -11599,14 +11882,22 @@
         const otrsRequests = otrsList.filter(t => (t.ticketCategory || "").toLowerCase() === "request").length;
 
         // Nội dung theo chuẩn định dạng yêu cầu của người dùng
-        const reportLines = [
+        const reportLines = [];
+        if (!isAllProjects) {
+          reportLines.push(`* BÁO CÁO DỰ ÁN: ${selectedProjects.join(", ")}`);
+        }
+        reportLines.push(
           `- Số lượng cuộc gọi trong tháng: ${voipMonthTotal} Cuộc gọi`,
           `- Số lượng cuộc gọi trong ngày: ${voipTodayTotal} Cuộc gọi ( Nhận: ${voipTodayInbound} Gọi ra: ${voipTodayOutbound})`,
           `- Số lượng Issue trong tháng: ${issuesMonthTotal} Issue`,
-          `- Số lượng Issue trong ngày: ${issuesTodayTotal} Issue (Hotline: ${issuesTodayHotline}, Mail: ${issuesTodayMail})`,
-          `- Số lượng Email: ${emailTotal} ( Nhận: ${emailReceived}, Gửi: ${emailSent})`,
-          `- Tổng số lượng ticket OTRS: ${otrsTotal} ticket ( ${otrsIssues} Issue, ${otrsRequests} Request)`
-        ];
+          `- Số lượng Issue trong ngày: ${issuesTodayTotal} Issue (Hotline: ${issuesTodayHotline}, Mail: ${issuesTodayMail})`
+        );
+        if (isAllProjects || selectedProjectsUpper.includes("NVN")) {
+          reportLines.push(
+            `- Số lượng Email: ${emailTotal} ( Nhận: ${emailReceived}, Gửi: ${emailSent})`,
+            `- Tổng số lượng ticket OTRS: ${otrsTotal} ticket ( ${otrsIssues} Issue, ${otrsRequests} Request)`
+          );
+        }
         const content = reportLines.join("\n");
 
         function onCopyDone() {
