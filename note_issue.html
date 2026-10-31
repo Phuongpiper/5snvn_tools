@@ -5509,6 +5509,37 @@
               </button>
             </div>
           </div>
+
+          <!-- Option 3: Nhập mã Ticket thủ công (Mới) -->
+          <div
+            style="border:1.5px solid #c7d2fe; background:#f5f3ff; border-radius:10px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:13px; font-weight:800; color:#4338ca; display:flex; align-items:center; gap:6px;">
+                <i class="fa-solid fa-keyboard" style="color:#6366f1;"></i> Cách 3: Gán mã Ticket thủ công
+              </span>
+              <span style="font-size:10px; font-weight:800; background:#e0e7ff; color:#4338ca; padding:2px 7px; border-radius:6px;">Trực tiếp</span>
+            </div>
+            <p style="font-size:12px; color:#475569; margin:0; line-height:1.4;">
+              Nếu bạn đã tạo ticket trên Chatbox hoặc có sẵn mã Ticket từ trước, hãy nhập mã vào đây để gán trực tiếp vào Issue:
+            </p>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <div style="position:relative; flex:1;">
+                <span style="position:absolute; left:11px; top:50%; transform:translateY(-50%); font-weight:800; color:#6366f1; font-size:14px; font-family:var(--font-mono);">#</span>
+                <input type="text" id="inputManualTicketId" class="form-control-studio" placeholder="Ví dụ: 14120 hoặc #14120"
+                  style="padding-left:26px; font-family:var(--font-mono); font-size:13px; font-weight:700; width:100%; border:1.5px solid #c7d2fe; border-radius:6px; background:#fff;"
+                  onkeydown="if(event.key==='Enter') saveManualTicketIdForIssue()" />
+              </div>
+              <button type="button" class="btn-stats-tool primary" onclick="saveManualTicketIdForIssue()"
+                style="padding:8px 14px; font-size:12.5px; font-weight:700; background:#6366f1; border-color:#4f46e5; color:#fff; white-space:nowrap;">
+                <i class="fa-solid fa-check"></i> Gán mã Ticket
+              </button>
+              <button type="button" id="btnRemoveManualTicketId" class="btn-stats-tool" onclick="removeManualTicketIdForIssue()"
+                style="display:none; padding:8px 10px; font-size:12px; color:#dc2626; border-color:#fecaca; background:#fee2e2; white-space:nowrap;"
+                title="Gỡ mã Ticket đã gán khỏi Issue này">
+                <i class="fa-solid fa-trash-can"></i> Gỡ
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -6915,7 +6946,36 @@
       }
 
       function findMatchedTicket(issue, tickets, usedTicketIds = null) {
-        if (!issue || !Array.isArray(tickets) || tickets.length === 0) return null;
+        if (!issue) return null;
+
+        // 0. ƯU TIÊN TUYỆT ĐỐI: Mã Ticket gán thủ công (manualTicketId)
+        if (issue.manualTicketId) {
+          const mId = String(issue.manualTicketId).trim().replace(/^#+/, "");
+          const mNum = parseInt(mId, 10);
+          if (mNum > 0) {
+            let realTicket = Array.isArray(tickets) ? tickets.find(t => String(t.id) === String(mNum)) : null;
+            if (realTicket) {
+              if (usedTicketIds) {
+                usedTicketIds.add(realTicket.id);
+                usedTicketIds.add(String(realTicket.id));
+              }
+              return realTicket;
+            }
+            const synTicket = {
+              id: mNum,
+              status: "CLOSED",
+              title: `Ticket #${mNum}`,
+              manual: true
+            };
+            if (usedTicketIds) {
+              usedTicketIds.add(mNum);
+              usedTicketIds.add(String(mNum));
+            }
+            return synTicket;
+          }
+        }
+
+        if (!Array.isArray(tickets) || tickets.length === 0) return null;
         const issueDate = getIssueDateNormalized(issue);
         let issueAgent = String(issue.memberCode || "").trim().toLowerCase();
         let issueMemberName = String(issue.memberName || "").trim().toLowerCase();
@@ -9913,8 +9973,8 @@
                       <i class="fa-solid fa-circle-exclamation" style="font-size:9.5px; color:#f59e0b;"></i> Chưa note
                     </span>
                   ` : `
-                    <span class="temp-status-badge chatbox-empty" title="Chưa ghi nhận ticket trên Chatbox AI (Bấm 'Đồng bộ' trước khi note ticket)" onclick="showToast('Vui lòng bấm Đồng bộ trước khi tạo Ticket trên Chatbox AI!', 'fa-cloud-arrow-up')" style="cursor:pointer;">
-                      <i class="fa-solid fa-robot" style="font-size:9.5px; opacity:0.6;"></i> Chưa note
+                    <span class="temp-status-badge chatbox-unnoted" title="Bấm để AI tự tạo Ticket trên Chatbox hoặc nhập mã Ticket thủ công" onclick="window.openChatboxForUnnotedIssue('${escapeHTML(String(n.id))}')" style="cursor:pointer;">
+                      <i class="fa-solid fa-circle-exclamation" style="font-size:9.5px; color:#f59e0b;"></i> Chưa note
                     </span>
                   `
                 )}
@@ -10206,7 +10266,22 @@
       const inFlightAiTicketIssues = new Set();
 
       function findDynamicMatchedTicketForIssue(targetIssue) {
-        if (!targetIssue || typeof findMatchedTicket !== "function" || !Array.isArray(helpdeskTickets) || helpdeskTickets.length === 0) {
+        if (!targetIssue) return null;
+        if (targetIssue.manualTicketId) {
+          const mId = String(targetIssue.manualTicketId).trim().replace(/^#+/, "");
+          const mNum = parseInt(mId, 10);
+          if (mNum > 0) {
+            let realTicket = Array.isArray(helpdeskTickets) ? helpdeskTickets.find(t => String(t.id) === String(mNum)) : null;
+            if (realTicket) return realTicket;
+            return {
+              id: mNum,
+              status: "CLOSED",
+              title: `Ticket #${mNum}`,
+              manual: true
+            };
+          }
+        }
+        if (typeof findMatchedTicket !== "function" || !Array.isArray(helpdeskTickets) || helpdeskTickets.length === 0) {
           return null;
         }
         const usedTicketIds = new Set();
@@ -10351,6 +10426,17 @@
           }
         }
 
+        // Nạp mã ticket thủ công vào input nếu có
+        const inpManual = document.getElementById("inputManualTicketId");
+        const btnRemove = document.getElementById("btnRemoveManualTicketId");
+        const curTicketId = found.manualTicketId || (matchedTicket ? matchedTicket.id : "");
+        if (inpManual) {
+          inpManual.value = curTicketId ? String(curTicketId) : "";
+        }
+        if (btnRemove) {
+          btnRemove.style.display = found.manualTicketId ? "inline-flex" : "none";
+        }
+
         // Cập nhật badge header modal theo trạng thái thực tế
         const statusBadge = document.getElementById("modalUnnotedStatusBadge");
         if (statusBadge) {
@@ -10378,7 +10464,174 @@
       window.closeUnnotedTicketModal = function () {
         const modal = document.getElementById("unnotedTicketModalBackdrop");
         if (modal) modal.classList.remove("show");
+        const inpManual = document.getElementById("inputManualTicketId");
+        if (inpManual) inpManual.value = "";
         currentUnnotedIssue = null;
+      };
+
+      window.saveManualTicketIdForIssue = async function () {
+        if (!currentUnnotedIssue) {
+          showToast("Không tìm thấy thông tin Issue đang chọn", "fa-triangle-exclamation");
+          return;
+        }
+        const inp = document.getElementById("inputManualTicketId");
+        if (!inp) return;
+        const rawVal = inp.value.trim().replace(/^#+/, "").trim();
+        if (!rawVal) {
+          showToast("Vui lòng nhập mã Ticket (ví dụ: 14120)", "fa-triangle-exclamation");
+          inp.focus();
+          return;
+        }
+        const ticketIdNum = parseInt(rawVal, 10);
+        if (isNaN(ticketIdNum) || ticketIdNum <= 0) {
+          showToast("Mã Ticket không hợp lệ. Vui lòng nhập số (ví dụ: 14120)", "fa-triangle-exclamation");
+          inp.focus();
+          return;
+        }
+
+        const issueId = String(currentUnnotedIssue.id || (typeof getIssueUniqueKey === "function" ? getIssueUniqueKey(currentUnnotedIssue) : ""));
+
+        // 1. Cập nhật vào tempNotes nếu có
+        let foundInTemp = false;
+        if (Array.isArray(tempNotes)) {
+          const tItem = tempNotes.find(n => String(n.id) === issueId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueId));
+          if (tItem) {
+            tItem.manualTicketId = String(ticketIdNum);
+            foundInTemp = true;
+          }
+        }
+
+        // 2. Cập nhật vào r2Issues nếu có
+        let foundInR2 = false;
+        if (Array.isArray(r2Issues)) {
+          const rItem = r2Issues.find(n => String(n.id) === issueId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueId));
+          if (rItem) {
+            rItem.manualTicketId = String(ticketIdNum);
+            foundInR2 = true;
+          }
+        }
+
+        currentUnnotedIssue.manualTicketId = String(ticketIdNum);
+
+        // 3. Đảm bảo helpdeskTickets có ticket này (hoặc tạo ticket giả lập nếu Chatbox chưa đồng bộ về)
+        if (Array.isArray(helpdeskTickets)) {
+          let tObj = helpdeskTickets.find(t => String(t.id) === String(ticketIdNum));
+          if (!tObj) {
+            tObj = {
+              id: ticketIdNum,
+              status: "CLOSED",
+              title: `Ticket #${ticketIdNum}`,
+              description: currentUnnotedIssue.result || currentUnnotedIssue.issue || "",
+              callDetails: currentUnnotedIssue.result || currentUnnotedIssue.issue || "",
+              date: currentUnnotedIssue.date || "",
+              agentId: currentUnnotedIssue.memberCode || "",
+              manual: true
+            };
+            helpdeskTickets.unshift(tObj);
+          }
+        }
+
+        // 4. Lưu lên Cloud R2 và localStorage
+        const memberCode = currentSelectedMember?.code || currentUnnotedIssue.memberCode || "";
+        if (foundInTemp) {
+          if (typeof saveTempNotesToLocal === "function") saveTempNotesToLocal();
+          if (memberCode && typeof saveMemberTempToR2 === "function") {
+            saveMemberTempToR2(memberCode, tempNotes, true);
+          }
+        }
+        if (foundInR2) {
+          try {
+            const endpoint = getIssuesApiEndpoint();
+            const curProj = getSelectedProject();
+            const cleaned = r2Issues.map(n => {
+              const clone = Object.assign({}, n);
+              delete clone.matchedTicket;
+              return clone;
+            });
+            await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "save_all", issues: cleaned, project: curProj })
+            });
+          } catch (e) {
+            console.warn("Lỗi push r2Issues:", e);
+          }
+        }
+
+        // Xóa cache trạng thái note cuộc gọi để cập nhật ngay
+        if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
+
+        showToast(`🎉 Đã gán mã Ticket #${ticketIdNum} cho Issue thành công!`, "fa-circle-check", 5000);
+        closeUnnotedTicketModal();
+
+        // 5. Cập nhật giao diện
+        if (typeof renderTempTable === "function") renderTempTable();
+        if (typeof renderStatsPage === "function") renderStatsPage();
+        if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
+        if (typeof renderVoipTable === "function") renderVoipTable();
+      };
+
+      window.removeManualTicketIdForIssue = async function () {
+        if (!currentUnnotedIssue) return;
+        if (!confirm("Bạn có chắc chắn muốn gỡ mã Ticket đã gán khỏi Issue này?")) return;
+
+        const issueId = String(currentUnnotedIssue.id || (typeof getIssueUniqueKey === "function" ? getIssueUniqueKey(currentUnnotedIssue) : ""));
+
+        let foundInTemp = false;
+        if (Array.isArray(tempNotes)) {
+          const tItem = tempNotes.find(n => String(n.id) === issueId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueId));
+          if (tItem) {
+            delete tItem.manualTicketId;
+            foundInTemp = true;
+          }
+        }
+
+        let foundInR2 = false;
+        if (Array.isArray(r2Issues)) {
+          const rItem = r2Issues.find(n => String(n.id) === issueId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueId));
+          if (rItem) {
+            delete rItem.manualTicketId;
+            foundInR2 = true;
+          }
+        }
+
+        delete currentUnnotedIssue.manualTicketId;
+
+        const memberCode = currentSelectedMember?.code || currentUnnotedIssue.memberCode || "";
+        if (foundInTemp) {
+          if (typeof saveTempNotesToLocal === "function") saveTempNotesToLocal();
+          if (memberCode && typeof saveMemberTempToR2 === "function") {
+            saveMemberTempToR2(memberCode, tempNotes, true);
+          }
+        }
+        if (foundInR2) {
+          try {
+            const endpoint = getIssuesApiEndpoint();
+            const curProj = getSelectedProject();
+            const cleaned = r2Issues.map(n => {
+              const clone = Object.assign({}, n);
+              delete clone.matchedTicket;
+              return clone;
+            });
+            await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "save_all", issues: cleaned, project: curProj })
+            });
+          } catch (e) {
+            console.warn("Lỗi push r2Issues:", e);
+          }
+        }
+
+        if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
+
+        showToast("Đã gỡ mã Ticket khỏi Issue", "fa-circle-check");
+        closeUnnotedTicketModal();
+
+        if (typeof renderTempTable === "function") renderTempTable();
+        if (typeof renderStatsPage === "function") renderStatsPage();
+        if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
+        if (typeof renderVoipTable === "function") renderVoipTable();
       };
 
       window.copyUnnotedPromptOnly = async function () {
