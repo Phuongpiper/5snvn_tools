@@ -171,6 +171,86 @@ async function loginHelpdesk(username, password) {
   throw new Error(`Login Helpdesk thất bại (HTTP ${res.status}): ${JSON.stringify(res.data || res.body)}`);
 }
 
+function normalizeTicket(t) {
+  if (!t) return null;
+  let callDetailObj = null;
+  if (t.call_details) {
+    try {
+      callDetailObj = typeof t.call_details === "string" ? JSON.parse(t.call_details) : t.call_details;
+    } catch (_) {}
+  }
+
+  // Lấy ngày chuẩn từ created_at (Helpdesk server đã trả về giờ local theo chuỗi ISO, ví dụ: "2026-10-19T17:04:39")
+  // Tuyệt đối không cộng thêm 7 tiếng vì sẽ làm các ticket tạo sau 17:00 chiều bị văng sang ngày hôm sau!
+  let vnDate = "";
+  if (t.created_at && typeof t.created_at === "string") {
+    const datePart = t.created_at.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      vnDate = datePart;
+    }
+  }
+  if (!vnDate) {
+    vnDate = t.date || t.created_date || "";
+  }
+
+  // Trích xuất số điện thoại (từ contact_source hoặc dự phòng từ description / call_details)
+  let phone = (t.contact_source || "").trim();
+  if (!/\d{8,11}/.test(phone) && t.description) {
+    const pm = t.description.match(/Hotline\s*(\d{8,11})/i) || t.description.match(/(0\d{8,10})/);
+    if (pm) phone = pm[1] || pm[0];
+  }
+  if (!/\d{8,11}/.test(phone) && t.call_details) {
+    const pm = String(t.call_details).match(/(0\d{8,10})/);
+    if (pm) phone = pm[1];
+  }
+  if (phone) {
+    const pm = phone.match(/0\d{8,10}/);
+    if (pm) phone = pm[0];
+  }
+
+  return {
+    id: t.id,
+    project: (t.project || "NVN").toUpperCase(),
+    category: t.ticket_category || t.category || "HELPDESK",
+    status: (t.status || "").toUpperCase(),
+    priority: t.priority || "P3",
+    agentId: (t.assigned_agent?.agent_id || t.assigned_agent_id || "").trim(),
+    agentName: (t.assigned_agent?.name || "").trim(),
+    date: vnDate,
+    createdAt: t.created_at || "",
+    createdDate: vnDate,
+    phone: phone,
+    distName: (t.dist_name || "").trim(),
+    distCode: (t.dist_code || "").trim(),
+    dsrCode: (t.dsr_code || "").trim(),
+    solutionCode: (t.solution_code || callDetailObj?.solution_linked?.solution_code || "").trim(),
+    solutionName: (t.solution_name || callDetailObj?.solution_linked?.solution_name || t.description || "").trim(),
+    systemAffected: (t.system_affected || "").trim(),
+    level: (t.level || "").trim(),
+    description: (t.description || "").trim(),
+    callDetails: t.call_details || "",
+    callDetailsParsed: callDetailObj,
+    result: (t.result || "").trim(),
+    processSteps: (t.process_steps || "").trim(),
+    rootCause: (t.root_cause || "").trim()
+  };
+}
+
+async function fetchSingleTicket(ticketId, username, password) {
+  const auth = await loginHelpdesk(username, password);
+  const token = auth.access_token;
+  const url = `${HELPDESK_BASE_URL}/api/tickets/${encodeURIComponent(ticketId)}`;
+  const res = await httpsRequest(url, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  if (res.status === 200 && res.data && res.data.id) {
+    return normalizeTicket(res.data);
+  }
+  return null;
+}
+
 async function fetchLiveTickets(options = {}) {
   const username = options.username || DEFAULT_USERNAME;
   const password = options.password || DEFAULT_PASSWORD;
@@ -188,15 +268,18 @@ async function fetchLiveTickets(options = {}) {
   const maxPages = isFull ? 50 : 2; // Mặc định chỉ lấy 1-2 trang mới nhất (~200 ticket) để tốc độ cực nhanh (< 500ms), không bị timeout Vercel
 
   while (page <= maxPages) {
-    const query = new URLSearchParams({
+    const queryObj = {
       scope: "team",
       category: "HELPDESK",
-      project: "NVN",
       from_date: from_date,
       to_date: to_date,
       page: String(page),
       limit: String(limit)
-    });
+    };
+    if (options.project && options.project !== "ALL") {
+      queryObj.project = options.project;
+    }
+    const query = new URLSearchParams(queryObj);
     const url = `${HELPDESK_BASE_URL}/api/tickets?${query.toString()}`;
     const res = await httpsRequest(url, {
       method: "GET",
@@ -219,67 +302,12 @@ async function fetchLiveTickets(options = {}) {
   }
 
   // Normalize tickets
-  const cleanTickets = allItems.map(t => {
-    let callDetailObj = null;
-    if (t.call_details) {
-      try {
-        callDetailObj = typeof t.call_details === "string" ? JSON.parse(t.call_details) : t.call_details;
-      } catch (_) {}
-    }
-
-    // Lấy ngày chuẩn từ created_at (Helpdesk server đã trả về giờ local theo chuỗi ISO, ví dụ: "2026-10-19T17:04:39")
-    // Tuyệt đối không cộng thêm 7 tiếng vì sẽ làm các ticket tạo sau 17:00 chiều bị văng sang ngày hôm sau!
-    let vnDate = "";
-    if (t.created_at && typeof t.created_at === "string") {
-      const datePart = t.created_at.slice(0, 10);
-      if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-        vnDate = datePart;
-      }
-    }
-    if (!vnDate) {
-      vnDate = t.date || t.created_date || "";
-    }
-
-    // Trích xuất số điện thoại (từ contact_source hoặc dự phòng từ description / call_details)
-    let phone = (t.contact_source || "").trim();
-    if (!/\d{8,11}/.test(phone) && t.description) {
-      const pm = t.description.match(/Hotline\s*(\d{8,11})/i) || t.description.match(/(0\d{8,10})/);
-      if (pm) phone = pm[1] || pm[0];
-    }
-    if (!/\d{8,11}/.test(phone) && t.call_details) {
-      const pm = String(t.call_details).match(/(0\d{8,10})/);
-      if (pm) phone = pm[1];
-    }
-
-    return {
-      id: t.id,
-      project: t.project || "NVN",
-      category: t.ticket_category || t.category || "HELPDESK",
-      status: t.status || "",
-      priority: t.priority || "P3",
-      agentId: (t.assigned_agent?.agent_id || t.assigned_agent_id || "").trim(),
-      agentName: (t.assigned_agent?.name || "").trim(),
-      date: vnDate,
-      createdAt: t.created_at || "",
-      createdDate: vnDate,
-      phone: phone,
-      distName: (t.dist_name || "").trim(),
-      dsrCode: (t.dsr_code || "").trim(),
-      solutionCode: (t.solution_code || callDetailObj?.solution_linked?.solution_code || "").trim(),
-      solutionName: (t.solution_name || callDetailObj?.solution_linked?.solution_name || t.description || "").trim(),
-      description: (t.description || "").trim(),
-      callDetails: t.call_details || "",
-      callDetailsParsed: callDetailObj,
-      result: (t.result || "").trim(),
-      processSteps: (t.process_steps || "").trim(),
-      rootCause: (t.root_cause || "").trim()
-    };
-  });
+  const cleanTickets = allItems.map(normalizeTicket).filter(Boolean);
 
   return {
     tickets: cleanTickets,
     total: cleanTickets.length,
-    filter: { scope: "team", category: "HELPDESK", project: "NVN", from_date, to_date },
+    filter: { scope: "team", category: "HELPDESK", project: options.project || "ALL", from_date, to_date },
     loggedUser: { username: auth.username, fullName: auth.full_name }
   };
 }
@@ -377,12 +405,72 @@ module.exports = async function handler(req, res) {
   }
 
   const parsedUrl = new URL(req.url, "http://localhost");
+  const ticketIdParam = (parsedUrl.searchParams.get("ticket_id") || parsedUrl.searchParams.get("id") || "").trim();
   const forceSync = parsedUrl.searchParams.get("sync") === "1" || parsedUrl.searchParams.get("force") === "1";
   const from_date = parsedUrl.searchParams.get("from_date") || undefined;
   const to_date = parsedUrl.searchParams.get("to_date") || undefined;
   const username = parsedUrl.searchParams.get("username") || undefined;
+  const project = parsedUrl.searchParams.get("project") || undefined;
 
-  // 1. Nếu không yêu cầu ép đồng bộ, thử lấy từ Cloudflare R2 cache trước
+  // 1. Nếu có ticket_id: tìm kiếm chính xác 1 ticket cụ thể từ Chatbox AI Helpdesk
+  if (ticketIdParam) {
+    try {
+      // Trước hết kiểm tra trong cache R2
+      const cached = await getCacheFromR2();
+      let foundTicket = (cached && Array.isArray(cached.tickets))
+        ? cached.tickets.find(t => String(t.id) === String(ticketIdParam))
+        : null;
+
+      // Nếu không có trong cache hoặc ép đồng bộ hoặc thông tin còn thiếu (chưa có phone / solutionName)
+      if (forceSync || !foundTicket || !foundTicket.phone || !foundTicket.solutionCode || foundTicket.manual) {
+        const liveTicket = await fetchSingleTicket(ticketIdParam, username);
+        if (liveTicket) {
+          foundTicket = liveTicket;
+          // Lưu / cập nhật vé này vào Cloudflare R2 cache
+          try {
+            const list = (cached && Array.isArray(cached.tickets)) ? [...cached.tickets] : [];
+            const idx = list.findIndex(t => String(t.id) === String(liveTicket.id));
+            if (idx !== -1) {
+              list[idx] = liveTicket;
+            } else {
+              list.unshift(liveTicket);
+            }
+            await saveCacheToR2({
+              status: "success",
+              total: list.length,
+              syncedAt: new Date().toISOString(),
+              source: "single_ticket_fetch",
+              tickets: list
+            });
+          } catch (cacheErr) {
+            console.warn("[Helpdesk] Lỗi ghi cache R2 cho single ticket:", cacheErr.message);
+          }
+        }
+      }
+
+      if (foundTicket) {
+        return res.status(200).json({
+          status: "success",
+          ticket: foundTicket,
+          source: foundTicket === cached?.tickets?.find(t => String(t.id) === String(ticketIdParam)) ? "r2_cache" : "live_helpdesk",
+          server: isVercel ? "vercel" : "local"
+        });
+      }
+
+      return res.status(404).json({
+        status: "not_found",
+        message: `Không tìm thấy thông tin Ticket #${ticketIdParam} trên Chatbox AI`
+      });
+    } catch (err) {
+      console.error(`[Helpdesk] Lỗi truy vấn ticket #${ticketIdParam}:`, err.message);
+      return res.status(500).json({
+        status: "error",
+        message: `Lỗi kết nối Chatbox AI để tìm Ticket #${ticketIdParam}: ${err.message}`
+      });
+    }
+  }
+
+  // 2. Nếu không yêu cầu ép đồng bộ, thử lấy từ Cloudflare R2 cache trước
   if (!forceSync) {
     const cached = await getCacheFromR2();
     if (cached && Array.isArray(cached.tickets)) {
@@ -401,9 +489,9 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2. Cần đồng bộ mới hoặc cache đã quá 3 phút (hoặc forceSync = true)
+  // 3. Cần đồng bộ mới hoặc cache đã quá hạn (hoặc forceSync = true)
   try {
-    const payload = await syncHelpdeskTickets(forceSync, { from_date, to_date, username });
+    const payload = await syncHelpdeskTickets(forceSync, { from_date, to_date, username, project });
     return res.status(200).json({
       ...payload,
       source: "live_helpdesk",
@@ -430,4 +518,6 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.syncHelpdeskTickets = syncHelpdeskTickets;
+module.exports.fetchSingleTicket = fetchSingleTicket;
+module.exports.normalizeTicket = normalizeTicket;
 module.exports.getCacheFromR2 = getCacheFromR2;

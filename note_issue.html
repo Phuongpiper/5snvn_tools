@@ -7344,15 +7344,8 @@
 
       let currentModalTicketId = null;
 
-      window.openTicketDetailModal = function (ticketId) {
-        const modal = document.getElementById("ticketDetailModalBackdrop");
-        if (!modal) return;
-        const t = helpdeskTickets.find(item => String(item.id) === String(ticketId));
-        if (!t) {
-          showToast(`Không tìm thấy chi tiết Ticket #${ticketId}`, "fa-circle-exclamation");
-          return;
-        }
-
+      function _renderTicketDetailModalBody(t) {
+        if (!t) return;
         currentModalTicketId = t.id;
 
         const modalTitle = document.getElementById("modalTicketTitle");
@@ -7481,7 +7474,65 @@
             </div>
           `;
         }
+      }
 
+      window.openTicketDetailModal = async function (ticketId) {
+        const modal = document.getElementById("ticketDetailModalBackdrop");
+        if (!modal) return;
+
+        // Tìm trong cache local trước
+        let t = Array.isArray(helpdeskTickets)
+          ? helpdeskTickets.find(item => String(item.id) === String(ticketId))
+          : null;
+
+        // Nếu chưa có hoặc còn thiếu thông tin (ticket manual / chưa đồng bộ từ CPVN/LVN...)
+        const needsFetch = !t || t.manual || !t.phone || !t.solutionCode;
+
+        if (needsFetch) {
+          // Hiển thị modal với loading spinner ngay lập tức
+          const bodyEl = document.getElementById("modalTicketBody");
+          if (bodyEl) {
+            bodyEl.innerHTML = `<div style="padding:32px 16px; text-align:center; color:#6366f1;">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-bottom:12px; display:block;"></i>
+              <div style="font-size:14px; font-weight:700;">Đang tải thông tin Ticket #${ticketId} từ Chatbox AI...</div>
+            </div>`;
+          }
+          modal.classList.add("show");
+
+          try {
+            const apiUrl = `${getHelpdeskApiEndpoint()}?ticket_id=${encodeURIComponent(ticketId)}&_t=${Date.now()}`;
+            const resp = await fetch(apiUrl);
+            if (resp.ok) {
+              const data = await resp.json();
+              if (data && data.ticket && data.ticket.id) {
+                // Cập nhật vào helpdeskTickets local cache
+                if (!Array.isArray(helpdeskTickets)) helpdeskTickets = [];
+                const idx = helpdeskTickets.findIndex(x => String(x.id) === String(data.ticket.id));
+                if (idx !== -1) {
+                  helpdeskTickets[idx] = data.ticket;
+                } else {
+                  helpdeskTickets.unshift(data.ticket);
+                }
+                t = data.ticket;
+              }
+            }
+          } catch (fetchErr) {
+            console.warn("[openTicketDetailModal] Lỗi fetch ticket live:", fetchErr);
+          }
+
+          if (!t) {
+            const bodyEl2 = document.getElementById("modalTicketBody");
+            if (bodyEl2) {
+              bodyEl2.innerHTML = `<div style="padding:32px 16px; text-align:center; color:#dc2626;">
+                <i class="fa-solid fa-circle-exclamation" style="font-size:2rem; margin-bottom:12px; display:block;"></i>
+                <div style="font-size:14px; font-weight:700;">Không tìm thấy thông tin Ticket #${ticketId} trên Chatbox AI</div>
+              </div>`;
+            }
+            return;
+          }
+        }
+
+        _renderTicketDetailModalBody(t);
         modal.classList.add("show");
       };
 
@@ -10513,21 +10564,68 @@
 
         currentUnnotedIssue.manualTicketId = String(ticketIdNum);
 
-        // 3. Đảm bảo helpdeskTickets có ticket này (hoặc tạo ticket giả lập nếu Chatbox chưa đồng bộ về)
-        if (Array.isArray(helpdeskTickets)) {
-          let tObj = helpdeskTickets.find(t => String(t.id) === String(ticketIdNum));
-          if (!tObj) {
-            tObj = {
+        // 3. Fetch thông tin ticket thực từ Chatbox AI (nền), cập nhật helpdeskTickets
+        //    (chạy ngay trước khi đóng modal để badge và detail modal sau đó hiển thị đúng)
+        const saveBtn = document.querySelector('#unnotedTicketModalBackdrop .btn-stats-tool.primary[onclick*="saveManualTicketId"]');
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lấy thông tin ticket...';
+        }
+        try {
+          const ticketApiUrl = `${getHelpdeskApiEndpoint()}?ticket_id=${encodeURIComponent(ticketIdNum)}&_t=${Date.now()}`;
+          const ticketResp = await fetch(ticketApiUrl);
+          if (ticketResp.ok) {
+            const ticketData = await ticketResp.json();
+            if (ticketData && ticketData.ticket && ticketData.ticket.id) {
+              const liveTicket = ticketData.ticket;
+              // Lưu vào helpdeskTickets local cache
+              if (!Array.isArray(helpdeskTickets)) helpdeskTickets = [];
+              const existIdx = helpdeskTickets.findIndex(x => String(x.id) === String(liveTicket.id));
+              if (existIdx !== -1) {
+                helpdeskTickets[existIdx] = liveTicket;
+              } else {
+                helpdeskTickets.unshift(liveTicket);
+              }
+              // Điền ngược thông tin ticket vào issue nếu field đang trống
+              const issueItems = [];
+              if (Array.isArray(tempNotes)) {
+                const ti = tempNotes.find(n => String(n.id) === issueId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueId));
+                if (ti) issueItems.push(ti);
+              }
+              if (Array.isArray(r2Issues)) {
+                const ri = r2Issues.find(n => String(n.id) === issueId || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueId));
+                if (ri) issueItems.push(ri);
+              }
+              if (currentUnnotedIssue) issueItems.push(currentUnnotedIssue);
+              for (const iss of issueItems) {
+                if (!iss.fields) iss.fields = {};
+                if (!iss.fields.hotline && liveTicket.phone) iss.fields.hotline = liveTicket.phone;
+                if (!iss.fields.npp && liveTicket.distName) iss.fields.npp = liveTicket.distName;
+                if (!iss.fields.solution && liveTicket.solutionName) iss.fields.solution = liveTicket.solutionName;
+                if (!iss.fields.solutionCode && liveTicket.solutionCode) iss.fields.solutionCode = liveTicket.solutionCode;
+                if (!iss.distCode && liveTicket.distCode) iss.distCode = liveTicket.distCode;
+              }
+              console.log(`[ManualTicket] ✅ Đã tải thông tin ticket #${liveTicket.id} (project: ${liveTicket.project}, phone: ${liveTicket.phone})`);
+            }
+          }
+        } catch (fetchErr) {
+          console.warn("[ManualTicket] Không thể fetch thông tin ticket live:", fetchErr);
+          // Tạo ticket giả lập fallback để modal không bị rỗng
+          if (!Array.isArray(helpdeskTickets)) helpdeskTickets = [];
+          if (!helpdeskTickets.find(t => String(t.id) === String(ticketIdNum))) {
+            helpdeskTickets.unshift({
               id: ticketIdNum,
               status: "CLOSED",
-              title: `Ticket #${ticketIdNum}`,
-              description: currentUnnotedIssue.result || currentUnnotedIssue.issue || "",
-              callDetails: currentUnnotedIssue.result || currentUnnotedIssue.issue || "",
+              solutionName: currentUnnotedIssue.result || currentUnnotedIssue.issue || "",
               date: currentUnnotedIssue.date || "",
               agentId: currentUnnotedIssue.memberCode || "",
               manual: true
-            };
-            helpdeskTickets.unshift(tObj);
+            });
+          }
+        } finally {
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fa-solid fa-check"></i> Gán mã Ticket';
           }
         }
 
