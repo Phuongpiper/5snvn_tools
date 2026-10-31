@@ -93,11 +93,11 @@ module.exports = async function handler(req, res) {
   res.setHeader("Pragma", "no-cache");
 
   try {
-    // GET: đọc settings (hiddenTabs & excludedPhones) từ R2
+    // GET: đọc settings (hiddenTabs, excludedPhones, projectDids) từ R2
     if (req.method === "GET") {
       const r2Res = await r2Fetch("GET", "");
       if (r2Res.statusCode === 404) {
-        return res.status(200).json({ hiddenTabs: [], excludedPhones: [] });
+        return res.status(200).json({ hiddenTabs: [], excludedPhones: [], projectDids: null });
       }
       if (r2Res.statusCode === 200) {
         try {
@@ -105,16 +105,17 @@ module.exports = async function handler(req, res) {
           return res.status(200).json({
             hiddenTabs: Array.isArray(parsed.hiddenTabs) ? parsed.hiddenTabs : [],
             excludedPhones: Array.isArray(parsed.excludedPhones) ? parsed.excludedPhones : [],
+            projectDids: (parsed && typeof parsed.projectDids === "object") ? parsed.projectDids : null,
             updatedAt: parsed.updatedAt || Date.now()
           });
         } catch (_) {
-          return res.status(200).json({ hiddenTabs: [], excludedPhones: [] });
+          return res.status(200).json({ hiddenTabs: [], excludedPhones: [], projectDids: null });
         }
       }
       return res.status(502).json({ error: "R2 GET failed", status: r2Res.statusCode });
     }
 
-    // POST: lưu settings lên R2 (hỗ trợ cập nhật hiddenTabs hoặc excludedPhones)
+    // POST: lưu settings lên R2 (hỗ trợ cập nhật hiddenTabs, excludedPhones hoặc projectDids)
     if (req.method === "POST") {
       let bodyData = req.body;
       if (typeof bodyData === "string") {
@@ -122,7 +123,7 @@ module.exports = async function handler(req, res) {
       }
 
       // Đọc bản hiện tại từ R2 để merge tránh ghi đè mất dữ liệu khác
-      let current = { hiddenTabs: [], excludedPhones: [] };
+      let current = { hiddenTabs: [], excludedPhones: [], projectDids: null };
       try {
         const getR = await r2Fetch("GET", "");
         if (getR.statusCode === 200 && getR.body) {
@@ -130,6 +131,7 @@ module.exports = async function handler(req, res) {
           if (parsed && typeof parsed === "object") {
             if (Array.isArray(parsed.hiddenTabs)) current.hiddenTabs = parsed.hiddenTabs;
             if (Array.isArray(parsed.excludedPhones)) current.excludedPhones = parsed.excludedPhones;
+            if (parsed.projectDids && typeof parsed.projectDids === "object") current.projectDids = parsed.projectDids;
           }
         }
       } catch (_) {}
@@ -139,6 +141,9 @@ module.exports = async function handler(req, res) {
       }
       if (bodyData && Array.isArray(bodyData.excludedPhones)) {
         current.excludedPhones = bodyData.excludedPhones;
+      }
+      if (bodyData && bodyData.projectDids !== undefined) {
+        current.projectDids = bodyData.projectDids;
       }
       current.updatedAt = Date.now();
 

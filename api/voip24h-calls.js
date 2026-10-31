@@ -326,7 +326,7 @@ module.exports = async function handler(req, res) {
 
   const date_start = payload.date_start || defaultDates.date_start;
   const date_end = payload.date_end || defaultDates.date_end;
-  const did = payload.did !== undefined ? payload.did : "02873065650";
+  const did = payload.did !== undefined ? payload.did : "all";
 
   // ── DOWNLOAD action ────────────────────────────────────────────────────────
   if (action === "download") {
@@ -395,8 +395,12 @@ module.exports = async function handler(req, res) {
   if (!shouldSyncLive || isVercel) {
     const cachedData = await getCacheFromR2();
     if (cachedData && cachedData.calls) {
+      let retCalls = cachedData.calls;
+      if (did && did !== "all") {
+        retCalls = retCalls.filter(c => String(c.did || "").trim() === String(did).trim());
+      }
       let cAnswered = 0, cMissed = 0, cBusy = 0, cNoAnswer = 0, cFailed = 0, cInbound = 0, cOutbound = 0;
-      for (const c of cachedData.calls) {
+      for (const c of retCalls) {
         const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
         const st = String(c.statusText || "").toLowerCase().trim();
         if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) cBusy++;
@@ -414,7 +418,10 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({
         ...cachedData,
-        stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, busy: cBusy, noAnswer: cNoAnswer, failed: cFailed, inbound: cInbound, outbound: cOutbound },
+        calls: retCalls,
+        total: retCalls.length,
+        stats: { total: retCalls.length, answered: cAnswered, missed: cMissed, busy: cBusy, noAnswer: cNoAnswer, failed: cFailed, inbound: cInbound, outbound: cOutbound },
+        filter: { date_start, date_end, did },
         source: "r2_cloud",
         server: isVercel ? "vercel" : "local",
         note: isVercel
@@ -514,8 +521,12 @@ module.exports = async function handler(req, res) {
   // load the latest synced data from Cloudflare R2!
   const cachedData = await getCacheFromR2();
   if (cachedData && cachedData.calls) {
+    let retCalls = cachedData.calls;
+    if (did && did !== "all") {
+      retCalls = retCalls.filter(c => String(c.did || "").trim() === String(did).trim());
+    }
     let cAnswered = 0, cMissed = 0, cBusy = 0, cNoAnswer = 0, cFailed = 0, cInbound = 0, cOutbound = 0;
-    for (const c of cachedData.calls) {
+    for (const c of retCalls) {
       const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
       const st = String(c.statusText || "").toLowerCase().trim();
       if (disp === "BUSY" || st.includes("bận") || st.includes("ban")) cBusy++;
@@ -533,7 +544,10 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       ...cachedData,
-      stats: { total: cachedData.calls.length, answered: cAnswered, missed: cMissed, busy: cBusy, noAnswer: cNoAnswer, failed: cFailed, inbound: cInbound, outbound: cOutbound },
+      calls: retCalls,
+      total: retCalls.length,
+      stats: { total: retCalls.length, answered: cAnswered, missed: cMissed, busy: cBusy, noAnswer: cNoAnswer, failed: cFailed, inbound: cInbound, outbound: cOutbound },
+      filter: { date_start, date_end, did },
       source: "r2_cloud",
       server: isVercel ? "vercel" : "local",
       note: "Dữ liệu được tải từ bộ nhớ đệm đám mây R2 (Do tổng đài Voip24h chặn IP nước ngoài của Vercel)"

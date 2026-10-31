@@ -4,11 +4,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Task Pending – NVN Team</title>
+  <title>Task Pending</title>
   <!-- Google Font: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <style>
@@ -76,13 +78,29 @@
       max-width: calc(100% - 330px);
       padding-right: 20px;
     }
+
     @media (max-width: 1280px) {
-      .due-sidebar { width: 280px; }
-      body.sidebar-open .page { width: calc(100% - 310px); max-width: calc(100% - 310px); padding: 18px 16px; }
+      .due-sidebar {
+        width: 280px;
+      }
+
+      body.sidebar-open .page {
+        width: calc(100% - 310px);
+        max-width: calc(100% - 310px);
+        padding: 18px 16px;
+      }
     }
+
     @media (max-width: 900px) {
-      .due-sidebar { width: 260px; }
-      body.sidebar-open .page { width: calc(100% - 290px); max-width: calc(100% - 290px); padding: 14px 12px; }
+      .due-sidebar {
+        width: 260px;
+      }
+
+      body.sidebar-open .page {
+        width: calc(100% - 290px);
+        max-width: calc(100% - 290px);
+        padding: 14px 12px;
+      }
     }
 
     /* ── Hero ─────────────────────────────────────────────────────────────── */
@@ -425,15 +443,18 @@
       gap: 6px;
       transition: all 0.2s;
     }
+
     .btn-reorder:hover {
       background: #e2e8f0;
       color: var(--text);
     }
+
     .reorder-actions {
       display: inline-flex;
       align-items: center;
       gap: 8px;
     }
+
     .btn-save-order {
       background: #10b981;
       color: #fff;
@@ -449,9 +470,11 @@
       gap: 6px;
       transition: all 0.2s;
     }
+
     .btn-save-order:hover {
       background: #059669;
     }
+
     .btn-cancel-order {
       background: #ffffff;
       color: #ef4444;
@@ -467,13 +490,16 @@
       gap: 6px;
       transition: all 0.2s;
     }
+
     .btn-cancel-order:hover {
       background: #fef2f2;
     }
+
     table.is-reordering {
       outline: 2px dashed #4f46e5;
       outline-offset: -2px;
     }
+
     .col-stt {
       width: 65px;
       text-align: center;
@@ -481,6 +507,7 @@
       color: var(--text-muted);
       user-select: none;
     }
+
     .drag-handle {
       display: none;
       cursor: grab;
@@ -491,24 +518,30 @@
       border-radius: 4px;
       transition: background 0.15s;
     }
+
     .drag-handle:hover {
       background: #e2e8f0;
       color: #1e293b;
     }
+
     .drag-handle:active {
       cursor: grabbing !important;
     }
+
     table.is-reordering .drag-handle {
       display: inline-block;
     }
+
     table.is-reordering tbody tr {
       cursor: grab;
     }
+
     .sortable-ghost {
       opacity: 0.35;
       background-color: #eff6ff !important;
       border: 2px dashed #4f46e5 !important;
     }
+
     .sortable-chosen {
       background-color: #f8fafc !important;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -1420,7 +1453,7 @@
       <div class="hero-left">
         <div class="hero-icon"><i class="fa-solid fa-list-check"></i></div>
         <div>
-          <h1>Task Pending – NVN Team</h1>
+          <h1>Task Pending</h1>
           <p>Quản lý công việc đang chờ xử lý, phân công và theo dõi tiến độ cho cả nhóm.</p>
         </div>
       </div>
@@ -1613,11 +1646,13 @@
           <!-- Alert settings row -->
           <div class="form-row" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:4px;">
             <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-regular fa-clock" style="color:var(--accent);"></i> Giờ cảnh báo</label>
+              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-regular fa-clock"
+                  style="color:var(--accent);"></i> Giờ cảnh báo</label>
               <input type="time" class="fc" id="tAlertTime" value="09:00" />
             </div>
             <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-bell" style="color:var(--accent);"></i> Tần suất nhắc</label>
+              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-bell"
+                  style="color:var(--accent);"></i> Tần suất nhắc</label>
               <select class="fc" id="tAlertFrequency" onchange="onAlertFreqChange()">
                 <option value="once">Một lần (Ngày cụ thể)</option>
                 <option value="1_day">Mỗi 1 ngày</option>
@@ -1629,16 +1664,19 @@
             </div>
           </div>
           <!-- Alert specific date row (shown only for 'once') -->
-          <div id="alertSpecificDateRow" class="form-row" style="grid-template-columns:1fr; gap:12px; margin-top:4px; display:none;">
+          <div id="alertSpecificDateRow" class="form-row"
+            style="grid-template-columns:1fr; gap:12px; margin-top:4px; display:none;">
             <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-day" style="color:var(--accent);"></i> Ngày cảnh báo cụ thể</label>
+              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-day"
+                  style="color:var(--accent);"></i> Ngày cảnh báo cụ thể</label>
               <input type="date" class="fc" id="tAlertSpecificDate" />
             </div>
           </div>
           <!-- Alert days row (shown only for 1_week / 2_weeks) -->
           <div id="alertDaysRow" class="form-row" style="grid-template-columns:1fr; gap:12px; margin-top:4px;">
             <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-days" style="color:var(--accent);"></i> Ngày nhắc trong tuần (Thứ 2 - Thứ 7)</label>
+              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-days"
+                  style="color:var(--accent);"></i> Ngày nhắc trong tuần (Thứ 2 - Thứ 7)</label>
               <select class="fc" id="tAlertDays">
                 <option value="mon">Thứ Hai</option>
                 <option value="tue">Thứ Ba</option>
@@ -1673,7 +1711,8 @@
         <div style="display:flex; gap:8px; margin-bottom:12px;">
           <input type="text" class="fc" id="newProjectName" placeholder="Tên dự án..." style="flex:1;"
             onkeydown="if(event.key==='Enter'){event.preventDefault();addProject();}" />
-          <input type="text" class="fc" id="newProjectSystem" placeholder="Hệ thống (VD: DMS1, DMS)..." style="width:140px;" />
+          <input type="text" class="fc" id="newProjectSystem" placeholder="Hệ thống (VD: DMS1, DMS)..."
+            style="width:140px;" />
           <button class="btn-primary" onclick="addProject()" style="padding:8px 14px; white-space:nowrap;"><i
               class="fa-solid fa-folder-plus"></i> Thêm</button>
         </div>
@@ -1697,13 +1736,16 @@
         <button onclick="closeMemberModal()" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <div style="background:var(--card-bg, #fff); border:1px solid var(--border); border-radius:var(--r-sm, 8px); padding:12px; margin-bottom:14px;">
-          <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        <div
+          style="background:var(--card-bg, #fff); border:1px solid var(--border); border-radius:var(--r-sm, 8px); padding:12px; margin-bottom:14px;">
+          <div
+            style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
             <i class="fa-solid fa-user-plus" style="color:var(--accent);"></i> Thêm thành viên mới
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <div style="flex:0 0 120px; min-width:100px;">
-              <input type="text" class="fc" id="newMemberCode" placeholder="Mã NV *" style="width:100%; text-transform:uppercase; font-weight:600; font-family:monospace;"
+              <input type="text" class="fc" id="newMemberCode" placeholder="Mã NV *"
+                style="width:100%; text-transform:uppercase; font-weight:600; font-family:monospace;"
                 title="Mã nhân viên (bắt buộc)"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('newMemberName').focus();}" />
             </div>
@@ -1713,25 +1755,32 @@
                 onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('newMemberExt').focus();}" />
             </div>
             <div style="flex:0 0 100px; min-width:80px;">
-              <input type="text" class="fc" id="newMemberExt" placeholder="Máy nhánh" style="width:100%; font-family:monospace;"
-                title="Số máy nhánh nội bộ (tuỳ chọn)"
+              <input type="text" class="fc" id="newMemberExt" placeholder="Máy nhánh"
+                style="width:100%; font-family:monospace;" title="Số máy nhánh nội bộ (tuỳ chọn)"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();addMember();}" />
             </div>
-            <button class="btn-primary" onclick="addMember()" style="padding:8px 14px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px;">
+            <button class="btn-primary" onclick="addMember()"
+              style="padding:8px 14px; white-space:nowrap; display:inline-flex; align-items:center; gap:6px;">
               <i class="fa-solid fa-plus"></i> Thêm
             </button>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
-            <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...) · Máy nhánh tuỳ chọn
+            <i class="fa-solid fa-circle-info"></i> Mã nhân viên là <b>bắt buộc</b> (ví dụ: NV01, NV02, TT01...) · Máy
+            nhánh tuỳ chọn
           </div>
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Danh sách nhân viên</span>
-          <span id="memberCountBadge" style="font-size:11px; background:var(--bg); border:1px solid var(--border); padding:2px 8px; border-radius:12px; color:var(--text-muted);">0 thành viên</span>
+          <span
+            style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Danh
+            sách nhân viên</span>
+          <span id="memberCountBadge"
+            style="font-size:11px; background:var(--bg); border:1px solid var(--border); padding:2px 8px; border-radius:12px; color:var(--text-muted);">0
+            thành viên</span>
         </div>
 
-        <ul class="member-list" id="memberList" style="margin-top:0; max-height:320px; overflow-y:auto; padding-right:2px;">
+        <ul class="member-list" id="memberList"
+          style="margin-top:0; max-height:320px; overflow-y:auto; padding-right:2px;">
           <li style="text-align:center; color:var(--text-muted); padding:12px;">Đang tải danh sách...</li>
         </ul>
       </div>
@@ -1981,7 +2030,7 @@
               statusVal = "Pending";
             }
             const priority = ["P1", "P2", "P3"].includes(t.priority) ? t.priority : "P3";
-            const validDays = ["mon","tue","wed","thu","fri","sat",""];
+            const validDays = ["mon", "tue", "wed", "thu", "fri", "sat", ""];
             const alertDays = validDays.includes(t.alert_days || "") ? (t.alert_days || "") : "";
             return {
               id: t.id,
@@ -2125,7 +2174,7 @@
         const projectBadge = t.project
           ? `<span class="badge" style="${getProjectStyle(t.project)}"><i class="fa-solid fa-folder" style="font-size:10px; margin-right:3px;"></i>${esc(t.project)}</span>`
           : `<span style="color:var(--text-muted)">—</span>`;
-        
+
         let statusBadge = "";
         if (t.status === "Done") {
           statusBadge = `<span class="badge badge-done"><i class="fa-solid fa-circle-check"></i> Done</span>`;
@@ -2134,7 +2183,7 @@
         } else {
           statusBadge = `<span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>`;
         }
-        
+
         const pClass = priorityClasses[t.priority] || "badge-p3";
         const priorityBadge = `<span class="badge ${pClass}">${t.priority || "P3"}</span>`;
 
@@ -2194,7 +2243,7 @@
       const fs = document.getElementById("filterStatus").value;
       const fp = document.getElementById("filterProject") ? document.getElementById("filterProject").value : "";
       const fm = document.getElementById("filterMember").value;
-      
+
       filteredTasks = allTasks.filter(t => {
         // 1. Phân loại theo Tab (Công việc thường vs Task cố định)
         if (currentTaskTab === "fixed") {
@@ -2220,9 +2269,9 @@
       const hasCustomPositions = filteredTasks.some(t => t.position && t.position > 0);
       if (hasCustomPositions) {
         // Tách thành 3 nhóm: có deadline, không deadline, Done
-        const withDate    = filteredTasks.filter(t => t.status !== "Done" && !!(t.deadline && String(t.deadline).trim()));
+        const withDate = filteredTasks.filter(t => t.status !== "Done" && !!(t.deadline && String(t.deadline).trim()));
         const withoutDate = filteredTasks.filter(t => t.status !== "Done" && !(t.deadline && String(t.deadline).trim()));
-        const done        = filteredTasks.filter(t => t.status === "Done");
+        const done = filteredTasks.filter(t => t.status === "Done");
         withDate.sort((a, b) => (a.position || 999999) - (b.position || 999999));
         withoutDate.sort((a, b) => (a.position || 999999) - (b.position || 999999));
         done.sort((a, b) => (a.position || 999999) - (b.position || 999999));
@@ -2496,7 +2545,7 @@
       sel.innerHTML = `<option value="">Tất cả thành viên</option>`;
       allMembers.forEach(m => {
         const opt = document.createElement("option");
-        opt.value = m.name; 
+        opt.value = m.name;
         opt.textContent = m.code ? `[${m.code}] ${m.name}` : m.name;
         if (m.name === cur) opt.selected = true;
         sel.appendChild(opt);
@@ -2633,7 +2682,7 @@
       const priority = document.getElementById("tPriority").value;
       const alert_time = document.getElementById("tAlertTime").value || "09:00";
       const alert_frequency = document.getElementById("tAlertFrequency").value || "1_week";
-      const freqHasDays = ["1_week","2_weeks"].includes(alert_frequency);
+      const freqHasDays = ["1_week", "2_weeks"].includes(alert_frequency);
       const alert_days = freqHasDays ? (document.getElementById("tAlertDays").value || "") : "";
       const alert_specific_date = (alert_frequency === "once") ? (document.getElementById("tAlertSpecificDate").value || "") : "";
 
@@ -2726,8 +2775,8 @@
       const q = document.getElementById("msInput").value.toLowerCase().trim();
       const dd = document.getElementById("msDropdown");
       dd.innerHTML = "";
-      const items = allMembers.filter(m => 
-        m.name.toLowerCase().includes(q) || 
+      const items = allMembers.filter(m =>
+        m.name.toLowerCase().includes(q) ||
         (m.code && m.code.toLowerCase().includes(q))
       );
       if (!items.length) {
@@ -2817,7 +2866,7 @@
           try { localStorage.setItem("app_projects_data", JSON.stringify(allProjects)); } catch (e) { }
           toast(`Đã cập nhật hệ thống cho "${name}"!`, "s");
         }
-      } catch (_) {}
+      } catch (_) { }
     }
 
     async function addProject() {
@@ -2860,7 +2909,7 @@
     /* ──────────────────────────────────────────────────────────────────────────
        MEMBERS – LOAD, RENDER, CRUD (NAME-BASED FROM COLUMN I)
     ────────────────────────────────────────────────────────────────────────── */
-    // Tự động tải URL Task Pending từ R2 khi mở trang
+    // Tự động tải URL  từ R2 khi mở trang
     async function autoDetectTaskUrl() {
       const endpoint = getR2Endpoint();
       try {
@@ -2978,10 +3027,10 @@
     async function saveEditMember(oldName, idx) {
       const codeEl = document.getElementById(`editMemberCode_${idx}`);
       const nameEl = document.getElementById(`editMemberName_${idx}`);
-      const extEl  = document.getElementById(`editMemberExt_${idx}`);
+      const extEl = document.getElementById(`editMemberExt_${idx}`);
       const newCode = (codeEl ? codeEl.value : "").trim().toUpperCase();
       const newName = (nameEl ? nameEl.value : "").trim();
-      const newExt  = (extEl  ? extEl.value  : "").trim();
+      const newExt = (extEl ? extEl.value : "").trim();
 
       if (!newCode) {
         toast("Vui lòng nhập mã nhân viên (bắt buộc)!", "w");
@@ -3032,7 +3081,7 @@
     async function addMember() {
       const codeInput = document.getElementById("newMemberCode");
       const nameInput = document.getElementById("newMemberName");
-      const extInput  = document.getElementById("newMemberExt");
+      const extInput = document.getElementById("newMemberExt");
       const code = (codeInput ? codeInput.value : "").trim().toUpperCase();
       const name = (nameInput ? nameInput.value : "").trim();
       const extension = (extInput ? extInput.value : "").trim();
@@ -3068,7 +3117,7 @@
           toast(`Đã thêm [${code}] ${name}${extension ? ' · Nhánh ' + extension : ''}!`, "s");
           if (codeInput) codeInput.value = "";
           if (nameInput) nameInput.value = "";
-          if (extInput)  extInput.value  = "";
+          if (extInput) extInput.value = "";
           codeInput?.focus();
           loadMembers();
         } else {

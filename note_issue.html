@@ -4538,12 +4538,15 @@
               </span>
               <select id="voipSelectDid"
                 style="padding:5px 8px; font-size:12px; font-weight:600; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
-                onchange="fetchVoipCalls(false)">
-                <option value="02873065650" selected>02873065650 (Đầu số chính)</option>
-                <option value="02873099980">02873099980</option>
-                <option value="02873095950">02873095950</option>
+                onchange="onVoipDidDropdownChange()">
                 <option value="all">Tất cả đầu số</option>
               </select>
+              <button type="button" class="btn-stats-tool" onclick="openVoipDidConfigModal()"
+                title="Cấu hình đầu số theo dự án (cho phép null)"
+                style="padding:5px 8px; font-size:12px; border-radius:6px; background:#f0f9ff; border:1px solid #bae6fd; color:#0284c7; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-gear"></i>
+                <span style="font-size:11px; font-weight:700;">Cấu hình</span>
+              </button>
             </div>
 
             <!-- Trạng thái, Loại, Ghi chú -->
@@ -5247,6 +5250,87 @@
     </div>
   </div>
 
+  <!-- MODAL: CẤU HÌNH ĐẦU SỐ THEO DỰ ÁN (VOIP DIDS) -->
+  <div class="member-modal-backdrop" id="voipDidConfigModalBackdrop"
+    onclick="if(event.target===this) closeVoipDidConfigModal()">
+    <div class="member-modal-box" style="max-width: 680px; width: 95%;">
+      <div class="member-modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="member-modal-header-icon"
+            style="background: rgba(255, 255, 255, 0.2); box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35); color:#fff;">
+            <i class="fa-solid fa-sim-card"></i>
+          </div>
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="margin:0; font-size:16px; font-weight:800; color:#fff;">Cấu hình Đầu số theo Dự án</h3>
+              <span id="tagVoipDidR2Status"
+                style="font-size:11px; font-weight:700; background:rgba(255,255,255,0.2); color:#fff; border:1px solid rgba(255,255,255,0.4); padding:2px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
+                <i class="fa-solid fa-cloud"></i> Đám mây R2
+              </span>
+            </div>
+            <p style="margin:2px 0 0; color:#e0f2fe; font-size:12px;">Thiết lập danh sách đầu số VoIP cho từng dự án · Cho phép để trống (null = Tất cả đầu số)</p>
+          </div>
+        </div>
+        <button type="button" class="member-modal-close-btn" onclick="closeVoipDidConfigModal()" title="Đóng" style="color:#fff;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="member-modal-body"
+        style="padding: 18px 22px; max-height: 70vh; display: flex; flex-direction: column; gap: 14px; overflow-y:auto;">
+        
+        <!-- Hướng dẫn quy tắc cấu hình -->
+        <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:var(--radius-md); padding:12px 14px; font-size:12px; color:#0369a1; line-height:1.6;">
+          <div style="font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-circle-info"></i> Quy tắc cấu hình đầu số:
+          </div>
+          • <strong>Để trống (null):</strong> Dự án sẽ nhận <strong>Tất cả đầu số</strong>, không bị lọc hay giới hạn cuộc gọi.<br>
+          • <strong>Nhiều đầu số:</strong> Nhập các số cách nhau bởi dấu phẩy (VD: <code>02873065650, 02873099980</code>).<br>
+          • <strong>Đầu số đầu tiên</strong> trong danh sách sẽ được làm <em>Đầu số chính</em> hiển thị mặc định của dự án.
+        </div>
+
+        <!-- Thanh chèn nhanh các đầu số đã phát hiện -->
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:var(--radius-sm); padding:8px 12px;">
+          <span style="font-size:11.5px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">
+            <i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Chèn nhanh:
+          </span>
+          <button type="button" class="btn-stats-tool" onclick="appendDidToActiveInput('02873065650')" title="Thêm 02873065650" style="padding:2px 8px; font-size:11px; font-weight:700; font-family:var(--font-mono);">+ 02873065650</button>
+          <button type="button" class="btn-stats-tool" onclick="appendDidToActiveInput('02873099980')" title="Thêm 02873099980" style="padding:2px 8px; font-size:11px; font-weight:700; font-family:var(--font-mono);">+ 02873099980</button>
+          <button type="button" class="btn-stats-tool" onclick="appendDidToActiveInput('02873095950')" title="Thêm 02873095950" style="padding:2px 8px; font-size:11px; font-weight:700; font-family:var(--font-mono);">+ 02873095950</button>
+          <button type="button" class="btn-stats-tool" onclick="appendDidToActiveInput('02873098989')" title="Thêm 02873098989" style="padding:2px 8px; font-size:11px; font-weight:700; font-family:var(--font-mono);">+ 02873098989</button>
+        </div>
+
+        <!-- Danh sách cấu hình từng dự án -->
+        <div id="voipDidConfigProjectList" style="display:flex; flex-direction:column; gap:10px;">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <div class="member-modal-footer"
+        style="padding:12px 22px; display:flex; justify-content:space-between; align-items:center; background:#fafbfc; border-top:1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn-stats-tool" onclick="resetVoipDidConfigToDefaults()"
+            style="padding:5px 11px; font-size:12px;" title="Khôi phục mặc định NVN 4 đầu số, các dự án khác = null">
+            <i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định
+          </button>
+          <span id="labelVoipDidR2Status"
+            style="font-size:11.5px; color:#64748b; display:inline-flex; align-items:center; gap:5px;">
+            <i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Tự động đồng bộ lên Cloud R2
+          </span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn-modal-cancel" onclick="closeVoipDidConfigModal()">
+            Hủy
+          </button>
+          <button type="button" class="btn-stats-tool primary" onclick="saveVoipDidConfigFromModal()"
+            style="padding:6px 16px; font-size:12.5px; font-weight:700;">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu cấu hình
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CHI TIẾT TICKET CHATBOX AI (HELPDESK) -->
   <div class="member-modal-backdrop" id="ticketDetailModalBackdrop"
     onclick="if(event.target===this) closeTicketDetailModal()">
@@ -5910,6 +5994,9 @@
           if (typeof clearSolutionField === "function") clearSolutionField();
           if (typeof clearNppField === "function") clearNppField();
           if (typeof loadDtList === "function") loadDtList(false, proj);
+          if (typeof populateVoipDidDropdown === "function") populateVoipDidDropdown(proj);
+          if (typeof renderVoipTable === "function") renderVoipTable();
+          if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
         }
         if (typeof updateResultDisplay === "function") updateResultDisplay();
       }
@@ -13092,6 +13179,357 @@
         }
       }
 
+      /* ──────────────────────────────────────────────────────────────────────────
+         VOIP DID CONFIGURATION PER PROJECT (CHO PHÉP NULL = TẤT CẢ ĐẦU SỐ)
+      ────────────────────────────────────────────────────────────────────────── */
+      const VOIP_DID_CONFIG_KEY = "voip_did_config_v1";
+      const KNOWN_SYSTEM_DIDS = ["02873065650", "02873099980", "02873095950", "02873098989"];
+      const DEFAULT_PROJECT_DIDS = {
+        "NVN": ["02873065650", "02873099980", "02873095950", "02873098989"],
+        "DMS1": ["02873065650", "02873099980", "02873095950", "02873098989"]
+      };
+      window.gActiveDidInputId = null;
+
+      function getVoipDidConfig() {
+        try {
+          const raw = localStorage.getItem(VOIP_DID_CONFIG_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === "object") return parsed;
+          }
+        } catch (_) {}
+        return Object.assign({}, DEFAULT_PROJECT_DIDS);
+      }
+
+      function saveVoipDidConfig(config, pushToR2 = true) {
+        try {
+          localStorage.setItem(VOIP_DID_CONFIG_KEY, JSON.stringify(config));
+        } catch (_) {}
+        if (pushToR2) {
+          pushVoipDidConfigToR2(config);
+        }
+      }
+
+      async function fetchVoipDidConfigFromR2() {
+        try {
+          const endpoint = (typeof getSettingsApiEndpoint === "function") ? getSettingsApiEndpoint() : "/api/r2-settings";
+          const res = await fetch(`${endpoint}?t=${Date.now()}`, { cache: "no-cache" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.projectDids && typeof data.projectDids === "object") {
+              saveVoipDidConfig(data.projectDids, false);
+              populateVoipDidDropdown();
+              renderVoipTable();
+              updateVoipKpiCardsAndBadges();
+            }
+          }
+        } catch (e) {
+          console.warn("fetchVoipDidConfigFromR2 error:", e);
+        }
+      }
+
+      async function pushVoipDidConfigToR2(config) {
+        const tag = document.getElementById("tagVoipDidR2Status");
+        const lbl = document.getElementById("labelVoipDidR2Status");
+        if (lbl) lbl.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin" style="color:#d97706;"></i> Đang đồng bộ Cloud...`;
+        try {
+          const endpoint = (typeof getSettingsApiEndpoint === "function") ? getSettingsApiEndpoint() : "/api/r2-settings";
+          await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ projectDids: config })
+          });
+          if (lbl) lbl.innerHTML = `<i class="fa-solid fa-cloud-arrow-up" style="color:#059669;"></i> Đã đồng bộ lên Cloud R2`;
+          if (tag) tag.innerHTML = `<i class="fa-solid fa-cloud"></i> Đã đồng bộ`;
+        } catch (e) {
+          console.warn("pushVoipDidConfigToR2 error:", e);
+          if (lbl) lbl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color:#dc2626;"></i> Lỗi đồng bộ Cloud`;
+        }
+      }
+
+      function getProjectDidList(projectName) {
+        const pName = (projectName || getSelectedProject()).trim().toUpperCase();
+        const config = getVoipDidConfig();
+
+        for (const k of Object.keys(config)) {
+          if (k.trim().toUpperCase() === pName) {
+            const val = config[k];
+            if (Array.isArray(val)) return val.length > 0 ? val : null;
+            if (val === null) return null;
+            if (typeof val === "string") {
+              const parts = val.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+              return parts.length > 0 ? parts : null;
+            }
+          }
+        }
+
+        // Fallback mặc định: NVN / DMS1 có 4 đầu số, các dự án khác = null (tất cả đầu số)
+        if (pName === "NVN" || pName === "DMS1") {
+          return ["02873065650", "02873099980", "02873095950", "02873098989"];
+        }
+        return null;
+      }
+
+      function populateVoipDidDropdown(projectName) {
+        const sel = document.getElementById("voipSelectDid");
+        if (!sel) return;
+        const currentProj = (projectName || getSelectedProject()).trim();
+        const dids = getProjectDidList(currentProj);
+        const prevVal = sel.value;
+        sel.innerHTML = "";
+
+        if (dids && dids.length > 0) {
+          // 1. Tùy chọn tất cả đầu số thuộc dự án này
+          const optProjAll = document.createElement("option");
+          optProjAll.value = "project_all";
+          optProjAll.textContent = `Tất cả đầu số dự án (${dids.length} đầu số)`;
+          sel.appendChild(optProjAll);
+
+          // 2. Từng đầu số cụ thể của dự án
+          dids.forEach((did, idx) => {
+            const opt = document.createElement("option");
+            opt.value = did;
+            opt.textContent = idx === 0 ? `${did} (Đầu số chính)` : did;
+            sel.appendChild(opt);
+          });
+
+          // 3. Tùy chọn tất cả đầu số toàn hệ thống
+          const optAll = document.createElement("option");
+          optAll.value = "all";
+          optAll.textContent = "Tất cả đầu số (Toàn hệ thống)";
+          sel.appendChild(optAll);
+
+          // Khôi phục giá trị hoặc chọn đầu số chính mặc định
+          if (prevVal === "project_all" || prevVal === "all" || dids.includes(prevVal)) {
+            sel.value = prevVal;
+          } else {
+            sel.value = dids[0];
+          }
+        } else {
+          // Dự án cho phép null (Tất cả đầu số)
+          const optAll = document.createElement("option");
+          optAll.value = "all";
+          optAll.textContent = "Tất cả đầu số";
+          sel.appendChild(optAll);
+
+          // Liệt kê các đầu số hệ thống đã biết hoặc xuất hiện trong cuộc gọi để tiện lọc
+          const allKnown = new Set(KNOWN_SYSTEM_DIDS);
+          (voipCalls || []).forEach(c => {
+            if (c.did && String(c.did).trim()) allKnown.add(String(c.did).trim());
+          });
+          Array.from(allKnown).sort().forEach(did => {
+            const opt = document.createElement("option");
+            opt.value = did;
+            opt.textContent = did;
+            sel.appendChild(opt);
+          });
+
+          if (prevVal && (prevVal === "all" || allKnown.has(prevVal))) {
+            sel.value = prevVal;
+          } else {
+            sel.value = "all";
+          }
+        }
+      }
+
+      window.onVoipDidDropdownChange = function () {
+        if (voipCalls && voipCalls.length > 0) {
+          renderVoipTable();
+          updateVoipKpiCardsAndBadges();
+          renderUnnotedSuggestions();
+        } else {
+          fetchVoipCalls(false);
+        }
+      };
+
+      window.openVoipDidConfigModal = function () {
+        const modal = document.getElementById("voipDidConfigModalBackdrop");
+        if (!modal) return;
+        modal.classList.add("show");
+        renderVoipDidConfigList();
+        fetchVoipDidConfigFromR2();
+      };
+
+      window.closeVoipDidConfigModal = function () {
+        const modal = document.getElementById("voipDidConfigModalBackdrop");
+        if (modal) modal.classList.remove("show");
+        window.gActiveDidInputId = null;
+      };
+
+      window.renderVoipDidConfigList = function () {
+        const container = document.getElementById("voipDidConfigProjectList");
+        if (!container) return;
+
+        let rawList = [];
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) rawList = JSON.parse(raw);
+        } catch (_) {}
+        if (!Array.isArray(rawList) || rawList.length === 0) {
+          rawList = [
+            { name: "NVN", system: "DMS1" },
+            { name: "LVN", system: "DMS" },
+            { name: "CPTH", system: "FPIT" },
+            { name: "FNB", system: "FNB" },
+            { name: "Nội bộ", system: "NB" },
+            { name: "Asian Shine", system: "WSM" },
+            { name: "Syngenta", system: "WSM" },
+            { name: "Haleon", system: "DMS" }
+          ];
+        }
+
+        const config = getVoipDidConfig();
+        container.innerHTML = "";
+
+        rawList.forEach(p => {
+          const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
+          if (!pName) return;
+          const pSys = (typeof p === "object" && p.system) ? p.system.trim() : "";
+          const pColor = (typeof getProjectColor === "function") ? getProjectColor(pName) : "#4f46e5";
+
+          let currentDids = null;
+          for (const k of Object.keys(config)) {
+            if (k.trim().toUpperCase() === pName.toUpperCase()) {
+              currentDids = config[k];
+              break;
+            }
+          }
+          if (currentDids === undefined && (pName.toUpperCase() === "NVN" || pName.toUpperCase() === "DMS1")) {
+            currentDids = DEFAULT_PROJECT_DIDS["NVN"];
+          }
+
+          let valStr = "";
+          if (Array.isArray(currentDids)) {
+            valStr = currentDids.join(", ");
+          } else if (typeof currentDids === "string") {
+            valStr = currentDids;
+          }
+
+          const card = document.createElement("div");
+          card.style.cssText = "background:#ffffff; border:1px solid #e2e8f0; border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:8px;";
+
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:${pColor};"></span>
+                <span style="font-weight:700; font-size:13px; color:var(--text-main);">${escapeHTML(pName)}</span>
+                ${pSys ? `<span style="font-size:11px; font-weight:700; color:#4f46e5; background:#eef2ff; border:1px solid #c7d2fe; padding:1px 6px; border-radius:6px;">${escapeHTML(pSys)}</span>` : ""}
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button type="button" class="btn-stats-tool" onclick="clearProjectDidInput('${escapeHTML(pName)}')"
+                  title="Xóa để nhận tất cả đầu số (null)"
+                  style="padding:2px 7px; font-size:11px; color:#ef4444; border-color:#fecaca; background:#fff5f5;">
+                  <i class="fa-solid fa-xmark"></i> Đặt null (Tất cả)
+                </button>
+              </div>
+            </div>
+            <div style="position:relative;">
+              <input type="text" class="voip-did-input form-control-studio"
+                id="voipDidInp_${escapeHTML(pName.replace(/\s+/g, '_'))}"
+                data-proj="${escapeHTML(pName)}"
+                value="${escapeHTML(valStr)}"
+                placeholder="Để trống = Tất cả đầu số (null) — không giới hạn"
+                style="font-family:var(--font-mono); font-size:12px; padding:7px 10px; width:100%; border:1px solid #cbd5e1; border-radius:6px;"
+                onfocus="gActiveDidInputId = this.id"
+                oninput="updateProjectDidHint(this)" />
+            </div>
+            <div class="voip-did-hint" style="font-size:11px; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
+              <span class="hint-text">${valStr ? `<i class="fa-solid fa-check" style="color:#059669;"></i> ${valStr.split(',').length} đầu số (Chính: <b>${escapeHTML(valStr.split(',')[0].trim())}</b>)` : `<i class="fa-solid fa-infinity" style="color:#0284c7;"></i> Mặc định: Nhận tất cả đầu số (null)`}</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      };
+
+      window.clearProjectDidInput = function (projName) {
+        const inp = document.getElementById(`voipDidInp_${projName.replace(/\s+/g, '_')}`);
+        if (inp) {
+          inp.value = "";
+          updateProjectDidHint(inp);
+          inp.focus();
+        }
+      };
+
+      window.appendDidToActiveInput = function (did) {
+        let inp = null;
+        if (window.gActiveDidInputId) {
+          inp = document.getElementById(window.gActiveDidInputId);
+        }
+        if (!inp) {
+          const curr = getSelectedProject();
+          inp = document.getElementById(`voipDidInp_${curr.replace(/\s+/g, '_')}`);
+        }
+        if (!inp) {
+          inp = document.querySelector(".voip-did-input");
+        }
+        if (!inp) return;
+
+        const currentVal = inp.value.trim();
+        if (!currentVal) {
+          inp.value = did;
+        } else {
+          const parts = currentVal.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+          if (!parts.includes(did)) {
+            parts.push(did);
+            inp.value = parts.join(", ");
+          }
+        }
+        updateProjectDidHint(inp);
+        inp.focus();
+      };
+
+      window.updateProjectDidHint = function (inp) {
+        const card = inp.closest("div").parentElement;
+        const hintEl = card ? card.querySelector(".hint-text") : null;
+        if (!hintEl) return;
+        const val = inp.value.trim();
+        if (!val) {
+          hintEl.innerHTML = `<i class="fa-solid fa-infinity" style="color:#0284c7;"></i> Mặc định: Nhận tất cả đầu số (null)`;
+        } else {
+          const parts = val.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+          const first = parts[0] || "";
+          hintEl.innerHTML = `<i class="fa-solid fa-check" style="color:#059669;"></i> ${parts.length} đầu số (Chính: <b>${escapeHTML(first)}</b>)`;
+        }
+      };
+
+      window.saveVoipDidConfigFromModal = function () {
+        const inputs = document.querySelectorAll(".voip-did-input");
+        const newConfig = {};
+
+        inputs.forEach(inp => {
+          const proj = inp.getAttribute("data-proj");
+          if (!proj) return;
+          const val = inp.value.trim();
+          if (!val) {
+            newConfig[proj] = null; // null = cho phép tất cả đầu số!
+          } else {
+            const parts = val.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean);
+            newConfig[proj] = parts.length > 0 ? parts : null;
+          }
+        });
+
+        saveVoipDidConfig(newConfig, true);
+        showToast("Đã lưu cấu hình đầu số theo dự án và đồng bộ Cloud!", "fa-circle-check");
+        closeVoipDidConfigModal();
+
+        populateVoipDidDropdown();
+        renderVoipTable();
+        updateVoipKpiCardsAndBadges();
+        renderUnnotedSuggestions();
+      };
+
+      window.resetVoipDidConfigToDefaults = function () {
+        if (!confirm("Khôi phục cấu hình mặc định (NVN có 4 đầu số, các dự án khác để null - nhận tất cả)?")) return;
+        const def = Object.assign({}, DEFAULT_PROJECT_DIDS);
+        saveVoipDidConfig(def, true);
+        renderVoipDidConfigList();
+        populateVoipDidDropdown();
+        renderVoipTable();
+        updateVoipKpiCardsAndBadges();
+        renderUnnotedSuggestions();
+        showToast("Đã khôi phục cấu hình đầu số mặc định!", "fa-rotate-left");
+      };
+
       function updateVoipKpiCardsAndBadges(rangeStart, rangeEnd) {
         let unnotedCount = 0;
         let answeredCount = 0;
@@ -13106,9 +13544,22 @@
         const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
         const myCode = currentSelectedMember?.code ? String(currentSelectedMember.code).trim() : "";
         const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
+        const filterDid = document.getElementById("voipSelectDid")?.value || "all";
+        const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "NVN";
+        const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
 
         (voipCalls || []).forEach(c => {
           if (typeof isCallExcluded === "function" && isCallExcluded(c)) return; // BỎ QUA HOÀN TOÀN CÁC SỐ MIỄN NOTE!
+
+          // Lọc theo Đầu số (DID)
+          const cDid = String(c.did || "").trim();
+          if (filterDid === "project_all") {
+            if (projDids && projDids.length > 0) {
+              if (cDid && !projDids.includes(cDid)) return;
+            }
+          } else if (filterDid !== "all") {
+            if (cDid && cDid !== filterDid) return;
+          }
 
           // Lọc theo khoảng thời gian đang chọn
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
@@ -13764,7 +14215,7 @@
           ]);
 
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
-          const did = document.getElementById("voipSelectDid")?.value || "02873065650";
+          const did = "all"; // Luôn lấy tất cả đầu số về Cloud và RAM (việc lọc theo dự án/đầu số do client xử lý tức thì)
 
           let data = null;
           let usedFlow = null;
@@ -13981,8 +14432,21 @@
         const filterStatus = document.getElementById("voipFilterStatus")?.value || "all";
         const filterType = document.getElementById("voipFilterType")?.value || "all";
         const filterNote = document.getElementById("voipFilterNoteStatus")?.value || "all";
+        const filterDid = document.getElementById("voipSelectDid")?.value || "all";
+        const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "NVN";
+        const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
 
         const filtered = voipCalls.filter(c => {
+          // 0. Lọc theo Đầu số (DID)
+          const cDid = String(c.did || "").trim();
+          if (filterDid === "project_all") {
+            if (projDids && projDids.length > 0) {
+              if (cDid && !projDids.includes(cDid)) return false;
+            }
+          } else if (filterDid !== "all") {
+            if (cDid && cDid !== filterDid) return false;
+          }
+
           // 1. Lọc theo Khoảng thời gian đang chọn (Tháng này / Hôm nay / Hôm qua / 7 ngày qua / Tùy chọn)
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
             const cd = parseCallDate(c.calldate);
@@ -14292,7 +14756,21 @@
         // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2 theo khoảng thời gian đã chọn
         // Ưu tiên các cuộc gọi đã đàm thoại (isAnswered)
         const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
+        const filterDid = document.getElementById("voipSelectDid")?.value || "all";
+        const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "NVN";
+        const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
+
         const unnotedCalls = voipCalls.filter(c => {
+          // Lọc theo Đầu số (DID)
+          const cDid = String(c.did || "").trim();
+          if (filterDid === "project_all") {
+            if (projDids && projDids.length > 0) {
+              if (cDid && !projDids.includes(cDid)) return false;
+            }
+          } else if (filterDid !== "all") {
+            if (cDid && cDid !== filterDid) return false;
+          }
+
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
             const cd = parseCallDate(c.calldate);
             if (cd && (cd.getTime() < dateRange.startTime || cd.getTime() > dateRange.endTime)) return false;
@@ -14521,7 +14999,8 @@
         try {
           showToast("Đang chuẩn bị file export...", "fa-clock");
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
-          const did = document.getElementById("voipSelectDid")?.value || "02873065650";
+          const selDid = document.getElementById("voipSelectDid")?.value || "all";
+          const did = (selDid === "project_all" || selDid === "all") ? "all" : selDid;
 
           // Thử ưu tiên Local trước, nếu không được thì fallback sang Vercel
           let downloadEndpoint = null;
@@ -14654,11 +15133,18 @@
         if (e.key === "app_projects_data") {
           cachedSystemProjects = null;
           populateHeaderProjects();
+          if (typeof populateVoipDidDropdown === "function") populateVoipDidDropdown();
+        }
+        if (e.key === VOIP_DID_CONFIG_KEY) {
+          if (typeof populateVoipDidDropdown === "function") populateVoipDidDropdown();
+          if (typeof renderVoipTable === "function") renderVoipTable();
+          if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
         }
       });
 
       async function init() {
         populateHeaderProjects();
+        if (typeof populateVoipDidDropdown === "function") populateVoipDidDropdown();
         syncProjectsFromCloud();
         initDateInputs();
         if (typeof updateExcludedPhonesBadge === "function") updateExcludedPhonesBadge();
@@ -14666,6 +15152,7 @@
         if (typeof loadHelpdeskCacheFromLocal === "function") loadHelpdeskCacheFromLocal();
         if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
         if (typeof updateVoipSyncStatusDisplay === "function") updateVoipSyncStatusDisplay();
+        if (typeof fetchVoipDidConfigFromR2 === "function") fetchVoipDidConfigFromR2();
         await checkMemberRequirement();
         await fetchSystemMembers();
         loadTempNotes();
