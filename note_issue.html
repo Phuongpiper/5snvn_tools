@@ -13270,65 +13270,111 @@
         return null;
       }
 
+      function getDidProjectMap() {
+        const config = getVoipDidConfig();
+        const map = {}; // did -> array of project names
+        Object.keys(config).forEach(pName => {
+          const val = config[pName];
+          if (Array.isArray(val)) {
+            val.forEach(did => {
+              const d = String(did).trim();
+              if (!d) return;
+              if (!map[d]) map[d] = [];
+              if (!map[d].includes(pName)) map[d].push(pName);
+            });
+          } else if (typeof val === "string" && val.trim()) {
+            val.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean).forEach(did => {
+              if (!map[did]) map[did] = [];
+              if (!map[did].includes(pName)) map[did].push(pName);
+            });
+          }
+        });
+        return map;
+      }
+
       function populateVoipDidDropdown(projectName) {
         const sel = document.getElementById("voipSelectDid");
         if (!sel) return;
         const currentProj = (projectName || getSelectedProject()).trim();
-        const dids = getProjectDidList(currentProj);
+        const currentProjDids = getProjectDidList(currentProj) || [];
         const prevVal = sel.value;
         sel.innerHTML = "";
 
-        if (dids && dids.length > 0) {
-          // 1. Tùy chọn tất cả đầu số thuộc dự án này
+        const didProjMap = getDidProjectMap();
+        const addedDids = new Set();
+
+        // 1. Nếu dự án hiện tại có TỪ 2 ĐẦU SỐ TRỞ LÊN: hiển thị tùy chọn Tất cả đầu số của dự án này
+        if (currentProjDids.length > 1) {
           const optProjAll = document.createElement("option");
           optProjAll.value = "project_all";
-          optProjAll.textContent = `Tất cả đầu số dự án (${dids.length} đầu số)`;
+          optProjAll.textContent = `Tất cả đầu số dự án (${currentProj} - ${currentProjDids.length} đầu số)`;
           sel.appendChild(optProjAll);
+        }
 
-          // 2. Từng đầu số cụ thể của dự án
-          dids.forEach((did, idx) => {
+        // 2. Thêm các đầu số của dự án hiện tại (ưu tiên hiển thị lên đầu)
+        currentProjDids.forEach((did, idx) => {
+          addedDids.add(did);
+          const opt = document.createElement("option");
+          opt.value = did;
+          const labelSuffix = currentProjDids.length > 1 && idx === 0 ? `${currentProj} - Chính` : currentProj;
+          opt.textContent = `${did} (${labelSuffix})`;
+          sel.appendChild(opt);
+        });
+
+        // 3. Thêm các đầu số của các dự án khác đã được cấu hình trong hệ thống
+        const config = getVoipDidConfig();
+        Object.keys(config).forEach(pName => {
+          if (pName.trim().toUpperCase() === currentProj.toUpperCase()) return;
+          const otherDids = getProjectDidList(pName) || [];
+          otherDids.forEach((did, idx) => {
+            if (addedDids.has(did)) return;
+            addedDids.add(did);
             const opt = document.createElement("option");
             opt.value = did;
-            opt.textContent = idx === 0 ? `${did} (Đầu số chính)` : did;
+            const labelSuffix = otherDids.length > 1 && idx === 0 ? `${pName} - Chính` : pName;
+            opt.textContent = `${did} (${labelSuffix})`;
             sel.appendChild(opt);
           });
+        });
 
-          // 3. Tùy chọn tất cả đầu số toàn hệ thống
-          const optAll = document.createElement("option");
-          optAll.value = "all";
-          optAll.textContent = "Tất cả đầu số (Toàn hệ thống)";
-          sel.appendChild(optAll);
-
-          // Khôi phục giá trị hoặc chọn đầu số chính mặc định
-          if (prevVal === "project_all" || prevVal === "all" || dids.includes(prevVal)) {
-            sel.value = prevVal;
+        // 4. Thêm các đầu số hệ thống khác (chưa được gán vào dự án nào)
+        const allKnown = new Set(KNOWN_SYSTEM_DIDS);
+        (voipCalls || []).forEach(c => {
+          if (c.did && String(c.did).trim()) allKnown.add(String(c.did).trim());
+        });
+        Array.from(allKnown).sort().forEach(did => {
+          if (addedDids.has(did)) return;
+          addedDids.add(did);
+          const opt = document.createElement("option");
+          opt.value = did;
+          const projs = didProjMap[did];
+          if (projs && projs.length > 0) {
+            opt.textContent = `${did} (${projs.join(", ")})`;
           } else {
-            sel.value = dids[0];
+            opt.textContent = `${did} (Hệ thống)`;
           }
+          sel.appendChild(opt);
+        });
+
+        // 5. Tùy chọn "Tất cả đầu số (Toàn hệ thống)"
+        const optAll = document.createElement("option");
+        optAll.value = "all";
+        optAll.textContent = "Tất cả đầu số (Toàn hệ thống)";
+        if (currentProjDids.length === 0) {
+          // Dự án null (nhận tất cả) -> Đưa "Tất cả đầu số" lên đầu tiên!
+          sel.insertBefore(optAll, sel.firstChild);
         } else {
-          // Dự án cho phép null (Tất cả đầu số)
-          const optAll = document.createElement("option");
-          optAll.value = "all";
-          optAll.textContent = "Tất cả đầu số";
+          // Dự án có đầu số -> Đưa "Tất cả đầu số" xuống cuối
           sel.appendChild(optAll);
+        }
 
-          // Liệt kê các đầu số hệ thống đã biết hoặc xuất hiện trong cuộc gọi để tiện lọc
-          const allKnown = new Set(KNOWN_SYSTEM_DIDS);
-          (voipCalls || []).forEach(c => {
-            if (c.did && String(c.did).trim()) allKnown.add(String(c.did).trim());
-          });
-          Array.from(allKnown).sort().forEach(did => {
-            const opt = document.createElement("option");
-            opt.value = did;
-            opt.textContent = did;
-            sel.appendChild(opt);
-          });
-
-          if (prevVal && (prevVal === "all" || allKnown.has(prevVal))) {
-            sel.value = prevVal;
-          } else {
-            sel.value = "all";
-          }
+        // Chọn giá trị mặc định hợp lý
+        if (prevVal && (prevVal === "project_all" || prevVal === "all" || addedDids.has(prevVal))) {
+          sel.value = prevVal;
+        } else if (currentProjDids.length > 0) {
+          sel.value = currentProjDids[0];
+        } else {
+          sel.value = "all";
         }
       }
 
@@ -13555,10 +13601,10 @@
           const cDid = String(c.did || "").trim();
           if (filterDid === "project_all") {
             if (projDids && projDids.length > 0) {
-              if (cDid && !projDids.includes(cDid)) return;
+              if (!cDid || !projDids.includes(cDid)) return;
             }
           } else if (filterDid !== "all") {
-            if (cDid && cDid !== filterDid) return;
+            if (!cDid || cDid !== filterDid) return;
           }
 
           // Lọc theo khoảng thời gian đang chọn
@@ -14441,10 +14487,10 @@
           const cDid = String(c.did || "").trim();
           if (filterDid === "project_all") {
             if (projDids && projDids.length > 0) {
-              if (cDid && !projDids.includes(cDid)) return false;
+              if (!cDid || !projDids.includes(cDid)) return false;
             }
           } else if (filterDid !== "all") {
-            if (cDid && cDid !== filterDid) return false;
+            if (!cDid || cDid !== filterDid) return false;
           }
 
           // 1. Lọc theo Khoảng thời gian đang chọn (Tháng này / Hôm nay / Hôm qua / 7 ngày qua / Tùy chọn)
@@ -14765,10 +14811,10 @@
           const cDid = String(c.did || "").trim();
           if (filterDid === "project_all") {
             if (projDids && projDids.length > 0) {
-              if (cDid && !projDids.includes(cDid)) return false;
+              if (!cDid || !projDids.includes(cDid)) return false;
             }
           } else if (filterDid !== "all") {
-            if (cDid && cDid !== filterDid) return false;
+            if (!cDid || cDid !== filterDid) return false;
           }
 
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
