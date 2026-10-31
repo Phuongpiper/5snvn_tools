@@ -191,6 +191,9 @@ module.exports = async function handler(req, res) {
             else if (up === "LVN") p.system = "DMS";
             else if (up === "CPTH") p.system = "FPIT";
           }
+          if (!Array.isArray(p.members)) {
+            p.members = [];
+          }
           return p;
         });
         return res.status(200).json({
@@ -359,13 +362,25 @@ module.exports = async function handler(req, res) {
         const newExt = (payload.extension !== undefined) ? (payload.extension || "").trim() : (currentData.members[idx].extension || "");
         currentData.members[idx] = { name: newName, code: newCode, extension: newExt };
 
-        // Cập nhật tên trong assignees của các task nếu tên thay đổi
-        if (oldName.toLowerCase() !== newName.toLowerCase() && Array.isArray(currentData.tasks)) {
-          currentData.tasks.forEach(t => {
-            if (Array.isArray(t.assignees)) {
-              t.assignees = t.assignees.map(a => a.toLowerCase() === oldName.toLowerCase() ? newName : a);
-            }
-          });
+        // Cập nhật tên trong assignees của các task và members của dự án nếu tên thay đổi
+        if (oldName.toLowerCase() !== newName.toLowerCase()) {
+          if (Array.isArray(currentData.tasks)) {
+            currentData.tasks.forEach(t => {
+              if (Array.isArray(t.assignees)) {
+                t.assignees = t.assignees.map(a => a.toLowerCase() === oldName.toLowerCase() ? newName : a);
+              }
+            });
+          }
+          if (Array.isArray(currentData.projects)) {
+            currentData.projects.forEach(p => {
+              if (Array.isArray(p.members)) {
+                p.members = p.members.map(m => {
+                  const mStr = typeof m === 'string' ? m : (m.name || '');
+                  return mStr.toLowerCase() === oldName.toLowerCase() ? newName : m;
+                });
+              }
+            });
+          }
         }
 
         await saveTasksData(currentData);
@@ -388,6 +403,17 @@ module.exports = async function handler(req, res) {
           return res.status(404).json({ status: "error", message: "Không tìm thấy nhân viên: " + (name || code) });
         }
         
+        if (Array.isArray(currentData.projects)) {
+          currentData.projects.forEach(p => {
+            if (Array.isArray(p.members)) {
+              p.members = p.members.filter(m => {
+                const mStr = typeof m === 'string' ? m : (m.name || '');
+                return mStr.toLowerCase() !== name.toLowerCase();
+              });
+            }
+          });
+        }
+
         await saveTasksData(currentData);
         return res.status(200).json({ status: "success", members: currentData.members });
       }
@@ -395,35 +421,38 @@ module.exports = async function handler(req, res) {
       if (action === "add_project") {
         const name = (payload.name || "").trim();
         const system = (payload.system !== undefined ? payload.system : "").trim();
+        const members = Array.isArray(payload.members) ? payload.members : [];
         if (!name) return res.status(400).json({ status: "error", message: "Tên dự án không được để trống" });
         if (!currentData.projects) currentData.projects = [];
         
         const exists = currentData.projects.some(p => p.name.toLowerCase() === name.toLowerCase());
         if (exists) return res.status(400).json({ status: "error", message: "Dự án đã tồn tại" });
         
-        currentData.projects.push({ name, system });
+        currentData.projects.push({ name, system, members });
         await saveTasksData(currentData);
-        return res.status(200).json({ status: "success" });
+        return res.status(200).json({ status: "success", projects: currentData.projects });
       }
 
       if (action === "update_project") {
         const name = (payload.name || "").trim();
-        const system = (payload.system !== undefined ? payload.system : "").trim();
+        const system = payload.system !== undefined ? payload.system : null;
         const newName = (payload.newName || "").trim();
+        const members = payload.members !== undefined ? (Array.isArray(payload.members) ? payload.members : []) : undefined;
         if (!name) return res.status(400).json({ status: "error", message: "Tên dự án không được để trống" });
         if (!currentData.projects) currentData.projects = [];
         
         let proj = currentData.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
         if (!proj) {
           // If project didn't exist yet, create it
-          proj = { name, system };
+          proj = { name, system: system !== null ? system.trim() : "", members: members !== undefined ? members : [] };
           currentData.projects.push(proj);
         } else {
           if (newName) proj.name = newName;
-          proj.system = system;
+          if (system !== null) proj.system = system.trim();
+          if (members !== undefined) proj.members = members;
         }
         await saveTasksData(currentData);
-        return res.status(200).json({ status: "success" });
+        return res.status(200).json({ status: "success", projects: currentData.projects });
       }
 
       if (action === "delete_project") {

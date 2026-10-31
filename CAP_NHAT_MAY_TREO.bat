@@ -25,3 +25,4 @@ echo     1. Click dup: DUNG_DONG_BO_VOIP.bat (de dung tien trinh cu)
 echo     2. Click dup: CHAY_DONG_BO_VOIP.bat (de chay phien ban moi lay tat ca dau so)
 echo.
 pause
+

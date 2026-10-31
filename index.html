@@ -2108,6 +2108,358 @@
       color: #ef4444;
     }
 
+    /* Project Cards & Member Assignment */
+    .topbar-project-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .topbar-project-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.07);
+    }
+
+    .topbar-project-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .topbar-project-title-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+    }
+
+    .topbar-project-name {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: #0f172a;
+    }
+
+    .topbar-project-count-badge {
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .topbar-project-system-area {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .topbar-project-sys-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    .topbar-project-system-input {
+      width: 120px;
+      font-size: 12px;
+      padding: 4px 8px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fff;
+      font-family: monospace;
+      font-weight: 700;
+      color: #4338ca;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    .topbar-project-system-input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+
+    .topbar-project-members-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding-top: 8px;
+      border-top: 1px dashed #e2e8f0;
+    }
+
+    .topbar-project-members-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+
+    .topbar-project-chips-wrap {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px;
+      flex: 1;
+    }
+
+    .topbar-proj-member-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+      padding: 2.5px 8px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-proj-member-chip:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+    }
+
+    .proj-member-code-tag {
+      font-family: monospace;
+      font-size: 10px;
+      color: #4f46e5;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .proj-member-name-text {
+      color: #0f172a;
+    }
+
+    .btn-remove-proj-member {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 0 1px 0 3px;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: bold;
+      transition: color 0.15s ease;
+    }
+
+    .btn-remove-proj-member:hover {
+      color: #ef4444;
+    }
+
+    .topbar-btn-toggle-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      color: #475569;
+      padding: 3px 10px;
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-btn-toggle-picker:hover,
+    .topbar-btn-toggle-picker.active {
+      background: #eef2ff;
+      border-color: #6366f1;
+      color: #4f46e5;
+    }
+
+    .topbar-member-picker-drawer {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 4px;
+      animation: fadeInDrawer 0.15s ease-out;
+    }
+
+    @keyframes fadeInDrawer {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .topbar-picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .topbar-picker-title {
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .topbar-picker-title strong {
+      color: #0f172a;
+    }
+
+    .topbar-picker-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+    }
+
+    .picker-btn-all {
+      color: #4f46e5;
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .picker-btn-all:hover {
+      text-decoration: underline;
+    }
+
+    .picker-btn-none {
+      color: #64748b;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .picker-btn-none:hover {
+      color: #ef4444;
+      text-decoration: underline;
+    }
+
+    .picker-btn-done {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .picker-btn-done:hover {
+      background: #4338ca;
+    }
+
+    .topbar-picker-search-box {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .picker-search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .topbar-picker-search-input {
+      width: 100%;
+      box-sizing: border-box;
+      height: 32px;
+      padding: 0 10px 0 28px;
+      font-size: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fff;
+      outline: none;
+    }
+
+    .topbar-picker-search-input:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+
+    .topbar-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 6px;
+      max-height: 170px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .topbar-picker-member-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .topbar-picker-member-item:hover {
+      border-color: #cbd5e1;
+      background: #f1f5f9;
+    }
+
+    .chk-proj-member {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #4f46e5;
+      flex-shrink: 0;
+    }
+
+    .picker-member-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      line-height: 1.25;
+    }
+
+    .picker-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .picker-code {
+      font-size: 10px;
+      font-family: monospace;
+      color: #64748b;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
     /* Settings Toast */
     .settings-toast {
       position: fixed;
@@ -3756,7 +4108,7 @@
 
   <!-- ── Modal: Quản lý Dự án (Toàn cục Topbar) ── -->
   <div class="settings-modal-overlay" id="topbarProjectsModal" style="display: none;">
-    <div class="topbar-modal-card">
+    <div class="topbar-modal-card wide" style="max-width: 680px;">
       <div class="topbar-modal-header">
         <div class="topbar-modal-header-left">
           <div class="topbar-modal-icon-badge">
@@ -3764,7 +4116,7 @@
           </div>
           <div>
             <h3>Quản lý Dự án</h3>
-            <p>Danh sách các dự án &amp; phân loại công việc</p>
+            <p>Danh sách các dự án &amp; phân công nhân viên phụ trách</p>
           </div>
         </div>
         <button type="button" class="topbar-modal-close-btn" id="btnCloseTopProjects" title="Đóng">
@@ -3781,7 +4133,7 @@
             <i class="fa-solid fa-folder-plus"></i> Thêm
           </button>
         </div>
-        <ul class="topbar-list" id="topProjectList">
+        <ul class="topbar-list" id="topProjectList" style="max-height: 480px; overflow-y: auto;">
           <li style="text-align:center; color:#94a3b8; padding:16px;">Đang tải danh sách...</li>
         </ul>
       </div>
@@ -3943,9 +4295,19 @@
         const list = document.getElementById("topProjectList");
         if (!list) return;
         try {
-          const res = await apiGet("read_projects");
-          if (res.status === "success") {
-            gProjects = res.data || res.projects || [];
+          const [pRes, mRes] = await Promise.all([
+            apiGet("read_projects"),
+            (!gMembers || !gMembers.length) ? apiGet("read_members") : Promise.resolve(null)
+          ]);
+          if (mRes && mRes.status === "success") {
+            gMembers = (mRes.data || []).map(m => {
+              if (typeof m === "string") return { name: m.trim(), code: "", extension: "" };
+              return { name: (m.name || "").trim(), code: (m.code || "").trim(), extension: (m.extension || "").trim() };
+            });
+            try { localStorage.setItem("app_members_data", JSON.stringify(gMembers)); } catch (_) { }
+          }
+          if (pRes.status === "success") {
+            gProjects = pRes.data || pRes.projects || [];
             try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) { }
             renderProjects();
           }
@@ -3962,38 +4324,258 @@
           list.innerHTML = `<li style="text-align:center; color:#94a3b8; padding:14px;">Chưa có dự án nào</li>`;
           return;
         }
+
         gProjects.forEach(p => {
           const li = document.createElement("li");
-          li.className = "topbar-list-item";
+          li.className = "topbar-project-card";
+
+          if (!Array.isArray(p.members)) p.members = [];
+          const memberCount = p.members.length;
+
+          // Build chips HTML
+          let chipsHtml = "";
+          if (memberCount > 0) {
+            p.members.forEach(mName => {
+              const mObj = (gMembers || []).find(m => m.name.toLowerCase() === mName.toLowerCase());
+              const mCode = mObj && mObj.code ? mObj.code : "";
+              chipsHtml += `
+                <span class="topbar-proj-member-chip" title="${mCode ? 'Mã NV: ' + esc(mCode) : ''}">
+                  ${mCode ? `<span class="proj-member-code-tag">${esc(mCode)}</span>` : ''}
+                  <span class="proj-member-name-text">${esc(mName)}</span>
+                  <button type="button" class="btn-remove-proj-member" data-project="${esc(p.name)}" data-member="${esc(mName)}" title="Gỡ ${esc(mName)} khỏi dự án">&times;</button>
+                </span>
+              `;
+            });
+          } else {
+            chipsHtml = `<span style="font-size:11.5px; color:#94a3b8; font-style:italic;">Chưa gán nhân viên</span>`;
+          }
+
+          // Build member checkboxes for the picker
+          let memberCheckboxesHtml = "";
+          if (gMembers && gMembers.length) {
+            gMembers.forEach(m => {
+              const isChecked = p.members.some(mName => mName.toLowerCase() === m.name.toLowerCase());
+              memberCheckboxesHtml += `
+                <label class="topbar-picker-member-item" data-name="${esc(m.name.toLowerCase())}" data-code="${esc((m.code || '').toLowerCase())}">
+                  <input type="checkbox" class="chk-proj-member" data-project="${esc(p.name)}" data-member="${esc(m.name)}" ${isChecked ? 'checked' : ''} />
+                  <div class="picker-member-info">
+                    <span class="picker-name">${esc(m.name)}</span>
+                    <span class="picker-code">${esc(m.code || 'Chưa có mã')}</span>
+                  </div>
+                </label>
+              `;
+            });
+          } else {
+            memberCheckboxesHtml = `<div style="grid-column: 1 / -1; font-size:12px; color:#94a3b8; padding:8px; text-align:center;">Chưa có danh sách nhân viên</div>`;
+          }
+
           li.innerHTML = `
-            <span style="font-weight:600; font-size:13.5px; color:#1e293b; display:flex; align-items:center; gap:8px; min-width:110px;">
-              <i class="fa-solid fa-folder" style="color:#6366f1;"></i> ${esc(p.name)}
-            </span>
-            <div style="display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; margin:0 8px;">
-              <span style="font-size:11px; font-weight:700; color:#64748b; white-space:nowrap;">Hệ thống:</span>
-              <input type="text" class="topbar-project-system-input" value="${esc(p.system || '')}" placeholder="VD: DMS1, DMS, FPIT" title="Điền hệ thống của dự án (VD: DMS1, DMS, FPIT)" style="width:130px; font-size:12px; padding:4px 8px; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-family:monospace; font-weight:700; color:#4338ca;" />
+            <div class="topbar-project-header">
+              <div class="topbar-project-title-area">
+                <i class="fa-solid fa-folder" style="color:#6366f1; font-size:16px;"></i>
+                <span class="topbar-project-name">${esc(p.name)}</span>
+                <span class="topbar-project-count-badge" id="badge_count_${esc(p.name)}">
+                  <i class="fa-solid fa-users" style="font-size:10px;"></i> <span>${memberCount}</span> NV
+                </span>
+              </div>
+              <div class="topbar-project-system-area">
+                <span class="topbar-project-sys-label">Hệ thống:</span>
+                <input type="text" class="topbar-project-system-input" value="${esc(p.system || '')}" placeholder="VD: DMS1, DMS" title="Điền hệ thống của dự án (VD: DMS1, DMS, FPIT)" />
+                <button type="button" class="topbar-icon-action-btn delete" title="Xóa dự án">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
             </div>
-            <div class="topbar-actions-btns">
-              <button type="button" class="topbar-icon-action-btn delete" title="Xóa dự án">
-                <i class="fa-solid fa-trash-can"></i>
+
+            <!-- Members section -->
+            <div class="topbar-project-members-row">
+              <div class="topbar-project-members-label">
+                <i class="fa-solid fa-id-badge" style="color:#6366f1;"></i> Nhân sự:
+              </div>
+              <div class="topbar-project-chips-wrap" id="chips_wrap_${esc(p.name)}">
+                ${chipsHtml}
+              </div>
+              <button type="button" class="topbar-btn-toggle-picker" data-project="${esc(p.name)}" title="Gán nhân viên vào dự án này">
+                <i class="fa-solid fa-user-plus"></i> Gán NV
               </button>
             </div>
+
+            <!-- Member Picker Drawer -->
+            <div class="topbar-member-picker-drawer" id="picker_drawer_${esc(p.name)}" style="display:none;">
+              <div class="topbar-picker-header">
+                <span class="topbar-picker-title">
+                  <i class="fa-solid fa-user-gear" style="color:#4f46e5;"></i> Phân công nhân viên vào <strong>${esc(p.name)}</strong>:
+                </span>
+                <div class="topbar-picker-actions">
+                  <a href="javascript:void(0)" class="picker-btn-all" data-project="${esc(p.name)}">Tất cả</a>
+                  <span style="color:#cbd5e1;">|</span>
+                  <a href="javascript:void(0)" class="picker-btn-none" data-project="${esc(p.name)}">Bỏ chọn</a>
+                  <span style="color:#cbd5e1;">|</span>
+                  <button type="button" class="picker-btn-done" data-project="${esc(p.name)}">Xong ✕</button>
+                </div>
+              </div>
+              <div class="topbar-picker-search-box">
+                <i class="fa-solid fa-magnifying-glass picker-search-icon"></i>
+                <input type="text" class="topbar-picker-search-input" placeholder="Lọc nhanh nhân viên theo tên hoặc mã NV..." />
+              </div>
+              <div class="topbar-picker-grid">
+                ${memberCheckboxesHtml}
+              </div>
+            </div>
           `;
+
+          // Event: Change system
           const sysInput = li.querySelector(".topbar-project-system-input");
           if (sysInput) {
             sysInput.addEventListener("change", () => updateProjectSystem(p.name, sysInput.value));
           }
+          // Event: Delete project
           li.querySelector(".delete")?.addEventListener("click", () => deleteProject(p.name));
+
+          // Event: Toggle picker drawer
+          const btnToggle = li.querySelector(".topbar-btn-toggle-picker");
+          const drawer = li.querySelector(".topbar-member-picker-drawer");
+          if (btnToggle && drawer) {
+            btnToggle.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const isHidden = drawer.style.display === "none";
+              drawer.style.display = isHidden ? "block" : "none";
+              if (isHidden) {
+                btnToggle.classList.add("active");
+                drawer.querySelector(".topbar-picker-search-input")?.focus();
+              } else {
+                btnToggle.classList.remove("active");
+              }
+            });
+          }
+
+          // Event: Search filter inside picker
+          const searchInput = li.querySelector(".topbar-picker-search-input");
+          if (searchInput) {
+            searchInput.addEventListener("input", (e) => {
+              const q = e.target.value.toLowerCase().trim();
+              li.querySelectorAll(".topbar-picker-member-item").forEach(item => {
+                const name = item.dataset.name || "";
+                const code = item.dataset.code || "";
+                if (!q || name.includes(q) || code.includes(q)) {
+                  item.style.display = "flex";
+                } else {
+                  item.style.display = "none";
+                }
+              });
+            });
+          }
+
+          // Event: Check / uncheck member
+          li.querySelectorAll(".chk-proj-member").forEach(chk => {
+            chk.addEventListener("change", () => {
+              const mName = chk.dataset.member;
+              toggleProjectMember(p.name, mName, chk.checked);
+            });
+          });
+
+          // Event: Select all
+          li.querySelector(".picker-btn-all")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            selectAllProjectMembers(p.name);
+          });
+
+          // Event: Deselect all
+          li.querySelector(".picker-btn-none")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            deselectAllProjectMembers(p.name);
+          });
+
+          // Event: Done / Close picker
+          li.querySelector(".picker-btn-done")?.addEventListener("click", () => {
+            if (drawer) drawer.style.display = "none";
+            if (btnToggle) btnToggle.classList.remove("active");
+          });
+
+          // Event: Remove member tag directly from chips
+          li.querySelectorAll(".btn-remove-proj-member").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const mName = btn.dataset.member;
+              toggleProjectMember(p.name, mName, false);
+            });
+          });
+
           list.appendChild(li);
         });
       }
 
+      function toggleProjectMember(projectName, memberName, isAssigned) {
+        const proj = gProjects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
+        if (!proj) return;
+        if (!Array.isArray(proj.members)) proj.members = [];
+
+        if (isAssigned) {
+          if (!proj.members.some(m => m.toLowerCase() === memberName.toLowerCase())) {
+            proj.members.push(memberName);
+          }
+        } else {
+          proj.members = proj.members.filter(m => m.toLowerCase() !== memberName.toLowerCase());
+        }
+
+        renderProjects();
+        // Reopen picker drawer so user can continue toggling
+        const drawer = document.getElementById("picker_drawer_" + projectName);
+        const btnToggle = document.querySelector(`.topbar-btn-toggle-picker[data-project="${projectName}"]`);
+        if (drawer) drawer.style.display = "block";
+        if (btnToggle) btnToggle.classList.add("active");
+
+        updateProjectMembers(proj.name, proj.members);
+      }
+
+      function selectAllProjectMembers(projectName) {
+        const proj = gProjects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
+        if (!proj) return;
+        proj.members = (gMembers || []).map(m => m.name);
+        renderProjects();
+        const drawer = document.getElementById("picker_drawer_" + projectName);
+        const btnToggle = document.querySelector(`.topbar-btn-toggle-picker[data-project="${projectName}"]`);
+        if (drawer) drawer.style.display = "block";
+        if (btnToggle) btnToggle.classList.add("active");
+        updateProjectMembers(proj.name, proj.members);
+      }
+
+      function deselectAllProjectMembers(projectName) {
+        const proj = gProjects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
+        if (!proj) return;
+        proj.members = [];
+        renderProjects();
+        const drawer = document.getElementById("picker_drawer_" + projectName);
+        const btnToggle = document.querySelector(`.topbar-btn-toggle-picker[data-project="${projectName}"]`);
+        if (drawer) drawer.style.display = "block";
+        if (btnToggle) btnToggle.classList.add("active");
+        updateProjectMembers(proj.name, proj.members);
+      }
+
+      async function updateProjectMembers(name, membersList) {
+        try {
+          const proj = gProjects.find(p => p.name.toLowerCase() === name.toLowerCase());
+          const system = proj ? proj.system : "";
+          const res = await apiPost({ action: "update_project", name, system, members: membersList });
+          if (res.status === "success") {
+            try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) { }
+            showHubToast(`Đã lưu nhân sự cho dự án "${name}"`, "success");
+            notifyOtherTabs("projects");
+          } else {
+            showHubToast(res.message || "Lỗi lưu nhân sự dự án", "warning");
+          }
+        } catch (_) {
+          showHubToast("Lỗi kết nối máy chủ", "warning");
+        }
+      }
+
       async function updateProjectSystem(name, system) {
         try {
-          const res = await apiPost({ action: "update_project", name, system: system.trim() });
+          const proj = gProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
+          const members = proj && Array.isArray(proj.members) ? proj.members : [];
+          const res = await apiPost({ action: "update_project", name, system: system.trim(), members });
           if (res.status === "success") {
-            const p = gProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
-            if (p) p.system = system.trim();
+            if (proj) proj.system = system.trim();
             try { localStorage.setItem("app_projects_data", JSON.stringify(gProjects)); } catch (_) { }
             showHubToast(`Đã cập nhật hệ thống cho dự án "${name}"`, "success");
             notifyOtherTabs("projects");
@@ -4012,7 +4594,7 @@
         const system = (inputSystem ? inputSystem.value : "").trim();
         if (!name) return;
         try {
-          const res = await apiPost({ action: "add_project", name, system });
+          const res = await apiPost({ action: "add_project", name, system, members: [] });
           if (res.status === "success") {
             showHubToast(`Đã thêm dự án "${name}"`, "success");
             inputName.value = "";

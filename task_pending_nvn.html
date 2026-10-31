@@ -2843,8 +2843,13 @@
       allProjects.forEach(p => {
         const li = document.createElement("li");
         li.className = "member-list-item";
+        const mCount = Array.isArray(p.members) ? p.members.length : 0;
+        const membersSummary = mCount > 0 ? p.members.join(", ") : "Chưa có NV";
         li.innerHTML = `
-      <span class="member-name" style="min-width:100px;"><i class="fa-solid fa-folder" style="color:var(--accent);margin-right:6px;"></i>${esc(p.name)}</span>
+      <div style="display:flex; flex-direction:column; gap:2px; min-width:110px;">
+        <span class="member-name"><i class="fa-solid fa-folder" style="color:var(--accent);margin-right:6px;"></i>${esc(p.name)}</span>
+        <span style="font-size:10px; color:var(--text-muted); white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${esc(membersSummary)}"><i class="fa-solid fa-users" style="font-size:9px;"></i> ${mCount} NV: ${esc(membersSummary)}</span>
+      </div>
       <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; gap:6px; margin:0 8px;">
         <span style="font-size:11px; color:var(--text-muted);">Hệ thống:</span>
         <input type="text" class="fc" value="${esc(p.system || '')}" placeholder="DMS1, DMS, FPIT" style="width:120px; font-size:12px; padding:3px 6px; font-family:monospace; font-weight:700;" onchange="updateProjectSystem('${esc(p.name)}', this.value)" />
@@ -2859,9 +2864,10 @@
 
     async function updateProjectSystem(name, system) {
       try {
-        const res = await apiPost({ action: "update_project", name, system: system.trim() });
+        const p = allProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
+        const members = p && Array.isArray(p.members) ? p.members : [];
+        const res = await apiPost({ action: "update_project", name, system: system.trim(), members });
         if (res.status === "success") {
-          const p = allProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
           if (p) p.system = system.trim();
           try { localStorage.setItem("app_projects_data", JSON.stringify(allProjects)); } catch (e) { }
           toast(`Đã cập nhật hệ thống cho "${name}"!`, "s");
@@ -2876,7 +2882,7 @@
       const system = inputSys ? inputSys.value.trim() : "";
       if (!name) { toast("Nhập tên dự án!", "w"); return; }
       try {
-        const res = await apiPost({ action: "add_project", name, system });
+        const res = await apiPost({ action: "add_project", name, system, members: [] });
         if (res.status === "success") {
           toast(`Đã thêm dự án "${name}"!`, "s");
           input.value = "";
