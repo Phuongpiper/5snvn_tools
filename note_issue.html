@@ -10831,9 +10831,55 @@
           const chatData = await chatRes.json();
           console.log("Chatbox AI response:", chatData);
 
-          const ticketId = chatData.ticket_id;
+          // Lấy ticket_id từ response: ưu tiên field ticket_id, nếu không có thì parse từ text response
+          let ticketId = chatData.ticket_id || chatData.id || null;
+          if (!ticketId) {
+            const responseText = chatData.message || chatData.response || chatData.text || chatData.reply || chatData.content || "";
+            if (responseText) {
+              // Match: "Đã tạo và đóng ticket #13910" hoặc "ticket #13910:" hoặc "#13910"
+              const ticketMatch = String(responseText).match(/(?:ticket|Ticket)\s*#(\d{4,})|#(\d{4,})/i);
+              if (ticketMatch) {
+                ticketId = parseInt(ticketMatch[1] || ticketMatch[2], 10);
+                console.log("[ChatboxAI] Parsed ticket ID từ response text:", ticketId, "| Text:", responseText.slice(0, 120));
+              }
+            }
+          }
+
           if (ticketId) {
-            // Tự động kiểm tra và đảm bảo ticket luôn là trạng thái CLOSED (Đổi câu mới & gửi chat retry nếu AI chưa đóng)
+            // ✅ GÁN NGAY ticket_id vào issue mà không cần sync toàn bộ
+            const issueIdKey = String(found.id || (typeof getIssueUniqueKey === "function" ? getIssueUniqueKey(found) : ""));
+            const ticketIdNum = parseInt(String(ticketId), 10);
+
+            // Cập nhật manualTicketId vào tất cả bản sao của issue trong memory
+            found.manualTicketId = String(ticketIdNum);
+            if (Array.isArray(tempNotes)) {
+              const ti = tempNotes.find(n => String(n.id) === issueIdKey || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueIdKey));
+              if (ti) ti.manualTicketId = String(ticketIdNum);
+            }
+            if (Array.isArray(r2Issues)) {
+              const ri = r2Issues.find(n => String(n.id) === issueIdKey || (typeof getIssueUniqueKey === "function" && getIssueUniqueKey(n) === issueIdKey));
+              if (ri) ri.manualTicketId = String(ticketIdNum);
+            }
+
+            // Tạo ticket object ngay vào helpdeskTickets (placeholder) để modal hiển thị được ngay
+            if (!Array.isArray(helpdeskTickets)) helpdeskTickets = [];
+            if (!helpdeskTickets.find(t => String(t.id) === String(ticketIdNum))) {
+              helpdeskTickets.unshift({
+                id: ticketIdNum,
+                status: "CLOSED",
+                project: (getSelectedProject && getSelectedProject()) || "NVN",
+                solutionName: found.fields?.solution || found.result || "",
+                solutionCode: found.fields?.solutionCode || "",
+                phone: found.fields?.hotline || "",
+                distName: found.fields?.npp || "",
+                dsrCode: found.fields?.role || found.memberCode || "",
+                date: found.date || new Date().toISOString().slice(0,10),
+                agentId: (found.memberCode || "").toLowerCase(),
+                manual: true
+              });
+            }
+
+            // Tự động kiểm tra và đảm bảo ticket luôn là trạng thái CLOSED
             try {
               if (btnAi) {
                 btnAi.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang hoàn tất đóng Ticket #' + ticketId + '...';
@@ -10846,16 +10892,65 @@
             } catch (autoCloseErr) {
               console.warn("Auto-close verify notice:", autoCloseErr);
             }
-            showToast(`🎉 Chatbox AI đã tạo & đóng thành công Ticket #${ticketId}! (Trạng thái: CLOSED)`, "fa-circle-check", 6000);
+
+            showToast(`🎉 Chatbox AI đã tạo & đóng Ticket #${ticketId} và đã gán vào Issue!`, "fa-circle-check", 7000);
+
+            // Sau khi đóng modal, lấy thêm thông tin chi tiết ticket về (chạy nền)
+            closeUnnotedTicketModal();
+            if (typeof invalidateVoipNoteStatusCache === "function") invalidateVoipNoteStatusCache();
+            if (typeof renderTempTable === "function") renderTempTable();
+            if (typeof renderStatsPage === "function") renderStatsPage();
+            if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges();
+            if (typeof renderVoipTable === "function") renderVoipTable();
+
+            // Lưu lên R2 ngay (nền)
+            const memberCode = currentSelectedMember?.code || found.memberCode || "";
+            if (memberCode && typeof saveMemberTempToR2 === "function") {
+              saveMemberTempToR2(memberCode, tempNotes, true);
+            }
+            try {
+              const endpoint = getIssuesApiEndpoint();
+              const curProj = getSelectedProject();
+              const cleaned = (Array.isArray(r2Issues) ? r2Issues : []).map(n => {
+                const clone = Object.assign({}, n);
+                delete clone.matchedTicket;
+                return clone;
+              });
+              await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "save_all", issues: cleaned, project: curProj })
+              });
+            } catch (e) {
+              console.warn("Lỗi push r2Issues sau gán ticket:", e);
+            }
+
+            // Fetch thêm thông tin đầy đủ từ Chatbox AI về sau (nền, 2 giây delay)
+            setTimeout(async () => {
+              try {
+                const ticketApiUrl = `${getHelpdeskApiEndpoint()}?ticket_id=${encodeURIComponent(ticketIdNum)}&_t=${Date.now()}`;
+                const ticketResp = await fetch(ticketApiUrl);
+                if (ticketResp.ok) {
+                  const ticketData = await ticketResp.json();
+                  if (ticketData && ticketData.ticket && ticketData.ticket.id) {
+                    const liveTicket = ticketData.ticket;
+                    const existIdx = helpdeskTickets.findIndex(x => String(x.id) === String(liveTicket.id));
+                    if (existIdx !== -1) helpdeskTickets[existIdx] = liveTicket;
+                    else helpdeskTickets.unshift(liveTicket);
+                    console.log(`[ChatboxAI] ✅ Đã cập nhật chi tiết Ticket #${liveTicket.id} vào cache`);
+                  }
+                }
+              } catch (_) {}
+              // Đồng bộ thêm toàn bộ helpdesk tickets (nền)
+              fetchHelpdeskTickets(false, true);
+            }, 2000);
+
           } else {
             showToast("✅ Chatbox AI đã tiếp nhận và đang xử lý tạo ticket!", "fa-robot", 6000);
+            // Vẫn đồng bộ lại để bắt ticket mới
+            closeUnnotedTicketModal();
+            setTimeout(() => { fetchHelpdeskTickets(false, true); }, 1500);
           }
-
-          // 3. Tự động đồng bộ lại ticket về R2
-          closeUnnotedTicketModal();
-          setTimeout(() => {
-            fetchHelpdeskTickets(false, true);
-          }, 1500);
 
         } catch (err) {
           console.error("Lỗi khi tự động tạo ticket bằng AI:", err);
