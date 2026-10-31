@@ -3384,6 +3384,17 @@
       border-left: 4px solid #cbd5e1 !important;
     }
 
+    /* Nghe hộ đầu số khác dự án - màu xanh nhạt, không đỏ */
+    .table-stitch-stats tr.call-row-other-proj td {
+      background: #f0f9ff !important;
+    }
+    .table-stitch-stats tr.call-row-other-proj:hover td {
+      background: #e0f2fe !important;
+    }
+    .table-stitch-stats tr.call-row-other-proj td:first-child {
+      border-left: 4px solid #38bdf8 !important;
+    }
+
     .voip-note-badge {
       display: inline-flex;
       align-items: center;
@@ -13661,6 +13672,8 @@
           validCallsCount++;
           const isAnswered = callIsAnswered(c);
           const noteInfo = checkCallNoteStatus(c);
+          // other_project: nhân viên nghe hộ đầu số dự án khác → KHÔNG tính vào chưa note!
+          if (noteInfo.status === "other_project") return;
           if (isAnswered && noteInfo.status === "unnoted") {
             unnotedCount++;
             const callExt = String(noteInfo.ext || "").trim();
@@ -13990,6 +14003,35 @@
         const isAnswered = callIsAnswered(call);
 
         let result = null;
+
+        // QUY TẮC MỚI: NGHE HỘ ĐẦU SỐ KHÁC DỰ ÁN → MIỄN NOTE cho dự án hiện tại
+        const callDid = String(call.did || "").trim();
+        if (isInbound && callDid) {
+          const _curProj4Did = (typeof getSelectedProject === "function") ? getSelectedProject() : "";
+          const _projDids4Did = (typeof getProjectDidList === "function") ? getProjectDidList(_curProj4Did) : null;
+          if (_projDids4Did && _projDids4Did.length > 0) {
+            if (!_projDids4Did.includes(callDid)) {
+              const _didProjMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+              const _ownerProjs = _didProjMap[callDid] || [];
+              const _ownerName = _ownerProjs.length > 0 ? _ownerProjs.join("/") : "Dự án khác";
+              result = {
+                status: "other_project",
+                badgeText: "Nghe hộ (" + _ownerName + ")",
+                hotline,
+                ext,
+                staff,
+                isInbound,
+                isAnswered,
+                isOtherProject: true,
+                otherProjectName: _ownerName,
+                callDid
+              };
+              call._noteStatusCache = result;
+              call._noteStatusCacheTime = Date.now();
+              return result;
+            }
+          }
+        }
 
         // QUY TẮC: Số điện thoại thuộc danh sách MIỄN NOTE ISSUE (Bỏ qua hoàn toàn)
         if (typeof isCallExcluded === "function" && isCallExcluded(call)) {
@@ -14609,11 +14651,14 @@
           const isUnnoted = noteInfo.status === "unnoted";
           const isInTemp = noteInfo.status === "in_temp";
           const isNoted = noteInfo.status === "noted";
+          const isOtherProj = noteInfo.status === "other_project";
 
           // Row class highlight
           let rowClass = "";
           if (isExcluded) {
             rowClass = "call-row-excluded";
+          } else if (isOtherProj) {
+            rowClass = "call-row-other-proj"; // Nghe hộ đầu số khác dự án - KHÔNG ĐỎ!
           } else if (isUnnoted && isAnswered) {
             rowClass = "call-row-unnoted"; // HIỆN ĐỎ!
           } else if (isUnnoted && isMissed) {
@@ -14632,7 +14677,9 @@
             : `<span class="voip-type-badge outbound"><i class="fa-solid fa-phone-arrow-up-right"></i> Gọi ra</span>`;
 
           let noteBadge = "";
-          if (isExcluded) {
+          if (isOtherProj) {
+            noteBadge = '<span class="voip-note-badge" style="background:#f0f9ff; color:#0369a1; border:1px solid #bae6fd;" title="Nhân viên nghe hộ - đầu số thuộc ' + escapeHTML(noteInfo.otherProjectName || 'dự án khác') + ' - Không bắt buộc note cho dự án này"><i class="fa-solid fa-phone-volume" style="font-size:10px;"></i> Nghe hộ (' + escapeHTML(noteInfo.otherProjectName || '?') + ')</span>';
+          } else if (isExcluded) {
             noteBadge = `<span class="voip-note-badge" style="background:#f1f5f9; color:#64748b; border:1px solid #cbd5e1;" title="Số điện thoại thuộc danh sách miễn note Issue"><i class="fa-solid fa-phone-slash" style="font-size:10px;"></i> Miễn note</span>`;
           } else if (!isAnswered) {
             // Cuộc gọi nhỡ (đàm thoại = 0): KHÔNG CẦN note, không hiện badge note
@@ -14865,6 +14912,8 @@
           }
           const noteInfo = checkCallNoteStatus(c);
           const isAnswered = callIsAnswered(c);
+          // other_project: nghe hộ → KHÔNG đưa vào gợi ý chưa note!
+          if (noteInfo.status === "other_project") return false;
           return noteInfo.status === "unnoted" && isAnswered;
         });
 
