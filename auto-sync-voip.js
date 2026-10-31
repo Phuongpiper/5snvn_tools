@@ -71,14 +71,14 @@ async function runSyncOnce() {
   console.log(`[${getTimestamp()}] 🚀 Bắt đầu đồng bộ lần #${syncCount} (Chu kỳ ${intervalMinutes} phút)...`);
 
   try {
-    // 1. Đồng bộ cuộc gọi Voip24h (Mặc định TẮT tự động để chống spam - Chỉ cào khi người dùng bấm nút trên Web)
-    const enableVoipAuto = process.env.SYNC_VOIP_CALLS === "1" || args.includes("--sync-voip");
+    // 1. Đồng bộ cuộc gọi Voip24h (Tất cả đầu số lên Cloudflare R2)
+    const enableVoipAuto = process.env.SYNC_VOIP_CALLS !== "0";
     if (enableVoipAuto) {
-      console.log(`[${getTimestamp()}] 📞 Đang đồng bộ cuộc gọi Voip24h...`);
+      console.log(`[${getTimestamp()}] 📞 Đang đồng bộ cuộc gọi Voip24h (Tất cả đầu số)...`);
       await new Promise((resolve, reject) => {
         const req = {
           method: 'GET',
-          url: '/api/voip24h-calls?sync=1&_t=' + Date.now()
+          url: '/api/voip24h-calls?sync=1&did=all&_t=' + Date.now()
         };
         const res = {
           setHeader: () => {},
@@ -88,9 +88,9 @@ async function runSyncOnce() {
               const total = data.total || 0;
               const latestCall = data.calls?.[0];
               console.log(`[${getTimestamp()}] ✅ ĐỒNG BỘ CUỘC GỌI THÀNH CÔNG!`);
-              console.log(`- Tổng số cuộc gọi trong tháng: ${total} cuộc`);
+              console.log(`- Tổng số cuộc gọi trong tháng: ${total} cuộc (Tất cả đầu số)`);
               if (latestCall) {
-                console.log(`- Cuộc gọi gần nhất: ${latestCall.calldate || 'N/A'} (Từ: ${latestCall.src || '—'} ➔ Đến: ${latestCall.dst || '—'})`);
+                console.log(`- Cuộc gọi gần nhất: ${latestCall.calldate || 'N/A'} (Từ: ${latestCall.src || '—'} ➔ Đến: ${latestCall.dst || '—'}, DID: ${latestCall.did || '—'})`);
               }
             } else {
               console.warn(`[${getTimestamp()}] ⚠️ Tổng đài phản hồi: ${data?.message || 'Không rõ lỗi'}`);
@@ -101,7 +101,7 @@ async function runSyncOnce() {
         voipHandler(req, res).catch(reject);
       });
     } else {
-      console.log(`[${getTimestamp()}] 🛡️ Bỏ qua tự động cào cuộc gọi Voip24h (Chỉ cào trực tiếp khi người dùng bấm nút trên web để tránh spam tổng đài).`);
+      console.log(`[${getTimestamp()}] 🛡️ Bỏ qua tự động cào cuộc gọi Voip24h (Do biến môi trường SYNC_VOIP_CALLS=0).`);
     }
 
     // 2. Đồng bộ Ticket Helpdesk (Chatbox AI)
@@ -129,7 +129,7 @@ console.log("=======================================================");
 console.log("   DMS HUB - DỊCH VỤ TỰ ĐỘNG ĐỒNG BỘ VOIP & TICKET AI");
 console.log("=======================================================");
 console.log(`- Chu kỳ đồng bộ: MỖI ${intervalMinutes} PHÚT (1 TIẾNG / LẦN)`);
-console.log(`- Dữ liệu đồng bộ: Ticket Chatbox AI (Cuộc gọi Voip24h chỉ đồng bộ khi bấm nút trên Web để chống Spam)`);
+console.log(`- Dữ liệu đồng bộ: Cuộc gọi Voip24h (Tất cả đầu số) & Ticket Chatbox AI`);
 console.log(`- Khung giờ hoạt động: 06:30 - 21:30 (Ban đêm tự động nghỉ)`);
 console.log(`- Máy chủ đang chạy liên tục trong nền.`);
 console.log(`- Nhấn Ctrl + C để dừng dịch vụ.`);

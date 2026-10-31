@@ -32,6 +32,14 @@ BƯỚC 3 (Tùy chọn - Rất khuyên dùng): Tự động chạy khi mở máy
  - Xong! Từ nay mỗi khi bật máy tính, Windows sẽ tự động chạy ngầm.
 
 ------------------------------------------------------------------------
+CÁCH CẬP NHẬT PHIÊN BẢN MỚI (LẤY TẤT CẢ ĐẦU SỐ):
+------------------------------------------------------------------------
+ - Bước 1: Click đúp vào file 👉 DUNG_DONG_BO_VOIP.bat để tắt tiến trình cũ.
+ - Bước 2: Click đúp vào file 👉 CAP_NHAT_MAY_TREO.bat (hoặc chạy "git pull", hoặc tải file ZIP mới nhất từ GitHub ghi đè vào).
+ - Bước 3: Click đúp vào file 👉 CHAY_DONG_BO_VOIP.bat để khởi động lại tiến trình mới.
+   (Tiến trình mới sẽ tự động cào TOÀN BỘ các đầu số thay vì chỉ 1 đầu số như bản cũ).
+
+------------------------------------------------------------------------
 CÁCH DỪNG CHƯƠNG TRÌNH:
 ------------------------------------------------------------------------
  - Nếu muốn dừng dịch vụ, click đúp vào:

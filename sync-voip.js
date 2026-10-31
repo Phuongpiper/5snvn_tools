@@ -9,7 +9,7 @@ async function sync() {
   console.log("1. Đang kết nối tổng đài Voip24h để lấy danh sách cuộc gọi mới nhất...");
 
   await new Promise((resolve) => {
-    const req = { method: 'GET', url: '/api/voip24h-calls?sync=1&_t=' + Date.now() };
+    const req = { method: 'GET', url: '/api/voip24h-calls?sync=1&did=all&_t=' + Date.now() };
     const res = {
       setHeader: () => {},
       status: function() { return this; },
