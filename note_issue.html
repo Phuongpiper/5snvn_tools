@@ -13258,8 +13258,10 @@
       const VOIP_DID_CONFIG_KEY = "voip_did_config_v1";
       const KNOWN_SYSTEM_DIDS = ["02873065650", "02873099980", "02873095950", "02873098989"];
       const DEFAULT_PROJECT_DIDS = {
-        "NVN": ["02873065650", "02873099980", "02873095950", "02873098989"],
-        "DMS1": ["02873065650", "02873099980", "02873095950", "02873098989"]
+        "NVN": ["02873065650"],
+        "LVN": ["02873099980"],
+        "CPTH": ["02873095950"],
+        "Haleon": ["02873098989"]
       };
       window.gActiveDidInputId = null;
 
@@ -13336,9 +13338,9 @@
           }
         }
 
-        // Fallback mặc định: NVN / DMS1 có 4 đầu số, các dự án khác = null (tất cả đầu số)
+        // Fallback mặc định: NVN / DMS1 có 02873065650, các dự án khác = null (tất cả đầu số)
         if (pName === "NVN" || pName === "DMS1") {
-          return ["02873065650", "02873099980", "02873095950", "02873098989"];
+          return ["02873065650"];
         }
         return null;
       }
@@ -13376,6 +13378,25 @@
         const didProjMap = getDidProjectMap();
         const addedDids = new Set();
 
+        // Helper: Format label hiển thị ĐẦY ĐỦ TẤT CẢ các dự án gán vào đầu số này
+        function formatDidLabel(did, isCurrentProj = false, isPrimary = false) {
+          const projs = didProjMap[did] || [];
+          if (projs.length > 0) {
+            // Đưa dự án hiện tại lên đầu danh sách nhãn nếu có
+            const sorted = [...projs].sort((a, b) => {
+              if (a.toUpperCase() === currentProj.toUpperCase()) return -1;
+              if (b.toUpperCase() === currentProj.toUpperCase()) return 1;
+              return a.localeCompare(b);
+            });
+            let suffix = sorted.join(", ");
+            if (isPrimary && projs.length === 1) {
+              suffix = `${suffix} - Chính`;
+            }
+            return `${did} (${suffix})`;
+          }
+          return `${did} (Hệ thống)`;
+        }
+
         // 1. Nếu dự án hiện tại có TỪ 2 ĐẦU SỐ TRỞ LÊN: hiển thị tùy chọn Tất cả đầu số của dự án này
         if (currentProjDids.length > 1) {
           const optProjAll = document.createElement("option");
@@ -13389,8 +13410,7 @@
           addedDids.add(did);
           const opt = document.createElement("option");
           opt.value = did;
-          const labelSuffix = currentProjDids.length > 1 && idx === 0 ? `${currentProj} - Chính` : currentProj;
-          opt.textContent = `${did} (${labelSuffix})`;
+          opt.textContent = formatDidLabel(did, true, currentProjDids.length > 1 && idx === 0);
           sel.appendChild(opt);
         });
 
@@ -13404,8 +13424,7 @@
             addedDids.add(did);
             const opt = document.createElement("option");
             opt.value = did;
-            const labelSuffix = otherDids.length > 1 && idx === 0 ? `${pName} - Chính` : pName;
-            opt.textContent = `${did} (${labelSuffix})`;
+            opt.textContent = formatDidLabel(did, false, false);
             sel.appendChild(opt);
           });
         });
@@ -13420,12 +13439,7 @@
           addedDids.add(did);
           const opt = document.createElement("option");
           opt.value = did;
-          const projs = didProjMap[did];
-          if (projs && projs.length > 0) {
-            opt.textContent = `${did} (${projs.join(", ")})`;
-          } else {
-            opt.textContent = `${did} (Hệ thống)`;
-          }
+          opt.textContent = formatDidLabel(did, false, false);
           sel.appendChild(opt);
         });
 
@@ -13441,13 +13455,23 @@
           sel.appendChild(optAll);
         }
 
-        // Chọn giá trị mặc định hợp lý
-        if (prevVal && (prevVal === "project_all" || prevVal === "all" || addedDids.has(prevVal))) {
-          sel.value = prevVal;
-        } else if (currentProjDids.length > 0) {
-          sel.value = currentProjDids[0];
+        // Chọn giá trị mặc định hợp lý:
+        if (currentProjDids.length > 0) {
+          // Dự án hiện tại có đầu số riêng:
+          if (prevVal && (currentProjDids.includes(prevVal) || (prevVal === "project_all" && currentProjDids.length > 1))) {
+            sel.value = prevVal;
+          } else if (currentProjDids.length > 1) {
+            sel.value = "project_all";
+          } else {
+            sel.value = currentProjDids[0];
+          }
         } else {
-          sel.value = "all";
+          // Dự án null (nhận tất cả):
+          if (prevVal && (prevVal === "all" || addedDids.has(prevVal))) {
+            sel.value = prevVal;
+          } else {
+            sel.value = "all";
+          }
         }
       }
 
@@ -13499,6 +13523,17 @@
 
         const config = getVoipDidConfig();
         container.innerHTML = "";
+
+        // Bổ sung các dự án đã có trong cấu hình DID mà chưa có trong rawList (ví dụ CPVN)
+        Object.keys(config).forEach(k => {
+          const exists = rawList.some(p => {
+            const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
+            return pName.toUpperCase() === k.trim().toUpperCase();
+          });
+          if (!exists) {
+            rawList.push({ name: k.trim(), system: "" });
+          }
+        });
 
         rawList.forEach(p => {
           const pName = typeof p === "string" ? p.trim() : (p && p.name ? p.name.trim() : "");
