@@ -3395,6 +3395,21 @@
       border-left: 4px solid #38bdf8 !important;
     }
 
+    /* ── PHÂN TRANG ── */
+    .voip-page-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 30px; height: 30px; padding: 0 8px;
+      border: 1px solid #e2e8f0; border-radius: 6px;
+      background: #fff; color: var(--text-main);
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .voip-page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+    .voip-page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .voip-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .voip-page-btn.page-ellipsis { border: none; background: transparent; cursor: default; color: #94a3b8; min-width: 24px; }
+    .voip-page-btn.page-ellipsis:hover { background: transparent; }
+
     .voip-note-badge {
       display: inline-flex;
       align-items: center;
@@ -4743,6 +4758,11 @@
               <!-- Dynamic calls loaded here -->
             </tbody>
           </table>
+        </div>
+        <!-- PHÂN TRANG -->
+        <div id="voipPagination" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:10px 4px 2px;">
+          <span id="voipPaginationInfo" style="font-size:12px; color:var(--text-muted);"></span>
+          <div id="voipPaginationBtns" style="display:flex; align-items:center; gap:4px;"></div>
         </div>
       </div>
     </div>
@@ -14553,6 +14573,71 @@
         }
       };
 
+      let voipCurrentPage = 1;
+      const VOIP_PAGE_SIZE = 50;
+      window._voipFilteredCalls = []; // lưu filtered để phân trang
+
+      window.voipGoToPage = function (page) {
+        const total = window._voipFilteredCalls.length;
+        const totalPages = Math.max(1, Math.ceil(total / VOIP_PAGE_SIZE));
+        voipCurrentPage = Math.max(1, Math.min(page, totalPages));
+        renderVoipTablePage();
+        renderVoipPagination();
+        // Scroll to top of table
+        const tbl = document.getElementById('tableVoipCalls');
+        if (tbl) tbl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+
+      function renderVoipTablePage() {
+        const tbody = document.getElementById('tbodyVoipCalls');
+        if (!tbody) return;
+        const filtered = window._voipFilteredCalls;
+        const start = (voipCurrentPage - 1) * VOIP_PAGE_SIZE;
+        const pageItems = filtered.slice(start, start + VOIP_PAGE_SIZE);
+        tbody.innerHTML = pageItems.map((c, i) => renderVoipCallRowHtml(c, start + i)).join('');
+      }
+
+      function renderVoipPagination() {
+        const total = window._voipFilteredCalls.length;
+        const totalPages = Math.max(1, Math.ceil(total / VOIP_PAGE_SIZE));
+        const pg = document.getElementById('voipPagination');
+        const info = document.getElementById('voipPaginationInfo');
+        const btns = document.getElementById('voipPaginationBtns');
+        if (!pg || !info || !btns) return;
+
+        const start = (voipCurrentPage - 1) * VOIP_PAGE_SIZE + 1;
+        const end = Math.min(voipCurrentPage * VOIP_PAGE_SIZE, total);
+        info.textContent = `Hiển thị ${start}–${end} / ${total} cuộc gọi`;
+
+        if (total <= VOIP_PAGE_SIZE) {
+          pg.style.display = 'none';
+          return;
+        }
+        pg.style.display = 'flex';
+
+        // Build page buttons with ellipsis
+        const cur = voipCurrentPage;
+        let pages = [];
+        if (totalPages <= 7) {
+          pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+        } else {
+          pages = [1];
+          if (cur > 3) pages.push('...');
+          for (let p = Math.max(2, cur - 1); p <= Math.min(totalPages - 1, cur + 1); p++) pages.push(p);
+          if (cur < totalPages - 2) pages.push('...');
+          pages.push(totalPages);
+        }
+
+        btns.innerHTML = [
+          `<button class="voip-page-btn" onclick="voipGoToPage(${cur - 1})" ${cur === 1 ? 'disabled' : ''} title="Trang trước"><i class="fa-solid fa-chevron-left" style="font-size:10px;"></i></button>`,
+          ...pages.map(p => p === '...'
+            ? '<span class="voip-page-btn page-ellipsis">…</span>'
+            : `<button class="voip-page-btn ${p === cur ? 'active' : ''}" onclick="voipGoToPage(${p})">${p}</button>`
+          ),
+          `<button class="voip-page-btn" onclick="voipGoToPage(${cur + 1})" ${cur === totalPages ? 'disabled' : ''} title="Trang sau"><i class="fa-solid fa-chevron-right" style="font-size:10px;"></i></button>`
+        ].join('');
+      }
+
       window.renderVoipTable = function () {
         const tbody = document.getElementById("tbodyVoipCalls");
         if (!tbody) return;
@@ -14641,7 +14726,7 @@
           return;
         }
 
-        function renderCallRowHtml(c, idx) {
+        function renderVoipCallRowHtml(c, idx) {
           const isAnswered = callIsAnswered(c);
           const isMissed = !isAnswered;
           const isInbound = (c.type_origin || "").toLowerCase() === "inbound" || (c.typeText || "").toLowerCase().includes("vào");
@@ -14768,18 +14853,13 @@
           </tr>`;
         }
 
-        const CHUNK_SIZE = 80;
-        const firstChunk = filtered.slice(0, CHUNK_SIZE);
-        tbody.innerHTML = firstChunk.map((c, idx) => renderCallRowHtml(c, idx)).join("");
-
-        if (window._voipChunkTimer) clearTimeout(window._voipChunkTimer);
-        if (filtered.length > CHUNK_SIZE) {
-          window._voipChunkTimer = setTimeout(() => {
-            const restChunk = filtered.slice(CHUNK_SIZE);
-            const restHtml = restChunk.map((c, idx) => renderCallRowHtml(c, idx + CHUNK_SIZE)).join("");
-            tbody.insertAdjacentHTML("beforeend", restHtml);
-          }, 30);
-        }
+        // Lưu filtered vào biến toàn cục để phân trang
+        window._voipFilteredCalls = filtered;
+        // Reset về trang 1 khi thay đổi bộ lọc
+        voipCurrentPage = 1;
+        // Render trang hiện tại
+        renderVoipTablePage();
+        renderVoipPagination();
       };
 
       /* ── CẬP NHẬT BANNER CẢNH BÁO CUỘC GỌI CHƯA NOTE TRONG TEMP ── */
