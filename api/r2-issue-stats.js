@@ -227,18 +227,15 @@ function aggregateIssueStats(issues, filters, targetProjects, excludedPhones) {
 }
 
 /**
- * Kiểm tra cuộc gọi đã được trả lời (đàm thoại > 0)
+ * Kiểm tra cuộc gọi có trạng thái "Trả lời" (ANSWERED).
+ * Chỉ tính khi disposition === ANSWERED hoặc statusText chứa "trả lời".
+ * Bỏ logic billsec > 0 vì một số cuộc gọi ANSWERED có billsec = 00:00:00.
  */
 function isCallAnswered(c) {
   if (!c) return false;
-  const bs = c.billsec;
-  if (bs === undefined || bs === null || bs === "" || bs === "—") return false;
-  if (typeof bs === "number") return bs > 0;
-  const parts = String(bs).split(":").map(Number);
-  const totalSec = parts.length === 3
-    ? parts[0] * 3600 + parts[1] * 60 + parts[2]
-    : parts.length === 2 ? parts[0] * 60 + parts[1] : Number(bs);
-  return totalSec > 0;
+  const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
+  const st = String(c.statusText || "").toLowerCase().trim();
+  return disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi");
 }
 
 /**
