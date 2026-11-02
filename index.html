@@ -2881,14 +2881,14 @@
       <!-- Iframe Frame Area -->
       <div class="frame-area">
 
-        <iframe class="tab-frame" id="nvnSolutionsFrame" src="nvn_solutions.html" title="Solutions"></iframe>
-        <iframe class="tab-frame" id="callLogFrame" src="call_log.html" title="Call Log"></iframe>
-        <iframe class="tab-frame" id="sumaryticketFrame" src="sumary_ticket.html" title="Sumary Ticket"></iframe>
-        <iframe class="tab-frame" id="vanMauNVNFrame" src="van_mau_nvn.html" title="Văn mẫu NVN"></iframe>
-        <iframe class="tab-frame" id="dms1ReportFrame" src="dms1_report.html" title="DMS1 Report"></iframe>
-        <iframe class="tab-frame" id="taskPendingFrame" src="task_pending_nvn.html" title="Task Pending NVN"></iframe>
-        <iframe class="tab-frame" id="tableFrame" src="table.html" title="Table"></iframe>
-        <iframe class="tab-frame" id="dtListFrame" src="danh_sach_dt.html" title="Danh sách DT"></iframe>
+        <iframe class="tab-frame" id="nvnSolutionsFrame" data-src="nvn_solutions.html" src="about:blank" title="Solutions"></iframe>
+        <iframe class="tab-frame" id="callLogFrame" data-src="call_log.html" src="about:blank" title="Call Log"></iframe>
+        <iframe class="tab-frame" id="sumaryticketFrame" data-src="sumary_ticket.html" src="about:blank" title="Sumary Ticket"></iframe>
+        <iframe class="tab-frame" id="vanMauNVNFrame" data-src="van_mau_nvn.html" src="about:blank" title="Văn mẫu NVN"></iframe>
+        <iframe class="tab-frame" id="dms1ReportFrame" data-src="dms1_report.html" src="about:blank" title="DMS1 Report"></iframe>
+        <iframe class="tab-frame" id="taskPendingFrame" data-src="task_pending_nvn.html" src="about:blank" title="Task Pending NVN"></iframe>
+        <iframe class="tab-frame" id="tableFrame" data-src="table.html" src="about:blank" title="Table"></iframe>
+        <iframe class="tab-frame" id="dtListFrame" data-src="danh_sach_dt.html" src="about:blank" title="Danh sách DT"></iframe>
         <iframe class="tab-frame active" id="noteIssueFrame" src="note_issue.html" title="Note Issue"></iframe>
       </div>
     </div>
@@ -2956,10 +2956,22 @@
         tabFrames.forEach((frame) => {
           const isActive = frame.id === targetId;
           frame.classList.toggle("active", isActive);
-          if (isActive && frame.contentWindow) {
-            try {
-              frame.contentWindow.postMessage({ type: "TAB_ACTIVATED" }, "*");
-            } catch (e) { }
+          if (isActive) {
+            // Lazy load iframe src when first visited
+            if (frame.dataset.src && (!frame.src || frame.src.endsWith("about:blank"))) {
+              frame.src = frame.dataset.src;
+            }
+            if (frame.contentWindow) {
+              try {
+                frame.contentWindow.postMessage({ type: "TAB_ACTIVATED" }, "*");
+              } catch (e) { }
+            }
+          } else {
+            if (frame.contentWindow) {
+              try {
+                frame.contentWindow.postMessage({ type: "TAB_DEACTIVATED" }, "*");
+              } catch (e) { }
+            }
           }
         });
       });
@@ -4235,7 +4247,7 @@
       function getApiTasksUrl() {
         let base = "";
         if (window.location.protocol === "file:") {
-          base = "https://5snvn-tools.vercel.app";
+          base = "";
         }
         return base + "/api/r2-tasks";
       }
@@ -4894,7 +4906,7 @@
 
       // R2 Settings API endpoint
       function getSettingsApiEndpoint() {
-        if (window.location.protocol === "file:") return "https://5snvn-tools.vercel.app/api/r2-settings";
+        if (window.location.protocol === "file:") return "/api/r2-settings";
         if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return "http://localhost:3000/api/r2-settings";
         return "/api/r2-settings";
       }

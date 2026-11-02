@@ -1,0 +1,12 @@
+name = "5snvn-tools"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "."
+
+[vars]
+R2_BUCKET_NAME = "dylan"
+R2_ACCOUNT_ID = "b63e9e1ed38dbfd59b2e77a28bb00a36"
+
+[[r2_buckets]]
+binding = "DYLAN"
+bucket_name = "dylan"

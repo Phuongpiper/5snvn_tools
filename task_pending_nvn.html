@@ -1875,10 +1875,10 @@
             const urlObj = new URL(wUrl);
             base = urlObj.origin;
           } catch (e) {
-            base = "https://5snvn-tools.vercel.app";
+            base = "";
           }
         } else {
-          base = "https://5snvn-tools.vercel.app";
+          base = "";
         }
       }
       return base + "/api/r2-tasks";
@@ -1905,7 +1905,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
       });
-      return r.json();
+      const resJson = await r.json();
+      if (resJson && (resJson.status === "success" || resJson.success)) {
+        try { if (taskBroadcastChannel) taskBroadcastChannel.postMessage({ type: "TASKS_SAVED", timestamp: Date.now() }); } catch (_) {}
+      }
+      return resJson;
     }
 
     function getR2Endpoint() {
@@ -1917,10 +1921,10 @@
             const urlObj = new URL(wUrl);
             base = urlObj.origin;
           } catch (e) {
-            base = "https://5snvn-tools.vercel.app";
+            base = "";
           }
         } else {
-          base = "https://5snvn-tools.vercel.app";
+          base = "";
         }
       }
       return base + "/api/r2-urls";
@@ -3262,12 +3266,25 @@
 
 
 
-    /* ── Real-time Auto-Sync System ── */
+    /* ── Real-time Sync via BroadcastChannel & Smart 120s Interval ── */
     let syncIntervalId = null;
     let currentEtag = localStorage.getItem("r2_tasks_etag") || "";
+    let taskBroadcastChannel = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        taskBroadcastChannel = new BroadcastChannel("R2_TASKS_SYNC");
+        taskBroadcastChannel.onmessage = (e) => {
+          if (e.data && e.data.type === "TASKS_SAVED") {
+            console.log("[BroadcastChannel] Tasks updated from peer tab, reloading...");
+            loadTasks(true);
+          }
+        };
+      }
+    } catch (_) {}
 
     async function checkTasksEtag() {
       try {
+        if (document.visibilityState === "hidden") return;
         const endpoint = getTasksEndpoint();
         const separator = endpoint.includes("?") ? "&" : "?";
         const res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
@@ -3280,11 +3297,6 @@
           console.log("[Auto-Sync] ETag changed:", currentEtag, "→", newEtag, "- fetching tasks...");
           currentEtag = newEtag;
           localStorage.setItem("r2_tasks_etag", newEtag);
-          // silent=true: deep-compare inside loadTasks will guard against unnecessary re-renders
-          await loadTasks(true);
-        }
-        // ETag absent (server doesn't expose it) → always silent-fetch & let deep-compare decide
-        if (!newEtag) {
           await loadTasks(true);
         }
       } catch (err) {
@@ -3294,9 +3306,9 @@
 
     function startAutoSync() {
       if (syncIntervalId) return;
-      checkTasksEtag();
-      syncIntervalId = setInterval(checkTasksEtag, 4000); // 4 seconds interval
-      console.log("[Auto-Sync] Started checking every 4s");
+      // Chu kỳ 120s (2 phút) thay vì 4 giây
+      syncIntervalId = setInterval(checkTasksEtag, 120000);
+      console.log("[Auto-Sync] Started checking every 120s");
     }
 
     function stopAutoSync() {
@@ -3311,11 +3323,22 @@
       if (document.visibilityState === "hidden") {
         stopAutoSync();
       } else {
+        checkTasksEtag();
         startAutoSync();
       }
     }
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Lắng nghe kích hoạt tab từ DMS Hub
+    window.addEventListener("message", (e) => {
+      if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
+        checkTasksEtag();
+        startAutoSync();
+      } else if (e.data && e.data.type === "TAB_DEACTIVATED") {
+        stopAutoSync();
+      }
+    });
 
     /* ──────────────────────────────────────────────────────────────────────────
        INIT

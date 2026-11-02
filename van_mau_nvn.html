@@ -960,7 +960,7 @@
     function getVanMauApiEndpoint(queryParam = "") {
       let base = "";
       if (window.location.protocol === "file:") {
-        base = "https://5snvn-tools.vercel.app";
+        base = "";
       } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
         if (window.location.port !== "3000") {
           base = "http://localhost:3000";

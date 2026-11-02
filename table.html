@@ -2690,10 +2690,10 @@
             const urlObj = new URL(wUrl);
             base = urlObj.origin;
           } catch (e) {
-            base = "https://5snvn-tools.vercel.app";
+            base = "";
           }
         } else {
-          base = "https://5snvn-tools.vercel.app";
+          base = "";
         }
       }
       const sep = queryParam ? (queryParam.startsWith("?") ? "" : "?") : "";
@@ -2719,7 +2719,7 @@
       let base = tableApiBaseOverride;
       if (base === null) {
         if (window.location.protocol === "file:") {
-          base = "https://5snvn-tools.vercel.app";
+          base = "";
         } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
           if (window.location.port !== "3000") {
             base = "http://localhost:3000";
@@ -2821,7 +2821,7 @@
       try {
         let endpoint = "/api/r2-dt";
         if (window.location.protocol === "file:") {
-          endpoint = "https://5snvn-tools.vercel.app/api/r2-dt";
+          endpoint = "/api/r2-dt";
         } else if (tableApiBaseOverride) {
           endpoint = tableApiBaseOverride + "/api/r2-dt";
         }
@@ -2830,8 +2830,8 @@
         try {
           res = await fetch(`${endpoint}${sep}t=${Date.now()}`, { cache: "no-cache" });
         } catch (_) {
-          if (!endpoint.includes("5snvn-tools.vercel.app")) {
-            res = await fetch(`https://5snvn-tools.vercel.app/api/r2-dt?t=${Date.now()}`, { cache: "no-cache" });
+          if (false) {
+            res = await fetch(`/api/r2-dt?t=${Date.now()}`, { cache: "no-cache" });
           }
         }
         if (res && res.ok) {
@@ -3247,8 +3247,8 @@
             body: JSON.stringify(payload)
           });
         } catch (fetchErr) {
-          if (!endpoint.includes("5snvn-tools.vercel.app")) {
-            tableApiBaseOverride = "https://5snvn-tools.vercel.app";
+          if (false) {
+            tableApiBaseOverride = "";
             endpoint = getTableApiEndpoint();
             res = await fetch(endpoint, {
               method: "POST",
@@ -3260,8 +3260,8 @@
           }
         }
 
-        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("5snvn-tools.vercel.app")) {
-          tableApiBaseOverride = "https://5snvn-tools.vercel.app";
+        if (!res.ok && (res.status === 404 || res.status === 502) && false) {
+          tableApiBaseOverride = "";
           endpoint = getTableApiEndpoint();
           res = await fetch(endpoint, {
             method: "POST",
@@ -3277,6 +3277,7 @@
           localStorage.setItem("r2_table_etag", newEtag);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
           showAutoSaveIndicator("saved");
+          try { if (tableBroadcastChannel) tableBroadcastChannel.postMessage({ type: "TABLE_SAVED", timestamp: Date.now() }); } catch (_) {}
           if (tableBroadcast) {
             try {
               tableBroadcast.postMessage({ type: "TABLE_UPDATED", etag: newEtag, timestamp: Date.now() });
@@ -3303,8 +3304,8 @@
         try {
           res = await fetch(`${endpoint}${separator}t=${Date.now()}`, { cache: "no-cache" });
         } catch (fetchErr) {
-          if (!endpoint.includes("5snvn-tools.vercel.app")) {
-            tableApiBaseOverride = "https://5snvn-tools.vercel.app";
+          if (false) {
+            tableApiBaseOverride = "";
             endpoint = getTableApiEndpoint();
             const sep2 = endpoint.includes("?") ? "&" : "?";
             res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
@@ -3313,8 +3314,8 @@
           }
         }
 
-        if (!res.ok && (res.status === 404 || res.status === 502) && !endpoint.includes("5snvn-tools.vercel.app")) {
-          tableApiBaseOverride = "https://5snvn-tools.vercel.app";
+        if (!res.ok && (res.status === 404 || res.status === 502) && false) {
+          tableApiBaseOverride = "";
           endpoint = getTableApiEndpoint();
           const sep2 = endpoint.includes("?") ? "&" : "?";
           res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { cache: "no-cache" });
@@ -3383,25 +3384,29 @@
       }
     }
 
+    let tableBroadcastChannel = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        tableBroadcastChannel = new BroadcastChannel("R2_TABLE_SYNC");
+        tableBroadcastChannel.onmessage = (e) => {
+          if (e.data && e.data.type === "TABLE_SAVED") {
+            console.log("[BroadcastChannel] Table updated from peer tab, reloading...");
+            fetchTableFromCloud(true);
+          }
+        };
+      }
+    } catch (_) {}
+
     async function checkTableEtag() {
       try {
+        if (document.visibilityState === "hidden") return;
         if (cloudSaveTimer || isCloudSaving) return;
         let endpoint = getTableApiEndpoint();
         const separator = endpoint.includes("?") ? "&" : "?";
-        let res;
-        try {
-          res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
-            method: "HEAD",
-            cache: "no-cache"
-          });
-        } catch (e) {
-          if (!endpoint.includes("5snvn-tools.vercel.app")) {
-            tableApiBaseOverride = "https://5snvn-tools.vercel.app";
-            endpoint = getTableApiEndpoint();
-            const sep2 = endpoint.includes("?") ? "&" : "?";
-            res = await fetch(`${endpoint}${sep2}t=${Date.now()}`, { method: "HEAD", cache: "no-cache" });
-          }
-        }
+        const res = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
+          method: "HEAD",
+          cache: "no-cache"
+        });
         if (!res || !res.ok) return;
         const newEtag = res.headers.get("ETag") || res.headers.get("Last-Modified");
         if (newEtag && newEtag !== currentTableEtag) {
@@ -3414,15 +3419,28 @@
 
     function startTableAutoSync() {
       if (tableSyncIntervalId) return;
-      tableSyncIntervalId = setInterval(checkTableEtag, 3000);
+      // Chu kỳ 120s (2 phút) thay vì 3 giây
+      tableSyncIntervalId = setInterval(checkTableEtag, 120000);
+      console.log("[Table AutoSync] Scheduled every 120s");
     }
 
     function stopTableAutoSync() {
       if (tableSyncIntervalId) {
         clearInterval(tableSyncIntervalId);
         tableSyncIntervalId = null;
+        console.log("[Table AutoSync] Stopped");
       }
     }
+
+    // Lắng nghe kích hoạt tab từ DMS Hub
+    window.addEventListener("message", (e) => {
+      if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
+        checkTableEtag();
+        startTableAutoSync();
+      } else if (e.data && e.data.type === "TAB_DEACTIVATED") {
+        stopTableAutoSync();
+      }
+    });
 
     async function forceSyncTableWithCloud() {
       showAutoSaveIndicator("saving");

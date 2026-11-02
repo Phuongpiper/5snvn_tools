@@ -2,7 +2,9 @@
   "name": "search_dms_tool",
   "version": "1.0.0",
   "scripts": {
-    "start": "node local-server.js"
+    "start": "node local-server.js",
+    "pages:dev": "wrangler pages dev . --compatibility-date 2024-09-23 --compatibility-flags nodejs_compat",
+    "pages:deploy": "wrangler pages deploy . --project-name 5snvn-tools --compatibility-date 2024-09-23 --compatibility-flags nodejs_compat"
   },
   "dependencies": {
     "dotenv": "^17.4.2"

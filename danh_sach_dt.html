@@ -1383,7 +1383,7 @@
       const p = proj || currentDtProject;
       let base = "";
       if (window.location.protocol === "file:") {
-        base = "https://dms-hub-tools.vercel.app";
+        base = "";
       }
       return base + "/api/r2-dt?project=" + encodeURIComponent(p);
     }
@@ -1406,7 +1406,7 @@
 
       try {
         let base = "";
-        if (window.location.protocol === "file:") base = "https://dms-hub-tools.vercel.app";
+        if (window.location.protocol === "file:") base = "";
         const tasksApi = base + "/api/r2-tasks?action=read_projects";
         const res = await fetch(tasksApi, { cache: "no-cache" });
         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1460,7 +1460,7 @@
         // Save to system project management API
         try {
           let base = "";
-          if (window.location.protocol === "file:") base = "https://dms-hub-tools.vercel.app";
+          if (window.location.protocol === "file:") base = "";
           await fetch(base + "/api/r2-tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1659,6 +1659,7 @@
           currentDtEtag = newEtag;
           localStorage.setItem("r2_dt_etag_" + proj.toUpperCase(), newEtag);
           showAutoSaveIndicator("saved");
+          try { if (dtBroadcastChannel) dtBroadcastChannel.postMessage({ type: "DT_SAVED", project: proj, timestamp: Date.now() }); } catch (_) {}
           if (dtBroadcast) {
             try {
               dtBroadcast.postMessage({ type: "DT_UPDATED", project: proj, etag: newEtag, timestamp: Date.now() });
@@ -1736,10 +1737,25 @@
       }
     }
 
+    let dtBroadcastChannel = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        dtBroadcastChannel = new BroadcastChannel("R2_DT_SYNC");
+        dtBroadcastChannel.onmessage = (e) => {
+          if (e.data && e.data.type === "DT_SAVED" && e.data.project === currentDtProject) {
+            console.log("[BroadcastChannel] DT updated for project", e.data.project, "reloading...");
+            fetchDtFromCloud(true, currentDtProject);
+          }
+        };
+      }
+    } catch (_) {}
+
     function startDtAutoSync() {
       if (dtSyncIntervalId) return;
+      // Chu kỳ 120s (2 phút) thay vì 3 giây
       dtSyncIntervalId = setInterval(async () => {
         try {
+          if (document.visibilityState === "hidden") return;
           if (cloudSaveTimer || isCloudSaving || isCloudFetching) return;
           if (Date.now() - lastLocalEditTime < 2500) return;
           const proj = currentDtProject;
@@ -1755,8 +1771,26 @@
             await fetchDtFromCloud(true, proj);
           }
         } catch (_) {}
-      }, 3000);
+      }, 120000);
+      console.log("[DT AutoSync] Scheduled every 120s");
     }
+
+    function stopDtAutoSync() {
+      if (dtSyncIntervalId) {
+        clearInterval(dtSyncIntervalId);
+        dtSyncIntervalId = null;
+        console.log("[DT AutoSync] Stopped");
+      }
+    }
+
+    // Lắng nghe kích hoạt tab từ DMS Hub
+    window.addEventListener("message", (e) => {
+      if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
+        startDtAutoSync();
+      } else if (e.data && e.data.type === "TAB_DEACTIVATED") {
+        stopDtAutoSync();
+      }
+    });
 
     async function forceSyncWithCloud() {
       showAutoSaveIndicator("saving");
