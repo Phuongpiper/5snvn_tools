@@ -4023,11 +4023,13 @@
                 <!-- F: NVBH (Mã nhân viên) -->
                 <td class="td-field-cell">
                   <div class="field-input-box">
-                    <input type="text" id="inputNvbh" class="form-control-studio" placeholder="VD: 01, 11, 22..."
+                    <input type="text" id="inputNvbh" class="form-control-studio" placeholder="VD: 01, 11, MT001..."
                       autocomplete="off" spellcheck="false" />
                     <button type="button" class="btn-clear-field" id="btnClearNvbh" title="Xoá ô NVBH" tabindex="-1">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
+                    <!-- CPVN NVBH Lookup dropdown -->
+                    <div class="autocomplete-card" id="dropdownNvbhCpvn" style="display:none;"></div>
                   </div>
                   <div class="field-hint-chip" id="hintNvbh"></div>
                 </td>
@@ -8800,6 +8802,299 @@
         hintNvbh.className = "field-hint-chip success";
         hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong>${escapeHTML(formatted)}</strong>`;
       }
+
+      /* ══════════════════════════════════════════════════════════════════════════
+         CPVN NVBH LOOKUP — Tính năng lookup NVBH ↔ NPP cho dự án CPVN
+         - Dùng dtList đã load sẵn (col_prefix = Mã NVBH, col_issue_name = Tên NVBH)
+         - Bật/tắt qua localStorage key DMS_FEATURE_CPVN_NVBH_LOOKUP
+         - Tự động bật khi project = CPVN
+      ══════════════════════════════════════════════════════════════════════════ */
+
+      // ── Lấy/set trạng thái toggle ──────────────────────────────────────────
+      const CPVN_NVBH_TOGGLE_KEY = "DMS_FEATURE_CPVN_NVBH_LOOKUP";
+
+      function isCpvnNvbhLookupEnabled() {
+        const proj = (typeof getSelectedProject === "function" ? getSelectedProject() : "").toUpperCase();
+        const stored = localStorage.getItem(CPVN_NVBH_TOGGLE_KEY);
+        // Mặc định: bật nếu project = CPVN, trừ khi user tắt thủ công
+        if (stored === "off") return false;
+        if (stored === "on") return true;
+        return proj === "CPVN"; // auto-enable cho CPVN
+      }
+
+      function setCpvnNvbhLookup(enabled) {
+        localStorage.setItem(CPVN_NVBH_TOGGLE_KEY, enabled ? "on" : "off");
+        updateCpvnNvbhToggleUI();
+      }
+
+      // ── Render badge toggle bên cạnh label NVBH ────────────────────────────
+      function renderCpvnNvbhToggleBadge() {
+        const proj = (typeof getSelectedProject === "function" ? getSelectedProject() : "").toUpperCase();
+        const container = document.getElementById("cpvnNvbhToggleBadge");
+        if (!container) return;
+
+        // Chỉ hiển thị badge khi project CPVN hoặc đã bật thủ công
+        if (proj !== "CPVN" && localStorage.getItem(CPVN_NVBH_TOGGLE_KEY) !== "on") {
+          container.style.display = "none";
+          return;
+        }
+        const enabled = isCpvnNvbhLookupEnabled();
+        container.style.display = "inline-flex";
+        container.innerHTML = `
+          <span style="
+            display:inline-flex;align-items:center;gap:4px;cursor:pointer;
+            background:${enabled ? "#dcfce7" : "#f1f5f9"};
+            color:${enabled ? "#16a34a" : "#94a3b8"};
+            border:1px solid ${enabled ? "#86efac" : "#cbd5e1"};
+            border-radius:99px;padding:1px 8px;font-size:10px;font-weight:600;
+            user-select:none;transition:all .15s;
+          " title="${enabled ? "Tắt" : "Bật"} tính năng Lookup NVBH ↔ NPP (CPVN)"
+            onclick="setCpvnNvbhLookup(${!enabled})">
+            <i class="fa-solid fa-${enabled ? "link" : "link-slash"}" style="font-size:9px;"></i>
+            ${enabled ? "NVBH↔NPP ON" : "NVBH↔NPP OFF"}
+          </span>
+        `;
+      }
+
+      function updateCpvnNvbhToggleUI() {
+        renderCpvnNvbhToggleBadge();
+        const dropdownEl = document.getElementById("dropdownNvbhCpvn");
+        if (dropdownEl && !isCpvnNvbhLookupEnabled()) {
+          dropdownEl.style.display = "none";
+        }
+      }
+
+      // ── Build danh sách NVBH từ dtList (chỉ khi CPVN) ─────────────────────
+      function getCpvnNvbhList() {
+        if (!Array.isArray(dtList)) return [];
+        return dtList
+          .filter(r => r.prefix && /^MT\d+$/i.test(r.prefix.trim()))
+          .map(r => ({
+            code: r.prefix.trim().toUpperCase(),    // MT001
+            name: r.issueName || r.name || "",       // No Mer Minh Cao
+            nppName: r.name || "",                   // Direct Trade Stores...
+            nppCode: r.code || "",                   // 10109001
+            _norm: normalizeStr((r.prefix + " " + (r.issueName || r.name || "")).trim())
+          }));
+      }
+
+      // ── Autocomplete NVBH cho CPVN ─────────────────────────────────────────
+      const dropdownNvbhCpvn = document.getElementById("dropdownNvbhCpvn");
+      let cpvnNvbhList = [];
+
+      function handleCpvnNvbhInput() {
+        if (!isCpvnNvbhLookupEnabled()) {
+          if (dropdownNvbhCpvn) dropdownNvbhCpvn.style.display = "none";
+          return;
+        }
+        cpvnNvbhList = getCpvnNvbhList();
+        if (cpvnNvbhList.length === 0) return;
+
+        const raw = inputNvbh.value.trim();
+        if (!raw) {
+          if (dropdownNvbhCpvn) dropdownNvbhCpvn.style.display = "none";
+          return;
+        }
+
+        const q = normalizeStr(raw);
+        const matches = cpvnNvbhList
+          .filter(item => item._norm.includes(q) || item.code.toLowerCase().includes(raw.toLowerCase()))
+          .slice(0, 10);
+
+        if (matches.length === 0) {
+          if (dropdownNvbhCpvn) dropdownNvbhCpvn.style.display = "none";
+          return;
+        }
+
+        // Kiểm tra exact match → tự động apply
+        const exact = matches.find(item =>
+          item.code.toLowerCase() === raw.toLowerCase()
+        );
+        if (exact) {
+          applyCpvnNvbh(exact, false);
+          if (dropdownNvbhCpvn) dropdownNvbhCpvn.style.display = "none";
+          return;
+        }
+
+        if (dropdownNvbhCpvn) {
+          dropdownNvbhCpvn.innerHTML = matches.map((item, idx) => `
+            <div class="ac-studio-item" data-cpvn-nvbh-idx="${idx}"
+              style="cursor:pointer;"
+              onmousedown="event.preventDefault(); applyCpvnNvbh(window._cpvnNvbhMatches[${idx}], true)">
+              <div>
+                <div class="ac-title">
+                  <span style="font-weight:700;color:#7c3aed;">${escapeHTML(item.code)}</span>
+                  &nbsp;·&nbsp;${escapeHTML(item.name)}
+                </div>
+                <div class="ac-desc">NPP: ${escapeHTML(item.nppName || item.nppCode || "—")}</div>
+              </div>
+              <span class="ac-tag" style="background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;">NVBH</span>
+            </div>
+          `).join("");
+          dropdownNvbhCpvn.style.display = "block";
+          window._cpvnNvbhMatches = matches;
+        }
+      }
+
+      // ── Apply NVBH: fill input + tự động fill NPP ──────────────────────────
+      window.applyCpvnNvbh = function(item, fillInput = true) {
+        if (!item) return;
+        if (fillInput) {
+          inputNvbh.value = item.code; // VD: MT001
+        }
+        if (dropdownNvbhCpvn) dropdownNvbhCpvn.style.display = "none";
+
+        // Tự động fill NPP nếu ô NPP đang trống hoặc chưa chọn
+        if (item.nppCode || item.nppName) {
+          // Tìm NPP object trong dtList
+          const nppObj = dtList.find(r =>
+            r.code === item.nppCode ||
+            normalizeStr(r.name || "") === normalizeStr(item.nppName || "") ||
+            normalizeStr(r.issueName || "") === normalizeStr(item.nppName || "")
+          );
+
+          if (nppObj && !currentNppObj) {
+            // Fill tên NPP vào ô NPP
+            const displayName = (nppObj.issueName || nppObj.name || "").replace(/^NPP\s+/i, "");
+            inputNpp.value = displayName;
+            applyNpp(nppObj, false);
+          } else if (!currentNppObj && !inputNpp.value.trim() && item.nppName) {
+            // Fallback: fill tên NPP thô
+            inputNpp.value = item.nppName;
+          }
+        }
+
+        // Hiển thị hint NVBH CPVN
+        hintNvbh.className = "field-hint-chip success";
+        hintNvbh.innerHTML = `
+          <i class="fa-solid fa-id-badge"></i>
+          Mã NVBH: <strong style="color:#7c3aed;">${escapeHTML(item.code)}</strong>
+          &nbsp;·&nbsp;${escapeHTML(item.name)}
+        `;
+
+        validateNvbh();
+        validateRole();
+        updateResultDisplay();
+      };
+
+      // ── Bổ sung gợi ý Mã NVBH vào dropdown NPP (chỉ khi CPVN) ────────────
+      // Override renderCpvnNvbhSuggestionInNpp — gọi sau khi render dropdownNpp
+      function appendCpvnNvbhToNppDropdown() {
+        if (!isCpvnNvbhLookupEnabled()) return;
+        cpvnNvbhList = getCpvnNvbhList();
+        if (cpvnNvbhList.length === 0 || !dropdownNpp) return;
+
+        const val = inputNpp.value.trim();
+        if (!val) return;
+
+        const q = normalizeStr(val);
+        // Tìm NVBH match với NPP hiện tại
+        const nvbhMatches = cpvnNvbhList
+          .filter(item =>
+            normalizeStr(item.nppName || "").includes(q) ||
+            normalizeStr(item.nppCode || "").includes(q)
+          )
+          .slice(0, 6);
+
+        if (nvbhMatches.length === 0) return;
+
+        // Thêm header separator + các mã NVBH vào dropdown NPP
+        const existing = dropdownNpp.innerHTML;
+        const separator = `
+          <div style="padding:4px 12px;font-size:10px;font-weight:700;color:#7c3aed;background:#faf5ff;
+            border-top:${existing ? "1px solid #ede9fe" : "none"};letter-spacing:.5px;">
+            <i class="fa-solid fa-user-tag"></i> MÃ NVBH (CPVN)
+          </div>
+        `;
+        const items = nvbhMatches.map((item, idx) => `
+          <div class="ac-studio-item" style="cursor:pointer;"
+            onmousedown="event.preventDefault(); applyCpvnNvbh(window._cpvnNppNvbhMatches[${idx}], true)">
+            <div>
+              <div class="ac-title">
+                <span style="font-weight:700;color:#7c3aed;">${escapeHTML(item.code)}</span>
+                &nbsp;·&nbsp;${escapeHTML(item.name)}
+              </div>
+              <div class="ac-desc">NPP: ${escapeHTML(item.nppName || "—")}</div>
+            </div>
+            <span class="ac-tag" style="background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;">NVBH</span>
+          </div>
+        `).join("");
+
+        dropdownNpp.innerHTML = existing + separator + items;
+        window._cpvnNppNvbhMatches = nvbhMatches;
+        dropdownNpp.style.display = "block";
+      }
+
+      // ── Hook vào inputNvbh events ──────────────────────────────────────────
+      if (inputNvbh && dropdownNvbhCpvn) {
+        inputNvbh.addEventListener("input", handleCpvnNvbhInput);
+
+        inputNvbh.addEventListener("blur", () => {
+          setTimeout(() => {
+            if (dropdownNvbhCpvn) dropdownNvbhCpvn.style.display = "none";
+          }, 150);
+        });
+
+        inputNvbh.addEventListener("focus", () => {
+          if (isCpvnNvbhLookupEnabled() && inputNvbh.value.trim()) {
+            handleCpvnNvbhInput();
+          }
+        });
+      }
+
+      // ── Hook vào inputNpp: sau khi render dropdown NPP thì append NVBH ─────
+      const _origHandleNppInput = typeof handleNppInput === "function" ? handleNppInput : null;
+      const _patchedHandleNppInput = function() {
+        if (_origHandleNppInput) _origHandleNppInput();
+        // Append CPVN NVBH suggestions sau khi NPP dropdown render xong
+        appendCpvnNvbhToNppDropdown();
+      };
+      if (inputNpp) {
+        inputNpp.addEventListener("input", appendCpvnNvbhToNppDropdown);
+      }
+
+      // ── Render toggle badge khi project thay đổi ───────────────────────────
+      // Inject badge container vào cell chứa NVBH
+      (function injectCpvnToggleBadge() {
+        const hintNvbhEl = document.getElementById("hintNvbh");
+        if (!hintNvbhEl) return;
+        const td = hintNvbhEl.closest("td");
+        if (!td) return;
+        // Thêm badge container vào sau field-hint-chip
+        const badge = document.createElement("div");
+        badge.id = "cpvnNvbhToggleBadge";
+        badge.style.cssText = "margin-top:3px;display:none;";
+        td.appendChild(badge);
+        renderCpvnNvbhToggleBadge();
+      })();
+
+      // ── Re-render badge khi đổi project ──────────────────────────────────
+      // Hook vào setSelectedProject nếu có thể
+      (function hookProjectChange() {
+        const origSetProject = typeof setSelectedProject === "function" ? setSelectedProject : null;
+        if (!origSetProject) return;
+        window._origSetSelectedProjectCpvn = origSetProject;
+        // Observe project selector changes
+        const projSel = document.getElementById("headerProjectSelect");
+        if (projSel) {
+          projSel.addEventListener("change", () => {
+            setTimeout(updateCpvnNvbhToggleUI, 100);
+          });
+        }
+      })();
+
+      // ── Khởi tạo khi dtList đã sẵn sàng ─────────────────────────────────
+      // Gọi sau khi loadDtList() hoàn thành → quan sát interval đơn giản
+      let _cpvnInitChecks = 0;
+      const _cpvnInitInterval = setInterval(() => {
+        _cpvnInitChecks++;
+        if ((Array.isArray(dtList) && dtList.length > 0) || _cpvnInitChecks > 20) {
+          clearInterval(_cpvnInitInterval);
+          updateCpvnNvbhToggleUI();
+        }
+      }, 300);
+
+      /* ────── End CPVN NVBH LOOKUP ────── */
 
       // 5. SUP / HQ / Admin Validation
       // Rule: Chỉ nhận ADMIN hoặc bắt đầu bằng HQ (cho phép dấu cách, VD: "HQ TANH BUI", "HQ 01")
