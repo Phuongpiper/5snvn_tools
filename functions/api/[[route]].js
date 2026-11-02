@@ -1,6 +1,18 @@
 // functions/api/[[route]].js - Universal API Router for Cloudflare Pages Functions
 // Supports both direct Cloudflare R2 bindings and Node S3/HMAC handlers
 
+const DEFAULT_R2_ACCOUNT_ID = "b63e9e1ed38dbfd59b2e77a28bb00a36";
+const DEFAULT_R2_ACCESS_KEY_ID = "30d0d30195468279bab5ca499ff39cf0";
+const DEFAULT_R2_SECRET_ACCESS_KEY = "7f2dc82f5e23d39b0743fbd615ce1ea964f4e182806c0c18ba81fac706c777bd";
+const DEFAULT_R2_BUCKET_NAME = "dylan";
+
+if (typeof process !== "undefined" && process.env) {
+  process.env.R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || DEFAULT_R2_ACCOUNT_ID;
+  process.env.R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || DEFAULT_R2_ACCESS_KEY_ID;
+  process.env.R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || DEFAULT_R2_SECRET_ACCESS_KEY;
+  process.env.R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || DEFAULT_R2_BUCKET_NAME;
+}
+
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,HEAD,OPTIONS",
