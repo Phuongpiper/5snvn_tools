@@ -257,6 +257,34 @@ function getVietnamToday() {
 }
 
 /**
+ * Kiểm tra xem một cuộc gọi có phải là cuộc gọi nội bộ hay không
+ * (Ví dụ: giữa các máy nhánh 113, 114, 115, 116, 118, 119...)
+ * Cuộc gọi nội bộ KHÔNG ĐƯỢC TÍNH vào báo cáo cuộc gọi.
+ */
+function isInternalCall(c) {
+  if (!c) return false;
+
+  // 1. Phân loại theo type_origin từ VoIP24h
+  const to = String(c.type_origin || "").toLowerCase().trim();
+  if (to === "local" || to === "internal") return true;
+
+  // 2. Phân loại theo nhãn typeText / type / call_type (vd: "Nội bộ")
+  const tt = String(c.typeText || c.type || c.call_type || "").toLowerCase().trim();
+  if (tt.includes("nội bộ") || tt.includes("noi bo") || tt.includes("internal") || tt.includes("local")) return true;
+
+  // 3. Phân loại theo tên file ghi âm
+  const rec = String(c.recordingfile || "").toLowerCase();
+  if (rec.startsWith("internal-")) return true;
+
+  // 4. Nếu cả số gọi (src) và số nhận (dst) đều là số máy nhánh nội bộ (<= 4 chữ số)
+  const src = String(c.src || "").trim();
+  const dst = String(c.dst || "").trim();
+  if (/^\d{2,4}$/.test(src) && /^\d{2,4}$/.test(dst)) return true;
+
+  return false;
+}
+
+/**
  * Tổng hợp số lượng cuộc gọi theo tháng và ngày cho từng nhân viên, hỗ trợ lọc theo dự án
  */
 function aggregateCallStats(calls, members, projectsList, targetProjects, targetDids, excludedPhones, targetIsoDate, targetIsoMonth) {
@@ -326,6 +354,9 @@ function aggregateCallStats(calls, members, projectsList, targetProjects, target
         const isExt = String(c.src) === ext || String(c.dst) === ext;
         if (!isExt) continue;
         if (!isCallAnswered(c)) continue;
+
+        // Bỏ qua cuộc gọi nội bộ (ví dụ: máy nhánh 113, 114, 115, 116, 118, 119 gọi cho nhau)
+        if (isInternalCall(c)) continue;
 
         // Lọc theo Đầu số (DID) của các dự án đã chọn
         const cDid = String(c.did || "").trim();

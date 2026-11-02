@@ -13621,8 +13621,29 @@
         });
       }
 
+      function isInternalCall(call) {
+        if (!call) return false;
+        const to = String(call.type_origin || "").toLowerCase().trim();
+        if (to === "local" || to === "internal") return true;
+
+        const tt = String(call.typeText || call.type || call.call_type || "").toLowerCase().trim();
+        if (tt.includes("nội bộ") || tt.includes("noi bo") || tt.includes("internal") || tt.includes("local")) return true;
+
+        const rec = String(call.recordingfile || "").toLowerCase();
+        if (rec.startsWith("internal-")) return true;
+
+        const src = String(call.src || "").trim();
+        const dst = String(call.dst || "").trim();
+        if (/^\d{2,4}$/.test(src) && /^\d{2,4}$/.test(dst)) return true;
+
+        return false;
+      }
+
       function isCallExcluded(call) {
         if (!call) return false;
+        // Loại bỏ cuộc gọi nội bộ (máy nhánh 113, 114, 115, 116, 118, 119...)
+        if (isInternalCall(call)) return true;
+
         const isInbound = (call.type_origin || "").toLowerCase() === "inbound" || (call.typeText || "").toLowerCase().includes("vào");
         const hotline = isInbound ? (call.src || "") : (call.dst || "");
         return isPhoneExcluded(hotline) || isPhoneExcluded(call.src) || isPhoneExcluded(call.dst);
