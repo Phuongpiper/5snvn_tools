@@ -5878,7 +5878,7 @@
             }
           }
         } catch (_) {}
-        cachedSystemProjects = ["NVN", "LVN", "CPTH", "FNB", "Nội bộ", "Asian Shine", "Syngenta", "Haleon"];
+        cachedSystemProjects = ["NVN", "LVN", "CPTH", "FNB", "Nội bộ", "Asian Shine", "Syngenta", "Haleon", "CPVN"];
         return cachedSystemProjects;
       }
 
@@ -6157,12 +6157,29 @@
             { name: "Nội bộ", system: "NB" },
             { name: "Asian Shine", system: "WSM" },
             { name: "Syngenta", system: "WSM" },
-            { name: "Haleon", system: "DMS" }
+            { name: "Haleon", system: "DMS" },
+            { name: "CPVN", system: "DMS" }
           ];
         }
 
-        const savedProj = (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
-        const currentVal = (sel ? sel.value : "") || savedProj;
+        // Lấy dự án đã lưu trong localStorage của người dùng
+        const savedProj = (localStorage.getItem("note_issue_selected_project") || "").trim();
+
+        // NẾU CÓ savedProj mà chưa có trong rawList -> TỰ ĐỘNG THÊM VÀO rawList ĐỂ KHÔNG BỊ MẤT!
+        if (savedProj) {
+          const exists = rawList.some(p => {
+            const n = typeof p === "string" ? p.trim() : (p?.name || "").trim();
+            return n.toLowerCase() === savedProj.toLowerCase();
+          });
+          if (!exists) {
+            rawList.push({ name: savedProj, system: savedProj.toUpperCase() === "CPVN" ? "DMS" : "" });
+          }
+        }
+
+        // Xác định dự án kích hoạt: ƯU TIÊN TUYỆT ĐỐI cho savedProj từ localStorage
+        let activeProj = savedProj;
+        if (!activeProj && sel && sel.value) activeProj = sel.value.trim();
+        if (!activeProj) activeProj = "NVN";
 
         // Keep hidden select synced
         if (sel) {
@@ -6175,6 +6192,7 @@
               if (up === "NVN") pSys = "DMS1";
               else if (up === "LVN") pSys = "DMS";
               else if (up === "CPTH") pSys = "FPIT";
+              else if (up === "CPVN") pSys = "DMS";
             }
             if (!pName) return;
             const opt = document.createElement("option");
@@ -6183,27 +6201,17 @@
             sel.appendChild(opt);
           });
 
-          const availableNames = rawList.map(p => typeof p === "string" ? p.trim() : (p?.name || "").trim());
-          const availableNamesLower = availableNames.map(n => n.toLowerCase());
-          const findMatch = (val) => {
-            if (!val) return "";
-            const exact = availableNames.find(n => n === val);
-            if (exact) return exact;
-            const ci = availableNames.find(n => n.toLowerCase() === val.toLowerCase());
-            return ci || "";
-          };
-          const matchCurrent = findMatch(currentVal);
-          const matchSaved = findMatch(savedProj);
-          if (matchCurrent) {
-            sel.value = matchCurrent;
-          } else if (matchSaved) {
-            sel.value = matchSaved;
-          } else {
-            sel.value = availableNames[0] || "NVN";
+          // Match đúng tên hiển thị trong rawList
+          const matchedItem = rawList.find(p => {
+            const n = typeof p === "string" ? p.trim() : (p?.name || "").trim();
+            return n.toLowerCase() === activeProj.toLowerCase();
+          });
+          if (matchedItem) {
+            activeProj = typeof matchedItem === "string" ? matchedItem.trim() : matchedItem.name.trim();
           }
+          sel.value = activeProj;
         }
 
-        const activeProj = sel ? sel.value : savedProj;
         renderCustomProjectList(rawList, activeProj);
         setSelectedProject(activeProj);
       }
