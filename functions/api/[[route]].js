@@ -34,7 +34,8 @@ const HANDLERS = {
   "r2-vanmau": require("../../api/r2-vanmau.js"),
   "r2-table": require("../../api/r2-table.js"),
   "r2-calllog": require("../../api/r2-calllog.js"),
-  "device-auth": require("../../api/device-auth.js")
+  "device-auth": require("../../api/device-auth.js"),
+  "daily-report-stats": require("../../api/daily-report-stats.js")
 };
 
 async function runNodeHandler(handler, request, env) {
