@@ -1,0 +1,10 @@
+.git
+.env
+.assetsignore
+node_modules
+_worker.js
+wrangler.toml
+package.json
+package-lock.json
+functions
+api
