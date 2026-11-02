@@ -33,7 +33,8 @@ const HANDLERS = {
   "r2-urls": require("../../api/r2-urls.js"),
   "r2-vanmau": require("../../api/r2-vanmau.js"),
   "r2-table": require("../../api/r2-table.js"),
-  "r2-calllog": require("../../api/r2-calllog.js")
+  "r2-calllog": require("../../api/r2-calllog.js"),
+  "device-auth": require("../../api/device-auth.js")
 };
 
 async function runNodeHandler(handler, request, env) {
@@ -78,13 +79,19 @@ async function runNodeHandler(handler, request, env) {
     }
   }
 
+  const clientIp = headers["cf-connecting-ip"] || 
+                   headers["x-real-ip"] || 
+                   (headers["x-forwarded-for"] ? headers["x-forwarded-for"].split(",")[0].trim() : "") || 
+                   "127.0.0.1";
+
   const req = {
     method: request.method,
     url: url.pathname + url.search,
     headers: headers,
     query: query,
     body: parsedBody,
-    rawBody: bodyText
+    rawBody: bodyText,
+    clientIp: clientIp
   };
 
   let statusCode = 200;
