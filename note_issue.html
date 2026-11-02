@@ -3889,7 +3889,6 @@
 
         <!-- Hidden select to keep 100% backward compatibility -->
         <select id="headerProjectSelect" class="header-project-select" style="display: none;" title="Chọn dự án đang làm việc">
-          <option value="NVN">NVN</option>
         </select>
 
         <!-- Floating Dropdown Card (Stitch design) -->
@@ -5883,9 +5882,14 @@
       }
 
       function getSelectedProject() {
+        // 1. Ưu tiên số 1: Đọc từ localStorage (ghi nhớ dự án đã chọn của user)
+        const saved = (localStorage.getItem("note_issue_selected_project") || "").trim();
+        if (saved) return saved;
+        // 2. Fallback sang select nếu có
         const sel = document.getElementById("headerProjectSelect");
         if (sel && sel.value) return sel.value.trim();
-        return (localStorage.getItem("note_issue_selected_project") || "NVN").trim();
+        // 3. Mặc định là NVN nếu chưa từng chọn
+        return "NVN";
       }
 
       function getProjectObject(projectName) {
@@ -16658,6 +16662,9 @@
         });
       }
       window.addEventListener("storage", (e) => {
+        if (e.key === "note_issue_selected_project" && e.newValue) {
+          setSelectedProject(e.newValue);
+        }
         if (e.key === "app_projects_data") {
           cachedSystemProjects = null;
           populateHeaderProjects();
