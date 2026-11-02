@@ -561,7 +561,11 @@
           setTimeout(() => {
             overlay.remove();
             document.body.style.overflow = "";
-          }, 800);
+            const frame = document.getElementById("noteIssueFrame");
+            if (frame) {
+              frame.src = "note_issue.html";
+            }
+          }, 600);
           return;
         }
 
@@ -611,6 +615,8 @@
           localStorage.removeItem(LS_ATTEMPTS_KEY);
           overlay.remove();
           document.body.style.overflow = "";
+          const frame = document.getElementById("noteIssueFrame");
+          if (frame) frame.src = "note_issue.html";
         } else {
           let fails = (Number(localStorage.getItem(LS_ATTEMPTS_KEY)) || 0) + 1;
           localStorage.setItem(LS_ATTEMPTS_KEY, String(fails));
@@ -637,8 +643,10 @@
   // ── 6. Khởi động kiểm tra an ninh (Main Entry) ───────────────────────────────
   async function initSecurityGuard() {
     try {
-      // Nếu đang nằm trong iframe (ví dụ note_issue.html trong index.html)
-      const isIframe = window.self !== window.top;
+      // Tuyệt đối không can thiệp vào các trang con chạy trong iframe
+      if (window.self !== window.top) {
+        return;
+      }
 
       currentHwid = await generateHwid();
 
@@ -646,11 +654,7 @@
       const localLock = Number(localStorage.getItem(LS_LOCK_KEY)) || 0;
       const now = Date.now();
       if (localLock > now) {
-        if (!isIframe) {
-          showLockedScreen(localLock, currentHwid, currentIp, "Khóa cục bộ do nhập sai 3 lần");
-        } else {
-          document.body.innerHTML = "<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;font-weight:bold;'>Thiết bị đã bị khóa 24 giờ do nhập sai mật khẩu 3 lần.</div>";
-        }
+        showLockedScreen(localLock, currentHwid, currentIp, "Khóa cục bộ do nhập sai 3 lần");
         return;
       }
 
@@ -663,11 +667,7 @@
 
           if (checkData.blocked && checkData.lockedUntil > now) {
             localStorage.setItem(LS_LOCK_KEY, String(checkData.lockedUntil));
-            if (!isIframe) {
-              showLockedScreen(checkData.lockedUntil, currentHwid, currentIp, checkData.reason);
-            } else {
-              document.body.innerHTML = "<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#0f172a;color:#ef4444;font-family:sans-serif;font-weight:bold;'>Thiết bị đã bị khóa 24 giờ.</div>";
-            }
+            showLockedScreen(checkData.lockedUntil, currentHwid, currentIp, checkData.reason);
             return;
           }
         }
@@ -677,12 +677,6 @@
       const authToken = localStorage.getItem(LS_AUTH_KEY);
       if (authToken) {
         // Đã xác thực trên máy này -> Cho phép truy cập bình thường
-        return;
-      }
-
-      // Nếu là iframe và chưa xác thực thì ẩn nội dung để tránh xem trộm
-      if (isIframe) {
-        document.body.style.display = "none";
         return;
       }
 
