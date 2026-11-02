@@ -23,8 +23,6 @@ try {
   }
 } catch (_) {}
 
-const https = require("https");
-const crypto = require("crypto");
 
 const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.env.R2_ACCOUNT_ID        || "b63e9e1ed38dbfd59b2e77a28bb00a36";
 const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "30d0d30195468279bab5ca499ff39cf0";
@@ -36,29 +34,44 @@ const HELPDESK_BASE_URL    = "https://helpdesk.ai-audit-test.online";
 const DEFAULT_USERNAME     = process.env.HELPDESK_USERNAME || "tanh.h.bui.3811";
 const DEFAULT_PASSWORD     = process.env.HELPDESK_PASSWORD || "1";
 
-function hmacSha256(key, msg, enc) {
-  return crypto.createHmac("sha256", key).update(msg, "utf8").digest(enc);
-}
-function sha256hex(msg) {
-  const buf = Buffer.isBuffer(msg) ? msg : Buffer.from(String(msg || ""), "utf8");
-  return crypto.createHash("sha256").update(buf).digest("hex");
+
+// ── Web Crypto helpers (works in Cloudflare Workers + Node 18+) ───────────────
+async function sha256hex(msg) {
+  const buf = typeof msg === "string" ? new TextEncoder().encode(msg) : msg;
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function r2Fetch(method, body = "", objectKey = R2_CACHE_KEY) {
-  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
-    return Promise.resolve({ statusCode: 500, body: "" });
+async function hmacSha256(key, msg, outputFormat) {
+  const keyBuf = typeof key === "string" ? new TextEncoder().encode(key) : key;
+  const msgBuf = typeof msg === "string" ? new TextEncoder().encode(msg) : msg;
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw", keyBuf, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, msgBuf);
+  if (outputFormat === "hex") {
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
-  const bodyBuf = body ? (Buffer.isBuffer(body) ? body : Buffer.from(String(body), "utf8")) : Buffer.alloc(0);
-  const host      = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
-  const uriPath   = "/" + R2_BUCKET_NAME + "/" + objectKey;
+  return new Uint8Array(sig);
+}
+
+async function r2Fetch(method, body, objectKey) {
+  if (objectKey === undefined) objectKey = R2_CACHE_KEY;
+  if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY) {
+    return { statusCode: 500, body: "" };
+  }
+  body = body || "";
+  const bodyBuf = typeof body === "string" ? new TextEncoder().encode(body) : body;
+  const host    = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
+  const uriPath = "/" + R2_BUCKET_NAME + "/" + objectKey;
   const now       = new Date();
   const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
   const amzDate   = now.toISOString().replace(/[:-]/g, "").replace(/\.\d+/, "");
   const region    = "auto";
   const service   = "s3";
 
-  const payloadHash  = sha256hex(bodyBuf);
-  const contentType  = method === "PUT" ? "application/json; charset=utf-8" : "";
+  const payloadHash = await sha256hex(bodyBuf);
+  const contentType = method === "PUT" ? "application/json; charset=utf-8" : "";
 
   let canonicalHeaders = "host:" + host + "\nx-amz-content-sha256:" + payloadHash + "\nx-amz-date:" + amzDate + "\n";
   let signedHeaders    = "host;x-amz-content-sha256;x-amz-date";
@@ -69,13 +82,13 @@ function r2Fetch(method, body = "", objectKey = R2_CACHE_KEY) {
 
   const canonicalRequest = [method, uriPath, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
   const credentialScope  = dateStamp + "/" + region + "/" + service + "/aws4_request";
-  const stringToSign     = ["AWS4-HMAC-SHA256", amzDate, credentialScope, sha256hex(canonicalRequest)].join("\n");
+  const stringToSign     = ["AWS4-HMAC-SHA256", amzDate, credentialScope, await sha256hex(canonicalRequest)].join("\n");
 
-  const kDate    = hmacSha256("AWS4" + R2_SECRET_ACCESS_KEY, dateStamp);
-  const kRegion  = hmacSha256(kDate, region);
-  const kService = hmacSha256(kRegion, service);
-  const kSigning = hmacSha256(kService, "aws4_request");
-  const signature = hmacSha256(kSigning, stringToSign, "hex");
+  const kDate    = await hmacSha256("AWS4" + R2_SECRET_ACCESS_KEY, dateStamp);
+  const kRegion  = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  const kSigning = await hmacSha256(kService, "aws4_request");
+  const signature = await hmacSha256(kSigning, stringToSign, "hex");
 
   const auth = "AWS4-HMAC-SHA256 Credential=" + R2_ACCESS_KEY_ID + "/" + credentialScope + ",SignedHeaders=" + signedHeaders + ",Signature=" + signature;
 
@@ -86,20 +99,18 @@ function r2Fetch(method, body = "", objectKey = R2_CACHE_KEY) {
   };
   if (contentType) {
     headers["Content-Type"] = contentType;
-    headers["Content-Length"] = bodyBuf.length;
+    headers["Content-Length"] = String(bodyBuf.length);
   }
 
-  return new Promise(function(resolve, reject) {
-    const req = https.request({ hostname: host, path: uriPath, method: method, headers: headers }, function(res) {
-      const chunks = [];
-      res.on("data", c => chunks.push(c));
-      res.on("end", () => resolve({ statusCode: res.statusCode, body: Buffer.concat(chunks).toString("utf8") }));
-    });
-    req.on("error", reject);
-    if (bodyBuf.length > 0) req.write(bodyBuf);
-    req.end();
+  const resp = await fetch("https://" + host + uriPath, {
+    method: method,
+    headers: headers,
+    body: method === "PUT" ? bodyBuf : undefined
   });
+  const resBody = await resp.text();
+  return { statusCode: resp.status, body: resBody, headers: Object.fromEntries(resp.headers.entries()) };
 }
+
 
 async function getCacheFromR2() {
   try {
@@ -124,21 +135,16 @@ async function saveCacheToR2(payload) {
   }
 }
 
-function httpsRequest(url, options = {}, postData = null) {
-  return new Promise((resolve, reject) => {
-    const req = https.request(url, options, res => {
-      const chunks = [];
-      res.on("data", c => chunks.push(c));
-      res.on("end", () => {
-        const bodyStr = Buffer.concat(chunks).toString("utf8");
-        try { resolve({ status: res.statusCode, data: JSON.parse(bodyStr) }); }
-        catch { resolve({ status: res.statusCode, body: bodyStr }); }
-      });
-    });
-    req.on("error", reject);
-    if (postData) req.write(postData);
-    req.end();
+async function httpsRequest(url, options = {}, postData = null) {
+  const resp = await fetch(url, {
+    method: options.method || "GET",
+    headers: options.headers || {},
+    body: postData || undefined
   });
+  const bodyStr = await resp.text();
+  let data;
+  try { data = JSON.parse(bodyStr); } catch (_) { data = null; }
+  return { status: resp.status, data: data, body: bodyStr };
 }
 
 function getCurrentMonthRange() {
@@ -160,8 +166,7 @@ async function loginHelpdesk(username, password) {
   const res = await httpsRequest(`${HELPDESK_BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Content-Length": Buffer.byteLength(postData)
+      "Content-Type": "application/json"
     }
   }, postData);
 

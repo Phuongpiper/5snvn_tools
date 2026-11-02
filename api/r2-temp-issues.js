@@ -1,6 +1,4 @@
 try { require("dotenv").config(); } catch(_) {}
-const https = require("https");
-const crypto = require("crypto");
 
 const R2_ACCOUNT_ID        = process.env.R2_ACCOUNT_ID_DYLAN        || process.env.R2_ACCOUNT_ID        || "b63e9e1ed38dbfd59b2e77a28bb00a36";
 const R2_ACCESS_KEY_ID     = process.env.R2_ACCESS_KEY_ID_DYLAN     || process.env.R2_ACCESS_KEY_ID     || "30d0d30195468279bab5ca499ff39cf0";
@@ -8,26 +6,41 @@ const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY_DYLAN || process.e
 const R2_BUCKET_NAME       = process.env.R2_BUCKET_NAME_DYLAN       || process.env.R2_BUCKET_NAME       || "dylan";
 const R2_OBJECT_KEY        = "dms_temp_issues.json";
 
-function hmacSha256(key, msg, enc) {
-  return crypto.createHmac("sha256", key).update(msg, "utf8").digest(enc);
-}
-function sha256hex(msg) {
-  const buf = Buffer.isBuffer(msg) ? msg : Buffer.from(String(msg || ""), "utf8");
-  return crypto.createHash("sha256").update(buf).digest("hex");
+
+// ── Web Crypto helpers (works in Cloudflare Workers + Node 18+) ───────────────
+async function sha256hex(msg) {
+  const buf = typeof msg === "string" ? new TextEncoder().encode(msg) : msg;
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function buildR2Request(method, body, objectKey = R2_OBJECT_KEY) {
-  const bodyBuf = body ? (Buffer.isBuffer(body) ? body : Buffer.from(String(body), "utf8")) : Buffer.alloc(0);
-  const host      = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
-  const uriPath   = "/" + R2_BUCKET_NAME + "/" + (objectKey || R2_OBJECT_KEY);
+async function hmacSha256(key, msg, outputFormat) {
+  const keyBuf = typeof key === "string" ? new TextEncoder().encode(key) : key;
+  const msgBuf = typeof msg === "string" ? new TextEncoder().encode(msg) : msg;
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw", keyBuf, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  );
+  const sig = await crypto.subtle.sign("HMAC", cryptoKey, msgBuf);
+  if (outputFormat === "hex") {
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  return new Uint8Array(sig);
+}
+
+async function r2Fetch(method, body, objectKey) {
+  if (objectKey === undefined) objectKey = R2_OBJECT_KEY;
+  body = body || "";
+  const bodyBuf = typeof body === "string" ? new TextEncoder().encode(body) : body;
+  const host    = R2_ACCOUNT_ID + ".r2.cloudflarestorage.com";
+  const uriPath = "/" + R2_BUCKET_NAME + "/" + objectKey;
   const now       = new Date();
   const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, "");
   const amzDate   = now.toISOString().replace(/[:-]/g, "").replace(/\.\d+/, "");
   const region    = "auto";
   const service   = "s3";
 
-  const payloadHash  = sha256hex(bodyBuf);
-  const contentType  = method === "PUT" ? "application/json; charset=utf-8" : "";
+  const payloadHash = await sha256hex(bodyBuf);
+  const contentType = method === "PUT" ? "application/json; charset=utf-8" : "";
 
   let canonicalHeaders = "host:" + host + "\nx-amz-content-sha256:" + payloadHash + "\nx-amz-date:" + amzDate + "\n";
   let signedHeaders    = "host;x-amz-content-sha256;x-amz-date";
@@ -38,13 +51,13 @@ function buildR2Request(method, body, objectKey = R2_OBJECT_KEY) {
 
   const canonicalRequest = [method, uriPath, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
   const credentialScope  = dateStamp + "/" + region + "/" + service + "/aws4_request";
-  const stringToSign     = ["AWS4-HMAC-SHA256", amzDate, credentialScope, sha256hex(canonicalRequest)].join("\n");
+  const stringToSign     = ["AWS4-HMAC-SHA256", amzDate, credentialScope, await sha256hex(canonicalRequest)].join("\n");
 
-  const kDate    = hmacSha256("AWS4" + R2_SECRET_ACCESS_KEY, dateStamp);
-  const kRegion  = hmacSha256(kDate, region);
-  const kService = hmacSha256(kRegion, service);
-  const kSigning = hmacSha256(kService, "aws4_request");
-  const signature = hmacSha256(kSigning, stringToSign, "hex");
+  const kDate    = await hmacSha256("AWS4" + R2_SECRET_ACCESS_KEY, dateStamp);
+  const kRegion  = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  const kSigning = await hmacSha256(kService, "aws4_request");
+  const signature = await hmacSha256(kSigning, stringToSign, "hex");
 
   const auth = "AWS4-HMAC-SHA256 Credential=" + R2_ACCESS_KEY_ID + "/" + credentialScope + ",SignedHeaders=" + signedHeaders + ",Signature=" + signature;
 
@@ -55,31 +68,18 @@ function buildR2Request(method, body, objectKey = R2_OBJECT_KEY) {
   };
   if (contentType) {
     headers["Content-Type"] = contentType;
-    headers["Content-Length"] = bodyBuf.length;
+    headers["Content-Length"] = String(bodyBuf.length);
   }
-  return { host: host, path: uriPath, headers: headers, bodyBuf: bodyBuf };
+
+  const resp = await fetch("https://" + host + uriPath, {
+    method: method,
+    headers: headers,
+    body: method === "PUT" ? bodyBuf : undefined
+  });
+  const resBody = await resp.text();
+  return { statusCode: resp.status, body: resBody, headers: Object.fromEntries(resp.headers.entries()) };
 }
 
-function r2Fetch(method, body, objectKey = R2_OBJECT_KEY) {
-  body = body || "";
-  return new Promise(function(resolve, reject) {
-    const info = buildR2Request(method, body, objectKey);
-    const options = { hostname: info.host, path: info.path, method: method, headers: info.headers };
-    const req = https.request(options, function(res) {
-      const chunks = [];
-      res.on("data", function(c) { chunks.push(c); });
-      res.on("end", function() {
-        const fullBody = Buffer.concat(chunks).toString("utf8");
-        resolve({ statusCode: res.statusCode, body: fullBody, headers: res.headers });
-      });
-    });
-    req.on("error", reject);
-    if (info.bodyBuf && info.bodyBuf.length > 0) {
-      req.write(info.bodyBuf);
-    }
-    req.end();
-  });
-}
 
 function normalizeMemberCode(code) {
   return String(code || "").trim().toUpperCase();

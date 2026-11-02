@@ -51,10 +51,12 @@ async function runNodeHandler(handler, request, env) {
   }
 
   // Parse body
-  let bodyBuffer = Buffer.alloc(0);
+  let bodyBytes = new Uint8Array(0);
+  let bodyText = "";
   if (request.method !== "GET" && request.method !== "HEAD" && request.body) {
     const arrayBuf = await request.arrayBuffer();
-    bodyBuffer = Buffer.from(arrayBuf);
+    bodyBytes = new Uint8Array(arrayBuf);
+    bodyText = new TextDecoder().decode(bodyBytes);
   }
 
   const headers = {};
@@ -68,11 +70,11 @@ async function runNodeHandler(handler, request, env) {
   }
 
   let parsedBody = undefined;
-  if (bodyBuffer.length > 0) {
+  if (bodyBytes.length > 0) {
     try {
-      parsedBody = JSON.parse(bodyBuffer.toString("utf8"));
+      parsedBody = JSON.parse(bodyText);
     } catch (_) {
-      parsedBody = bodyBuffer.toString("utf8");
+      parsedBody = bodyText;
     }
   }
 
@@ -82,7 +84,7 @@ async function runNodeHandler(handler, request, env) {
     headers: headers,
     query: query,
     body: parsedBody,
-    rawBody: bodyBuffer
+    rawBody: bodyText
   };
 
   let statusCode = 200;
