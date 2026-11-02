@@ -4032,6 +4032,22 @@
                     <div class="autocomplete-card" id="dropdownNvbhCpvn" style="display:none;"></div>
                   </div>
                   <div class="field-hint-chip" id="hintNvbh"></div>
+                  <!-- Badge toggle CPVN NVBH Lookup — luôn có trong DOM, JS control display -->
+                  <div id="cpvnNvbhToggleBadge" style="display:none; margin-top:4px;">
+                    <button type="button" id="btnCpvnNvbhToggle"
+                      onclick="toggleCpvnNvbhLookup()"
+                      title="Bật/Tắt tính năng Lookup NVBH ↔ NPP (CPVN)"
+                      style="
+                        display:inline-flex;align-items:center;gap:5px;
+                        border:1px solid #a78bfa;border-radius:99px;
+                        background:#ede9fe;color:#6d28d9;
+                        padding:2px 10px;font-size:11px;font-weight:600;
+                        cursor:pointer;transition:all .15s;line-height:1.4;
+                      ">
+                      <i id="iCpvnNvbhIcon" class="fa-solid fa-link" style="font-size:10px;"></i>
+                      <span id="lblCpvnNvbh">NVBH↔NPP: BẬT</span>
+                    </button>
+                  </div>
                 </td>
 
                 <!-- G: SUP/HQ/Admin -->
@@ -8827,34 +8843,42 @@
         updateCpvnNvbhToggleUI();
       }
 
-      // ── Render badge toggle bên cạnh label NVBH ────────────────────────────
+      // ── Cập nhật UI badge toggle (dùng element đã hardcode trong HTML) ───────
       function renderCpvnNvbhToggleBadge() {
         const proj = (typeof getSelectedProject === "function" ? getSelectedProject() : "").toUpperCase();
-        const container = document.getElementById("cpvnNvbhToggleBadge");
-        if (!container) return;
+        const badgeDiv = document.getElementById("cpvnNvbhToggleBadge");
+        const btn = document.getElementById("btnCpvnNvbhToggle");
+        const icon = document.getElementById("iCpvnNvbhIcon");
+        const lbl = document.getElementById("lblCpvnNvbh");
+        if (!badgeDiv) return;
 
-        // Chỉ hiển thị badge khi project CPVN hoặc đã bật thủ công
-        if (proj !== "CPVN" && localStorage.getItem(CPVN_NVBH_TOGGLE_KEY) !== "on") {
-          container.style.display = "none";
+        // Chỉ hiển thị khi project CPVN hoặc user đã bật thủ công
+        const forceOn = localStorage.getItem(CPVN_NVBH_TOGGLE_KEY) === "on";
+        if (proj !== "CPVN" && !forceOn) {
+          badgeDiv.style.display = "none";
           return;
         }
+        badgeDiv.style.display = "block";
+
         const enabled = isCpvnNvbhLookupEnabled();
-        container.style.display = "inline-flex";
-        container.innerHTML = `
-          <span style="
-            display:inline-flex;align-items:center;gap:4px;cursor:pointer;
-            background:${enabled ? "#dcfce7" : "#f1f5f9"};
-            color:${enabled ? "#16a34a" : "#94a3b8"};
-            border:1px solid ${enabled ? "#86efac" : "#cbd5e1"};
-            border-radius:99px;padding:1px 8px;font-size:10px;font-weight:600;
-            user-select:none;transition:all .15s;
-          " title="${enabled ? "Tắt" : "Bật"} tính năng Lookup NVBH ↔ NPP (CPVN)"
-            onclick="setCpvnNvbhLookup(${!enabled})">
-            <i class="fa-solid fa-${enabled ? "link" : "link-slash"}" style="font-size:9px;"></i>
-            ${enabled ? "NVBH↔NPP ON" : "NVBH↔NPP OFF"}
-          </span>
-        `;
+        if (btn) {
+          btn.style.background = enabled ? "#dcfce7" : "#f1f5f9";
+          btn.style.color = enabled ? "#16a34a" : "#94a3b8";
+          btn.style.borderColor = enabled ? "#86efac" : "#cbd5e1";
+          btn.title = (enabled ? "Tắt" : "Bật") + " Lookup NVBH ↔ NPP (CPVN)";
+        }
+        if (icon) {
+          icon.className = "fa-solid fa-" + (enabled ? "link" : "link-slash");
+        }
+        if (lbl) {
+          lbl.textContent = "NVBH↔NPP: " + (enabled ? "BẬT" : "TẮT");
+        }
       }
+
+      // Hàm gọi khi user click nút toggle
+      window.toggleCpvnNvbhLookup = function() {
+        setCpvnNvbhLookup(!isCpvnNvbhLookupEnabled());
+      };
 
       function updateCpvnNvbhToggleUI() {
         renderCpvnNvbhToggleBadge();
@@ -9053,20 +9077,8 @@
         inputNpp.addEventListener("input", appendCpvnNvbhToNppDropdown);
       }
 
-      // ── Render toggle badge khi project thay đổi ───────────────────────────
-      // Inject badge container vào cell chứa NVBH
-      (function injectCpvnToggleBadge() {
-        const hintNvbhEl = document.getElementById("hintNvbh");
-        if (!hintNvbhEl) return;
-        const td = hintNvbhEl.closest("td");
-        if (!td) return;
-        // Thêm badge container vào sau field-hint-chip
-        const badge = document.createElement("div");
-        badge.id = "cpvnNvbhToggleBadge";
-        badge.style.cssText = "margin-top:3px;display:none;";
-        td.appendChild(badge);
-        renderCpvnNvbhToggleBadge();
-      })();
+      // ── Badge toggle đã hardcode trong HTML, chỉ cần khởi tạo UI ────────────
+      renderCpvnNvbhToggleBadge();
 
       // ── Re-render badge khi đổi project ──────────────────────────────────
       // Hook vào setSelectedProject nếu có thể
