@@ -6279,6 +6279,8 @@
       // Internal State
       let solutionsList = [];
       let dtList = [];
+      let currentDtColumns = [];
+      let projectNvbhList = [];
       let tempNotes = [];
       let currentSolutionMatches = [];
       let currentNppMatches = [];
@@ -6460,6 +6462,7 @@
         if (pillDtStatus) pillDtStatus.classList.remove("active");
 
         let rows = [];
+        let cols = [];
         // 1. Đọc từ localStorage theo đúng dự án
         try {
           const key = "DMS_DT_LIST_DATA_V1_" + proj;
@@ -6471,6 +6474,7 @@
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.rows) && parsed.rows.length > 0) {
               rows = parsed.rows;
+              cols = parsed.columns || [];
             }
           }
         } catch (_) { }
@@ -6484,22 +6488,76 @@
               const data = await res.json();
               if (data && Array.isArray(data.rows) && data.rows.length > 0) {
                 rows = data.rows;
+                cols = data.columns || [];
                 localStorage.setItem("DMS_DT_LIST_DATA_V1_" + proj, JSON.stringify(data));
               }
             }
           } catch (_) { }
         }
 
-        // 3. Map vào dtList
-        dtList = rows
-          .filter(r => r.col_dt_code || r.col_npp_name || r.col_issue_name)
-          .map(r => ({
-            code: String(r.col_dt_code || "").trim(),
-            name: String(r.col_npp_name || "").trim(),
-            issueName: String(r.col_issue_name || "").trim(),
-            prefix: String(r.col_prefix || "").trim().toUpperCase(),
-            project: proj
-          }));
+        currentDtColumns = cols;
+
+        // 3. Phân biệt dự án có bảng NVBH độc lập (CPVN...) vs Dự án NPP truyền thống (NVN...)
+        const isNvbhMode = typeof isNvbhLookupActive === "function" ? isNvbhLookupActive(proj) : (proj === "CPVN");
+
+        if (isNvbhMode) {
+          // ── BẢNG DANH SÁCH NVBH ĐỘC LẬP (CPVN...) ──
+          // col_dt_code    = Mã NPP / DT code (VD: 10109001)
+          // col_npp_name   = TÊN NHÀ PHÂN PHỐI (VD: Direct Trade Stores (SM1+SM2+SM3))
+          // col_issue_name = TÊN NHÂN VIÊN BÁN HÀNG (VD: 38410340-Vương Hiển Quân)
+          // col_prefix     = MÃ NHÂN VIÊN BÁN HÀNG (VD: MT028)
+
+          // 3A. Danh sách toàn bộ NVBH của dự án
+          projectNvbhList = rows
+            .filter(r => r.col_prefix || r.col_issue_name)
+            .map(r => ({
+              code: String(r.col_prefix || "").trim().toUpperCase(),
+              name: String(r.col_issue_name || "").trim(),
+              nppCode: String(r.col_dt_code || "").trim(),
+              nppName: String(r.col_npp_name || "").trim(),
+              _norm: typeof normalizeStr === "function"
+                ? normalizeStr((String(r.col_prefix || "") + " " + String(r.col_issue_name || "")).trim())
+                : (String(r.col_prefix || "") + " " + String(r.col_issue_name || "")).toLowerCase()
+            }));
+
+          // 3B. Danh sách Nhà phân phối (Deduplicate theo Mã NPP / Tên NPP)
+          const nppMap = new Map();
+          rows.forEach(r => {
+            const nppName = String(r.col_npp_name || "").trim();
+            const nppCode = String(r.col_dt_code || "").trim();
+            if (!nppName && !nppCode) return;
+            const key = nppCode ? (nppCode + "__" + nppName) : nppName;
+            if (!nppMap.has(key)) {
+              nppMap.set(key, {
+                code: nppCode,
+                name: nppName,
+                issueName: nppName, // TÊN NPP DÙNG KHI VIẾT ISSUE CHÍNH LÀ TÊN NPP!
+                prefix: "",
+                project: proj,
+                nvbhList: []
+              });
+            }
+            const nppObj = nppMap.get(key);
+            const nvCode = String(r.col_prefix || "").trim().toUpperCase();
+            const nvName = String(r.col_issue_name || "").trim();
+            if (nvCode || nvName) {
+              nppObj.nvbhList.push({ code: nvCode, name: nvName });
+            }
+          });
+          dtList = Array.from(nppMap.values());
+        } else {
+          // ── DỰ ÁN TRUYỀN THỐNG (NVN, LVN, CPTH...) ──
+          projectNvbhList = [];
+          dtList = rows
+            .filter(r => r.col_dt_code || r.col_npp_name || r.col_issue_name)
+            .map(r => ({
+              code: String(r.col_dt_code || "").trim(),
+              name: String(r.col_npp_name || "").trim(),
+              issueName: String(r.col_issue_name || "").trim(),
+              prefix: String(r.col_prefix || "").trim().toUpperCase(),
+              project: proj
+            }));
+        }
 
         // Fallback mẫu chỉ khi là NVN và không có dữ liệu
         if (dtList.length === 0 && proj === "NVN") {
@@ -6511,7 +6569,10 @@
           ];
         }
 
-        if (txtDtStatus) txtDtStatus.textContent = `NPP (${proj}): ${dtList.length} mục`;
+        if (txtDtStatus) {
+          const extraInfo = projectNvbhList.length > 0 ? ` · ${projectNvbhList.length} NVBH` : "";
+          txtDtStatus.textContent = `NPP (${proj}): ${dtList.length} mục${extraInfo}`;
+        }
         if (pillDtStatus) pillDtStatus.classList.toggle("active", dtList.length > 0);
       }
 
@@ -8628,7 +8689,7 @@
             <div class="ac-studio-item" data-idx="${idx}" data-code="${escapeHTML(m.code)}">
               <div>
                 <div class="ac-title">${escapeHTML(m.issueName || m.name)}</div>
-                <div class="ac-desc">Mã DT: ${escapeHTML(m.code)} · Prefix: <strong>${escapeHTML(m.prefix)}</strong></div>
+                <div class="ac-desc">Mã DT: ${escapeHTML(m.code)}${m.prefix ? ` · Prefix: <strong>${escapeHTML(m.prefix)}</strong>` : ""}${m.nvbhList && m.nvbhList.length ? ` · <span style="color:#7c3aed;font-weight:600;"><i class="fa-solid fa-users" style="font-size:10px;"></i> ${m.nvbhList.length} NVBH</span>` : ""}</div>
               </div>
               <span class="ac-tag npp">${escapeHTML(m.prefix || 'NPP')}</span>
             </div>
@@ -8707,12 +8768,26 @@
         updateResultDisplay();
       }
 
-      // 4. NVBH Validation & Prefix Auto-Padding
-      // Rule: Sau Prefix luôn là 4 số. Vd: 243G0002, 243G0021, 123N0001
+      // 4. NVBH Validation & Prefix Formatting
       function formatNvbh(raw) {
         const val = raw ? raw.trim() : "";
         if (!val) return "";
 
+        // ── CHẾ ĐỘ NVBH ĐỘC LẬP (CPVN hoặc dự án có bật NVBH Lookup) ──
+        if (typeof isNvbhLookupActive === "function" && isNvbhLookupActive()) {
+          const up = val.toUpperCase();
+          // 1. Khớp chính xác với mã NVBH có trong danh sách (VD: MT028, MT001) -> GIỮ NGUYÊN BẢN
+          if (Array.isArray(projectNvbhList) && projectNvbhList.length > 0) {
+            const found = projectNvbhList.find(n => n.code === up);
+            if (found) return found.code;
+          }
+          // 2. Mã độc lập gồm chữ + số (VD: MT028, VN50821) -> TUYỆT ĐỐI KHÔNG TỰ PAD 4 SỐ
+          if (/^[A-Za-z0-9]+$/i.test(val)) {
+            return up;
+          }
+        }
+
+        // ── CHẾ ĐỘ TRUYỀN THỐNG (NVN...): Prefix + 4 số thứ tự (VD: 286G0001) ──
         let prefix = (currentNppObj?.prefix || "").trim().toUpperCase();
 
         // Fallback tìm prefix nếu currentNppObj chưa set nhưng có inputNpp và dtList
@@ -8744,7 +8819,6 @@
           }
         }
 
-        // Nếu prefix chỉ gồm toàn số (VD: "243") thì mặc định GT thêm "G", nếu đã có ký tự kênh (VD: "123N", "243G") thì giữ nguyên
         const resolvedPrefix = /^\d+$/.test(prefix) ? prefix + "G" : prefix;
 
         // Trường hợp 1: Chỉ nhập số (VD: 2, 01, 11, 00002, 000021, 100...)
@@ -8767,9 +8841,6 @@
 
           if (resolvedPrefix) {
             const lastLetter = resolvedPrefix.slice(-1);
-            // Nếu người dùng gõ đúng prefix của NPP (123N01),
-            // hoặc gõ nhầm thêm G (123NG0001 / 123NG01 -> tự chuẩn hóa về 123N0001),
-            // hoặc chỉ gõ ký tự đuôi của kênh (VD: "N01" khi prefix là 123N, hoặc "G01" theo thói quen)
             if (
               pfxPart === resolvedPrefix ||
               pfxPart === resolvedPrefix + "G" ||
@@ -8808,7 +8879,16 @@
           return;
         }
 
+        // Nếu dự án dùng NVBH độc lập (CPVN) và chưa chọn NPP:
+        // Tự động tìm NPP từ mã NVBH vừa nhập!
         if (!currentNppObj && !inputNpp.value.trim()) {
+          if (typeof isNvbhLookupActive === "function" && isNvbhLookupActive() && Array.isArray(projectNvbhList)) {
+            const found = projectNvbhList.find(n => n.code.toUpperCase() === raw.toUpperCase());
+            if (found) {
+              applyNvbhLookup(found, false);
+              return;
+            }
+          }
           hintNvbh.className = "field-hint-chip warning";
           hintNvbh.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> Cần chọn NPP ở ô trước để lấy Prefix!`;
           return;
@@ -8816,15 +8896,19 @@
 
         const formatted = formatNvbh(raw);
         hintNvbh.className = "field-hint-chip success";
-        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong>${escapeHTML(formatted)}</strong>`;
+        let extraEmpName = "";
+        if (typeof isNvbhLookupActive === "function" && isNvbhLookupActive() && Array.isArray(projectNvbhList)) {
+          const emp = projectNvbhList.find(n => n.code.toUpperCase() === formatted.toUpperCase());
+          if (emp && emp.name) extraEmpName = ` · <span style="opacity:0.85;">${escapeHTML(emp.name)}</span>`;
+        }
+        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong style="color:#7c3aed;">${escapeHTML(formatted)}</strong>${extraEmpName}`;
       }
 
       /* ══════════════════════════════════════════════════════════════════════════
          NVBH LOOKUP — Tính năng lookup Mã NVBH ↔ NPP (bật/tắt theo từng dự án)
-         - Dùng dtList đã load sẵn: prefix = Mã NVBH, issueName = Tên NVBH
-         - Lưu trạng thái PER-PROJECT: DMS_NVBH_LOOKUP_{PROJECT} = "on"/"off"
-         - Mặc định: "on" khi dtList có mã NVBH dạng chữ+số (MT001, NV01...)
-         - Badge hardcoded trong HTML, JS chỉ cập nhật hiển thị
+         - Dùng danh sách NVBH độc lập: col_prefix = Mã NVBH, col_issue_name = Tên NVBH
+         - Tự động map chính xác NPP: col_npp_name = Tên NPP, col_dt_code = Mã NPP
+         - Bật/tắt per-project: DMS_NVBH_LOOKUP_{PROJECT} = "on" | "off"
       ══════════════════════════════════════════════════════════════════════════ */
 
       // ── Key localStorage theo từng dự án ───────────────────────────────────
@@ -8833,35 +8917,48 @@
         return "DMS_NVBH_LOOKUP_" + p;
       }
 
-      // ── Kiểm tra xem dtList có chứa mã NVBH dạng chữ+số không ─────────────
-      // Dùng để tự động bật mặc định khi dự án có danh sách NVBH riêng
-      function dtListHasNvbhCodes() {
-        if (!Array.isArray(dtList)) return false;
-        return dtList.some(r => r.prefix && /^[A-Z]{1,3}\d+$/i.test(r.prefix.trim()));
+      // ── Kiểm tra dự án có cấu trúc bảng NVBH độc lập không ─────────────────
+      function isProjectNvbhTable(cols, proj) {
+        const p = (proj || (typeof getSelectedProject === "function" ? getSelectedProject() : "")).toUpperCase();
+        if (p === "CPVN") return true;
+        if (Array.isArray(cols) && cols.length > 0) {
+          return cols.some(c => {
+            const n = (c.name || "").toLowerCase();
+            return n.includes("nvbh") || n.includes("nhân viên") || n.includes("mã nv");
+          });
+        }
+        return false;
       }
 
-      // ── Lấy trạng thái toggle cho project hiện tại ─────────────────────────
-      function isNvbhLookupEnabled(proj) {
-        const key = getNvbhLookupKey(proj);
-        const stored = localStorage.getItem(key);
+      // ── Trạng thái toggle tính năng (BẬT / TẮT) cho dự án ─────────────────
+      function isNvbhLookupActive(proj) {
+        const p = (proj || (typeof getSelectedProject === "function" ? getSelectedProject() : "")).toUpperCase();
+        const stored = localStorage.getItem(getNvbhLookupKey(p));
         if (stored === "off") return false;
         if (stored === "on") return true;
-        // Mặc định: bật nếu dtList có NVBH codes
-        return dtListHasNvbhCodes();
+        // Mặc định: bật nếu là CPVN hoặc bảng có cột NVBH
+        return isProjectNvbhTable(currentDtColumns, p);
       }
 
-      // ── Set trạng thái toggle cho project hiện tại ─────────────────────────
       function setNvbhLookup(enabled, proj) {
         localStorage.setItem(getNvbhLookupKey(proj), enabled ? "on" : "off");
-        updateNvbhLookupUI();
       }
 
       // ── Click nút toggle ───────────────────────────────────────────────────
       window.toggleNvbhLookup = function() {
-        setNvbhLookup(!isNvbhLookupEnabled());
+        const curProj = (typeof getSelectedProject === "function" ? getSelectedProject() : "NVN").toUpperCase();
+        const newState = !isNvbhLookupActive(curProj);
+        setNvbhLookup(newState, curProj);
+        // Nạp lại dtList để rebuild dữ liệu theo đúng chế độ đã bật/tắt
+        loadDtList(false, curProj).then(() => {
+          updateNvbhLookupUI();
+          validateNvbh();
+          validateRole();
+          updateResultDisplay();
+        });
       };
 
-      // ── Cập nhật UI badge (dùng element hardcode trong HTML) ───────────────
+      // ── Cập nhật UI badge toggle (bên dưới ô NVBH) ─────────────────────────
       function updateNvbhLookupUI() {
         const badgeDiv = document.getElementById("nvbhLookupBadge");
         const btn = document.getElementById("btnNvbhLookupToggle");
@@ -8869,70 +8966,81 @@
         const lbl = document.getElementById("lblNvbhLookup");
         if (!badgeDiv) return;
 
-        // Hiện badge khi dtList có NVBH codes (bất kể dự án nào)
-        const hasNvbh = dtListHasNvbhCodes();
-        badgeDiv.style.display = hasNvbh ? "block" : "none";
+        const curProj = (typeof getSelectedProject === "function" ? getSelectedProject() : "").toUpperCase();
+        const isEligible = isProjectNvbhTable(currentDtColumns, curProj) || (Array.isArray(projectNvbhList) && projectNvbhList.length > 0);
 
-        const enabled = isNvbhLookupEnabled();
+        badgeDiv.style.display = isEligible ? "block" : "none";
+
+        const enabled = isNvbhLookupActive(curProj);
         if (btn) {
           btn.style.background = enabled ? "#dcfce7" : "#f1f5f9";
           btn.style.color = enabled ? "#16a34a" : "#94a3b8";
           btn.style.borderColor = enabled ? "#86efac" : "#cbd5e1";
-          btn.title = (enabled ? "Tắt" : "Bật") + " Lookup Mã NVBH ↔ NPP cho dự án hiện tại";
+          btn.title = (enabled ? "Tắt" : "Bật") + " Lookup Mã NVBH ↔ NPP cho " + curProj;
         }
         if (icon) icon.className = "fa-solid fa-" + (enabled ? "link" : "link-slash");
         if (lbl) lbl.textContent = "NVBH↔NPP: " + (enabled ? "BẬT" : "TẮT");
 
-        // Ẩn dropdown nếu tắt
-        const dropdownEl = document.getElementById("dropdownNvbhCpvn");
-        if (dropdownEl && !enabled) dropdownEl.style.display = "none";
-      }
-
-      // ── Build danh sách NVBH từ dtList ─────────────────────────────────────
-      function getNvbhList() {
-        if (!Array.isArray(dtList)) return [];
-        return dtList
-          .filter(r => r.prefix && /^[A-Z]{1,3}\d+$/i.test(r.prefix.trim()))
-          .map(r => ({
-            code: r.prefix.trim().toUpperCase(),
-            name: r.issueName || r.name || "",
-            nppName: r.name || "",
-            nppCode: r.code || "",
-            _norm: normalizeStr((r.prefix + " " + (r.issueName || r.name || "")).trim())
-          }));
+        if (dropdownNvbhEl && !enabled) dropdownNvbhEl.style.display = "none";
       }
 
       // ── Autocomplete NVBH khi gõ vào ô NVBH ───────────────────────────────
       const dropdownNvbhEl = document.getElementById("dropdownNvbhCpvn");
-      let _nvbhList = [];
 
       function handleNvbhLookupInput() {
-        if (!isNvbhLookupEnabled()) {
+        if (!isNvbhLookupActive()) {
           if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none";
           return;
         }
-        _nvbhList = getNvbhList();
-        if (_nvbhList.length === 0) return;
+        if (!Array.isArray(projectNvbhList) || projectNvbhList.length === 0) {
+          if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none";
+          return;
+        }
 
         const raw = inputNvbh.value.trim();
         if (!raw) {
+          // Nếu ô NVBH trống nhưng đã có NPP được chọn -> show toàn bộ NVBH của NPP đó!
+          if (currentNppObj) {
+            showNvbhOfCurrentNpp();
+            return;
+          }
           if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none";
           return;
         }
 
-        const q = normalizeStr(raw);
-        const matches = _nvbhList
-          .filter(item => item._norm.includes(q) || item.code.toLowerCase().includes(raw.toLowerCase()))
-          .slice(0, 10);
+        const q = typeof normalizeStr === "function" ? normalizeStr(raw) : raw.toLowerCase();
+        const upRaw = raw.toUpperCase();
+
+        const nppCode = currentNppObj?.code || "";
+        const nppName = currentNppObj?.name || "";
+
+        let matches = projectNvbhList.filter(item => {
+          return item.code.includes(upRaw) || (item._norm && item._norm.includes(q)) || (item.name && item.name.toLowerCase().includes(q));
+        });
+
+        // Sắp xếp: NVBH thuộc NPP đang chọn lên đầu, sau đó theo exact match
+        matches.sort((a, b) => {
+          const aExact = a.code === upRaw ? 1 : 0;
+          const bExact = b.code === upRaw ? 1 : 0;
+          if (aExact !== bExact) return bExact - aExact;
+
+          const aSameNpp = (nppCode && a.nppCode === nppCode) || (nppName && a.nppName === nppName) ? 1 : 0;
+          const bSameNpp = (nppCode && b.nppCode === nppCode) || (nppName && b.nppName === nppName) ? 1 : 0;
+          if (aSameNpp !== bSameNpp) return bSameNpp - aSameNpp;
+
+          return a.code.localeCompare(b.code);
+        });
+
+        matches = matches.slice(0, 15);
 
         if (matches.length === 0) {
           if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none";
           return;
         }
 
-        // Exact match → tự động apply, không cần dropdown
-        const exact = matches.find(item => item.code.toLowerCase() === raw.toLowerCase());
-        if (exact) {
+        // Exact match mã NVBH duy nhất -> tự động apply
+        const exact = matches.find(item => item.code === upRaw);
+        if (exact && matches.length === 1) {
           applyNvbhLookup(exact, false);
           if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none";
           return;
@@ -8940,15 +9048,19 @@
 
         if (dropdownNvbhEl) {
           window._nvbhDropdownMatches = matches;
-          dropdownNvbhEl.innerHTML = matches.map((item, idx) => `
+          dropdownNvbhEl.innerHTML = `
+            <div style="padding:4px 10px;font-size:10px;font-weight:700;color:#7c3aed;background:#faf5ff;letter-spacing:.5px;">
+              <i class="fa-solid fa-user-tag"></i> DANH SÁCH NHÂN VIÊN (${matches.length})
+            </div>
+          ` + matches.map((item, idx) => `
             <div class="ac-studio-item" style="cursor:pointer;"
               onmousedown="event.preventDefault(); applyNvbhLookup(window._nvbhDropdownMatches[${idx}], true)">
               <div>
                 <div class="ac-title">
                   <span style="font-weight:700;color:#7c3aed;">${escapeHTML(item.code)}</span>
-                  &nbsp;·&nbsp;${escapeHTML(item.name)}
+                  &nbsp;·&nbsp;${escapeHTML(item.name || "Chưa có tên")}
                 </div>
-                <div class="ac-desc">NPP: ${escapeHTML(item.nppName || item.nppCode || "—")}</div>
+                <div class="ac-desc">NPP: <strong>${escapeHTML(item.nppName || "—")}</strong>${item.nppCode ? ` (Mã DT: ${escapeHTML(item.nppCode)})` : ""}</div>
               </div>
               <span class="ac-tag" style="background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;">NVBH</span>
             </div>
@@ -8957,51 +9069,97 @@
         }
       }
 
-      // ── Apply NVBH: fill input + tự động fill NPP ──────────────────────────
+      // ── Hiển thị danh sách NVBH thuộc NPP đang được chọn ───────────────────
+      function showNvbhOfCurrentNpp() {
+        if (!isNvbhLookupActive() || !dropdownNvbhEl || !currentNppObj) return;
+        const nppCode = currentNppObj.code || "";
+        const nppName = currentNppObj.name || "";
+        if (!nppCode && !nppName) return;
+
+        const qName = typeof normalizeStr === "function" ? normalizeStr(nppName) : nppName.toLowerCase();
+        const matches = projectNvbhList.filter(item =>
+          (nppCode && item.nppCode === nppCode) ||
+          (nppName && item.nppName && (typeof normalizeStr === "function" ? normalizeStr(item.nppName) : item.nppName.toLowerCase()) === qName)
+        ).slice(0, 20);
+
+        if (matches.length === 0) return;
+
+        window._nvbhDropdownMatches = matches;
+        dropdownNvbhEl.innerHTML = `
+          <div style="padding:4px 10px;font-size:10px;font-weight:700;color:#7c3aed;background:#faf5ff;letter-spacing:.5px;">
+            <i class="fa-solid fa-users"></i> NVBH THUỘC NPP: ${escapeHTML(nppName || nppCode)} (${matches.length})
+          </div>
+        ` + matches.map((item, idx) => `
+          <div class="ac-studio-item" style="cursor:pointer;"
+            onmousedown="event.preventDefault(); applyNvbhLookup(window._nvbhDropdownMatches[${idx}], true)">
+            <div>
+              <div class="ac-title">
+                <span style="font-weight:700;color:#7c3aed;">${escapeHTML(item.code)}</span>
+                &nbsp;·&nbsp;${escapeHTML(item.name || "Chưa có tên")}
+              </div>
+              <div class="ac-desc">NPP: ${escapeHTML(item.nppName || "—")}</div>
+            </div>
+            <span class="ac-tag" style="background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;">NVBH</span>
+          </div>
+        `).join("");
+        dropdownNvbhEl.style.display = "block";
+      }
+
+      // ── Apply NVBH: fill ô NVBH + TỰ ĐỘNG FILL Ô NPP ĐÚNG ──────────────────
       window.applyNvbhLookup = function(item, fillInput = true) {
         if (!item) return;
         if (fillInput) inputNvbh.value = item.code;
         if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none";
 
-        // Tự động fill NPP nếu chưa có
-        if ((item.nppCode || item.nppName) && !currentNppObj) {
+        // TỰ ĐỘNG CHỌN NHÀ PHÂN PHỐI (NPP) TƯƠNG ỨNG
+        if (item.nppName || item.nppCode) {
+          const qName = typeof normalizeStr === "function" ? normalizeStr(item.nppName) : (item.nppName || "").toLowerCase();
           const nppObj = dtList.find(r =>
-            r.code === item.nppCode ||
-            normalizeStr(r.name || "") === normalizeStr(item.nppName || "") ||
-            normalizeStr(r.issueName || "") === normalizeStr(item.nppName || "")
+            (item.nppCode && r.code === item.nppCode) ||
+            (item.nppName && typeof normalizeStr === "function" && normalizeStr(r.name) === qName) ||
+            (item.nppName && typeof normalizeStr === "function" && normalizeStr(r.issueName) === qName)
           );
+
           if (nppObj) {
-            const displayName = (nppObj.issueName || nppObj.name || "").replace(/^NPP\s+/i, "");
-            inputNpp.value = displayName;
+            inputNpp.value = nppObj.issueName || nppObj.name;
             applyNpp(nppObj, false);
-          } else if (!inputNpp.value.trim() && item.nppName) {
+          } else if (item.nppName) {
             inputNpp.value = item.nppName;
+            currentNppObj = {
+              code: item.nppCode || "",
+              name: item.nppName,
+              issueName: item.nppName,
+              prefix: "",
+              project: getSelectedProject()
+            };
+            hintNpp.className = "field-hint-chip success";
+            hintNpp.innerHTML = renderNppHint(currentNppObj);
           }
         }
 
         hintNvbh.className = "field-hint-chip success";
-        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong style="color:#7c3aed;">${escapeHTML(item.code)}</strong> &nbsp;·&nbsp;${escapeHTML(item.name)}`;
+        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong style="color:#7c3aed;">${escapeHTML(item.code)}</strong> · ${escapeHTML(item.name || "")}`;
         validateNvbh();
         validateRole();
         updateResultDisplay();
       };
 
-      // ── Gợi ý Mã NVBH trong dropdown NPP ──────────────────────────────────
+      // ── Gợi ý Mã NVBH trong dropdown NPP khi tìm NPP ───────────────────────
       function appendNvbhToNppDropdown() {
-        if (!isNvbhLookupEnabled()) return;
-        _nvbhList = getNvbhList();
-        if (_nvbhList.length === 0 || !dropdownNpp) return;
+        if (!isNvbhLookupActive() || !dropdownNpp) return;
+        if (!Array.isArray(projectNvbhList) || projectNvbhList.length === 0) return;
 
         const val = inputNpp.value.trim();
         if (!val) return;
 
-        const q = normalizeStr(val);
-        const nvbhMatches = _nvbhList
-          .filter(item =>
-            normalizeStr(item.nppName || "").includes(q) ||
-            normalizeStr(item.nppCode || "").includes(q)
-          )
-          .slice(0, 6);
+        const q = typeof normalizeStr === "function" ? normalizeStr(val) : val.toLowerCase();
+        const up = val.toUpperCase();
+
+        const nvbhMatches = projectNvbhList.filter(item =>
+          item.code.includes(up) ||
+          (item._norm && item._norm.includes(q)) ||
+          (item.name && item.name.toLowerCase().includes(q))
+        ).slice(0, 6);
 
         if (nvbhMatches.length === 0) return;
 
@@ -9009,13 +9167,16 @@
         window._nvbhNppDropdownMatches = nvbhMatches;
         const label = `<div style="padding:4px 12px;font-size:10px;font-weight:700;color:#7c3aed;background:#faf5ff;
           border-top:${existing ? "1px solid #ede9fe" : "none"};letter-spacing:.5px;">
-          <i class="fa-solid fa-user-tag"></i> MÃ NVBH</div>`;
+          <i class="fa-solid fa-user-tag"></i> GỢI Ý MÃ NVBH LIÊN QUAN</div>`;
         const items = nvbhMatches.map((item, idx) => `
           <div class="ac-studio-item" style="cursor:pointer;"
             onmousedown="event.preventDefault(); applyNvbhLookup(window._nvbhNppDropdownMatches[${idx}], true)">
             <div>
-              <div class="ac-title"><span style="font-weight:700;color:#7c3aed;">${escapeHTML(item.code)}</span> &nbsp;·&nbsp;${escapeHTML(item.name)}</div>
-              <div class="ac-desc">NPP: ${escapeHTML(item.nppName || "—")}</div>
+              <div class="ac-title">
+                <span style="font-weight:700;color:#7c3aed;">${escapeHTML(item.code)}</span>
+                &nbsp;·&nbsp;${escapeHTML(item.name || "Chưa có tên")}
+              </div>
+              <div class="ac-desc">NPP: <strong>${escapeHTML(item.nppName || "—")}</strong>${item.nppCode ? ` (Mã DT: ${escapeHTML(item.nppCode)})` : ""}</div>
             </div>
             <span class="ac-tag" style="background:#ede9fe;color:#6d28d9;border-color:#c4b5fd;">NVBH</span>
           </div>
@@ -9024,18 +9185,27 @@
         dropdownNpp.style.display = "block";
       }
 
-      // ── Gắn events ─────────────────────────────────────────────────────────
+      // ── Gắn events cho ô NVBH & NPP ───────────────────────────────────────
       if (inputNvbh && dropdownNvbhEl) {
         inputNvbh.addEventListener("input", handleNvbhLookupInput);
-        inputNvbh.addEventListener("blur", () => { setTimeout(() => { if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none"; }, 150); });
-        inputNvbh.addEventListener("focus", () => { if (isNvbhLookupEnabled() && inputNvbh.value.trim()) handleNvbhLookupInput(); });
+        inputNvbh.addEventListener("blur", () => {
+          setTimeout(() => { if (dropdownNvbhEl) dropdownNvbhEl.style.display = "none"; }, 150);
+        });
+        inputNvbh.addEventListener("focus", () => {
+          if (isNvbhLookupActive()) {
+            if (inputNvbh.value.trim()) {
+              handleNvbhLookupInput();
+            } else if (currentNppObj) {
+              showNvbhOfCurrentNpp();
+            }
+          }
+        });
       }
       if (inputNpp) {
         inputNpp.addEventListener("input", appendNvbhToNppDropdown);
       }
 
-      // ── Khởi tạo + cập nhật khi project thay đổi ─────────────────────────
-      // Gọi updateNvbhLookupUI() ngay + sau mỗi 500ms (tối đa 5s) cho đến khi dtList sẵn sàng
+      // ── Khởi tạo + quan sát load dự án ─────────────────────────────────────
       window.addEventListener("load", updateNvbhLookupUI);
       let _nvbhInitCount = 0;
       const _nvbhInitTimer = setInterval(() => {
