@@ -15177,12 +15177,21 @@
       }
 
       // Helper: Chỉ tính cuộc gọi có trạng thái "Trả lời" (ANSWERED).
-      // Bỏ fallback billsec > 0 — một số cuộc gọi ANSWERED có billsec = 00:00:00.
+      // FIX: Loại trừ "Không trả lời" ra khỏi regex match (st.includes("trả lời") match cả "không trả lời"!)
       function callIsAnswered(c) {
         if (!c) return false;
         const disp = String(c.disposition || c.asterisk_disposition || "").toUpperCase().trim();
         const st = String(c.statusText || "").toLowerCase().trim();
-        return disp === "ANSWERED" || st.includes("trả lời") || st.includes("tra loi");
+        // Trường hợp chắc chắn KHÔNG trả lời — kiểm tra trước
+        if (disp === "NO ANSWER" || disp === "FAILED" || disp === "BUSY" || disp === "MISSED") return false;
+        if (st.includes("không") || st.includes("khong") ||
+            st.includes("nhỡ") || st.includes("nho") ||
+            st.includes("bận") || st.includes("ban") ||
+            st.includes("lỗi") || st.includes("loi")) return false;
+        // ANSWERED chuẩn
+        if (disp === "ANSWERED") return true;
+        // Fallback text (chỉ khi chưa bị exclude ở trên)
+        return st.includes("trả lời") || st.includes("tra loi");
       }
 
       function renderCallStatusBadge(c) {
@@ -15425,58 +15434,76 @@
             return false;
           }
 
-          // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
-          // QUY TẮC: Phải trùng số điện thoại VÀ BẮT BUỘC ĐÚNG NGÀY GỌI (Ngày nào note ngày đó, tuyệt đối không lấy ngày khác)
-          const matchedR2Issue = r2Issues.find(iss => {
-            const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-            const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
-              (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
-            if (!phoneOk) return false;
-            if (!isIssueDateMatched(callDateFormatted, iss.date)) return false;
-            // BẮT BUỘC: Issue phải thuộc đúng nhân viên nhận/gọi cuộc gọi đó (tránh note nhầm sang người khác)
-            const issMember = String(iss.memberCode || "").trim().toUpperCase();
-            const callMember = String(staff?.code || "").trim().toUpperCase();
-            if (issMember && callMember && issMember !== callMember) return false;
-            return true;
-          });
+          // Helper: tìm issue theo hotline+ngày (không phân biệt nhân viên)
+          function findIssueByPhoneAndDate(pool, phone, date) {
+            // Tầng 1: Ưu tiên khớp cả nhân viên (chính xác nhất)
+            const exact = pool.find(iss => {
+              const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+              const phoneOk = (issPhone && phoneMatches(phone, issPhone)) ||
+                (phone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(phone.slice(-9)));
+              if (!phoneOk) return false;
+              if (!isIssueDateMatched(date, iss.date)) return false;
+              const issMember = String(iss.memberCode || "").trim().toUpperCase();
+              const callMember = String(staff?.code || "").trim().toUpperCase();
+              return issMember && callMember && issMember === callMember;
+            });
+            if (exact) return { issue: exact, isTeamNoted: false };
 
-          if (matchedR2Issue) {
+            // Tầng 2: Khớp hotline+ngày bất kể nhân viên nào trong team đã note
+            // (cùng 1 hotline, cùng ngày → hotline đó đã được xử lý dù ai note)
+            const team = pool.find(iss => {
+              const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+              const phoneOk = (issPhone && phoneMatches(phone, issPhone)) ||
+                (phone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(phone.slice(-9)));
+              if (!phoneOk) return false;
+              return isIssueDateMatched(date, iss.date);
+            });
+            if (team) return { issue: team, isTeamNoted: true };
+
+            return null;
+          }
+
+          // 1. Kiểm tra trong Issue đã note chính thức trên Cloud R2 (r2Issues)
+          // QUY TẮC: Phải trùng số điện thoại VÀ BẮT BUỘC ĐÚNG NGÀY GỌI
+          // Ưu tiên: khớp đúng nhân viên → fallback khớp hotline+ngày (team đã note)
+          const r2Match = findIssueByPhoneAndDate(r2Issues, cleanCallPhone, callDateFormatted);
+
+          if (r2Match) {
+            const notedByLabel = r2Match.isTeamNoted
+              ? (r2Match.issue.memberName || r2Match.issue.memberCode || "")
+              : "";
             result = {
               status: "noted",
-              badgeText: "Đã note",
+              badgeText: r2Match.isTeamNoted ? `Đã note (${notedByLabel})` : "Đã note",
               hotline,
               ext,
               staff,
               isInbound,
               isAnswered,
-              issue: matchedR2Issue
+              issue: r2Match.issue,
+              isTeamNoted: r2Match.isTeamNoted,
+              notedByLabel
             };
           } else {
             // 2. Kiểm tra trong Temp Notes (BẮT BUỘC PHẢI ĐÚNG NGÀY GỌI)
             const poolTemp = [...tempNotes, ...allR2TempIssues];
-            const matchedTemp = poolTemp.find(iss => {
-              const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-              const phoneOk = (issPhone && phoneMatches(cleanCallPhone, issPhone)) ||
-                (cleanCallPhone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(cleanCallPhone.slice(-9)));
-              if (!phoneOk) return false;
-              if (!isIssueDateMatched(callDateFormatted, iss.date)) return false;
-              // BẮT BUỘC: Issue phải thuộc đúng nhân viên nhận/gọi cuộc gọi đó (tránh note nhầm sang người khác)
-              const issMember = String(iss.memberCode || "").trim().toUpperCase();
-              const callMember = String(staff?.code || "").trim().toUpperCase();
-              if (issMember && callMember && issMember !== callMember) return false;
-              return true;
-            });
+            const tempMatch = findIssueByPhoneAndDate(poolTemp, cleanCallPhone, callDateFormatted);
 
-            if (matchedTemp) {
+            if (tempMatch) {
+              const tempByLabel = tempMatch.isTeamNoted
+                ? (tempMatch.issue.memberName || tempMatch.issue.memberCode || "")
+                : "";
               result = {
                 status: "in_temp",
-                badgeText: "Đang trong Temp",
+                badgeText: tempMatch.isTeamNoted ? `Temp (${tempByLabel})` : "Đang trong Temp",
                 hotline,
                 ext,
                 staff,
                 isInbound,
                 isAnswered,
-                issue: matchedTemp
+                issue: tempMatch.issue,
+                isTeamNoted: tempMatch.isTeamNoted,
+                notedByLabel: tempByLabel
               };
             } else {
               // 3. Chưa note issue cho ngày gọi này!
@@ -16086,7 +16113,11 @@
             noteBadge = "";
           } else if (isNoted) {
             const noteDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
-            noteBadge = `<span class="voip-note-badge noted" title="Đã có Issue ghi chú ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-circle-check"></i> Đã note${noteDateSuffix}</span>`;
+            const noteByLabel = noteInfo.isTeamNoted && noteInfo.notedByLabel ? ` - ${escapeHTML(noteInfo.notedByLabel)}` : "";
+            const noteTitle = noteInfo.isTeamNoted
+              ? `Hotline đã được note bởi ${escapeHTML(noteInfo.notedByLabel || "đồng nghiệp")} ngày ${escapeHTML(noteInfo.issue?.date || "")}`
+              : `Đã có Issue ghi chú ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}`;
+            noteBadge = `<span class="voip-note-badge noted" title="${noteTitle}"><i class="fa-solid fa-circle-check"></i> Đã note${noteDateSuffix}${noteByLabel}</span>`;
           } else if (isInTemp) {
             const tempDateSuffix = noteInfo.issue?.date ? ` (${noteInfo.issue.date.slice(0, 5)})` : "";
             noteBadge = `<span class="voip-note-badge in-temp" title="Đang có trong Danh sách tạm (Temp) ${escapeHTML(noteInfo.issue?.date ? 'ngày ' + noteInfo.issue.date : '')}"><i class="fa-solid fa-clock-rotate-left"></i> Temp${tempDateSuffix}</span>`;
