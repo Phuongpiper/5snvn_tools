@@ -14073,7 +14073,10 @@
 
         const isInbound = (call.type_origin || "").toLowerCase() === "inbound" || (call.typeText || "").toLowerCase().includes("vào");
         const hotline = isInbound ? (call.src || "") : (call.dst || "");
-        return isPhoneExcluded(hotline) || isPhoneExcluded(call.src) || isPhoneExcluded(call.dst);
+        // Chỉ lấy số hotline của khách hàng (src nếu gọi vào, dst nếu gọi ra)
+        // KHÔNG check cả src và dst vì máy nhánh nội bộ (VD: 119) có thể nằm trong
+        // danh sách miễn note, gây sai kết quả (hotline khách chưa miễn note nhưng bị flag!)
+        return isPhoneExcluded(hotline);
       }
 
       window.openExcludedPhonesModal = function () {
