@@ -2709,9 +2709,7 @@
               <button type="button" class="btn-xs-pill" id="btnCfgDeselectAllCols" onclick="setAllExportCols(false)">
                 <i class="fa-solid fa-xmark"></i> Bỏ chọn hết
               </button>
-              <button type="button" class="btn-xs-pill" id="btnCfgToggleMemberCols" onclick="toggleMemberCols()">
-                <i class="fa-solid fa-user-slash"></i> Ẩn/Hiện cột NV
-              </button>
+
             </div>
           </div>
 
@@ -6946,6 +6944,17 @@
       });
     }
 
+    // Helper: Nhận diện cột nhân sự / người thực hiện (luôn luôn loại bỏ hoàn toàn khỏi xuất & copy)
+    function isMemberColumn(c) {
+      if (!c) return false;
+      if (c.type === "member") return true;
+      const nameLow = (c.name || "").toLowerCase().trim();
+      return nameLow.includes("nhân viên") || nameLow.includes("nhan vien") ||
+             nameLow.includes("mã nv") || nameLow.includes("ma nv") ||
+             nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
+             nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee");
+    }
+
     /* ── 1. MODAL CHỌN CỘT & DÒNG TRƯỚC KHI XUẤT ẢNH / COPY BẢNG ── */
     function openExcelExportConfigModal(preferredAction = "capture") {
       const sheet = getActiveSheet();
@@ -6959,8 +6968,8 @@
       const nameEl = document.getElementById("cfgModalSheetName");
       if (nameEl) nameEl.textContent = sheet.name || "Bảng tính";
 
-      // 1. Cấu hình Cột
-      const sheetCols = sheet.columns || [];
+      // 1. Cấu hình Cột (TUYỆT ĐỐI KHÔNG BAO GỒM CỘT NHÂN VIÊN)
+      const sheetCols = (sheet.columns || []).filter(c => !isMemberColumn(c));
       let savedDisabled = [];
       try {
         const raw = localStorage.getItem("dms_export_disabled_cols_" + sheet.id);
@@ -6971,16 +6980,6 @@
         let isChecked = true;
         if (Array.isArray(savedDisabled) && savedDisabled.length > 0) {
           isChecked = !savedDisabled.includes(col.id);
-        } else {
-          // Mặc định: loại trừ các cột nhân viên nếu chưa từng lưu tuỳ chọn
-          const nameLow = (col.name || "").toLowerCase().trim();
-          if (col.type === "member" ||
-              nameLow.includes("nhân viên") || nameLow.includes("nhan vien") ||
-              nameLow.includes("mã nv") || nameLow.includes("ma nv") ||
-              nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
-              nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee")) {
-            isChecked = false;
-          }
         }
         return {
           id: col.id,
@@ -7130,7 +7129,7 @@
         if (dtCol && r[dtCol.id]) {
           summaryParts.push(`<strong style="font-family:var(--font-mono); color:#4338ca; background:#eef2ff; padding:1px 6px; border-radius:4px;">${escapeHtml(String(r[dtCol.id]))}</strong>`);
         }
-        const textCols = sheet.columns.filter(c => !["dt_code", "status", "checkbox"].includes(c.type));
+        const textCols = sheet.columns.filter(c => !["dt_code", "status", "checkbox"].includes(c.type) && !isMemberColumn(c));
         for (let i = 0; i < Math.min(textCols.length, 3); i++) {
           const val = r[textCols[i].id];
           if (val !== undefined && val !== null && val !== "") {
@@ -7355,9 +7354,12 @@
               <th style="padding: 8px 12px; border: 1px solid #1e3a8a; font-size: 13px; font-weight: 700; text-align: center; width: 44px; white-space: nowrap; font-family: inherit;">STT</th>
         `;
 
-        columns.forEach(col => {
-          let align = "left";
-          if (["dt_code", "date", "status", "project", "checkbox", "member"].includes(col.type)) align = "center";
+        // Luôn đảm bảo loại bỏ hoàn toàn cột nhân viên
+      columns = columns.filter(c => !isMemberColumn(c));
+
+      columns.forEach(col => {
+        let align = "left";
+        if (["dt_code", "date", "status", "project", "checkbox"].includes(col.type)) align = "center";
           if (col.type === "number") align = "right";
 
           theadHtml += `
@@ -7806,9 +7808,12 @@
             <tr style="background-color: #1e3a8a; color: #ffffff;">
               <th style="border: 1px solid #1e3a8a; padding: 7px 10px; text-align: center; font-weight: bold;">STT</th>
       `;
+      // Luôn đảm bảo loại bỏ hoàn toàn cột nhân viên
+      columns = columns.filter(c => !isMemberColumn(c));
+
       columns.forEach(col => {
         let align = "left";
-        if (["dt_code", "date", "status", "project", "checkbox", "member"].includes(col.type)) align = "center";
+        if (["dt_code", "date", "status", "project", "checkbox"].includes(col.type)) align = "center";
         if (col.type === "number") align = "right";
         htmlTable += `<th style="border: 1px solid #2563eb; padding: 7px 12px; text-align: ${align}; font-weight: bold;">${escapeHtml(col.name)}</th>`;
       });
