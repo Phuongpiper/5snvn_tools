@@ -2183,6 +2183,74 @@
       box-shadow: 0 4px 14px rgba(16, 185, 129, 0.5);
     }
 
+    /* ── MODAL: TÙY CHỌN CHỤP ẢNH & COPY BẢNG EXCEL ── */
+    .btn-xs-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1.4;
+      user-select: none;
+    }
+    .btn-xs-pill:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+    .btn-xs-pill.active {
+      background: #ecfdf5;
+      border-color: #107c41;
+      color: #0e7039;
+    }
+    .cfg-col-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12.5px;
+      color: #334155;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .cfg-col-chip:hover {
+      border-color: #107c41;
+      background: #f0fdf4;
+    }
+    .cfg-col-chip.checked {
+      background: #f0fdf4;
+      border-color: #107c41;
+      color: #0e7039;
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(16, 124, 65, 0.08);
+    }
+    .cfg-col-chip input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: #107c41;
+      width: 15px;
+      height: 15px;
+    }
+    .cfg-row-item:hover {
+      background: #f8fafc;
+    }
+    .cfg-row-item.checked {
+      background: #f0fdf4 !important;
+    }
+    .cfg-row-item.checked:hover {
+      background: #e6f9ed !important;
+    }
     @media (max-width: 600px) {
       .fab-excel-group {
         bottom: 14px;
@@ -2599,6 +2667,130 @@
     <div class="dropdown-item" onclick="exportAsJson()"><i class="fa-solid fa-download"></i> Sao lưu toàn bộ (JSON)</div>
     <div class="dropdown-item" onclick="triggerJsonImport()"><i class="fa-solid fa-upload"></i> Khôi phục từ JSON</div>
     <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-item" onclick="openExcelExportConfigModal('capture')"><i class="fa-solid fa-camera" style="color:#107c41;"></i> Chụp ảnh Excel (Chọn cột/dòng)...</div>
+    <div class="dropdown-item" onclick="openExcelExportConfigModal('copy_table')"><i class="fa-solid fa-table-cells" style="color:#2563eb;"></i> Copy bảng Excel (Chọn cột/dòng)...</div>
+  </div>
+
+  <!-- ── MODAL: TÙY CHỌN CHỤP ẢNH & COPY BẢNG EXCEL (CHỌN CỘT & DÒNG) ── -->
+  <div class="modal-overlay" id="excelExportConfigModal">
+    <div class="modal-box" style="max-width: 800px; width: 95%;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #0e7039 0%, #107c41 100%); color: #ffffff;">
+        <h3 style="color: #ffffff; display: flex; align-items: center; gap: 8px; font-size: 15px;">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Tùy Chọn Chụp &amp; Copy Bảng Excel</span>
+        </h3>
+        <button class="btn-modal-close" style="color: #ffffff; opacity: 0.85;" onclick="closeExcelExportConfigModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px 20px; max-height: 75vh; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Sheet info banner -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; color: #166534;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-table" style="color: #107c41; font-size: 16px;"></i>
+            <span>Đang thao tác trên Sheet: <strong id="cfgModalSheetName" style="color: #0e7039; font-size: 13px;">...</strong></span>
+          </div>
+          <span style="font-size: 11.5px; color: #15803d; background: #dcfce7; padding: 2px 10px; border-radius: 20px; font-weight: 600;">
+            <i class="fa-solid fa-check-double"></i> Chọn cột &amp; dòng cần dùng
+          </span>
+        </div>
+
+        <!-- ── PHẦN 1: CHỌN CỘT HIỂN THỊ ── -->
+        <div class="export-cfg-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="font-size: 13px; color: #1e293b;"><i class="fa-solid fa-table-columns" style="color: #107c41;"></i> 1. Cột xuất dữ liệu:</strong>
+              <span id="cfgColCountBadge" style="font-size: 11px; background: #e0e7ff; color: #3730a3; padding: 1px 8px; border-radius: 12px; font-weight: 700;">0/0 cột</span>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+              <button type="button" class="btn-xs-pill" id="btnCfgSelectAllCols" onclick="setAllExportCols(true)">
+                <i class="fa-solid fa-check"></i> Chọn tất cả
+              </button>
+              <button type="button" class="btn-xs-pill" id="btnCfgDeselectAllCols" onclick="setAllExportCols(false)">
+                <i class="fa-solid fa-xmark"></i> Bỏ chọn hết
+              </button>
+              <button type="button" class="btn-xs-pill" id="btnCfgToggleMemberCols" onclick="toggleMemberCols()">
+                <i class="fa-solid fa-user-slash"></i> Ẩn/Hiện cột NV
+              </button>
+            </div>
+          </div>
+
+          <!-- Columns Grid -->
+          <div id="cfgColumnsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- ── PHẦN 2: CHỌN DÒNG DỮ LIỆU ── -->
+        <div class="export-cfg-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <strong style="font-size: 13px; color: #1e293b;"><i class="fa-solid fa-list-check" style="color: #107c41;"></i> 2. Dòng xuất dữ liệu:</strong>
+              <span id="cfgRowCountBadge" style="font-size: 11px; background: #dcfce7; color: #166534; padding: 1px 8px; border-radius: 12px; font-weight: 700;">0/0 dòng</span>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+              <button type="button" class="btn-xs-pill" id="btnCfgSelectAllRows" onclick="setAllExportRows(true)">
+                <i class="fa-solid fa-check"></i> Tất cả dòng
+              </button>
+              <button type="button" class="btn-xs-pill" id="btnCfgSelectTableRows" onclick="selectOnlyTableCheckedRows()">
+                <i class="fa-solid fa-square-check"></i> Theo tick trên bảng
+              </button>
+              <button type="button" class="btn-xs-pill" id="btnCfgDeselectAllRows" onclick="setAllExportRows(false)">
+                <i class="fa-solid fa-xmark"></i> Bỏ chọn hết
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Search Row in Modal -->
+          <div style="margin-bottom: 8px;">
+            <div class="search-input-wrap" style="height: 32px; background: #ffffff;">
+              <i class="fa-solid fa-magnifying-glass search-icon" style="font-size: 12px;"></i>
+              <input type="text" id="cfgRowSearchInput" class="search-input" placeholder="Lọc nhanh dòng theo từ khóa (Mã DT, CTTB, nội dung ô)..." style="font-size: 12px;" oninput="filterCfgRowsList()" />
+              <button type="button" class="search-clear" onclick="clearCfgRowSearch()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <!-- Rows List Table (Scrollable) -->
+          <div style="max-height: 240px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+              <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 2; border-bottom: 1px solid #cbd5e1;">
+                <tr>
+                  <th style="width: 38px; text-align: center; padding: 6px 4px;">
+                    <input type="checkbox" id="cfgToggleAllRowsCheck" onchange="toggleAllRowsCheckbox(this.checked)" style="cursor: pointer; accent-color: #107c41;" />
+                  </th>
+                  <th style="width: 44px; text-align: center; padding: 6px 4px; font-weight: 700; color: #475569;">STT</th>
+                  <th style="text-align: left; padding: 6px 10px; font-weight: 700; color: #475569;">Nội dung tóm tắt dòng</th>
+                  <th style="width: 100px; text-align: center; padding: 6px 8px; font-weight: 700; color: #475569;">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="cfgRowsTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+        <span style="font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+          <i class="fa-solid fa-circle-question" style="color: #107c41;"></i> Bỏ tick các cột hoặc dòng bạn không muốn xuất hiện.
+        </span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline" onclick="closeExcelExportConfigModal()">
+            Huỷ
+          </button>
+          <button type="button" class="btn btn-outline" id="btnExecuteCopyTable" style="border-color: #2563eb; color: #1e40af; font-weight: 600;" onclick="executeExportConfig('copy_table')">
+            <i class="fa-solid fa-table-cells" style="color: #2563eb;"></i> Copy bảng Excel
+          </button>
+          <button type="button" class="btn btn-outline" id="btnExecuteDownloadImg" style="border-color: #0e7039; color: #0e7039; font-weight: 600;" onclick="executeExportConfig('download_image')">
+            <i class="fa-solid fa-download"></i> Tải ảnh (.PNG)
+          </button>
+          <button type="button" class="btn btn-primary" id="btnExecuteCaptureImg" style="background: linear-gradient(135deg, #0e7039 0%, #107c41 100%); border-color: #0e7039; font-weight: 700; box-shadow: 0 2px 8px rgba(16, 124, 65, 0.35);" onclick="executeExportConfig('capture')">
+            <i class="fa-solid fa-camera"></i> Chụp &amp; Copy ảnh (Dán ngay)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── MODAL: XEM & SAO CHÉP ẢNH EXCEL ── -->
@@ -2631,6 +2823,9 @@
           <i class="fa-solid fa-shield-halved" style="color: #107c41;"></i> Ảnh PNG độ nét cao (2x DPI) format như Excel gốc
         </span>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline" id="btnReconfigExportModal" style="border-color: #107c41; color: #107c41; font-weight: 600;" title="Chọn lại các cột và dòng cần xuất" onclick="reopenExportConfigFromPreview()">
+            <i class="fa-solid fa-sliders"></i> Tùy chỉnh cột / dòng
+          </button>
           <button class="btn btn-outline" id="btnCopyTableFormatModal" style="border-color: #2563eb; color: #1e40af;" title="Copy định dạng bảng để dán vào Excel, Google Sheets, Word...">
             <i class="fa-solid fa-table-cells" style="color: #2563eb;"></i> Copy bảng Excel
           </button>
@@ -6724,10 +6919,15 @@
     }
 
     /* ──────────────────────────────────────────────────────────────────────────
-       EXCEL IMAGE CAPTURE & CLIPBOARD ENGINE (BEAUTIFUL EXCEL-LIKE IMAGE)
+       EXCEL IMAGE CAPTURE & CLIPBOARD ENGINE (WITH COLUMN & ROW CUSTOMIZATION)
     ────────────────────────────────────────────────────────────────────────── */
     let currentExcelImageBlob = null;
     let currentExcelImageFileName = "";
+    let currentExportSheet = null;
+    let currentExportCols = []; // { id, name, type, col, checked }
+    let currentExportRows = []; // { id, row, checked, origIndex }
+    let lastExportColumns = null;
+    let lastExportRows = null;
 
     function ensureHtml2CanvasLoaded() {
       if (typeof html2canvas !== "undefined") return Promise.resolve(true);
@@ -6746,25 +6946,375 @@
       });
     }
 
-    async function captureExcelImage() {
+    /* ── 1. MODAL CHỌN CỘT & DÒNG TRƯỚC KHI XUẤT ẢNH / COPY BẢNG ── */
+    function openExcelExportConfigModal(preferredAction = "capture") {
       const sheet = getActiveSheet();
       if (!sheet) {
         toast("Không tìm thấy dữ liệu Sheet hiện tại!", "warning");
         return;
       }
+      currentExportSheet = sheet;
 
+      // Cập nhật tên Sheet trong modal
+      const nameEl = document.getElementById("cfgModalSheetName");
+      if (nameEl) nameEl.textContent = sheet.name || "Bảng tính";
+
+      // 1. Cấu hình Cột
+      const sheetCols = sheet.columns || [];
+      let savedDisabled = [];
+      try {
+        const raw = localStorage.getItem("dms_export_disabled_cols_" + sheet.id);
+        if (raw) savedDisabled = JSON.parse(raw);
+      } catch (_) {}
+
+      currentExportCols = sheetCols.map(col => {
+        let isChecked = true;
+        if (Array.isArray(savedDisabled) && savedDisabled.length > 0) {
+          isChecked = !savedDisabled.includes(col.id);
+        } else {
+          // Mặc định: loại trừ các cột nhân viên nếu chưa từng lưu tuỳ chọn
+          const nameLow = (col.name || "").toLowerCase().trim();
+          if (col.type === "member" ||
+              nameLow.includes("nhân viên") || nameLow.includes("nhan vien") ||
+              nameLow.includes("mã nv") || nameLow.includes("ma nv") ||
+              nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
+              nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee")) {
+            isChecked = false;
+          }
+        }
+        return {
+          id: col.id,
+          name: col.name || "Cột",
+          type: col.type || "text",
+          col: col,
+          checked: isChecked
+        };
+      });
+
+      // 2. Cấu hình Dòng
       const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
-      let targetRows = [];
-      const isSelection = selectedRowIds.size > 0;
+      const isSelection = selectedRowIds && selectedRowIds.size > 0;
 
-      if (isSelection) {
-        targetRows = sheet.rows.filter(r => selectedRowIds.has(r.id));
-      } else {
-        targetRows = allRows.filter(r => !r.locked);
+      currentExportRows = allRows.map((r, idx) => {
+        let isChecked = true;
+        if (isSelection) {
+          isChecked = selectedRowIds.has(r.id);
+        } else {
+          isChecked = !r.locked; // Mặc định bỏ qua dòng khoá nếu không chọn cụ thể
+        }
+        return {
+          id: r.id,
+          row: r,
+          origIndex: idx,
+          checked: isChecked
+        };
+      });
+
+      // Reset ô tìm kiếm dòng
+      const searchIn = document.getElementById("cfgRowSearchInput");
+      if (searchIn) searchIn.value = "";
+
+      // Render danh sách
+      renderCfgColumnsList();
+      renderCfgRowsList("");
+      updateExportConfigCounters();
+
+      // Đánh dấu nút ưu tiên
+      const btnCapture = document.getElementById("btnExecuteCaptureImg");
+      const btnCopy = document.getElementById("btnExecuteCopyTable");
+      if (btnCapture && btnCopy) {
+        if (preferredAction === "copy_table") {
+          btnCopy.style.boxShadow = "0 0 0 2px #2563eb";
+          btnCapture.style.boxShadow = "";
+        } else {
+          btnCapture.style.boxShadow = "0 2px 10px rgba(16, 124, 65, 0.4)";
+          btnCopy.style.boxShadow = "";
+        }
       }
 
-      if (targetRows.length === 0) {
-        toast("Không có dữ liệu phù hợp để chụp ảnh (Dòng đang bị khoá 🔒 hoặc bị lọc ẩn)!", "warning");
+      const modal = document.getElementById("excelExportConfigModal");
+      if (modal) modal.classList.add("active");
+    }
+
+    function closeExcelExportConfigModal() {
+      const modal = document.getElementById("excelExportConfigModal");
+      if (modal) modal.classList.remove("active");
+    }
+
+    function reopenExportConfigFromPreview() {
+      closeExcelImageModal();
+      openExcelExportConfigModal("capture");
+    }
+
+    function renderCfgColumnsList() {
+      const grid = document.getElementById("cfgColumnsGrid");
+      if (!grid) return;
+
+      grid.innerHTML = currentExportCols.map(c => {
+        const iconHtml = typeof getTypeIcon === "function" ? getTypeIcon(c.type) : '<i class="fa-solid fa-font"></i>';
+        return `
+          <label class="cfg-col-chip ${c.checked ? 'checked' : ''}" data-col-id="${escapeHtml(c.id)}" title="${escapeHtml(c.name)}">
+            <input type="checkbox" data-col-id="${escapeHtml(c.id)}" ${c.checked ? 'checked' : ''} onchange="onColChipChange(this)" />
+            <span style="font-size: 13px; display: inline-flex; align-items: center;">${iconHtml}</span>
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: inherit;">${escapeHtml(c.name)}</span>
+          </label>
+        `;
+      }).join("");
+    }
+
+    function onColChipChange(cb) {
+      const colId = cb.getAttribute("data-col-id");
+      const item = currentExportCols.find(c => c.id === colId);
+      if (item) {
+        item.checked = cb.checked;
+        const label = cb.closest(".cfg-col-chip");
+        if (label) label.classList.toggle("checked", cb.checked);
+      }
+      updateExportConfigCounters();
+    }
+
+    function setAllExportCols(checked) {
+      currentExportCols.forEach(c => c.checked = checked);
+      renderCfgColumnsList();
+      updateExportConfigCounters();
+    }
+
+    function toggleMemberCols() {
+      const memberItems = currentExportCols.filter(c => {
+        const nameLow = (c.name || "").toLowerCase().trim();
+        return c.type === "member" || nameLow.includes("nhân viên") || nameLow.includes("nhan vien") || nameLow.includes("mã nv") || nameLow.includes("ma nv") || nameLow.includes("người làm") || nameLow.includes("người thực hiện") || nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee");
+      });
+      if (memberItems.length === 0) {
+        toast("Bảng này không có cột nhân sự!", "info");
+        return;
+      }
+      const allChecked = memberItems.every(c => c.checked);
+      memberItems.forEach(c => c.checked = !allChecked);
+      renderCfgColumnsList();
+      updateExportConfigCounters();
+      toast(allChecked ? "Đã ẩn các cột nhân viên" : "Đã bật các cột nhân viên", "info");
+    }
+
+    function renderCfgRowsList(query = "") {
+      const tbody = document.getElementById("cfgRowsTableBody");
+      if (!tbody || !currentExportSheet) return;
+
+      const q = String(query || "").toLowerCase().trim();
+      const sheet = currentExportSheet;
+
+      const visibleItems = currentExportRows.filter(item => {
+        if (!q) return true;
+        const r = item.row;
+        const rowText = Object.values(r).map(v => Array.isArray(v) ? v.join(" ") : String(v)).join(" ").toLowerCase();
+        return rowText.includes(q) || String(item.origIndex + 1).includes(q);
+      });
+
+      if (visibleItems.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 12.5px;">
+              <i class="fa-solid fa-filter" style="opacity: 0.5; margin-right: 5px;"></i> Không tìm thấy dòng nào khớp với từ khóa tìm kiếm.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = visibleItems.map(item => {
+        const r = item.row;
+        const idx = item.origIndex;
+
+        // Tóm tắt nội dung dòng
+        const summaryParts = [];
+        const dtCol = sheet.columns.find(c => c.type === "dt_code");
+        if (dtCol && r[dtCol.id]) {
+          summaryParts.push(`<strong style="font-family:var(--font-mono); color:#4338ca; background:#eef2ff; padding:1px 6px; border-radius:4px;">${escapeHtml(String(r[dtCol.id]))}</strong>`);
+        }
+        const textCols = sheet.columns.filter(c => !["dt_code", "status", "checkbox"].includes(c.type));
+        for (let i = 0; i < Math.min(textCols.length, 3); i++) {
+          const val = r[textCols[i].id];
+          if (val !== undefined && val !== null && val !== "") {
+            const displayVal = Array.isArray(val) ? val.join(", ") : String(val);
+            summaryParts.push(`<span style="color:#1e293b;">${escapeHtml(displayVal)}</span>`);
+          }
+        }
+        const summaryHtml = summaryParts.length > 0
+          ? summaryParts.join(`<span style="color:#cbd5e1; margin:0 5px;">•</span>`)
+          : `<span style="color:#94a3b8; font-style:italic;">(Dòng trống)</span>`;
+
+        // Trạng thái badge
+        let statusBadgeHtml = '<span style="color:#cbd5e1;">—</span>';
+        const statusCol = sheet.columns.find(c => c.type === "status");
+        if (statusCol && r[statusCol.id]) {
+          const sVal = String(r[statusCol.id]);
+          let sColor = "#475569";
+          let sBg = "#f1f5f9";
+          const sLow = sVal.toLowerCase();
+          if (sLow.includes("pending") || sLow.includes("chờ")) { sColor = "#b91c1c"; sBg = "#fee2e2"; }
+          else if (sLow.includes("done") || sLow.includes("hoàn thành") || sLow.includes("success")) { sColor = "#047857"; sBg = "#d1fae5"; }
+          else if (sLow.includes("progress") || sLow.includes("đang")) { sColor = "#0369a1"; sBg = "#e0f2fe"; }
+          statusBadgeHtml = `<span style="font-size:11px; font-weight:700; color:${sColor}; background:${sBg}; padding:2px 7px; border-radius:12px; display:inline-block;">${escapeHtml(sVal)}</span>`;
+        }
+
+        const lockIcon = r.locked ? `<i class="fa-solid fa-lock" style="color:#94a3b8; font-size:10px; margin-left:3px;" title="Dòng bị khoá"></i>` : "";
+
+        return `
+          <tr class="cfg-row-item ${item.checked ? 'checked' : ''}" data-row-id="${escapeHtml(item.id)}" onclick="onRowItemClick(event, '${escapeHtml(item.id)}')" style="cursor: pointer; border-bottom: 1px solid #f1f5f9;">
+            <td style="text-align: center; padding: 6px 4px;" onclick="event.stopPropagation()">
+              <input type="checkbox" class="cfg-row-cb" data-row-id="${escapeHtml(item.id)}" ${item.checked ? 'checked' : ''} onchange="onRowCbChange(this)" style="cursor: pointer; accent-color: #107c41; width: 14px; height: 14px;" />
+            </td>
+            <td style="text-align: center; padding: 6px 4px; font-weight: 700; color: #64748b; font-family: var(--font-mono); font-size: 11.5px;">
+              ${idx + 1}${lockIcon}
+            </td>
+            <td style="padding: 6px 10px; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${summaryHtml}
+            </td>
+            <td style="text-align: center; padding: 6px 8px;">
+              ${statusBadgeHtml}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function onRowCbChange(cb) {
+      const rowId = cb.getAttribute("data-row-id");
+      const item = currentExportRows.find(r => r.id === rowId);
+      if (item) {
+        item.checked = cb.checked;
+        const tr = cb.closest("tr");
+        if (tr) tr.classList.toggle("checked", cb.checked);
+      }
+      updateExportConfigCounters();
+    }
+
+    function onRowItemClick(e, rowId) {
+      if (e.target.tagName === "INPUT" || e.target.closest("button") || e.target.closest("a")) return;
+      const item = currentExportRows.find(r => r.id === rowId);
+      if (item) {
+        item.checked = !item.checked;
+        const cb = document.querySelector(`.cfg-row-cb[data-row-id="${rowId}"]`);
+        if (cb) cb.checked = item.checked;
+        const tr = document.querySelector(`tr.cfg-row-item[data-row-id="${rowId}"]`);
+        if (tr) tr.classList.toggle("checked", item.checked);
+        updateExportConfigCounters();
+      }
+    }
+
+    function setAllExportRows(checked) {
+      const q = (document.getElementById("cfgRowSearchInput")?.value || "").toLowerCase().trim();
+      currentExportRows.forEach(item => {
+        if (!q) {
+          item.checked = checked;
+        } else {
+          const r = item.row;
+          const rowText = Object.values(r).map(v => Array.isArray(v) ? v.join(" ") : String(v)).join(" ").toLowerCase();
+          if (rowText.includes(q)) item.checked = checked;
+        }
+      });
+      renderCfgRowsList(q);
+      updateExportConfigCounters();
+    }
+
+    function selectOnlyTableCheckedRows() {
+      if (!selectedRowIds || selectedRowIds.size === 0) {
+        toast("Chưa có dòng nào được tick checkbox trên bảng chính!", "info");
+        return;
+      }
+      currentExportRows.forEach(item => {
+        item.checked = selectedRowIds.has(item.id);
+      });
+      const q = (document.getElementById("cfgRowSearchInput")?.value || "").toLowerCase().trim();
+      renderCfgRowsList(q);
+      updateExportConfigCounters();
+      toast(`Đã chọn ${selectedRowIds.size} dòng khớp với checkbox trên bảng!`, "success");
+    }
+
+    function toggleAllRowsCheckbox(checked) {
+      setAllExportRows(checked);
+    }
+
+    function filterCfgRowsList() {
+      const q = document.getElementById("cfgRowSearchInput")?.value || "";
+      renderCfgRowsList(q);
+      updateExportConfigCounters();
+    }
+
+    function clearCfgRowSearch() {
+      const inEl = document.getElementById("cfgRowSearchInput");
+      if (inEl) inEl.value = "";
+      renderCfgRowsList("");
+      updateExportConfigCounters();
+    }
+
+    function updateExportConfigCounters() {
+      const colBadge = document.getElementById("cfgColCountBadge");
+      const rowBadge = document.getElementById("cfgRowCountBadge");
+      const masterCb = document.getElementById("cfgToggleAllRowsCheck");
+
+      const checkedCols = currentExportCols.filter(c => c.checked).length;
+      const totalCols = currentExportCols.length;
+      if (colBadge) {
+        colBadge.textContent = `${checkedCols}/${totalCols} cột`;
+        colBadge.style.background = checkedCols > 0 ? "#e0e7ff" : "#fee2e2";
+        colBadge.style.color = checkedCols > 0 ? "#3730a3" : "#b91c1c";
+      }
+
+      const checkedRows = currentExportRows.filter(r => r.checked).length;
+      const totalRows = currentExportRows.length;
+      if (rowBadge) {
+        rowBadge.textContent = `${checkedRows}/${totalRows} dòng`;
+        rowBadge.style.background = checkedRows > 0 ? "#dcfce7" : "#fee2e2";
+        rowBadge.style.color = checkedRows > 0 ? "#166534" : "#b91c1c";
+      }
+
+      if (masterCb) {
+        masterCb.checked = totalRows > 0 && checkedRows === totalRows;
+        masterCb.indeterminate = checkedRows > 0 && checkedRows < totalRows;
+      }
+    }
+
+    function executeExportConfig(action) {
+      const chosenCols = currentExportCols.filter(c => c.checked).map(c => c.col);
+      if (chosenCols.length === 0) {
+        toast("Vui lòng chọn ít nhất 1 cột dữ liệu để xuất!", "warning");
+        return;
+      }
+
+      const chosenRows = currentExportRows.filter(r => r.checked).map(r => r.row);
+      if (chosenRows.length === 0) {
+        toast("Vui lòng chọn ít nhất 1 dòng dữ liệu để xuất!", "warning");
+        return;
+      }
+
+      // Lưu tuỳ chọn cột vào localStorage của sheet này
+      try {
+        if (currentExportSheet) {
+          const disabledIds = currentExportCols.filter(c => !c.checked).map(c => c.id);
+          localStorage.setItem("dms_export_disabled_cols_" + currentExportSheet.id, JSON.stringify(disabledIds));
+        }
+      } catch (_) {}
+
+      // Lưu cache cho thao tác copy sau đó trong modal
+      lastExportColumns = chosenCols;
+      lastExportRows = chosenRows;
+
+      closeExcelExportConfigModal();
+
+      if (action === "copy_table") {
+        doCopyExcelTableFormat(chosenCols, chosenRows);
+      } else if (action === "download_image") {
+        doCaptureExcelImage(chosenCols, chosenRows, true);
+      } else {
+        doCaptureExcelImage(chosenCols, chosenRows, false);
+      }
+    }
+
+    /* ── 2. CORE ENGINE: CHỤP ẢNH BẢNG EXCEL THEO CỘT & DÒNG TUỲ CHỌN ── */
+    async function doCaptureExcelImage(columns, targetRows, autoDownload = false) {
+      const sheet = getActiveSheet();
+      if (!sheet || !Array.isArray(columns) || !Array.isArray(targetRows) || columns.length === 0 || targetRows.length === 0) {
+        toast("Dữ liệu xuất không hợp lệ!", "warning");
         return;
       }
 
@@ -6781,20 +7331,7 @@
         }
         await ensureHtml2CanvasLoaded();
 
-        // Exclude member / assignee columns per user requirement
-        const columns = (sheet.columns || []).filter(col => {
-          if (col.type === "member") return false;
-          const nameLow = (col.name || "").toLowerCase().trim();
-          if (nameLow.includes("nhân viên") || nameLow.includes("nhan vien") || 
-              nameLow.includes("mã nv") || nameLow.includes("ma nv") || 
-              nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
-              nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee")) {
-            return false;
-          }
-          return true;
-        });
-
-        // Offscreen container to build pure Excel table DOM (no banners, no footers)
+        // Offscreen container
         const container = document.createElement("div");
         container.id = "excelRenderOffscreenContainer";
         container.style.position = "fixed";
@@ -6808,11 +7345,10 @@
         container.style.color = "#111827";
         container.style.width = "max-content";
 
-        // Current timestamp for file naming
         const now = new Date();
         const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-        // Thead: Deep Royal Navy #1E3A8A header exactly matching normal Excel table
+        // Thead: Deep Royal Navy #1E3A8A header matching Excel table
         let theadHtml = `
           <thead>
             <tr style="background: #1e3a8a; color: #ffffff;">
@@ -6821,7 +7357,7 @@
 
         columns.forEach(col => {
           let align = "left";
-          if (["dt_code", "date", "status", "project", "checkbox"].includes(col.type)) align = "center";
+          if (["dt_code", "date", "status", "project", "checkbox", "member"].includes(col.type)) align = "center";
           if (col.type === "number") align = "right";
 
           theadHtml += `
@@ -6832,7 +7368,7 @@
         });
         theadHtml += `</tr></thead>`;
 
-        // Tbody: Plain normal Excel text, clean borders, no flashy pills or badges
+        // Tbody
         let tbodyHtml = `<tbody>`;
         targetRows.forEach((r, idx) => {
           const isEven = idx % 2 === 1;
@@ -6841,14 +7377,13 @@
 
           tbodyHtml += `<tr style="background: ${rowBg};">`;
 
-          // STT column
+          // STT
           tbodyHtml += `
             <td style="padding: 7px 10px; border: 1px solid #cbd5e1; text-align: center; font-size: 13px; font-weight: 700; color: #111827; font-family: inherit; background: ${sttBg};">
               ${idx + 1}
             </td>
           `;
 
-          // Other columns
           columns.forEach(col => {
             const val = r[col.id];
             const cellHighlight = r.highlights?.[col.id];
@@ -6869,6 +7404,10 @@
               align = "right";
               const num = Number(val);
               displayVal = !isNaN(num) ? num.toLocaleString("vi-VN") : String(val);
+            } else if (col.type === "member") {
+              align = "center";
+              const mems = typeof getRowMembers === "function" ? getRowMembers(val) : (Array.isArray(val) ? val : [val]);
+              displayVal = mems.join(", ");
             } else if (col.type === "dt_code" || col.type === "status" || col.type === "project") {
               align = "center";
               displayVal = String(val);
@@ -6888,7 +7427,6 @@
         });
         tbodyHtml += `</tbody>`;
 
-        // Render pure table only (no banner, no footer summary)
         container.innerHTML = `
           <table style="border-collapse: collapse; width: 100%; border: 1px solid #1e3a8a; background: #ffffff; font-family: 'Segoe UI', Aptos, Calibri, Arial, sans-serif;">
             ${theadHtml}
@@ -6901,7 +7439,7 @@
         let canvas = null;
         if (typeof html2canvas !== "undefined") {
           canvas = await html2canvas(container, {
-            scale: 2, // 2x DPI Retina
+            scale: 2,
             useCORS: true,
             backgroundColor: "#ffffff",
             logging: false
@@ -6920,6 +7458,22 @@
         const safeName = (sheet.name || "BangTinh").replace(/[\\/:*?"<>|]/g, "_").trim().replace(/\s+/g, "_");
         const fileName = `${safeName}_${getTodayIso()}_${timeStr.replace(":", "")}.png`;
 
+        if (autoDownload) {
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          toast(`Đã tải ảnh Excel (${targetRows.length} dòng, ${columns.length} cột) về máy!`, "success");
+          if (btn) {
+            btn.classList.remove("loading");
+            btn.innerHTML = origHtml;
+            updateFooterStats();
+          }
+          return;
+        }
+
         // Copy blob to Clipboard
         canvas.toBlob(async (blob) => {
           let isCopied = false;
@@ -6929,13 +7483,12 @@
                 new ClipboardItem({ "image/png": blob })
               ]);
               isCopied = true;
-              toast("Đã sao chép ảnh dạng Excel vào bộ nhớ tạm! Bạn có thể dán (Ctrl + V) ngay.", "success");
+              toast(`Đã chụp & copy ảnh Excel (${targetRows.length} dòng, ${columns.length} cột)! Nhấn Ctrl+V để dán.`, "success");
             } catch (clipErr) {
               console.warn("ClipboardItem write failed:", clipErr);
             }
           }
 
-          // Open image preview & actions modal
           openExcelImageModal(dataUrl, blob, fileName, isCopied);
 
           if (btn) {
@@ -6961,6 +7514,14 @@
         const c = document.getElementById("excelRenderOffscreenContainer");
         if (c) c.remove();
       }
+    }
+
+    // Public wrapper: Khi nhấn nút chụp ảnh, mở modal chọn cột/dòng
+    async function captureExcelImage(customCols, customRows, autoDownload) {
+      if (Array.isArray(customCols) && Array.isArray(customRows)) {
+        return doCaptureExcelImage(customCols, customRows, Boolean(autoDownload));
+      }
+      openExcelExportConfigModal("capture");
     }
 
     // Modal Display & Action Handlers
@@ -7024,13 +7585,36 @@
         });
       }
 
+      const cfgModal = document.getElementById("excelExportConfigModal");
+      if (cfgModal) {
+        cfgModal.addEventListener("click", (e) => {
+          if (e.target === cfgModal) closeExcelExportConfigModal();
+        });
+      }
+
+      // Đóng modal bằng phím ESC
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          const m1 = document.getElementById("excelExportConfigModal");
+          if (m1 && m1.classList.contains("active")) {
+            closeExcelExportConfigModal();
+            return;
+          }
+          const m2 = document.getElementById("excelImagePreviewModal");
+          if (m2 && m2.classList.contains("active")) {
+            closeExcelImageModal();
+          }
+        }
+      });
+
       const btnCopyTableModal = document.getElementById("btnCopyTableFormatModal");
       if (btnCopyTableModal) {
-        btnCopyTableModal.addEventListener("click", copyExcelTableFormat);
+        btnCopyTableModal.addEventListener("click", () => copyExcelTableFormat());
       }
 
       setupDraggableFabExcelButton();
     }
+
 
     /* ── KÉO NÚT CAMERA FAB VÀ TỰ ĐỘNG NHẢY VÀO GÓC MÀN HÌNH (AUTO SNAP TO 4 CORNERS) ── */
     function setupDraggableFabExcelButton() {
@@ -7182,41 +7766,14 @@
       }, true);
     }
 
-    /* ── COPY BẢNG ĐỊNH DẠNG EXCEL (HTML + TSV) ĐỂ DÁN VÀO EXCEL / SHEETS / WORD ── */
-    async function copyExcelTableFormat() {
-      const sheet = getActiveSheet();
-      if (!sheet) {
-        toast("Không tìm thấy dữ liệu Sheet hiện tại!", "warning");
+
+
+    /* ── 3. CORE ENGINE: COPY BẢNG ĐỊNH DẠNG EXCEL (HTML + TSV) THEO CỘT & DÒNG TUỲ CHỌN ── */
+    async function doCopyExcelTableFormat(columns, targetRows) {
+      if (!Array.isArray(columns) || !Array.isArray(targetRows) || columns.length === 0 || targetRows.length === 0) {
+        toast("Dữ liệu xuất không hợp lệ!", "warning");
         return;
       }
-
-      const allRows = typeof getFilteredRows === "function" ? getFilteredRows() : (sheet.rows || []);
-      let targetRows = [];
-      const isSelection = selectedRowIds.size > 0;
-
-      if (isSelection) {
-        targetRows = sheet.rows.filter(r => selectedRowIds.has(r.id));
-      } else {
-        targetRows = allRows.filter(r => !r.locked);
-      }
-
-      if (targetRows.length === 0) {
-        toast("Không có dữ liệu phù hợp để copy (Dòng đang bị khoá 🔒 hoặc bị lọc ẩn)!", "warning");
-        return;
-      }
-
-      // Filter out member / assignee columns per user request
-      const columns = (sheet.columns || []).filter(col => {
-        if (col.type === "member") return false;
-        const nameLow = (col.name || "").toLowerCase().trim();
-        if (nameLow.includes("nhân viên") || nameLow.includes("nhan vien") || 
-            nameLow.includes("mã nv") || nameLow.includes("ma nv") || 
-            nameLow.includes("người làm") || nameLow.includes("người thực hiện") ||
-            nameLow.includes("nguoi thuc hien") || nameLow.includes("assignee")) {
-          return false;
-        }
-        return true;
-      });
 
       // Build TSV (tab-separated values) - standard format for Excel / Google Sheets pasting
       const headerRowTsv = ["STT", ...columns.map(c => c.name)].join("\t");
@@ -7230,6 +7787,9 @@
           else if (col.type === "number") {
             const num = Number(val);
             val = !isNaN(num) ? num.toLocaleString("vi-VN") : String(val);
+          } else if (col.type === "member") {
+            const mems = typeof getRowMembers === "function" ? getRowMembers(val) : (Array.isArray(val) ? val : [val]);
+            val = mems.join(", ");
           } else {
             val = String(val).replace(/[\r\n\t]/g, " ");
           }
@@ -7248,7 +7808,7 @@
       `;
       columns.forEach(col => {
         let align = "left";
-        if (["dt_code", "date", "status", "project", "checkbox"].includes(col.type)) align = "center";
+        if (["dt_code", "date", "status", "project", "checkbox", "member"].includes(col.type)) align = "center";
         if (col.type === "number") align = "right";
         htmlTable += `<th style="border: 1px solid #2563eb; padding: 7px 12px; text-align: ${align}; font-weight: bold;">${escapeHtml(col.name)}</th>`;
       });
@@ -7275,6 +7835,10 @@
             align = "right";
             const num = Number(val);
             displayVal = !isNaN(num) ? num.toLocaleString("vi-VN") : String(val);
+          } else if (col.type === "member") {
+            align = "center";
+            const mems = typeof getRowMembers === "function" ? getRowMembers(val) : (Array.isArray(val) ? val : [val]);
+            displayVal = mems.join(", ");
           } else if (["dt_code", "status", "project"].includes(col.type)) {
             align = "center";
             displayVal = String(val);
@@ -7296,10 +7860,10 @@
               "text/plain": new Blob([tsvText], { type: "text/plain" })
             })
           ]);
-          toast("Đã copy định dạng bảng Excel! Bạn có thể dán (Ctrl+V) vào Excel, Sheets, Word ngay.", "success");
+          toast(`Đã copy định dạng bảng Excel (${targetRows.length} dòng, ${columns.length} cột)! Dán (Ctrl+V) vào Excel, Sheets, Word ngay.`, "success");
         } else if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(tsvText);
-          toast("Đã copy bảng dữ liệu! Bạn có thể dán (Ctrl+V) vào Excel/Sheets.", "success");
+          toast(`Đã copy bảng dữ liệu (${targetRows.length} dòng, ${columns.length} cột)! Dán (Ctrl+V) vào Excel/Sheets.`, "success");
         } else {
           const ta = document.createElement("textarea");
           ta.value = tsvText;
@@ -7326,6 +7890,18 @@
         toast("Không thể copy bảng: " + err.message, "danger");
       }
     }
+
+    // Public wrapper: Khi nhấn copy bảng, nếu chưa có cấu hình thì mở modal chọn cột/dòng
+    async function copyExcelTableFormat(customCols, customRows) {
+      if (Array.isArray(customCols) && Array.isArray(customRows)) {
+        return doCopyExcelTableFormat(customCols, customRows);
+      }
+      if (Array.isArray(lastExportColumns) && Array.isArray(lastExportRows)) {
+        return doCopyExcelTableFormat(lastExportColumns, lastExportRows);
+      }
+      openExcelExportConfigModal("copy_table");
+    }
+
 
     // Direct Canvas Fallback if html2canvas is completely unreachable (pure table only)
     function renderExcelCanvasDirect(sheet, targetRows, columns) {
