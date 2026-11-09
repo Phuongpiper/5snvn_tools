@@ -3339,6 +3339,83 @@
       border-color: #bfdbfe !important;
     }
 
+    /* ── Voip DID Multi-Select Styles ── */
+    .voip-did-multiselect {
+      position: relative;
+      display: inline-block;
+    }
+
+    .voip-did-select-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #ffffff;
+      cursor: pointer;
+      min-width: 170px;
+      max-width: 270px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .voip-did-select-btn:hover {
+      border-color: #93c5fd;
+      background: #f8fafc;
+    }
+
+    .voip-did-select-btn:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    .voip-did-dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      width: 320px;
+      max-height: 420px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      z-index: 9999;
+      padding: 8px;
+      font-size: 12px;
+      flex-direction: column;
+      animation: voipMenuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .voip-did-option-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.15s, border-color 0.15s;
+      user-select: none;
+      border: 1px solid transparent;
+    }
+
+    .voip-did-option-row:hover {
+      background: #f1f5f9;
+    }
+
+    .voip-did-option-row.selected {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+    }
+
     /* ── Unnoted Call Highlighting & Note Status Badges ── */
     .table-stitch-stats tr.call-row-unnoted td {
       background: #fff1f2 !important;
@@ -4621,11 +4698,42 @@
                 style="font-size:11px; font-weight:700; color:#0284c7; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
                 <i class="fa-solid fa-sim-card"></i> Đầu số:
               </span>
-              <select id="voipSelectDid"
-                style="padding:5px 8px; font-size:12px; font-weight:600; color:var(--text-main); border:1px solid var(--border); border-radius:6px; font-family:inherit; background:#ffffff;"
-                onchange="onVoipDidDropdownChange()">
-                <option value="all">Tất cả đầu số</option>
-              </select>
+              <div class="voip-did-multiselect" id="voipDidMultiSelectWrap" style="position:relative; display:inline-block;">
+                <button type="button" id="voipDidMultiSelectBtn" class="voip-did-select-btn" onclick="toggleVoipDidDropdown(event)"
+                  title="Nhấn để chọn một hoặc nhiều đầu số">
+                  <span id="voipDidMultiSelectLabel" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-flex; align-items:center; max-width:210px;">Tất cả đầu số</span>
+                  <i class="fa-solid fa-chevron-down" id="voipDidDropdownIcon" style="font-size:10px; color:var(--text-muted); transition:transform 0.2s; flex-shrink:0;"></i>
+                </button>
+                <select id="voipSelectDid" style="display:none;"></select>
+                <!-- Dropdown Menu -->
+                <div id="voipDidDropdownMenu" class="voip-did-dropdown-menu" onclick="event.stopPropagation()">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #e2e8f0; gap:4px;">
+                    <button type="button" onclick="selectVoipDidQuick('all')" style="padding:3px 7px; font-size:11px; font-weight:600; border-radius:4px; border:1px solid #bae6fd; background:#f0f9ff; color:#0284c7; cursor:pointer;" title="Xem tất cả cuộc gọi toàn hệ thống">
+                      <i class="fa-solid fa-asterisk"></i> Tất cả
+                    </button>
+                    <button type="button" id="btnVoipQuickProj" onclick="selectVoipDidQuick('project')" style="padding:3px 7px; font-size:11px; font-weight:600; border-radius:4px; border:1px solid #e2e8f0; background:#f8fafc; color:#334155; cursor:pointer;" title="Chỉ chọn các đầu số của dự án hiện tại">
+                      <i class="fa-solid fa-folder-open"></i> Dự án này
+                    </button>
+                    <button type="button" onclick="selectVoipDidQuick('clear')" style="padding:3px 7px; font-size:11px; font-weight:600; border-radius:4px; border:1px solid #fecaca; background:#fff1f2; color:#b91c1c; cursor:pointer;" title="Bỏ chọn">
+                      <i class="fa-solid fa-xmark"></i> Bỏ chọn
+                    </button>
+                  </div>
+                  <div style="position:relative; margin-bottom:8px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:11px; color:#94a3b8;"></i>
+                    <input type="text" id="voipDidSearchInput" oninput="filterVoipDidList()" placeholder="Tìm đầu số, tên dự án..."
+                      style="width:100%; box-sizing:border-box; padding:4px 8px 4px 26px; font-size:11.5px; border:1px solid #cbd5e1; border-radius:5px; outline:none; font-family:inherit;">
+                  </div>
+                  <div id="voipDidOptionsList" style="overflow-y:auto; max-height:240px; display:flex; flex-direction:column; gap:2px; padding-right:2px;">
+                    <!-- Rendered dynamically -->
+                  </div>
+                  <div style="margin-top:6px; padding-top:6px; border-top:1px solid #f1f5f9; display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--text-muted);">
+                    <span id="voipDidCountText">Đang chọn: Tất cả</span>
+                    <button type="button" onclick="closeVoipDidDropdown()" style="padding:2px 8px; font-size:11px; font-weight:600; border-radius:4px; border:1px solid #cbd5e1; background:#f8fafc; color:#475569; cursor:pointer;">
+                      Xong
+                    </button>
+                  </div>
+                </div>
+              </div>
               <button type="button" class="btn-stats-tool" onclick="openVoipDidConfigModal()"
                 title="Cấu hình đầu số theo dự án (cho phép null)"
                 style="padding:5px 8px; font-size:12px; border-radius:6px; background:#f0f9ff; border:1px solid #bae6fd; color:#0284c7; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
@@ -14568,22 +14676,74 @@
         return map;
       }
 
-      function populateVoipDidDropdown(projectName) {
-        const sel = document.getElementById("voipSelectDid");
-        if (!sel) return;
-        const currentProj = (projectName || getSelectedProject()).trim();
-        const currentProjDids = getProjectDidList(currentProj) || [];
-        const prevVal = sel.value;
-        sel.innerHTML = "";
+      // ── VOIP DID MULTI-SELECT MANAGER ──
+      window.voipSelectedDids = null; // Array of selected DIDs, or ["all"]
+      window.voipAvailableDids = []; // Array of { did, label, projs, isCurrentProj }
 
+      function getVoipSelectedDids() {
+        if (Array.isArray(window.voipSelectedDids)) {
+          return window.voipSelectedDids;
+        }
+        try {
+          const raw = localStorage.getItem("dms_voip_selected_dids_v2");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              window.voipSelectedDids = parsed;
+              return parsed;
+            }
+          }
+        } catch (_) {}
+        const v1 = localStorage.getItem("dms_voip_selected_did_v1");
+        if (v1) {
+          window.voipSelectedDids = [v1];
+          return [v1];
+        }
+        window.voipSelectedDids = ["all"];
+        return window.voipSelectedDids;
+      }
+
+      function saveVoipSelectedDids() {
+        try {
+          const list = Array.isArray(window.voipSelectedDids) ? window.voipSelectedDids : ["all"];
+          localStorage.setItem("dms_voip_selected_dids_v2", JSON.stringify(list));
+          if (list.includes("all")) {
+            localStorage.setItem("dms_voip_selected_did_v1", "all");
+          } else if (list.length === 1) {
+            localStorage.setItem("dms_voip_selected_did_v1", list[0]);
+          } else {
+            localStorage.setItem("dms_voip_selected_did_v1", list.join(","));
+          }
+        } catch (_) {}
+      }
+
+      function isVoipCallMatchingDid(callDid, selectedDids, projDids) {
+        if (!selectedDids) return true;
+        if (selectedDids.includes("all")) return true;
+        if (selectedDids.length === 0) return false;
+
+        const cDid = String(callDid || "").trim();
+        if (!cDid) return false;
+
+        if (selectedDids.includes("project_all")) {
+          if (projDids && projDids.length > 0 && projDids.includes(cDid)) {
+            return true;
+          }
+        }
+
+        return selectedDids.includes(cDid);
+      }
+
+      function populateVoipDidDropdown(projectName) {
+        const currentProj = (projectName || getSelectedProject() || "NVN").trim();
+        const currentProjDids = (typeof getProjectDidList === "function") ? (getProjectDidList(currentProj) || []) : [];
         const didProjMap = getDidProjectMap();
         const addedDids = new Set();
+        const didList = [];
 
-        // Helper: Format label hiển thị ĐẦY ĐỦ TẤT CẢ các dự án gán vào đầu số này
         function formatDidLabel(did, isCurrentProj = false, isPrimary = false) {
           const projs = didProjMap[did] || [];
           if (projs.length > 0) {
-            // Đưa dự án hiện tại lên đầu danh sách nhãn nếu có
             const sorted = [...projs].sort((a, b) => {
               if (a.toUpperCase() === currentProj.toUpperCase()) return -1;
               if (b.toUpperCase() === currentProj.toUpperCase()) return 1;
@@ -14598,39 +14758,35 @@
           return `${did} (Hệ thống)`;
         }
 
-        // 1. Nếu dự án hiện tại có TỪ 2 ĐẦU SỐ TRỞ LÊN: hiển thị tùy chọn Tất cả đầu số của dự án này
-        if (currentProjDids.length > 1) {
-          const optProjAll = document.createElement("option");
-          optProjAll.value = "project_all";
-          optProjAll.textContent = `Tất cả đầu số dự án (${currentProj} - ${currentProjDids.length} đầu số)`;
-          sel.appendChild(optProjAll);
-        }
-
-        // 2. Thêm các đầu số của dự án hiện tại (ưu tiên hiển thị lên đầu)
+        // 1. Thêm đầu số của dự án hiện tại (ưu tiên lên đầu)
         currentProjDids.forEach((did, idx) => {
           addedDids.add(did);
-          const opt = document.createElement("option");
-          opt.value = did;
-          opt.textContent = formatDidLabel(did, true, currentProjDids.length > 1 && idx === 0);
-          sel.appendChild(opt);
+          didList.push({
+            did,
+            label: formatDidLabel(did, true, currentProjDids.length > 1 && idx === 0),
+            projs: didProjMap[did] || [currentProj],
+            isCurrentProj: true
+          });
         });
 
-        // 3. Thêm các đầu số của các dự án khác đã được cấu hình trong hệ thống
+        // 2. Thêm đầu số của các dự án khác đã cấu hình
         const config = getVoipDidConfig();
         Object.keys(config).forEach(pName => {
           if (pName.trim().toUpperCase() === currentProj.toUpperCase()) return;
           const otherDids = getProjectDidList(pName) || [];
-          otherDids.forEach((did, idx) => {
+          otherDids.forEach(did => {
             if (addedDids.has(did)) return;
             addedDids.add(did);
-            const opt = document.createElement("option");
-            opt.value = did;
-            opt.textContent = formatDidLabel(did, false, false);
-            sel.appendChild(opt);
+            didList.push({
+              did,
+              label: formatDidLabel(did, false, false),
+              projs: didProjMap[did] || [pName],
+              isCurrentProj: false
+            });
           });
         });
 
-        // 4. Thêm các đầu số hệ thống khác (chưa được gán vào dự án nào)
+        // 3. Thêm các đầu số hệ thống khác từ KNOWN_SYSTEM_DIDS và voipCalls
         const allKnown = new Set(KNOWN_SYSTEM_DIDS);
         (voipCalls || []).forEach(c => {
           if (c.did && String(c.did).trim()) allKnown.add(String(c.did).trim());
@@ -14638,73 +14794,291 @@
         Array.from(allKnown).sort().forEach(did => {
           if (addedDids.has(did)) return;
           addedDids.add(did);
-          const opt = document.createElement("option");
-          opt.value = did;
-          opt.textContent = formatDidLabel(did, false, false);
-          sel.appendChild(opt);
+          didList.push({
+            did,
+            label: formatDidLabel(did, false, false),
+            projs: didProjMap[did] || [],
+            isCurrentProj: false
+          });
         });
 
-        // 5. Tùy chọn "Tất cả đầu số (Toàn hệ thống)"
-        const optAll = document.createElement("option");
-        optAll.value = "all";
-        optAll.textContent = "Tất cả đầu số (Toàn hệ thống)";
-        if (currentProjDids.length === 0) {
-          // Dự án null (nhận tất cả) -> Đưa "Tất cả đầu số" lên đầu tiên!
-          sel.insertBefore(optAll, sel.firstChild);
-        } else {
-          // Dự án có đầu số -> Đưa "Tất cả đầu số" xuống cuối
-          sel.appendChild(optAll);
+        window.voipAvailableDids = didList;
+
+        // Xử lý giá trị đang chọn
+        if (window.voipSelectedDids === null) {
+          getVoipSelectedDids();
         }
 
-        // Chọn giá trị mặc định: ưu tiên localStorage, sau đó prevVal, cuối cùng mặc định theo project
-        const savedDid = localStorage.getItem("dms_voip_selected_did_v1") || "";
-
-        function applyDidValue(val) {
-          if (!val) return false;
-          // Kiểm tra value có tồn tại trong dropdown không
-          const exists = Array.from(sel.options).some(o => o.value === val);
-          if (exists) { sel.value = val; return true; }
-          return false;
-        }
-
-        if (currentProjDids.length > 0) {
-          // Dự án hiện tại có đầu số riêng:
-          let applied = false;
-          // 1. Thử savedDid từ localStorage
-          if (savedDid && (currentProjDids.includes(savedDid) || savedDid === "project_all" || savedDid === "all" || addedDids.has(savedDid))) {
-            applied = applyDidValue(savedDid);
-          }
-          // 2. Thử prevVal (giá trị đang chọn hiện tại)
-          if (!applied && prevVal && (currentProjDids.includes(prevVal) || (prevVal === "project_all" && currentProjDids.length > 1))) {
-            applied = applyDidValue(prevVal);
-          }
-          // 3. Mặc định
-          if (!applied) {
-            if (currentProjDids.length > 1) {
-              sel.value = "project_all";
+        // Nếu người dùng chủ động đổi dự án qua dropdown header (projectName được truyền vào)
+        if (projectName) {
+          if (!window.voipSelectedDids.includes("all")) {
+            if (currentProjDids.length > 0) {
+              window.voipSelectedDids = [...currentProjDids];
             } else {
-              sel.value = currentProjDids[0];
+              window.voipSelectedDids = ["all"];
             }
+            saveVoipSelectedDids();
           }
-        } else {
-          // Dự án null (nhận tất cả):
-          let applied = false;
-          if (savedDid && (savedDid === "all" || addedDids.has(savedDid))) {
-            applied = applyDidValue(savedDid);
-          }
-          if (!applied && prevVal && (prevVal === "all" || addedDids.has(prevVal))) {
-            applied = applyDidValue(prevVal);
-          }
-          if (!applied) { sel.value = "all"; }
         }
+
+        // Đồng bộ hidden select element (nếu có script cũ đọc)
+        const selHidden = document.getElementById("voipSelectDid");
+        if (selHidden) {
+          selHidden.innerHTML = "";
+          const optAll = document.createElement("option");
+          optAll.value = "all";
+          optAll.textContent = "Tất cả đầu số";
+          selHidden.appendChild(optAll);
+          didList.forEach(item => {
+            const opt = document.createElement("option");
+            opt.value = item.did;
+            opt.textContent = item.label;
+            selHidden.appendChild(opt);
+          });
+          const cur = getVoipSelectedDids();
+          if (cur.includes("all")) selHidden.value = "all";
+          else if (cur.length === 1) selHidden.value = cur[0];
+          else selHidden.value = cur.join(",");
+        }
+
+        renderVoipDidOptionsList();
+        updateVoipDidMultiSelectLabel();
       }
 
-      window.onVoipDidDropdownChange = function () {
-        // Lưu lựa chọn đầu số vào localStorage
-        const selDid = document.getElementById("voipSelectDid");
-        if (selDid && selDid.value) {
-          try { localStorage.setItem("dms_voip_selected_did_v1", selDid.value); } catch (_) {}
+      window.renderVoipDidOptionsList = function () {
+        const container = document.getElementById("voipDidOptionsList");
+        if (!container) return;
+
+        const currentProj = (getSelectedProject() || "NVN").trim();
+        const currentProjDids = (typeof getProjectDidList === "function") ? (getProjectDidList(currentProj) || []) : [];
+        const selected = getVoipSelectedDids();
+        const isAll = selected.includes("all");
+        const didProjMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+        const didList = window.voipAvailableDids || [];
+
+        let html = "";
+
+        // 1. Dòng "Tất cả đầu số"
+        html += `
+          <div class="voip-did-option-row ${isAll ? "selected" : ""}" data-search="tat ca toan he thong all" onclick="onVoipDidRowClick(event, 'all')">
+            <input type="checkbox" style="cursor:pointer; width:15px; height:15px; accent-color:#0284c7; pointer-events:none;" ${isAll ? "checked" : ""} />
+            <div style="flex:1; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+              <span style="font-weight:700; color:#1e293b;"><i class="fa-solid fa-asterisk" style="font-size:10px; color:#0284c7; margin-right:4px;"></i> Tất cả đầu số</span>
+              <span style="font-size:10.5px; padding:1px 6px; border-radius:4px; background:#f1f5f9; color:#64748b; font-weight:600;">Toàn hệ thống</span>
+            </div>
+          </div>
+          <div style="margin:4px 0; border-top:1px solid #f1f5f9;"></div>
+        `;
+
+        // 2. Danh sách từng đầu số
+        didList.forEach(item => {
+          const did = item.did;
+          const isChecked = !isAll && selected.includes(did);
+          const isCurrent = item.isCurrentProj;
+          const projs = didProjMap[did] || [];
+          const projsText = projs.join(", ") || "Hệ thống";
+          const searchKey = `${did} ${projsText}`.toLowerCase();
+
+          html += `
+            <div class="voip-did-option-row ${isChecked ? "selected" : ""}" data-search="${escapeHTML(searchKey)}" onclick="onVoipDidRowClick(event, '${escapeHTML(did)}')">
+              <input type="checkbox" style="cursor:pointer; width:15px; height:15px; accent-color:#0284c7; pointer-events:none;" ${isChecked ? "checked" : ""} />
+              <div style="flex:1; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-family:monospace; font-weight:700; color:#0f172a; font-size:12px;">${escapeHTML(did)}</span>
+                  ${isCurrent ? '<span style="font-size:9.5px; padding:0 4px; border-radius:3px; background:#e0f2fe; color:#0369a1; font-weight:700;">Dự án</span>' : ''}
+                </div>
+                <span style="font-size:11px; padding:1px 6px; border-radius:4px; background:${isCurrent ? "#f0fdf4" : "#f8fafc"}; color:${isCurrent ? "#166534" : "#475569"}; border:1px solid ${isCurrent ? "#bbf7d0" : "#e2e8f0"}; font-weight:600; max-width:140px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" title="${escapeHTML(projsText)}">
+                  ${escapeHTML(projsText)}
+                </span>
+              </div>
+            </div>
+          `;
+        });
+
+        container.innerHTML = html;
+
+        // Cập nhật nút chọn nhanh theo dự án
+        const btnProj = document.getElementById("btnVoipQuickProj");
+        if (btnProj) {
+          if (currentProjDids.length > 0) {
+            btnProj.style.display = "inline-flex";
+            btnProj.innerHTML = `<i class="fa-solid fa-folder-open"></i> Dự án (${escapeHTML(currentProj)})`;
+            btnProj.title = `Chỉ chọn đầu số của ${currentProj}: ${currentProjDids.join(", ")}`;
+          } else {
+            btnProj.style.display = "none";
+          }
         }
+
+        // Cập nhật text đếm
+        const countText = document.getElementById("voipDidCountText");
+        if (countText) {
+          if (isAll) {
+            countText.textContent = "Đang chọn: Tất cả đầu số";
+          } else if (selected.length === 0) {
+            countText.textContent = "Chưa chọn đầu số nào";
+          } else {
+            countText.textContent = `Đang chọn: ${selected.length} / ${didList.length} đầu số`;
+          }
+        }
+      };
+
+      window.updateVoipDidMultiSelectLabel = function () {
+        const lbl = document.getElementById("voipDidMultiSelectLabel");
+        const btn = document.getElementById("voipDidMultiSelectBtn");
+        if (!lbl) return;
+
+        const selected = getVoipSelectedDids();
+        const didProjMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+
+        if (selected.includes("all")) {
+          lbl.innerHTML = `<i class="fa-solid fa-asterisk" style="font-size:10px; color:#0284c7; margin-right:4px;"></i> Tất cả đầu số`;
+          if (btn) btn.title = "Đang chọn: Tất cả đầu số (Toàn hệ thống)";
+          return;
+        }
+
+        if (selected.length === 0) {
+          lbl.innerHTML = `<span style="color:#ef4444; font-weight:700;"><i class="fa-solid fa-triangle-exclamation" style="font-size:10px;"></i> Chưa chọn đầu số</span>`;
+          if (btn) btn.title = "Chưa chọn đầu số nào. Nhấn để chọn.";
+          return;
+        }
+
+        if (selected.length === 1) {
+          const did = selected[0];
+          const projs = didProjMap[did] || [];
+          const suffix = projs.length > 0 ? ` (${projs.join(", ")})` : "";
+          lbl.innerHTML = `<span style="font-family:monospace; font-weight:700; color:#0f172a;">${escapeHTML(did)}</span><span style="font-size:11px; color:#64748b;">${escapeHTML(suffix)}</span>`;
+          if (btn) btn.title = `Đang chọn 1 đầu số: ${did}${suffix}`;
+          return;
+        }
+
+        // Nhiều đầu số được chọn
+        const count = selected.length;
+        const firstDids = selected.slice(0, 2).join(", ");
+        const moreText = count > 2 ? `, +${count - 2}` : "";
+        lbl.innerHTML = `<span style="background:#0284c7; color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-right:4px;">${count}</span><span style="font-family:monospace; font-weight:600; font-size:11.5px;">${escapeHTML(firstDids)}${moreText}</span>`;
+        if (btn) btn.title = `Đang chọn ${count} đầu số: ${selected.join(", ")}`;
+      };
+
+      window.onVoipDidRowClick = function (e, didValue) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        window.onVoipDidCheckboxToggle(didValue);
+      };
+
+      window.onVoipDidCheckboxToggle = function (didValue) {
+        let selected = getVoipSelectedDids().slice();
+
+        if (didValue === "all") {
+          window.voipSelectedDids = ["all"];
+        } else {
+          if (selected.includes("all")) {
+            selected = [didValue];
+          } else {
+            const idx = selected.indexOf(didValue);
+            if (idx >= 0) {
+              selected.splice(idx, 1);
+            } else {
+              selected.push(didValue);
+            }
+          }
+          window.voipSelectedDids = selected;
+        }
+
+        saveVoipSelectedDids();
+        renderVoipDidOptionsList();
+        updateVoipDidMultiSelectLabel();
+        onVoipDidSelectionChanged();
+      };
+
+      window.selectVoipDidQuick = function (action) {
+        const currentProj = (getSelectedProject() || "NVN").trim();
+        const currentProjDids = (typeof getProjectDidList === "function") ? (getProjectDidList(currentProj) || []) : [];
+
+        if (action === "all") {
+          window.voipSelectedDids = ["all"];
+        } else if (action === "project") {
+          if (currentProjDids.length > 0) {
+            window.voipSelectedDids = [...currentProjDids];
+          } else {
+            window.voipSelectedDids = ["all"];
+          }
+        } else if (action === "clear") {
+          window.voipSelectedDids = [];
+        }
+
+        saveVoipSelectedDids();
+        renderVoipDidOptionsList();
+        updateVoipDidMultiSelectLabel();
+        onVoipDidSelectionChanged();
+      };
+
+      window.filterVoipDidList = function () {
+        const query = (document.getElementById("voipDidSearchInput")?.value || "").toLowerCase().trim();
+        const items = document.querySelectorAll("#voipDidOptionsList .voip-did-option-row");
+        items.forEach(el => {
+          const text = (el.getAttribute("data-search") || el.textContent || "").toLowerCase();
+          if (!query || text.includes(query)) {
+            el.style.display = "flex";
+          } else {
+            el.style.display = "none";
+          }
+        });
+      };
+
+      window.toggleVoipDidDropdown = function (e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById("voipDidDropdownMenu");
+        const icon = document.getElementById("voipDidDropdownIcon");
+        if (!menu) return;
+        const isOpen = menu.style.display === "flex";
+        if (isOpen) {
+          closeVoipDidDropdown();
+        } else {
+          openVoipDidDropdown();
+        }
+      };
+
+      window.openVoipDidDropdown = function () {
+        const menu = document.getElementById("voipDidDropdownMenu");
+        const icon = document.getElementById("voipDidDropdownIcon");
+        if (!menu) return;
+        menu.style.display = "flex";
+        if (icon) icon.style.transform = "rotate(180deg)";
+        const searchInput = document.getElementById("voipDidSearchInput");
+        if (searchInput) {
+          searchInput.value = "";
+          filterVoipDidList();
+          setTimeout(() => searchInput.focus(), 50);
+        }
+      };
+
+      window.closeVoipDidDropdown = function () {
+        const menu = document.getElementById("voipDidDropdownMenu");
+        const icon = document.getElementById("voipDidDropdownIcon");
+        if (!menu) return;
+        menu.style.display = "none";
+        if (icon) icon.style.transform = "rotate(0deg)";
+      };
+
+      document.addEventListener("click", function (e) {
+        const wrap = document.getElementById("voipDidMultiSelectWrap");
+        const menu = document.getElementById("voipDidDropdownMenu");
+        if (wrap && menu && !wrap.contains(e.target)) {
+          closeVoipDidDropdown();
+        }
+      });
+
+      function onVoipDidSelectionChanged() {
+        const selHidden = document.getElementById("voipSelectDid");
+        const cur = getVoipSelectedDids();
+        if (selHidden) {
+          if (cur.includes("all")) selHidden.value = "all";
+          else if (cur.length === 1) selHidden.value = cur[0];
+          else selHidden.value = cur.join(",");
+        }
+
         if (voipCalls && voipCalls.length > 0) {
           renderVoipTable();
           updateVoipKpiCardsAndBadges();
@@ -14712,6 +15086,10 @@
         } else {
           fetchVoipCalls(false);
         }
+      }
+
+      window.onVoipDidDropdownChange = function () {
+        onVoipDidSelectionChanged();
       };
 
       window.openVoipDidConfigModal = function () {
@@ -14927,7 +15305,7 @@
         const myExt = currentSelectedMember?.extension ? String(currentSelectedMember.extension).trim() : "";
         const myCode = currentSelectedMember?.code ? String(currentSelectedMember.code).trim() : "";
         const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
-        const filterDid = document.getElementById("voipSelectDid")?.value || "all";
+        const selectedDids = (typeof getVoipSelectedDids === "function") ? getVoipSelectedDids() : ["all"];
         const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "NVN";
         const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
 
@@ -14936,13 +15314,7 @@
 
           // Lọc theo Đầu số (DID)
           const cDid = String(c.did || "").trim();
-          if (filterDid === "project_all") {
-            if (projDids && projDids.length > 0) {
-              if (!cDid || !projDids.includes(cDid)) return;
-            }
-          } else if (filterDid !== "all") {
-            if (!cDid || cDid !== filterDid) return;
-          }
+          if (!isVoipCallMatchingDid(cDid, selectedDids, projDids)) return;
 
           // Lọc theo khoảng thời gian đang chọn
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
@@ -15992,20 +16364,14 @@
         const filterStatus = document.getElementById("voipFilterStatus")?.value || "all";
         const filterType = document.getElementById("voipFilterType")?.value || "all";
         const filterNote = document.getElementById("voipFilterNoteStatus")?.value || "all";
-        const filterDid = document.getElementById("voipSelectDid")?.value || "all";
+        const selectedDids = (typeof getVoipSelectedDids === "function") ? getVoipSelectedDids() : ["all"];
         const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "NVN";
         const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
 
         const filtered = voipCalls.filter(c => {
           // 0. Lọc theo Đầu số (DID)
           const cDid = String(c.did || "").trim();
-          if (filterDid === "project_all") {
-            if (projDids && projDids.length > 0) {
-              if (!cDid || !projDids.includes(cDid)) return false;
-            }
-          } else if (filterDid !== "all") {
-            if (!cDid || cDid !== filterDid) return false;
-          }
+          if (!isVoipCallMatchingDid(cDid, selectedDids, projDids)) return false;
 
           // 1. Lọc theo Khoảng thời gian đang chọn (Tháng này / Hôm nay / Hôm qua / 7 ngày qua / Tùy chọn)
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
@@ -16320,20 +16686,14 @@
         // Lọc các cuộc gọi chưa có trong temp và chưa có trong R2 theo khoảng thời gian đã chọn
         // Ưu tiên các cuộc gọi đã đàm thoại (isAnswered)
         const dateRange = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : null;
-        const filterDid = document.getElementById("voipSelectDid")?.value || "all";
+        const selectedDids = (typeof getVoipSelectedDids === "function") ? getVoipSelectedDids() : ["all"];
         const currentProj = (typeof getSelectedProject === "function") ? getSelectedProject() : "NVN";
         const projDids = (typeof getProjectDidList === "function") ? getProjectDidList(currentProj) : null;
 
         const unnotedCalls = voipCalls.filter(c => {
           // Lọc theo Đầu số (DID)
           const cDid = String(c.did || "").trim();
-          if (filterDid === "project_all") {
-            if (projDids && projDids.length > 0) {
-              if (!cDid || !projDids.includes(cDid)) return false;
-            }
-          } else if (filterDid !== "all") {
-            if (!cDid || cDid !== filterDid) return false;
-          }
+          if (!isVoipCallMatchingDid(cDid, selectedDids, projDids)) return false;
 
           if (dateRange && c.calldate && typeof parseCallDate === "function") {
             const cd = parseCallDate(c.calldate);
@@ -16565,8 +16925,13 @@
         try {
           showToast("Đang chuẩn bị file export...", "fa-clock");
           const { date_start, date_end } = getVoipDateRange(voipCurrentRange);
-          const selDid = document.getElementById("voipSelectDid")?.value || "all";
-          const did = (selDid === "project_all" || selDid === "all") ? "all" : selDid;
+          const selDids = (typeof getVoipSelectedDids === "function") ? getVoipSelectedDids() : ["all"];
+          let did = "all";
+          if (selDids.length === 1 && selDids[0] !== "all" && selDids[0] !== "project_all") {
+            did = selDids[0];
+          } else if (selDids.length > 1 && !selDids.includes("all")) {
+            did = selDids.join(",");
+          }
 
           // Thử ưu tiên Local trước, nếu không được thì fallback sang Vercel
           let downloadEndpoint = null;
