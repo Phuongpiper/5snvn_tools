@@ -10340,6 +10340,46 @@
           }
         };
 
+        // ⚠️ Cảnh báo khi lưu backdate
+        if (isBackdate) {
+          const doSave = () => {
+            tempNotes.unshift(item);
+            saveTempNotes();
+            renderTempTable();
+            updateIssuesBadge();
+            if (currentStudioView === "stats") renderStatsPage();
+            showToast("Đã lưu ghi chú backdate vào danh sách tạm!", "fa-floppy-disk");
+            copyResult();
+          };
+          // Hiển thị modal xác nhận backdate
+          const existing = document.getElementById("backdateConfirmModal");
+          if (existing) existing.remove();
+          const modal = document.createElement("div");
+          modal.id = "backdateConfirmModal";
+          modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit";
+          modal.innerHTML = `
+            <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25);text-align:center">
+              <div style="font-size:2.4rem;margin-bottom:10px">⚠️</div>
+              <div style="font-size:1.1rem;font-weight:700;color:#c0392b;margin-bottom:8px">Lưu ghi chú ngày cũ!</div>
+              <div style="font-size:.95rem;color:#444;margin-bottom:6px">Bạn đang lưu note cho ngày <b style="color:#e74c3c">${selectedDateStr}</b></div>
+              <div style="font-size:.88rem;color:#888;margin-bottom:22px">Hôm nay là <b>${todayStr}</b>. Đây là một <b>backdate</b>.</div>
+              <div style="font-size:.85rem;color:#666;background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin-bottom:22px;text-align:left">
+                📋 <b>Issue sẽ lưu:</b><br>
+                <span style="color:#333;font-size:.82rem;word-break:break-all">${text.length > 120 ? text.substring(0, 120) + "..." : text}</span>
+              </div>
+              <div style="display:flex;gap:12px;justify-content:center">
+                <button id="bdCancel" style="padding:10px 24px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;font-size:.95rem;cursor:pointer;font-weight:600;color:#555">✕ Huỷ</button>
+                <button id="bdConfirm" style="padding:10px 24px;border-radius:8px;border:none;background:#e74c3c;color:#fff;font-size:.95rem;cursor:pointer;font-weight:700">✔ Vẫn lưu backdate</button>
+              </div>
+            </div>`;
+          document.body.appendChild(modal);
+          const close = () => modal.remove();
+          modal.querySelector("#bdCancel").addEventListener("click", close);
+          modal.querySelector("#bdConfirm").addEventListener("click", () => { close(); doSave(); });
+          modal.addEventListener("click", e => { if (e.target === modal) close(); });
+          return;
+        }
+
         tempNotes.unshift(item);
         saveTempNotes();
         renderTempTable();
