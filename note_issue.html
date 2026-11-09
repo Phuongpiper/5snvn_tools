@@ -11713,11 +11713,26 @@
           if (typeof validateHotline === "function") validateHotline();
         }
 
-        // 7. Ngày ghi nhận: Khi issue được đẩy từ call-log thì không cần lấy ngày cũ của cuộc gọi, luôn nhận đúng hôm nay
+        // 7. Ngày ghi nhận: Tự động chuyển sang ngày của cuộc gọi (nếu có), fallback về hôm nay
         const issueDateInput = document.getElementById("inputIssueDate");
         if (issueDateInput) {
-          const todayIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
-          issueDateInput.value = todayIso;
+          let targetIso = "";
+          const dVal = data.date || data.calldate || data.callDate || "";
+          if (dVal) {
+            const raw = String(dVal).trim();
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+              targetIso = raw.slice(0, 10);
+            } else {
+              const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+              if (m) {
+                targetIso = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+              }
+            }
+          }
+          if (!targetIso) {
+            targetIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
+          }
+          issueDateInput.value = targetIso;
           issueDateInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
@@ -16902,19 +16917,40 @@
         const inputHotline = document.getElementById("inputHotline");
         if (inputHotline) {
           inputHotline.value = phone;
+          if (typeof validateHotline === "function") validateHotline();
           inputHotline.dispatchEvent(new Event("input", { bubbles: true }));
           inputHotline.dispatchEvent(new Event("blur", { bubbles: true }));
         }
 
-        // Luôn nhận ngày hôm nay khi nạp từ cuộc gọi vào form Soạn Issue
+        // Tự động chuyển sang ngày của cuộc gọi bị thiếu (nếu có), fallback về hôm nay nếu không có ngày
         const dp = document.getElementById("inputIssueDate");
+        let targetIso = "";
+        if (date) {
+          const raw = String(date).trim();
+          if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+            targetIso = raw.slice(0, 10);
+          } else {
+            const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (m) {
+              targetIso = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+            }
+          }
+        }
+        if (!targetIso) {
+          targetIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
+        }
+
         if (dp) {
-          const todayIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
-          dp.value = todayIso;
+          dp.value = targetIso;
           dp.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
-        showToast(`Đã nạp số Hotline: ${phone} vào form Soạn Issue!`, "fa-phone");
+        if (typeof updateResultDisplay === "function") {
+          updateResultDisplay();
+        }
+
+        const dateDisplay = targetIso ? targetIso.split("-").reverse().join("/") : "";
+        showToast(`Đã nạp Hotline: ${phone} (ngày ${dateDisplay}) vào Soạn Issue!`, "fa-phone");
         setTimeout(() => {
           inputHotline?.scrollIntoView({ behavior: "smooth", block: "center" });
           inputHotline?.focus();
