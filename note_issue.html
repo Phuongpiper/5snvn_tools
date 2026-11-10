@@ -15864,31 +15864,61 @@
             return false;
           }
 
-          // Helper: tìm issue theo hotline+ngày (không phân biệt nhân viên)
+          // Helper: tìm issue theo hotline+ngày
+          // QUY TẮC: Cuộc gọi của nhân viên nào (staff) thì CHỈ NHÂN VIÊN ĐÓ note mới được tính!
+          // Tuyệt đối không lấy note của nhân viên khác (Duy, Khoa, v.v.) gán vào cuộc gọi của Tánh hay ai khác.
           function findIssueByPhoneAndDate(pool, phone, date) {
-            // Tầng 1: Ưu tiên khớp cả nhân viên (chính xác nhất)
+            if (!pool || pool.length === 0 || !phone || !date) return null;
+
+            // Khớp issue theo đúng nhân viên của cuộc gọi (nếu cuộc gọi có staff)
             const exact = pool.find(iss => {
               const issPhone = normalizePhone(extractHotlineFromIssue(iss));
               const phoneOk = (issPhone && phoneMatches(phone, issPhone)) ||
                 (phone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(phone.slice(-9)));
               if (!phoneOk) return false;
               if (!isIssueDateMatched(date, iss.date)) return false;
-              const issMember = String(iss.memberCode || "").trim().toUpperCase();
-              const callMember = String(staff?.code || "").trim().toUpperCase();
-              return issMember && callMember && issMember === callMember;
-            });
-            if (exact) return { issue: exact, isTeamNoted: false };
 
-            // Tầng 2: Khớp hotline+ngày bất kể nhân viên nào trong team đã note
-            // (cùng 1 hotline, cùng ngày → hotline đó đã được xử lý dù ai note)
-            const team = pool.find(iss => {
-              const issPhone = normalizePhone(extractHotlineFromIssue(iss));
-              const phoneOk = (issPhone && phoneMatches(phone, issPhone)) ||
-                (phone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(phone.slice(-9)));
-              if (!phoneOk) return false;
-              return isIssueDateMatched(date, iss.date);
+              // Nếu cuộc gọi có xác định nhân viên (staff) -> BẮT BUỘC issue phải thuộc về đúng nhân viên này
+              if (staff) {
+                const callMemberCode = String(staff.code || "").trim().toUpperCase();
+                const callMemberName = String(staff.name || "").trim().toLowerCase();
+                const issMemberCode = String(iss.memberCode || "").trim().toUpperCase();
+                const issMemberName = String(iss.memberName || "").trim().toLowerCase();
+
+                const isCodeMatch = Boolean(callMemberCode && issMemberCode && (
+                  callMemberCode === issMemberCode ||
+                  callMemberCode.includes(issMemberCode) ||
+                  issMemberCode.includes(callMemberCode)
+                ));
+                const isNameMatch = Boolean(callMemberName && issMemberName && (
+                  callMemberName === issMemberName ||
+                  callMemberName.includes(issMemberName) ||
+                  issMemberName.includes(callMemberName)
+                ));
+
+                return isCodeMatch || isNameMatch;
+              }
+
+              // Nếu cuộc gọi không xác định được nhân viên (máy nhánh không rõ thuộc ai)
+              return true;
             });
-            if (team) return { issue: team, isTeamNoted: true };
+
+            if (exact) {
+              return { issue: exact, isTeamNoted: false };
+            }
+
+            // CHỈ khi cuộc gọi KHÔNG xác định được nhân viên (staff == null, máy nhánh lạ)
+            // thì mới cho phép fallback khớp theo team note
+            if (!staff) {
+              const team = pool.find(iss => {
+                const issPhone = normalizePhone(extractHotlineFromIssue(iss));
+                const phoneOk = (issPhone && phoneMatches(phone, issPhone)) ||
+                  (phone.length >= 9 && (iss.result || "").replace(/\s+/g, "").includes(phone.slice(-9)));
+                if (!phoneOk) return false;
+                return isIssueDateMatched(date, iss.date);
+              });
+              if (team) return { issue: team, isTeamNoted: true };
+            }
 
             return null;
           }
