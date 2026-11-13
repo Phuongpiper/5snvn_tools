@@ -7890,30 +7890,28 @@
 
         // 1. Lấy token xác thực
         if (!token) {
-          try {
-            const loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username: agentUsername, password: "1" })
-            });
-            if (loginRes.ok) {
-              const authData = await loginRes.json();
-              token = authData.access_token || "";
-            }
-          } catch (_) { }
-
-          if (!token) {
+          const tryLogin = async (usr, pwd) => {
             try {
-              const defLogin = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+              const res = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username: "tanh.h.bui.3811", password: "1" })
+                body: JSON.stringify({ username: usr, password: pwd })
               });
-              if (defLogin.ok) {
-                const dAuth = await defLogin.json();
-                token = dAuth.access_token || "";
+              if (res.ok) {
+                const data = await res.json();
+                return data.access_token || "";
               }
             } catch (_) { }
+            return "";
+          };
+
+          // Thử mật khẩu mới NVNchatbox@666, fallback sang 1
+          token = await tryLogin(agentUsername, "NVNchatbox@666");
+          if (!token) token = await tryLogin(agentUsername, "1");
+
+          if (!token && agentUsername !== "tanh.h.bui.3811") {
+            token = await tryLogin("tanh.h.bui.3811", "NVNchatbox@666");
+            if (!token) token = await tryLogin("tanh.h.bui.3811", "1");
           }
         }
 
@@ -11444,11 +11442,42 @@
         try {
           // 1. Đăng nhập trực tiếp từ Client (0% CPU server hosting)
           const agentId = (found.memberCode || "").trim().toLowerCase() || "tanh.h.bui.3811";
-          const loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+          let loginRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username: agentId, password: "1" })
+            body: JSON.stringify({ username: agentId, password: "NVNchatbox@666" })
           });
+
+          // Fallback sang mật khẩu cũ "1" nếu tài khoản chưa đổi
+          if (!loginRes.ok) {
+            try {
+              const fbRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: agentId, password: "1" })
+              });
+              if (fbRes.ok) loginRes = fbRes;
+            } catch (_) { }
+          }
+
+          // Fallback sang tài khoản mặc định Tánh nếu nhân viên chưa có account
+          if (!loginRes.ok && agentId !== "tanh.h.bui.3811") {
+            try {
+              let defRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: "tanh.h.bui.3811", password: "NVNchatbox@666" })
+              });
+              if (!defRes.ok) {
+                defRes = await fetch("https://helpdesk.ai-audit-test.online/api/auth/login", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ username: "tanh.h.bui.3811", password: "1" })
+                });
+              }
+              if (defRes.ok) loginRes = defRes;
+            } catch (_) { }
+          }
 
           if (!loginRes.ok) {
             throw new Error(`Đăng nhập Helpdesk thất bại (HTTP ${loginRes.status})`);

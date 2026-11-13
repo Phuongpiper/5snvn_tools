@@ -159,20 +159,30 @@ function getCurrentMonthRange() {
 }
 
 async function loginHelpdesk(username, password) {
-  const postData = JSON.stringify({
-    username: username || DEFAULT_USERNAME,
-    password: password || DEFAULT_PASSWORD
-  });
-  const res = await httpsRequest(`${HELPDESK_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    }
-  }, postData);
+  const user = username || DEFAULT_USERNAME;
+  const pwd = password || DEFAULT_PASSWORD;
 
+  const tryLogin = async (p) => {
+    const postData = JSON.stringify({ username: user, password: p });
+    return await httpsRequest(`${HELPDESK_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    }, postData);
+  };
+
+  let res = await tryLogin(pwd);
   if (res.status === 200 && res.data && res.data.access_token) {
     return res.data;
   }
+
+  // Fallback sang mật khẩu dự phòng "1" nếu bị 401
+  if (res.status === 401 && pwd !== "1") {
+    const fallbackRes = await tryLogin("1");
+    if (fallbackRes.status === 200 && fallbackRes.data && fallbackRes.data.access_token) {
+      return fallbackRes.data;
+    }
+  }
+
   throw new Error(`Login Helpdesk thất bại (HTTP ${res.status}): ${JSON.stringify(res.data || res.body)}`);
 }
 
