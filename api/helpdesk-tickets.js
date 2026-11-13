@@ -32,7 +32,7 @@ const R2_CACHE_KEY         = "helpdesk_tickets_cache.json";
 
 const HELPDESK_BASE_URL    = "https://helpdesk.ai-audit-test.online";
 const DEFAULT_USERNAME     = process.env.HELPDESK_USERNAME || "tanh.h.bui.3811";
-const DEFAULT_PASSWORD     = process.env.HELPDESK_PASSWORD || "1";
+const DEFAULT_PASSWORD     = process.env.HELPDESK_PASSWORD || "NVNchatbox@666";
 
 
 // ── Web Crypto helpers (works in Cloudflare Workers + Node 18+) ───────────────
