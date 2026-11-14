@@ -5782,15 +5782,20 @@
           </div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Tên dự án (ID)*</label>
-              <input type="text" id="editorProjectId" placeholder="VD: LVN, CPVN..." maxlength="20"
-                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; text-transform:uppercase;"
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">
+                <i class="fa-solid fa-diagram-project" style="color:#0284c7; margin-right:3px;"></i>Dự án trên hệ thống*
+              </label>
+              <select id="editorProjectSelect" onchange="onEditorProjectSelectChange(this.value)"
+                style="width:100%; font-size:12px; font-weight:700; color:#1e293b; padding:6px 8px; border:1.5px solid #0284c7; border-radius:5px; box-sizing:border-box; background:#fff; cursor:pointer;">
+              </select>
+              <input type="text" id="editorProjectId" placeholder="Hoặc nhập tên dự án khác..." maxlength="20"
+                style="display:none; width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; text-transform:uppercase; margin-top:4px;"
                 oninput="this.value=this.value.toUpperCase()" />
             </div>
             <div>
               <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Badge (tên hiển thị)</label>
               <input type="text" id="editorProjectBadge" placeholder="VD: LVN DMS"
-                style="width:100%; font-size:12px; padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+                style="width:100%; font-size:12px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
             </div>
             <div style="grid-column:1/-1;">
               <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Server URL*</label>
@@ -14514,18 +14519,17 @@
           pass: "NPage@0101",
           serverId: "VN",
           installationUrl: "https://docs.google.com/spreadsheets/d/1qSBDKBwsUy05X21z1okcJ4zWeXxGFMK_BO4VQ77Ln68/edit?gid=331979622#gid=331979622"
+        },
+        {
+          id: "LVN",
+          label: "LVN",
+          badge: "Loreal DMS",
+          serverUrl: "https://dms-vn.loreal-apac.net",
+          companyCd: "LOREAL_VN_PRD_VN",
+          pass: "NPage@0101",
+          serverId: "VN",
+          installationUrl: ""
         }
-        // Ví dụ thêm dự án LVN:
-        // {
-        //   id: "LVN",
-        //   label: "LVN",
-        //   badge: "LVN DMS",
-        //   serverUrl: "https://lvn.server.com",
-        //   companyCd: "C_LVN",
-        //   pass: "LVN@pass",
-        //   serverId: "VN",
-        //   installationUrl: "https://docs.google.com/..."
-        // }
       ];
       let currentSetupProjectId = "NVN"; // Tab đang active
       let currentSetupMode = "nvbh"; // "nvbh" | "hq"
@@ -14539,8 +14543,8 @@
       function getAllSetupProjects() {
         const custom = loadCustomSetupProjects();
         const map = {};
-        SETUP_PROJECTS.forEach(p => { map[p.id] = p; });
-        custom.forEach(p => { map[p.id] = p; });
+        SETUP_PROJECTS.forEach(p => { map[p.id.toUpperCase()] = p; });
+        custom.forEach(p => { map[p.id.toUpperCase()] = p; });
         return Object.values(map);
       }
 
@@ -14588,28 +14592,116 @@
         });
       }
 
+      // Đổ danh sách dự án từ hệ thống vào Select của Editor
+      function populateEditorProjectSelect(selectedId) {
+        const sel = document.getElementById("editorProjectSelect");
+        const inputId = document.getElementById("editorProjectId");
+        if (!sel) return;
+        sel.innerHTML = "";
+
+        // Lấy danh sách dự án thực tế trên hệ thống (từ localStorage app_projects_data hoặc core)
+        const sysProjs = (typeof getSystemProjects === "function") ? getSystemProjects() : ["NVN", "LVN", "CPTH", "CPVN", "FNB", "Haleon"];
+        const existingSetupProjs = getAllSetupProjects().map(p => p.id.toUpperCase());
+
+        const defOpt = document.createElement("option");
+        defOpt.value = "";
+        defOpt.textContent = "-- Chọn dự án từ hệ thống --";
+        sel.appendChild(defOpt);
+
+        sysProjs.forEach(p => {
+          const pName = typeof p === "string" ? p.trim() : (p?.name || "").trim();
+          if (!pName) return;
+          const pUp = pName.toUpperCase();
+          const pObj = (typeof getProjectObject === "function") ? getProjectObject(pName) : { name: pName, system: "" };
+          const pSys = pObj.system ? ` (${pObj.system})` : "";
+          const isConfigured = existingSetupProjs.includes(pUp);
+
+          const opt = document.createElement("option");
+          opt.value = pUp;
+          opt.dataset.badge = pUp === "NVN" ? "Nestlé DMS" : (pUp === "LVN" ? "Loreal DMS" : (pObj.system ? `${pName} ${pObj.system}` : `${pName} DMS`));
+          opt.textContent = `${pName}${pSys}${isConfigured ? " ✓" : ""}`;
+          sel.appendChild(opt);
+        });
+
+        const customOpt = document.createElement("option");
+        customOpt.value = "__custom__";
+        customOpt.textContent = "+ Nhập dự án khác ngoài hệ thống...";
+        sel.appendChild(customOpt);
+
+        if (selectedId) {
+          const match = Array.from(sel.options).find(o => o.value === selectedId.toUpperCase());
+          if (match) {
+            sel.value = selectedId.toUpperCase();
+            if (inputId) inputId.style.display = "none";
+          } else {
+            sel.value = "__custom__";
+            if (inputId) inputId.style.display = "block";
+          }
+        }
+      }
+
+      window.onEditorProjectSelectChange = function(val) {
+        const inputId = document.getElementById("editorProjectId");
+        const inputBadge = document.getElementById("editorProjectBadge");
+        const sel = document.getElementById("editorProjectSelect");
+        if (!inputId) return;
+
+        if (val === "__custom__") {
+          inputId.style.display = "block";
+          inputId.value = "";
+          inputId.disabled = false;
+          inputId.focus();
+        } else if (val) {
+          inputId.style.display = "none";
+          inputId.value = val;
+          const opt = sel?.options[sel.selectedIndex];
+          if (inputBadge) {
+            inputBadge.value = opt?.dataset?.badge || (val + " DMS");
+          }
+          // Nếu dự án đã có cấu hình trong hệ thống -> điền sẵn
+          const existing = getAllSetupProjects().find(p => p.id.toUpperCase() === val.toUpperCase());
+          if (existing) {
+            if (existing.badge) inputBadge.value = existing.badge;
+            if (existing.serverUrl) document.getElementById("editorProjectServerUrl").value = existing.serverUrl;
+            if (existing.companyCd) document.getElementById("editorProjectCompanyCd").value = existing.companyCd;
+            if (existing.pass) document.getElementById("editorProjectPass").value = existing.pass;
+            if (existing.serverId) document.getElementById("editorProjectServerId").value = existing.serverId;
+            if (existing.installationUrl) document.getElementById("editorProjectInstallUrl").value = existing.installationUrl;
+          }
+        } else {
+          inputId.style.display = "none";
+          inputId.value = "";
+        }
+      };
+
       // Mở panel editor
       window.openSetupProjectEditor = function(projectId) {
         const panel = document.getElementById("setupProjectEditorPanel");
         const title = document.getElementById("setupEditorTitle");
         const deleteBtn = document.getElementById("setupEditorDeleteBtn");
+        const selProj = document.getElementById("editorProjectSelect");
+        const inputId = document.getElementById("editorProjectId");
         if (!panel) return;
 
-        const isBuiltIn = projectId && SETUP_PROJECTS.some(p => p.id === projectId);
+        const isBuiltIn = projectId && SETUP_PROJECTS.some(p => p.id.toUpperCase() === projectId.toUpperCase());
 
         if (projectId) {
-          const proj = getAllSetupProjects().find(p => p.id === projectId);
+          const proj = getAllSetupProjects().find(p => p.id.toUpperCase() === projectId.toUpperCase());
           if (!proj) return;
-          document.getElementById("editorProjectId").value = proj.id;
-          document.getElementById("editorProjectId").disabled = isBuiltIn;
+          populateEditorProjectSelect(projectId);
+          if (inputId) {
+            inputId.value = proj.id;
+            inputId.disabled = isBuiltIn;
+          }
+          if (selProj) selProj.disabled = isBuiltIn;
           document.getElementById("editorProjectBadge").value = proj.badge || "";
           document.getElementById("editorProjectServerUrl").value = proj.serverUrl || "";
           document.getElementById("editorProjectCompanyCd").value = proj.companyCd || "";
           document.getElementById("editorProjectPass").value = proj.pass || "";
           document.getElementById("editorProjectServerId").value = proj.serverId || "";
           document.getElementById("editorProjectInstallUrl").value = proj.installationUrl || "";
-          title.innerHTML = `<i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Chỉnh sửa: <strong>${proj.id}</strong>`;
-          const hasCustomOverride = loadCustomSetupProjects().some(p => p.id === projectId);
+          title.innerHTML = `<i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Chỉnh sửa thông số: <strong>${proj.id}</strong>`;
+          const hasCustomOverride = loadCustomSetupProjects().some(p => p.id.toUpperCase() === projectId.toUpperCase());
           if (isBuiltIn) {
             deleteBtn.style.display = hasCustomOverride ? "inline-flex" : "none";
             deleteBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định';
@@ -14619,17 +14711,34 @@
           }
           panel._editingId = projectId;
         } else {
+          // Tạo mới: Ưu tiên chọn ngay dự án hiện tại đang kích hoạt trên hệ thống Note Issue
+          const activeSysProj = ((typeof getSelectedProject === "function" ? getSelectedProject() : "") || "NVN").toUpperCase();
+          const existingSetupProjs = getAllSetupProjects().map(p => p.id.toUpperCase());
+
+          // Tìm dự án hệ thống đầu tiên chưa có cấu hình cài máy (ưu tiên dự án đang xem)
+          let targetPreselect = "";
+          if (!existingSetupProjs.includes(activeSysProj)) {
+            targetPreselect = activeSysProj;
+          }
+
+          populateEditorProjectSelect(targetPreselect);
+          if (selProj) selProj.disabled = false;
+
           ["editorProjectId","editorProjectBadge","editorProjectServerUrl","editorProjectCompanyCd","editorProjectPass","editorProjectServerId","editorProjectInstallUrl"].forEach(id => {
             const el = document.getElementById(id);
             if (el) { el.value = ""; el.disabled = false; }
           });
-          title.innerHTML = `<i class="fa-solid fa-plus" style="margin-right:5px;"></i>Tạo dự án mới`;
+
+          if (targetPreselect) {
+            onEditorProjectSelectChange(targetPreselect);
+          }
+
+          title.innerHTML = `<i class="fa-solid fa-plus" style="margin-right:5px;"></i>Thêm thông số dự án hệ thống`;
           deleteBtn.style.display = "none";
           panel._editingId = null;
         }
 
         panel.style.display = "block";
-        setTimeout(() => document.getElementById("editorProjectId")?.focus(), 50);
       };
 
       window.closeSetupProjectEditor = function() {
@@ -14638,7 +14747,10 @@
       };
 
       window.saveSetupProject = function() {
-        const id = (document.getElementById("editorProjectId")?.value || "").trim().toUpperCase();
+        const selVal = document.getElementById("editorProjectSelect")?.value || "";
+        const manualId = (document.getElementById("editorProjectId")?.value || "").trim().toUpperCase();
+        const id = (selVal && selVal !== "__custom__") ? selVal.toUpperCase() : manualId;
+
         const badge = (document.getElementById("editorProjectBadge")?.value || "").trim() || id + " DMS";
         const serverUrl = (document.getElementById("editorProjectServerUrl")?.value || "").trim();
         const companyCd = (document.getElementById("editorProjectCompanyCd")?.value || "").trim();
@@ -14646,13 +14758,13 @@
         const serverId = (document.getElementById("editorProjectServerId")?.value || "").trim() || "VN";
         const installationUrl = (document.getElementById("editorProjectInstallUrl")?.value || "").trim();
 
-        if (!id) { showToast("Vui lòng nhập Tên dự án!", "fa-triangle-exclamation"); return; }
+        if (!id) { showToast("Vui lòng chọn hoặc nhập Tên dự án!", "fa-triangle-exclamation"); return; }
         if (!serverUrl) { showToast("Vui lòng nhập Server URL!", "fa-triangle-exclamation"); return; }
         if (!companyCd) { showToast("Vui lòng nhập Company CD!", "fa-triangle-exclamation"); return; }
         if (!pass) { showToast("Vui lòng nhập Pass!", "fa-triangle-exclamation"); return; }
 
         const newProj = { id, badge, serverUrl, companyCd, pass, serverId, installationUrl };
-        const custom = loadCustomSetupProjects().filter(p => p.id !== id);
+        const custom = loadCustomSetupProjects().filter(p => p.id.toUpperCase() !== id.toUpperCase());
         custom.push(newProj);
         saveCustomSetupProjects(custom);
 
@@ -14660,17 +14772,17 @@
         renderSetupTabs();
         switchSetupTab(id);
         closeSetupProjectEditor();
-        showToast(`Đã lưu dự án ${id}!`, "fa-floppy-disk");
+        showToast(`Đã lưu thông số dự án ${id}!`, "fa-floppy-disk");
       };
 
       window.deleteSetupProject = function() {
         const panel = document.getElementById("setupProjectEditorPanel");
-        const id = panel?._editingId;
+        const id = (panel?._editingId || "").toUpperCase();
         if (!id) return;
-        const isBuiltIn = SETUP_PROJECTS.some(p => p.id === id);
+        const isBuiltIn = SETUP_PROJECTS.some(p => p.id.toUpperCase() === id);
         if (isBuiltIn) {
           if (!confirm(`Khôi phục cài đặt mặc định cho dự án "${id}"?`)) return;
-          const custom = loadCustomSetupProjects().filter(p => p.id !== id);
+          const custom = loadCustomSetupProjects().filter(p => p.id.toUpperCase() !== id);
           saveCustomSetupProjects(custom);
           renderSetupTabs();
           switchSetupTab(id);
@@ -14679,9 +14791,9 @@
           return;
         }
         if (!confirm(`Xoá dự án "${id}"? Thao tác này không thể hoàn tác.`)) return;
-        const custom = loadCustomSetupProjects().filter(p => p.id !== id);
+        const custom = loadCustomSetupProjects().filter(p => p.id.toUpperCase() !== id);
         saveCustomSetupProjects(custom);
-        currentSetupProjectId = getAllSetupProjects().find(p => p.id !== id)?.id || "NVN";
+        currentSetupProjectId = getAllSetupProjects().find(p => p.id.toUpperCase() !== id)?.id || "NVN";
         renderSetupTabs();
         switchSetupTab(currentSetupProjectId);
         closeSetupProjectEditor();
@@ -14775,6 +14887,17 @@
 
         // Render tabs (bao gồm custom projects từ localStorage)
         renderSetupTabs();
+
+        // TỰ ĐỘNG BÁM THEO DỰ ÁN HỆ THỐNG ĐANG CHỌN Ở HEADER:
+        const currentActiveSysProj = ((typeof getSelectedProject === "function" ? getSelectedProject() : "") || "NVN").toUpperCase();
+        const allProjs = getAllSetupProjects();
+        const found = allProjs.find(p => p.id.toUpperCase() === currentActiveSysProj);
+        if (found) {
+          currentSetupProjectId = found.id;
+        } else if (!allProjs.some(p => p.id === currentSetupProjectId)) {
+          currentSetupProjectId = allProjs[0]?.id || "NVN";
+        }
+
         switchSetupTab(currentSetupProjectId);
 
         const { maNpp, maNvbh, role } = getSetupDeviceValues();
