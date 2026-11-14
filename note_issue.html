@@ -5764,18 +5764,69 @@
 
       <div class="member-modal-body" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0;">
 
-        <!-- Tab chọn dự án -->
-        <div id="setupProjectTabs" style="display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0;">
-          <button type="button" class="setup-tab-btn active" data-project="NVN" onclick="switchSetupTab('NVN')"
-            style="padding:5px 16px; border-radius:20px; border:2px solid #0284c7; background:#0284c7; color:#fff; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;">
-            NVN
-          </button>
-          <!-- Thêm tab dự án mới vào đây, ví dụ:
-          <button type="button" class="setup-tab-btn" data-project="LVN" onclick="switchSetupTab('LVN')"
-            style="padding:5px 16px; border-radius:20px; border:2px solid #cbd5e1; background:#f8fafc; color:#475569; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;">
-            LVN
-          </button>
-          -->
+        <!-- Tab chọn dự án (render bằng JS) -->
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex-shrink:0;">
+          <div id="setupProjectTabs" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+          <button type="button" id="setupTabAddBtn" onclick="openSetupProjectEditor(null)"
+            title="Thêm dự án mới"
+            style="width:30px; height:30px; border-radius:50%; border:2px dashed #94a3b8; background:transparent; color:#64748b; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s;"
+            onmouseover="this.style.borderColor='#0284c7';this.style.color='#0284c7';"
+            onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';">+</button>
+        </div>
+
+        <!-- Panel chỉnh sửa / tạo dự án (ẩn mặc định) -->
+        <div id="setupProjectEditorPanel" style="display:none; background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:8px; padding:14px 16px; flex-shrink:0;">
+          <div style="font-size:12px; font-weight:800; color:#0369a1; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
+            <span id="setupEditorTitle"><i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Tạo / Chỉnh sửa dự án</span>
+            <button type="button" onclick="closeSetupProjectEditor()" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;" title="Đóng">✕</button>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Tên dự án (ID)*</label>
+              <input type="text" id="editorProjectId" placeholder="VD: LVN, CPVN..." maxlength="20"
+                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; text-transform:uppercase;"
+                oninput="this.value=this.value.toUpperCase()" />
+            </div>
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Badge (tên hiển thị)</label>
+              <input type="text" id="editorProjectBadge" placeholder="VD: LVN DMS"
+                style="width:100%; font-size:12px; padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+            </div>
+            <div style="grid-column:1/-1;">
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Server URL*</label>
+              <input type="text" id="editorProjectServerUrl" placeholder="VD: https://server.com"
+                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Company CD*</label>
+              <input type="text" id="editorProjectCompanyCd" placeholder="VD: C_LVN_VNM"
+                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Pass*</label>
+              <input type="text" id="editorProjectPass" placeholder="VD: Pass@1234"
+                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">ID máy chủ</label>
+              <input type="text" id="editorProjectServerId" placeholder="VD: VN"
+                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+            </div>
+            <div>
+              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Link file Installation</label>
+              <input type="text" id="editorProjectInstallUrl" placeholder="https://docs.google.com/..."
+                style="width:100%; font-size:12px; padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
+            <button type="button" id="setupEditorDeleteBtn" onclick="deleteSetupProject()" style="display:none; padding:5px 12px; border-radius:5px; border:1px solid #fca5a5; background:#fef2f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer;">
+              <i class="fa-solid fa-trash"></i> Xoá dự án
+            </button>
+            <button type="button" onclick="closeSetupProjectEditor()" style="padding:5px 12px; border-radius:5px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:12px; cursor:pointer;">Huỷ</button>
+            <button type="button" onclick="saveSetupProject()" style="padding:5px 14px; border-radius:5px; border:none; background:#0284c7; color:#fff; font-size:12px; font-weight:700; cursor:pointer;">
+              <i class="fa-solid fa-floppy-disk"></i> Lưu dự án
+            </button>
+          </div>
         </div>
 
         <!-- Bảng thông số Cài máy (chuẩn theo mẫu Excel) -->
@@ -11956,23 +12007,10 @@
             });
           }
         } else if (currentStudioView === "voip") {
-          if (isSameView && typeof window.reloadVoipData === "function") {
-            window.reloadVoipData(true);
-            return;
-          }
-          const tbody = document.getElementById("tbodyVoipCalls");
-          const alreadyHasRows = tbody && tbody.children.length > 0;
-
-          // Nếu view VoIP chưa từng được render hoặc bảng đang rỗng thì mới render lần đầu
-          if (!isVoipViewRendered || !alreadyHasRows) {
+          if (!isVoipViewRendered) {
             isVoipViewRendered = true;
-            if (!voipCalls || voipCalls.length === 0) {
-              if (typeof loadVoipCacheFromLocal === "function") loadVoipCacheFromLocal();
-            }
             if (voipCalls && voipCalls.length > 0) {
-              const { date_start, date_end } = (typeof getVoipDateRange === "function") ? getVoipDateRange(voipCurrentRange) : { date_start: "", date_end: "" };
               requestAnimationFrame(() => {
-                if (typeof updateVoipKpiCardsAndBadges === "function") updateVoipKpiCardsAndBadges(date_start, date_end);
                 if (typeof renderVoipTable === "function") renderVoipTable();
                 if (typeof renderUnnotedSuggestions === "function") renderUnnotedSuggestions();
               });
@@ -12081,14 +12119,42 @@
             const list = JSON.parse(raw);
             if (Array.isArray(list)) {
               list.forEach(p => {
-                if (!p) return;
-                const pName = typeof p === "string" ? p.trim() : (p.name ? p.name.trim() : "");
-                if (pName) set.add(pName);
+                const n = typeof p === "string" ? p.trim() : (p?.name || "").trim();
+                if (n) set.add(n);
               });
             }
           }
         } catch (_) {}
+        // 4. From VoIP DID config
+        if (typeof getVoipDidConfig === "function") {
+          const cfg = getVoipDidConfig();
+          Object.keys(cfg).forEach(k => { if (k && k.trim()) set.add(k.trim()); });
+        }
         return Array.from(set);
+      }
+
+      function getReportDidsForProjects(projectNames) {
+        const dids = new Set();
+        const config = (typeof getVoipDidConfig === "function") ? getVoipDidConfig() : {};
+        const didMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
+
+        projectNames.forEach(p => {
+          const pUp = p.trim().toUpperCase();
+          for (const [k, v] of Object.entries(config)) {
+            if (k.trim().toUpperCase() === pUp) {
+              if (Array.isArray(v)) v.forEach(d => d && dids.add(String(d).trim()));
+              else if (typeof v === "string" && v.trim()) {
+                v.split(/[,;\s]+/).forEach(d => d && dids.add(String(d).trim()));
+              }
+            }
+          }
+          for (const [did, projs] of Object.entries(didMap)) {
+            if (Array.isArray(projs) && projs.some(pr => pr.trim().toUpperCase() === pUp)) {
+              dids.add(String(did).trim());
+            }
+          }
+        });
+        return Array.from(dids);
       }
 
       function getIssueProjectName(iss) {
@@ -14466,8 +14532,161 @@
 
       // Lấy config dự án hiện tại
       function getCurrentSetupProject() {
-        return SETUP_PROJECTS.find(p => p.id === currentSetupProjectId) || SETUP_PROJECTS[0];
+        return getAllSetupProjects().find(p => p.id === currentSetupProjectId) || getAllSetupProjects()[0];
       }
+
+      // Lấy tất cả dự án = built-in + custom từ localStorage
+      function getAllSetupProjects() {
+        const custom = loadCustomSetupProjects();
+        const map = {};
+        SETUP_PROJECTS.forEach(p => { map[p.id] = p; });
+        custom.forEach(p => { map[p.id] = p; });
+        return Object.values(map);
+      }
+
+      function loadCustomSetupProjects() {
+        try {
+          const raw = localStorage.getItem("setup_custom_projects_v1");
+          if (raw) return JSON.parse(raw) || [];
+        } catch(_) {}
+        return [];
+      }
+
+      function saveCustomSetupProjects(list) {
+        try { localStorage.setItem("setup_custom_projects_v1", JSON.stringify(list)); } catch(_) {}
+      }
+
+      // Render toàn bộ tab buttons
+      function renderSetupTabs() {
+        const container = document.getElementById("setupProjectTabs");
+        if (!container) return;
+        container.innerHTML = "";
+        getAllSetupProjects().forEach(proj => {
+          const isActive = proj.id === currentSetupProjectId;
+          const wrap = document.createElement("div");
+          wrap.style.cssText = "display:inline-flex; align-items:center; gap:3px;";
+          // Tab button
+          const tab = document.createElement("button");
+          tab.type = "button";
+          tab.className = "setup-tab-btn" + (isActive ? " active" : "");
+          tab.dataset.project = proj.id;
+          tab.textContent = proj.id;
+          tab.style.cssText = `padding:5px 12px; border-radius:20px; border:2px solid ${isActive ? "#0284c7" : "#cbd5e1"}; background:${isActive ? "#0284c7" : "#f8fafc"}; color:${isActive ? "#fff" : "#475569"}; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;`;
+          tab.onclick = () => { closeSetupProjectEditor(); switchSetupTab(proj.id); };
+          wrap.appendChild(tab);
+          // Edit icon
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.title = "Chỉnh sửa " + proj.id;
+          editBtn.innerHTML = '<i class="fa-solid fa-pen" style="font-size:9px;"></i>';
+          editBtn.style.cssText = "width:18px; height:18px; border-radius:50%; border:1px solid #cbd5e1; background:#fff; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;";
+          editBtn.onmouseover = function() { this.style.borderColor="#0284c7"; this.style.color="#0284c7"; };
+          editBtn.onmouseout = function() { this.style.borderColor="#cbd5e1"; this.style.color="#94a3b8"; };
+          editBtn.onclick = (e) => { e.stopPropagation(); openSetupProjectEditor(proj.id); };
+          wrap.appendChild(editBtn);
+          container.appendChild(wrap);
+        });
+      }
+
+      // Mở panel editor
+      window.openSetupProjectEditor = function(projectId) {
+        const panel = document.getElementById("setupProjectEditorPanel");
+        const title = document.getElementById("setupEditorTitle");
+        const deleteBtn = document.getElementById("setupEditorDeleteBtn");
+        if (!panel) return;
+
+        const isBuiltIn = projectId && SETUP_PROJECTS.some(p => p.id === projectId);
+
+        if (projectId) {
+          const proj = getAllSetupProjects().find(p => p.id === projectId);
+          if (!proj) return;
+          document.getElementById("editorProjectId").value = proj.id;
+          document.getElementById("editorProjectId").disabled = isBuiltIn;
+          document.getElementById("editorProjectBadge").value = proj.badge || "";
+          document.getElementById("editorProjectServerUrl").value = proj.serverUrl || "";
+          document.getElementById("editorProjectCompanyCd").value = proj.companyCd || "";
+          document.getElementById("editorProjectPass").value = proj.pass || "";
+          document.getElementById("editorProjectServerId").value = proj.serverId || "";
+          document.getElementById("editorProjectInstallUrl").value = proj.installationUrl || "";
+          title.innerHTML = `<i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Chỉnh sửa: <strong>${proj.id}</strong>`;
+          const hasCustomOverride = loadCustomSetupProjects().some(p => p.id === projectId);
+          if (isBuiltIn) {
+            deleteBtn.style.display = hasCustomOverride ? "inline-flex" : "none";
+            deleteBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định';
+          } else {
+            deleteBtn.style.display = "inline-flex";
+            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Xoá dự án';
+          }
+          panel._editingId = projectId;
+        } else {
+          ["editorProjectId","editorProjectBadge","editorProjectServerUrl","editorProjectCompanyCd","editorProjectPass","editorProjectServerId","editorProjectInstallUrl"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) { el.value = ""; el.disabled = false; }
+          });
+          title.innerHTML = `<i class="fa-solid fa-plus" style="margin-right:5px;"></i>Tạo dự án mới`;
+          deleteBtn.style.display = "none";
+          panel._editingId = null;
+        }
+
+        panel.style.display = "block";
+        setTimeout(() => document.getElementById("editorProjectId")?.focus(), 50);
+      };
+
+      window.closeSetupProjectEditor = function() {
+        const panel = document.getElementById("setupProjectEditorPanel");
+        if (panel) panel.style.display = "none";
+      };
+
+      window.saveSetupProject = function() {
+        const id = (document.getElementById("editorProjectId")?.value || "").trim().toUpperCase();
+        const badge = (document.getElementById("editorProjectBadge")?.value || "").trim() || id + " DMS";
+        const serverUrl = (document.getElementById("editorProjectServerUrl")?.value || "").trim();
+        const companyCd = (document.getElementById("editorProjectCompanyCd")?.value || "").trim();
+        const pass = (document.getElementById("editorProjectPass")?.value || "").trim();
+        const serverId = (document.getElementById("editorProjectServerId")?.value || "").trim() || "VN";
+        const installationUrl = (document.getElementById("editorProjectInstallUrl")?.value || "").trim();
+
+        if (!id) { showToast("Vui lòng nhập Tên dự án!", "fa-triangle-exclamation"); return; }
+        if (!serverUrl) { showToast("Vui lòng nhập Server URL!", "fa-triangle-exclamation"); return; }
+        if (!companyCd) { showToast("Vui lòng nhập Company CD!", "fa-triangle-exclamation"); return; }
+        if (!pass) { showToast("Vui lòng nhập Pass!", "fa-triangle-exclamation"); return; }
+
+        const newProj = { id, badge, serverUrl, companyCd, pass, serverId, installationUrl };
+        const custom = loadCustomSetupProjects().filter(p => p.id !== id);
+        custom.push(newProj);
+        saveCustomSetupProjects(custom);
+
+        currentSetupProjectId = id;
+        renderSetupTabs();
+        switchSetupTab(id);
+        closeSetupProjectEditor();
+        showToast(`Đã lưu dự án ${id}!`, "fa-floppy-disk");
+      };
+
+      window.deleteSetupProject = function() {
+        const panel = document.getElementById("setupProjectEditorPanel");
+        const id = panel?._editingId;
+        if (!id) return;
+        const isBuiltIn = SETUP_PROJECTS.some(p => p.id === id);
+        if (isBuiltIn) {
+          if (!confirm(`Khôi phục cài đặt mặc định cho dự án "${id}"?`)) return;
+          const custom = loadCustomSetupProjects().filter(p => p.id !== id);
+          saveCustomSetupProjects(custom);
+          renderSetupTabs();
+          switchSetupTab(id);
+          closeSetupProjectEditor();
+          showToast(`Đã khôi phục mặc định cho ${id}!`, "fa-rotate-left");
+          return;
+        }
+        if (!confirm(`Xoá dự án "${id}"? Thao tác này không thể hoàn tác.`)) return;
+        const custom = loadCustomSetupProjects().filter(p => p.id !== id);
+        saveCustomSetupProjects(custom);
+        currentSetupProjectId = getAllSetupProjects().find(p => p.id !== id)?.id || "NVN";
+        renderSetupTabs();
+        switchSetupTab(currentSetupProjectId);
+        closeSetupProjectEditor();
+        showToast(`Đã xoá dự án ${id}.`, "fa-trash");
+      };
 
       // Chuyển tab dự án
       window.switchSetupTab = function(projectId) {
@@ -14498,7 +14717,7 @@
         if (passEl) passEl.textContent = proj.pass;
         if (serverIdEl) serverIdEl.textContent = proj.serverId;
         if (badgeEl) badgeEl.textContent = proj.badge;
-        if (installLink) installLink.href = proj.installationUrl;
+        if (installLink) installLink.href = proj.installationUrl || "#";
 
         // Reset User ID inputs khi đổi dự án
         const inputNppEl = document.getElementById("setupInputMaNpp");
@@ -14553,6 +14772,10 @@
       window.openSetupModal = function () {
         const modal = document.getElementById("setupDeviceModalBackdrop");
         if (!modal) return;
+
+        // Render tabs (bao gồm custom projects từ localStorage)
+        renderSetupTabs();
+        switchSetupTab(currentSetupProjectId);
 
         const { maNpp, maNvbh, role } = getSetupDeviceValues();
         const inputNppEl = document.getElementById("setupInputMaNpp");
