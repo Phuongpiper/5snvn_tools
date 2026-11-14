@@ -6432,10 +6432,12 @@
         const wrap = input ? input.closest(".result-date-picker-wrap") : null;
         if (!input) return;
         const todayISO = getTodayISO();
-        input.value = todayISO;
+        if (!input.value) input.value = todayISO;
         input.max = todayISO; // Không cho chọn ngày tương lai
         const updateStyle = () => {
-          const isBackdate = input.value && input.value !== todayISO;
+          const currentToday = getTodayISO();
+          input.max = currentToday;
+          const isBackdate = input.value && input.value !== currentToday;
           input.classList.toggle("is-backdate", !!isBackdate);
           if (wrap) wrap.classList.toggle("is-backdate", !!isBackdate);
           if (wrap) wrap.title = isBackdate
@@ -6444,6 +6446,7 @@
         };
         input.addEventListener("change", updateStyle);
         updateStyle();
+        window.updateIssueDatePickerStyle = updateStyle;
       }
 
       function getYesterdayString() {
@@ -17241,6 +17244,162 @@
         if (typeof fetchVoipCalls === "function") {
           fetchVoipCalls(false, true);
         }
+
+        // Kích hoạt tự động làm mới UI mỗi 8 tiếng & khi bước sang ngày mới
+        setupAutoRefreshAndNewDaySync();
+      }
+
+      /* ── TỰ ĐỘNG LÀM MỚI GIAO DIỆN MỖI 8 TIẾNG & KHI SANG NGÀY MỚI ── */
+      function setupAutoRefreshAndNewDaySync() {
+        const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000; // 8 tiếng = 28,800,000 ms
+        const pageLoadedAt = Date.now();
+        let lastDateISO = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().slice(0, 10);
+        let reloadScheduled = false;
+        let lastUserActivity = Date.now();
+
+        // Ghi nhận tương tác gần nhất của người dùng
+        const markActive = () => { lastUserActivity = Date.now(); };
+        window.addEventListener("mousemove", markActive, { passive: true });
+        window.addEventListener("keydown", markActive, { passive: true });
+        window.addEventListener("click", markActive, { passive: true });
+        window.addEventListener("touchstart", markActive, { passive: true });
+
+        // Kiểm tra xem người dùng có đang bận soạn thảo hoặc thao tác form/modal không
+        function isUserBusy() {
+          try {
+            // 1. Kiểm tra các input soạn issue có đang nhập dở không
+            const inSol = document.getElementById("solutionSearch");
+            const inHot = document.getElementById("hotlineInput");
+            const inNpp = document.getElementById("nppSearch");
+            const inNvbh = document.getElementById("nvbhSearch");
+            const inSup = document.getElementById("supSearch");
+            const hasDraft = !!(
+              (inSol && inSol.value.trim()) ||
+              (inHot && inHot.value.trim()) ||
+              (inNpp && inNpp.value.trim()) ||
+              (inNvbh && inNvbh.value.trim()) ||
+              (inSup && inSup.value.trim())
+            );
+            if (hasDraft) return true;
+
+            // 2. Kiểm tra modal/popup nào đang mở không
+            const openModals = document.querySelectorAll(
+              ".studio-modal.show, .studio-modal[style*='display: flex'], .studio-modal[style*='display: block'], .modal.show, #modalTicketDetail[style*='display: block'], #modalUnnotedPrompt[style*='display: block'], #modalVoipDetail[style*='display: block']"
+            );
+            if (openModals.length > 0) return true;
+
+            // 3. Kiểm tra input đang được người dùng focus
+            const activeEl = document.activeElement;
+            if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
+              return true;
+            }
+
+            // 4. Có tương tác click/gõ trong vòng 20 giây vừa rồi
+            if (Date.now() - lastUserActivity < 20000) return true;
+          } catch (_) { }
+
+          return false;
+        }
+
+        // Thực hiện làm mới trang an toàn (không làm gián đoạn người dùng)
+        function executeSafeReload(reason) {
+          if (isUserBusy()) {
+            reloadScheduled = true;
+            console.log(`[AutoRefresh] Hoãn reload vì người dùng đang thao tác (${reason})`);
+            return;
+          }
+
+          console.log(`[AutoRefresh] Thực hiện reload trang: ${reason}`);
+          try {
+            sessionStorage.setItem("DMS_AUTO_REFRESH_REASON", reason);
+          } catch (_) { }
+
+          window.location.reload();
+        }
+
+        // Tự động kiểm tra sang ngày mới và đồng bộ ô ngày
+        function checkAndSyncDayRollover() {
+          const currentTodayISO = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().slice(0, 10);
+          if (currentTodayISO !== lastDateISO) {
+            const oldDate = lastDateISO;
+            lastDateISO = currentTodayISO;
+
+            // Cập nhật ngay ô chọn ngày soạn issue nếu người dùng chưa chủ động chọn ngày cũ
+            const issueDateInput = document.getElementById("inputIssueDate");
+            if (issueDateInput && (issueDateInput.value === oldDate || !issueDateInput.value)) {
+              issueDateInput.value = currentTodayISO;
+              issueDateInput.max = currentTodayISO;
+              if (typeof window.updateIssueDatePickerStyle === "function") {
+                window.updateIssueDatePickerStyle();
+              }
+            }
+
+            // Kích hoạt reload trang sạch sẽ cho ngày mới
+            executeSafeReload(`Đã bước sang ngày mới (${currentTodayISO.split("-").reverse().join("/")})`);
+          }
+        }
+
+        // 1. Kiểm tra định kỳ mỗi 60 giây
+        setInterval(() => {
+          checkAndSyncDayRollover();
+
+          // Kiểm tra đủ 8 tiếng
+          if (Date.now() - pageLoadedAt >= EIGHT_HOURS_MS) {
+            executeSafeReload("Đã đủ chu kỳ 8 tiếng mở tab liên tục");
+          }
+
+          // Nếu trước đó bị hoãn do người dùng bận, nay đã rảnh thì reload ngay
+          if (reloadScheduled && !isUserBusy()) {
+            executeSafeReload("Làm mới định kỳ sau khi người dùng hoàn tất thao tác");
+          }
+        }, 60 * 1000);
+
+        // 2. Kiểm tra khi người dùng mở lại tab hoặc mở máy tính dậy
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            checkAndSyncDayRollover();
+            if (Date.now() - pageLoadedAt >= EIGHT_HOURS_MS) {
+              executeSafeReload("Đã đủ 8 tiếng (kích hoạt khi mở lại tab)");
+            }
+          }
+        });
+
+        window.addEventListener("focus", () => {
+          checkAndSyncDayRollover();
+        });
+
+        // 3. Thông báo nhẹ nhàng cho người dùng sau khi trang tự reload
+        try {
+          const reason = sessionStorage.getItem("DMS_AUTO_REFRESH_REASON");
+          if (reason) {
+            sessionStorage.removeItem("DMS_AUTO_REFRESH_REASON");
+            setTimeout(() => {
+              if (typeof showToast === "function") {
+                showToast(`🔄 Giao diện đã tự làm mới (${reason})`, "fa-rotate", 4000);
+              }
+            }, 1000);
+          }
+        } catch (_) { }
+
+        // 4. Expose API tiện ích để test hoặc kiểm tra trạng thái trong console
+        window.getAutoRefreshStatus = function () {
+          const pad = n => String(n).padStart(2, "0");
+          const fmt = d => `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+          const nextRefreshDate = new Date(pageLoadedAt + EIGHT_HOURS_MS);
+          const remainingMinutes = Math.max(0, Math.round((pageLoadedAt + EIGHT_HOURS_MS - Date.now()) / 60000));
+          return {
+            pageLoadedAt: fmt(new Date(pageLoadedAt)),
+            next8hRefreshAt: fmt(nextRefreshDate),
+            remainingMinutes: remainingMinutes + " phút",
+            lastRecordedDate: lastDateISO,
+            currentDate: typeof getTodayISO === "function" ? getTodayISO() : "",
+            isUserBusy: isUserBusy(),
+            reloadScheduled: reloadScheduled
+          };
+        };
+        window.triggerManualAutoRefresh = function (reason = "Test thủ công") {
+          executeSafeReload(reason);
+        };
       }
 
       function checkPendingPrefillIssue() {
