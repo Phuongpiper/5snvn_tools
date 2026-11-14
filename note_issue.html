@@ -14560,10 +14560,23 @@
           pass: "NPage@0101",
           serverId: "VN",
           installationUrl: ""
+        },
+        {
+          id: "HALEON",
+          label: "HALEON",
+          badge: "Haleon",
+          serverUrl: "https://fw.np.accenture.com",
+          companyCd: "HAL_VN_PROD",
+          pass: "Haleon@Pwd_VN1",
+          serverId: "HV",
+          installationUrl: ""
         }
       ];
       let currentSetupProjectId = "NVN"; // Tab đang active
       let currentSetupMode = "nvbh"; // "nvbh" | "hq"
+
+      const LS_SETUP_PROJECTS_KEY = "setup_custom_projects_v1";
+      const LS_SETUP_MIGRATED_KEY = "setup_custom_projects_migrated_v1";
 
       // Lấy config dự án hiện tại
       function getCurrentSetupProject() {
@@ -14581,14 +14594,75 @@
 
       function loadCustomSetupProjects() {
         try {
-          const raw = localStorage.getItem("setup_custom_projects_v1");
+          const raw = localStorage.getItem(LS_SETUP_PROJECTS_KEY);
           if (raw) return JSON.parse(raw) || [];
         } catch(_) {}
         return [];
       }
 
       function saveCustomSetupProjects(list) {
-        try { localStorage.setItem("setup_custom_projects_v1", JSON.stringify(list)); } catch(_) {}
+        try { localStorage.setItem(LS_SETUP_PROJECTS_KEY, JSON.stringify(list)); } catch(_) {}
+      }
+
+      // Đồng bộ thông số dự án từ Cloudflare R2
+      async function fetchSetupProjectsFromR2(silent = false) {
+        try {
+          const endpoint = (typeof getSettingsApiEndpoint === "function") ? getSettingsApiEndpoint() : "/api/r2-settings";
+          const res = await fetch(`${endpoint}?t=${Date.now()}`, { cache: "no-cache" });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.setupProjects)) {
+              const r2List = data.setupProjects;
+              const localList = loadCustomSetupProjects();
+              const hasMigrated = localStorage.getItem(LS_SETUP_MIGRATED_KEY) === "true";
+
+              let merged = [];
+              if (!hasMigrated) {
+                const map = {};
+                r2List.forEach(p => { if (p && p.id) map[p.id.toUpperCase()] = p; });
+                let hasNewLocal = false;
+                localList.forEach(p => {
+                  if (p && p.id && !map[p.id.toUpperCase()]) {
+                    map[p.id.toUpperCase()] = p;
+                    hasNewLocal = true;
+                  }
+                });
+                merged = Object.values(map);
+                localStorage.setItem(LS_SETUP_MIGRATED_KEY, "true");
+                saveCustomSetupProjects(merged);
+                if (hasNewLocal) {
+                  pushSetupProjectsToR2(merged);
+                }
+              } else {
+                merged = r2List;
+                saveCustomSetupProjects(merged);
+              }
+
+              // Cập nhật giao diện tabs nếu modal đang mở
+              const modal = document.getElementById("setupDeviceModalBackdrop");
+              if (modal && modal.classList.contains("show")) {
+                renderSetupTabs();
+                switchSetupTab(currentSetupProjectId);
+              }
+            }
+          }
+        } catch (e) {
+          if (!silent) console.warn("fetchSetupProjectsFromR2 error:", e);
+        }
+      }
+
+      // Đẩy danh sách dự án custom lên Cloudflare R2 để các máy khác cùng thấy
+      async function pushSetupProjectsToR2(list) {
+        try {
+          const endpoint = (typeof getSettingsApiEndpoint === "function") ? getSettingsApiEndpoint() : "/api/r2-settings";
+          await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ setupProjects: list })
+          });
+        } catch (e) {
+          console.warn("pushSetupProjectsToR2 error:", e);
+        }
       }
 
       // Render toàn bộ tab buttons (gọn gàng, chuẩn tab)
@@ -14635,7 +14709,7 @@
 
           const opt = document.createElement("option");
           opt.value = pUp;
-          opt.dataset.badge = pUp === "NVN" ? "Nestlé DMS" : (pUp === "LVN" ? "Loreal DMS" : (pObj.system ? `${pName} ${pObj.system}` : `${pName} DMS`));
+          opt.dataset.badge = pUp === "NVN" ? "Nestlé DMS" : (pUp === "LVN" ? "Loreal DMS" : (pUp === "HALEON" ? "Haleon" : (pObj.system ? `${pName} ${pObj.system}` : `${pName} DMS`)));
           opt.textContent = `${pName}${pSys}${isConfigured ? " ✓" : ""}`;
           sel.appendChild(opt);
         });
@@ -14810,6 +14884,7 @@
         const custom = loadCustomSetupProjects().filter(p => p.id.toUpperCase() !== id.toUpperCase());
         custom.push(newProj);
         saveCustomSetupProjects(custom);
+        pushSetupProjectsToR2(custom);
 
         currentSetupProjectId = id;
         renderSetupTabs();
@@ -14827,6 +14902,7 @@
           if (!confirm(`Khôi phục cài đặt mặc định cho dự án "${id}"?`)) return;
           const custom = loadCustomSetupProjects().filter(p => p.id.toUpperCase() !== id);
           saveCustomSetupProjects(custom);
+          pushSetupProjectsToR2(custom);
           renderSetupTabs();
           switchSetupTab(id);
           closeSetupProjectEditor();
@@ -14836,6 +14912,7 @@
         if (!confirm(`Xoá dự án "${id}"? Thao tác này không thể hoàn tác.`)) return;
         const custom = loadCustomSetupProjects().filter(p => p.id.toUpperCase() !== id);
         saveCustomSetupProjects(custom);
+        pushSetupProjectsToR2(custom);
         currentSetupProjectId = getAllSetupProjects().find(p => p.id.toUpperCase() !== id)?.id || "NVN";
         renderSetupTabs();
         switchSetupTab(currentSetupProjectId);
@@ -14932,6 +15009,11 @@
       window.openSetupModal = function () {
         const modal = document.getElementById("setupDeviceModalBackdrop");
         if (!modal) return;
+
+        // Tải cập nhật mới nhất từ Cloud R2 (chạy ngầm)
+        if (typeof fetchSetupProjectsFromR2 === "function") {
+          fetchSetupProjectsFromR2(true);
+        }
 
         // Render tabs (bao gồm custom projects từ localStorage)
         renderSetupTabs();
@@ -17692,6 +17774,7 @@
         fetchIssuesFromR2(true);
         fetchAllTempNotesFromR2(true);
         if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
+        if (typeof fetchSetupProjectsFromR2 === "function") fetchSetupProjectsFromR2(true);
         if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
         await loadSolutions();
         await loadDtList(false, getSelectedProject());
@@ -17898,6 +17981,7 @@
         fetchIssuesFromR2(true);
         fetchTempNotesFromR2(true);
         if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
+        if (typeof fetchSetupProjectsFromR2 === "function") fetchSetupProjectsFromR2(true);
         if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
       });
       window.addEventListener("message", (e) => {
@@ -17906,6 +17990,7 @@
           fetchIssuesFromR2(true);
           fetchTempNotesFromR2(true);
           if (typeof fetchExcludedPhonesFromR2 === "function") fetchExcludedPhonesFromR2(true);
+          if (typeof fetchSetupProjectsFromR2 === "function") fetchSetupProjectsFromR2(true);
           if (typeof fetchHelpdeskTickets === "function") fetchHelpdeskTickets(true);
         } else if (e.data && e.data.type === "DMS_LOAD_ISSUE" && e.data.data) {
           if (typeof window.loadIssueIntoForm === "function") {
