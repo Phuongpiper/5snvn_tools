@@ -5763,6 +5763,21 @@
       </div>
 
       <div class="member-modal-body" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0;">
+
+        <!-- Tab chọn dự án -->
+        <div id="setupProjectTabs" style="display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0;">
+          <button type="button" class="setup-tab-btn active" data-project="NVN" onclick="switchSetupTab('NVN')"
+            style="padding:5px 16px; border-radius:20px; border:2px solid #0284c7; background:#0284c7; color:#fff; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;">
+            NVN
+          </button>
+          <!-- Thêm tab dự án mới vào đây, ví dụ:
+          <button type="button" class="setup-tab-btn" data-project="LVN" onclick="switchSetupTab('LVN')"
+            style="padding:5px 16px; border-radius:20px; border:2px solid #cbd5e1; background:#f8fafc; color:#475569; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;">
+            LVN
+          </button>
+          -->
+        </div>
+
         <!-- Bảng thông số Cài máy (chuẩn theo mẫu Excel) -->
         <div
           style="border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">
@@ -5789,7 +5804,7 @@
                 </td>
                 <td style="padding: 11px 14px; text-align: right; width: 90px;">
                   <button type="button" class="btn-copy-chip"
-                    onclick="copySetupField('https://fw.np.accenture.com', 'Server URL')" title="Sao chép Server URL">
+                    onclick="copySetupField(document.getElementById('setupDeviceServerUrl').textContent, 'Server URL')" title="Sao chép Server URL">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
                 </td>
@@ -5806,7 +5821,7 @@
                   <span id="setupDeviceCompanyCd">C_NES_VNM</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right;">
-                  <button type="button" class="btn-copy-chip" onclick="copySetupField('C_NES_VNM', 'Company CD')"
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField(document.getElementById('setupDeviceCompanyCd').textContent, 'Company CD')"
                     title="Sao chép Company CD">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
@@ -5842,7 +5857,7 @@
                   <span id="setupDevicePass">NPage@0101</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right;">
-                  <button type="button" class="btn-copy-chip" onclick="copySetupField('NPage@0101', 'Mật khẩu Pass')"
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField(document.getElementById('setupDevicePass').textContent, 'Mật khẩu Pass')"
                     title="Sao chép Mật khẩu">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
@@ -5859,7 +5874,7 @@
                   <span id="setupDeviceServerId">VN</span>
                 </td>
                 <td style="padding: 11px 14px; text-align: right;">
-                  <button type="button" class="btn-copy-chip" onclick="copySetupField('VN', 'ID máy chủ')"
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField(document.getElementById('setupDeviceServerId').textContent, 'ID máy chủ')"
                     title="Sao chép ID máy chủ">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
@@ -5920,7 +5935,7 @@
 
       <div class="member-modal-footer"
         style="padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; border-top: 1px solid var(--border); flex-shrink: 0;">
-        <a href="https://docs.google.com/spreadsheets/d/1qSBDKBwsUy05X21z1okcJ4zWeXxGFMK_BO4VQ77Ln68/edit?gid=331979622#gid=331979622"
+        <a id="setupInstallationLink" href="https://docs.google.com/spreadsheets/d/1qSBDKBwsUy05X21z1okcJ4zWeXxGFMK_BO4VQ77Ln68/edit?gid=331979622#gid=331979622"
           target="_blank" rel="noopener noreferrer" class="btn-studio-action"
           style="background:#0284c7; color:#fff; box-shadow:0 4px 12px rgba(2,132,199,0.3); text-decoration:none;"
           title="Mở file Google Sheets Installation trong tab mới">
@@ -12066,42 +12081,14 @@
             const list = JSON.parse(raw);
             if (Array.isArray(list)) {
               list.forEach(p => {
-                const n = typeof p === "string" ? p.trim() : (p?.name || "").trim();
-                if (n) set.add(n);
+                if (!p) return;
+                const pName = typeof p === "string" ? p.trim() : (p.name ? p.name.trim() : "");
+                if (pName) set.add(pName);
               });
             }
           }
         } catch (_) {}
-        // 4. From VoIP DID config
-        if (typeof getVoipDidConfig === "function") {
-          const cfg = getVoipDidConfig();
-          Object.keys(cfg).forEach(k => { if (k && k.trim()) set.add(k.trim()); });
-        }
         return Array.from(set);
-      }
-
-      function getReportDidsForProjects(projectNames) {
-        const dids = new Set();
-        const config = (typeof getVoipDidConfig === "function") ? getVoipDidConfig() : {};
-        const didMap = (typeof getDidProjectMap === "function") ? getDidProjectMap() : {};
-
-        projectNames.forEach(p => {
-          const pUp = p.trim().toUpperCase();
-          for (const [k, v] of Object.entries(config)) {
-            if (k.trim().toUpperCase() === pUp) {
-              if (Array.isArray(v)) v.forEach(d => d && dids.add(String(d).trim()));
-              else if (typeof v === "string" && v.trim()) {
-                v.split(/[,;\s]+/).forEach(d => d && dids.add(String(d).trim()));
-              }
-            }
-          }
-          for (const [did, projs] of Object.entries(didMap)) {
-            if (Array.isArray(projs) && projs.some(pr => pr.trim().toUpperCase() === pUp)) {
-              dids.add(String(did).trim());
-            }
-          }
-        });
-        return Array.from(dids);
       }
 
       function getIssueProjectName(iss) {
@@ -14450,7 +14437,79 @@
       /* ──────────────────────────────────────────────────────────────────────────
          THÔNG SỐ CÀI MÁY DMS (MÔ PHỎNG MẪU EXCEL & SAO CHÉP NHANH)
       ────────────────────────────────────────────────────────────────────────── */
+      // ========= CẤU HÌNH DỰ ÁN - THÊM DỰ ÁN MỚI VÀO ĐÂY =========
+      const SETUP_PROJECTS = [
+        {
+          id: "NVN",
+          label: "NVN",
+          badge: "Nestlé DMS",
+          serverUrl: "https://fw.np.accenture.com",
+          companyCd: "C_NES_VNM",
+          pass: "NPage@0101",
+          serverId: "VN",
+          installationUrl: "https://docs.google.com/spreadsheets/d/1qSBDKBwsUy05X21z1okcJ4zWeXxGFMK_BO4VQ77Ln68/edit?gid=331979622#gid=331979622"
+        }
+        // Ví dụ thêm dự án LVN:
+        // {
+        //   id: "LVN",
+        //   label: "LVN",
+        //   badge: "LVN DMS",
+        //   serverUrl: "https://lvn.server.com",
+        //   companyCd: "C_LVN",
+        //   pass: "LVN@pass",
+        //   serverId: "VN",
+        //   installationUrl: "https://docs.google.com/..."
+        // }
+      ];
+      let currentSetupProjectId = "NVN"; // Tab đang active
       let currentSetupMode = "nvbh"; // "nvbh" | "hq"
+
+      // Lấy config dự án hiện tại
+      function getCurrentSetupProject() {
+        return SETUP_PROJECTS.find(p => p.id === currentSetupProjectId) || SETUP_PROJECTS[0];
+      }
+
+      // Chuyển tab dự án
+      window.switchSetupTab = function(projectId) {
+        currentSetupProjectId = projectId;
+        const proj = getCurrentSetupProject();
+        if (!proj) return;
+
+        // Cập nhật style tab buttons
+        document.querySelectorAll(".setup-tab-btn").forEach(btn => {
+          const isActive = btn.dataset.project === projectId;
+          btn.style.background = isActive ? "#0284c7" : "#f8fafc";
+          btn.style.color = isActive ? "#fff" : "#475569";
+          btn.style.borderColor = isActive ? "#0284c7" : "#cbd5e1";
+          if (isActive) btn.classList.add("active");
+          else btn.classList.remove("active");
+        });
+
+        // Cập nhật giá trị trong bảng
+        const serverUrlEl = document.getElementById("setupDeviceServerUrl");
+        const companyCdEl = document.getElementById("setupDeviceCompanyCd");
+        const passEl = document.getElementById("setupDevicePass");
+        const serverIdEl = document.getElementById("setupDeviceServerId");
+        const badgeEl = document.querySelector("#setupDeviceModalBackdrop .member-modal-header span[style*='background:#e0f2fe']");
+        const installLink = document.getElementById("setupInstallationLink");
+
+        if (serverUrlEl) serverUrlEl.textContent = proj.serverUrl;
+        if (companyCdEl) companyCdEl.textContent = proj.companyCd;
+        if (passEl) passEl.textContent = proj.pass;
+        if (serverIdEl) serverIdEl.textContent = proj.serverId;
+        if (badgeEl) badgeEl.textContent = proj.badge;
+        if (installLink) installLink.href = proj.installationUrl;
+
+        // Reset User ID inputs khi đổi dự án
+        const inputNppEl = document.getElementById("setupInputMaNpp");
+        const inputNvbhEl = document.getElementById("setupInputMaNvbh");
+        const inputRoleEl = document.getElementById("setupInputRole");
+        if (inputNppEl) inputNppEl.value = "";
+        if (inputNvbhEl) inputNvbhEl.value = "";
+        if (inputRoleEl) inputRoleEl.value = "";
+
+        updateSetupModalDisplay();
+      };
 
       function getSetupDeviceValues() {
         // 1. Kiểm tra ô HQ trước
@@ -14612,8 +14671,9 @@
       };
 
       window.copyAllSetupInfo = function () {
+        const proj = getCurrentSetupProject();
         const userId = getCurrentSetupUserId();
-        const content = `Server URL: https://fw.np.accenture.com\nCompany CD: C_NES_VNM\nUser ID: ${userId}\nPass: NPage@0101\nID máy chủ: VN`;
+        const content = `Server URL: ${proj.serverUrl}\nCompany CD: ${proj.companyCd}\nUser ID: ${userId}\nPass: ${proj.pass}\nID máy chủ: ${proj.serverId}`;
         navigator.clipboard.writeText(content);
         showToast("Đã sao chép toàn bộ thông số Cài máy!", "fa-copy");
       };
