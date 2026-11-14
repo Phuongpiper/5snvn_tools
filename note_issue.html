@@ -11789,26 +11789,11 @@
           if (typeof validateHotline === "function") validateHotline();
         }
 
-        // 7. Ngày ghi nhận: Tự động chuyển sang ngày của cuộc gọi (nếu có), fallback về hôm nay
+        // 7. Ngày ghi nhận: Mặc định giữ nguyên ngày hôm nay khi nạp từ Call Log (không tự đổi theo ngày cũ)
         const issueDateInput = document.getElementById("inputIssueDate");
         if (issueDateInput) {
-          let targetIso = "";
-          const dVal = data.date || data.calldate || data.callDate || "";
-          if (dVal) {
-            const raw = String(dVal).trim();
-            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
-              targetIso = raw.slice(0, 10);
-            } else {
-              const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-              if (m) {
-                targetIso = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-              }
-            }
-          }
-          if (!targetIso) {
-            targetIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
-          }
-          issueDateInput.value = targetIso;
+          const todayIso = typeof getTodayISO === "function" ? getTodayISO() : new Date().toISOString().split("T")[0];
+          issueDateInput.value = todayIso;
           issueDateInput.dispatchEvent(new Event("change", { bubbles: true }));
         }
 
