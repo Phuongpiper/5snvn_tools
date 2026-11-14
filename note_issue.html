@@ -5833,7 +5833,7 @@
               </tr>
 
               <!-- Row 4: Pass -->
-              <tr style="transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'"
+              <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'"
                 onmouseout="this.style.background='transparent'">
                 <td style="padding: 11px 14px; font-weight: 700; color: #334155; border-right: 1px solid #e2e8f0;">
                   Pass
@@ -5844,6 +5844,23 @@
                 <td style="padding: 11px 14px; text-align: right;">
                   <button type="button" class="btn-copy-chip" onclick="copySetupField('NPage@0101', 'Mật khẩu Pass')"
                     title="Sao chép Mật khẩu">
+                    <i class="fa-regular fa-copy"></i> Copy
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 5: ID máy chủ -->
+              <tr style="transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'"
+                onmouseout="this.style.background='transparent'">
+                <td style="padding: 11px 14px; font-weight: 700; color: #334155; border-right: 1px solid #e2e8f0;">
+                  ID máy chủ
+                </td>
+                <td style="padding: 11px 14px; font-family: var(--font-mono); font-weight: 700; color: #1e293b; letter-spacing: 0.05em;">
+                  <span id="setupDeviceServerId">VN</span>
+                </td>
+                <td style="padding: 11px 14px; text-align: right;">
+                  <button type="button" class="btn-copy-chip" onclick="copySetupField('VN', 'ID máy chủ')"
+                    title="Sao chép ID máy chủ">
                     <i class="fa-regular fa-copy"></i> Copy
                   </button>
                 </td>
@@ -14596,7 +14613,7 @@
 
       window.copyAllSetupInfo = function () {
         const userId = getCurrentSetupUserId();
-        const content = `Server URL: https://fw.np.accenture.com\nCompany CD: C_NES_VNM\nUser ID: ${userId}\nPass: NPage@0101`;
+        const content = `Server URL: https://fw.np.accenture.com\nCompany CD: C_NES_VNM\nUser ID: ${userId}\nPass: NPage@0101\nID máy chủ: VN`;
         navigator.clipboard.writeText(content);
         showToast("Đã sao chép toàn bộ thông số Cài máy!", "fa-copy");
       };
