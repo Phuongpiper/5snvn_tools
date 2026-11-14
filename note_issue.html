@@ -5764,74 +5764,23 @@
 
       <div class="member-modal-body" style="padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 0;">
 
-        <!-- Tab chọn dự án (render bằng JS) -->
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex-shrink:0;">
-          <div id="setupProjectTabs" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
-          <button type="button" id="setupTabAddBtn" onclick="openSetupProjectEditor(null)"
-            title="Thêm dự án mới"
-            style="width:30px; height:30px; border-radius:50%; border:2px dashed #94a3b8; background:transparent; color:#64748b; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s;"
-            onmouseover="this.style.borderColor='#0284c7';this.style.color='#0284c7';"
-            onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';">+</button>
-        </div>
-
-        <!-- Panel chỉnh sửa / tạo dự án (ẩn mặc định) -->
-        <div id="setupProjectEditorPanel" style="display:none; background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:8px; padding:14px 16px; flex-shrink:0;">
-          <div style="font-size:12px; font-weight:800; color:#0369a1; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;">
-            <span id="setupEditorTitle"><i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Tạo / Chỉnh sửa dự án</span>
-            <button type="button" onclick="closeSetupProjectEditor()" style="background:none;border:none;cursor:pointer;color:#64748b;font-size:14px;" title="Đóng">✕</button>
+        <!-- Tab chọn dự án & Nút chỉnh sửa gom gọn -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <div id="setupProjectTabs" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
+            <button type="button" id="setupTabAddBtn" onclick="openSetupProjectEditor(null)"
+              title="Thêm cấu hình dự án mới"
+              style="width:28px; height:28px; border-radius:50%; border:2px dashed #94a3b8; background:transparent; color:#64748b; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s;"
+              onmouseover="this.style.borderColor='#0284c7';this.style.color='#0284c7';this.style.background='#f0f9ff';"
+              onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';this.style.background='transparent';">+</button>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">
-                <i class="fa-solid fa-diagram-project" style="color:#0284c7; margin-right:3px;"></i>Dự án trên hệ thống*
-              </label>
-              <select id="editorProjectSelect" onchange="onEditorProjectSelectChange(this.value)"
-                style="width:100%; font-size:12px; font-weight:700; color:#1e293b; padding:6px 8px; border:1.5px solid #0284c7; border-radius:5px; box-sizing:border-box; background:#fff; cursor:pointer;">
-              </select>
-              <input type="text" id="editorProjectId" placeholder="Hoặc nhập tên dự án khác..." maxlength="20"
-                style="display:none; width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box; text-transform:uppercase; margin-top:4px;"
-                oninput="this.value=this.value.toUpperCase()" />
-            </div>
-            <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Badge (tên hiển thị)</label>
-              <input type="text" id="editorProjectBadge" placeholder="VD: LVN DMS"
-                style="width:100%; font-size:12px; padding:6px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
-            </div>
-            <div style="grid-column:1/-1;">
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Server URL*</label>
-              <input type="text" id="editorProjectServerUrl" placeholder="VD: https://server.com"
-                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
-            </div>
-            <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Company CD*</label>
-              <input type="text" id="editorProjectCompanyCd" placeholder="VD: C_LVN_VNM"
-                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
-            </div>
-            <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Pass*</label>
-              <input type="text" id="editorProjectPass" placeholder="VD: Pass@1234"
-                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
-            </div>
-            <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">ID máy chủ</label>
-              <input type="text" id="editorProjectServerId" placeholder="VD: VN"
-                style="width:100%; font-size:12px; font-family:var(--font-mono); padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
-            </div>
-            <div>
-              <label style="font-size:10.5px; font-weight:700; color:#475569; display:block; margin-bottom:3px;">Link file Installation</label>
-              <input type="text" id="editorProjectInstallUrl" placeholder="https://docs.google.com/..."
-                style="width:100%; font-size:12px; padding:5px 8px; border:1px solid #cbd5e1; border-radius:5px; box-sizing:border-box;" />
-            </div>
-          </div>
-          <div style="display:flex; gap:8px; margin-top:10px; justify-content:flex-end;">
-            <button type="button" id="setupEditorDeleteBtn" onclick="deleteSetupProject()" style="display:none; padding:5px 12px; border-radius:5px; border:1px solid #fca5a5; background:#fef2f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer;">
-              <i class="fa-solid fa-trash"></i> Xoá dự án
-            </button>
-            <button type="button" onclick="closeSetupProjectEditor()" style="padding:5px 12px; border-radius:5px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-size:12px; cursor:pointer;">Huỷ</button>
-            <button type="button" onclick="saveSetupProject()" style="padding:5px 14px; border-radius:5px; border:none; background:#0284c7; color:#fff; font-size:12px; font-weight:700; cursor:pointer;">
-              <i class="fa-solid fa-floppy-disk"></i> Lưu dự án
-            </button>
-          </div>
+          <button type="button" id="setupTabEditBtn" onclick="openSetupProjectEditor(currentSetupProjectId)"
+            title="Chỉnh sửa thông số dự án đang xem"
+            style="padding:5px 12px; border-radius:18px; border:1px solid #cbd5e1; background:#f8fafc; color:#0284c7; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s; flex-shrink:0;"
+            onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#0284c7';"
+            onmouseout="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1';">
+            <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
+          </button>
         </div>
 
         <!-- Bảng thông số Cài máy (chuẩn theo mẫu Excel) -->
@@ -6000,6 +5949,88 @@
         <button type="button" class="btn-modal-cancel" onclick="closeSetupModal()">
           Đóng
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CON: HỘP THOẠI CHI TIẾT TẠO / CHỈNH SỬA DỰ ÁN CÀI MÁY -->
+  <div class="member-modal-backdrop" id="setupProjectEditorModalBackdrop" style="z-index: 100010; display: none;"
+    onclick="if(event.target===this) closeSetupProjectEditor()">
+    <div class="member-modal-box" style="max-width: 520px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);">
+      <div class="member-modal-header" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #fff; padding: 14px 20px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="member-modal-header-icon" style="background: rgba(255,255,255,0.2); color:#fff; width:34px; height:34px; border-radius:8px;">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </div>
+          <div>
+            <h3 id="setupEditorTitle" style="margin:0; font-size:15px; color:#fff;">Chỉnh sửa thông số dự án</h3>
+            <p style="margin:2px 0 0; font-size:11.5px; color:#e0f2fe;">Cấu hình kết nối DMS máy cầm tay theo dự án</p>
+          </div>
+        </div>
+        <button type="button" class="member-modal-close-btn" style="color:#fff;" onclick="closeSetupProjectEditor()" title="Đóng (Esc)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="member-modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div>
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">
+              <i class="fa-solid fa-diagram-project" style="color:#0284c7; margin-right:4px;"></i>Dự án hệ thống*
+            </label>
+            <select id="editorProjectSelect" onchange="onEditorProjectSelectChange(this.value)" class="form-control-studio"
+              style="font-size:12.5px; font-weight:700; color:#0f172a; padding:6px 10px;">
+            </select>
+            <input type="text" id="editorProjectId" placeholder="Hoặc nhập tên dự án khác..." maxlength="20" class="form-control-studio"
+              style="display:none; font-size:12.5px; font-family:var(--font-mono); padding:6px 10px; text-transform:uppercase; margin-top:5px;"
+              oninput="this.value=this.value.toUpperCase()" />
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Badge (tên hiển thị)</label>
+            <input type="text" id="editorProjectBadge" placeholder="VD: LVN DMS" class="form-control-studio"
+              style="font-size:12.5px; padding:6px 10px;" />
+          </div>
+          <div style="grid-column:1/-1;">
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Server URL*</label>
+            <input type="text" id="editorProjectServerUrl" placeholder="VD: https://server.com" class="form-control-studio"
+              style="font-size:12.5px; font-family:var(--font-mono); padding:6px 10px;" />
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Company CD*</label>
+            <input type="text" id="editorProjectCompanyCd" placeholder="VD: C_LVN_VNM" class="form-control-studio"
+              style="font-size:12.5px; font-family:var(--font-mono); padding:6px 10px;" />
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Pass*</label>
+            <input type="text" id="editorProjectPass" placeholder="VD: Pass@1234" class="form-control-studio"
+              style="font-size:12.5px; font-family:var(--font-mono); padding:6px 10px;" />
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">ID máy chủ</label>
+            <input type="text" id="editorProjectServerId" placeholder="VD: VN" class="form-control-studio"
+              style="font-size:12.5px; font-family:var(--font-mono); padding:6px 10px;" />
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:700; color:#334155; display:block; margin-bottom:4px;">Link file Installation</label>
+            <input type="text" id="editorProjectInstallUrl" placeholder="https://docs.google.com/..." class="form-control-studio"
+              style="font-size:12.5px; padding:6px 10px;" />
+          </div>
+        </div>
+      </div>
+
+      <div class="member-modal-footer" style="padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; background: #fafbfc; border-top: 1px solid var(--border);">
+        <div>
+          <button type="button" id="setupEditorDeleteBtn" onclick="deleteSetupProject()" style="display:none; padding:6px 14px; border-radius:6px; border:1px solid #fca5a5; background:#fef2f2; color:#dc2626; font-size:12px; font-weight:700; cursor:pointer;">
+            <i class="fa-solid fa-trash"></i> Xoá dự án
+          </button>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-modal-cancel" onclick="closeSetupProjectEditor()">Huỷ</button>
+          <button type="button" class="btn-studio-action" onclick="saveSetupProject()"
+            style="background:#0284c7; color:#fff; box-shadow:0 4px 12px rgba(2,132,199,0.3);">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu dự án
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -14560,35 +14591,21 @@
         try { localStorage.setItem("setup_custom_projects_v1", JSON.stringify(list)); } catch(_) {}
       }
 
-      // Render toàn bộ tab buttons
+      // Render toàn bộ tab buttons (gọn gàng, chuẩn tab)
       function renderSetupTabs() {
         const container = document.getElementById("setupProjectTabs");
         if (!container) return;
         container.innerHTML = "";
         getAllSetupProjects().forEach(proj => {
           const isActive = proj.id === currentSetupProjectId;
-          const wrap = document.createElement("div");
-          wrap.style.cssText = "display:inline-flex; align-items:center; gap:3px;";
-          // Tab button
           const tab = document.createElement("button");
           tab.type = "button";
           tab.className = "setup-tab-btn" + (isActive ? " active" : "");
           tab.dataset.project = proj.id;
           tab.textContent = proj.id;
-          tab.style.cssText = `padding:5px 12px; border-radius:20px; border:2px solid ${isActive ? "#0284c7" : "#cbd5e1"}; background:${isActive ? "#0284c7" : "#f8fafc"}; color:${isActive ? "#fff" : "#475569"}; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;`;
-          tab.onclick = () => { closeSetupProjectEditor(); switchSetupTab(proj.id); };
-          wrap.appendChild(tab);
-          // Edit icon
-          const editBtn = document.createElement("button");
-          editBtn.type = "button";
-          editBtn.title = "Chỉnh sửa " + proj.id;
-          editBtn.innerHTML = '<i class="fa-solid fa-pen" style="font-size:9px;"></i>';
-          editBtn.style.cssText = "width:18px; height:18px; border-radius:50%; border:1px solid #cbd5e1; background:#fff; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;";
-          editBtn.onmouseover = function() { this.style.borderColor="#0284c7"; this.style.color="#0284c7"; };
-          editBtn.onmouseout = function() { this.style.borderColor="#cbd5e1"; this.style.color="#94a3b8"; };
-          editBtn.onclick = (e) => { e.stopPropagation(); openSetupProjectEditor(proj.id); };
-          wrap.appendChild(editBtn);
-          container.appendChild(wrap);
+          tab.style.cssText = `padding:5px 14px; border-radius:20px; border:2px solid ${isActive ? "#0284c7" : "#cbd5e1"}; background:${isActive ? "#0284c7" : "#f8fafc"}; color:${isActive ? "#fff" : "#475569"}; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.15s;`;
+          tab.onclick = () => switchSetupTab(proj.id);
+          container.appendChild(tab);
         });
       }
 
@@ -14674,14 +14691,14 @@
         }
       };
 
-      // Mở panel editor
+      // Mở hộp thoại chi tiết editor (Modal con riêng biệt)
       window.openSetupProjectEditor = function(projectId) {
-        const panel = document.getElementById("setupProjectEditorPanel");
+        const modal = document.getElementById("setupProjectEditorModalBackdrop");
         const title = document.getElementById("setupEditorTitle");
         const deleteBtn = document.getElementById("setupEditorDeleteBtn");
         const selProj = document.getElementById("editorProjectSelect");
         const inputId = document.getElementById("editorProjectId");
-        if (!panel) return;
+        if (!modal) return;
 
         const isBuiltIn = projectId && SETUP_PROJECTS.some(p => p.id.toUpperCase() === projectId.toUpperCase());
 
@@ -14700,7 +14717,7 @@
           document.getElementById("editorProjectPass").value = proj.pass || "";
           document.getElementById("editorProjectServerId").value = proj.serverId || "";
           document.getElementById("editorProjectInstallUrl").value = proj.installationUrl || "";
-          title.innerHTML = `<i class="fa-solid fa-pen-to-square" style="margin-right:5px;"></i>Chỉnh sửa thông số: <strong>${proj.id}</strong>`;
+          if (title) title.innerHTML = `Chỉnh sửa thông số: <strong>${proj.id}</strong>`;
           const hasCustomOverride = loadCustomSetupProjects().some(p => p.id.toUpperCase() === projectId.toUpperCase());
           if (isBuiltIn) {
             deleteBtn.style.display = hasCustomOverride ? "inline-flex" : "none";
@@ -14709,13 +14726,12 @@
             deleteBtn.style.display = "inline-flex";
             deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Xoá dự án';
           }
-          panel._editingId = projectId;
+          modal._editingId = projectId;
         } else {
           // Tạo mới: Ưu tiên chọn ngay dự án hiện tại đang kích hoạt trên hệ thống Note Issue
           const activeSysProj = ((typeof getSelectedProject === "function" ? getSelectedProject() : "") || "NVN").toUpperCase();
           const existingSetupProjs = getAllSetupProjects().map(p => p.id.toUpperCase());
 
-          // Tìm dự án hệ thống đầu tiên chưa có cấu hình cài máy (ưu tiên dự án đang xem)
           let targetPreselect = "";
           if (!existingSetupProjs.includes(activeSysProj)) {
             targetPreselect = activeSysProj;
@@ -14733,17 +14749,21 @@
             onEditorProjectSelectChange(targetPreselect);
           }
 
-          title.innerHTML = `<i class="fa-solid fa-plus" style="margin-right:5px;"></i>Thêm thông số dự án hệ thống`;
+          if (title) title.innerHTML = `Thêm thông số dự án hệ thống`;
           deleteBtn.style.display = "none";
-          panel._editingId = null;
+          modal._editingId = null;
         }
 
-        panel.style.display = "block";
+        modal.style.display = "flex";
+        modal.classList.add("show");
       };
 
       window.closeSetupProjectEditor = function() {
-        const panel = document.getElementById("setupProjectEditorPanel");
-        if (panel) panel.style.display = "none";
+        const modal = document.getElementById("setupProjectEditorModalBackdrop");
+        if (modal) {
+          modal.classList.remove("show");
+          modal.style.display = "none";
+        }
       };
 
       window.saveSetupProject = function() {
@@ -14776,8 +14796,8 @@
       };
 
       window.deleteSetupProject = function() {
-        const panel = document.getElementById("setupProjectEditorPanel");
-        const id = (panel?._editingId || "").toUpperCase();
+        const modal = document.getElementById("setupProjectEditorModalBackdrop");
+        const id = (modal?._editingId || "").toUpperCase();
         if (!id) return;
         const isBuiltIn = SETUP_PROJECTS.some(p => p.id.toUpperCase() === id);
         if (isBuiltIn) {
@@ -14815,6 +14835,10 @@
           if (isActive) btn.classList.add("active");
           else btn.classList.remove("active");
         });
+
+        // Cập nhật tooltip nút Chỉnh sửa
+        const editBtn = document.getElementById("setupTabEditBtn");
+        if (editBtn) editBtn.title = `Chỉnh sửa thông số dự án ${proj.id}`;
 
         // Cập nhật giá trị trong bảng
         const serverUrlEl = document.getElementById("setupDeviceServerUrl");
