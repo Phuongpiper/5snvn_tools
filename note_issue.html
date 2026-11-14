@@ -17257,6 +17257,8 @@
         let reloadScheduled = false;
         let lastUserActivity = Date.now();
 
+        console.log(`%c[AutoRefresh] Script tự làm mới UI đang chạy. Chu kỳ 8h tiếp theo: ${new Date(pageLoadedAt + EIGHT_HOURS_MS).toLocaleTimeString('vi-VN')}`, "color: #0369a1; font-size: 11px;");
+
         // Ghi nhận tương tác gần nhất của người dùng
         const markActive = () => { lastUserActivity = Date.now(); };
         window.addEventListener("mousemove", markActive, { passive: true });
@@ -17368,11 +17370,15 @@
           checkAndSyncDayRollover();
         });
 
-        // 3. Thông báo nhẹ nhàng cho người dùng sau khi trang tự reload
+        // 3. Thông báo nhẹ nhàng và in log Console sau khi trang tự reload
         try {
           const reason = sessionStorage.getItem("DMS_AUTO_REFRESH_REASON");
           if (reason) {
             sessionStorage.removeItem("DMS_AUTO_REFRESH_REASON");
+            console.log(
+              `%c[AutoRefresh] 🔄 UI đã reload thành công! Lý do: ${reason} (Vào lúc ${new Date().toLocaleTimeString('vi-VN')} ${new Date().toLocaleDateString('vi-VN')})`,
+              "background: #15803d; color: #ffffff; font-weight: bold; padding: 3px 8px; border-radius: 4px; font-size: 12px;"
+            );
             setTimeout(() => {
               if (typeof showToast === "function") {
                 showToast(`🔄 Giao diện đã tự làm mới (${reason})`, "fa-rotate", 4000);
