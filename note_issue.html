@@ -5768,13 +5768,13 @@
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-shrink:0;">
           <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
             <div id="setupProjectTabs" style="display:flex; gap:6px; flex-wrap:wrap;"></div>
-            <button type="button" id="setupTabAddBtn" onclick="openSetupProjectEditor(null)"
+            <button type="button" id="setupTabAddBtn" onclick="openSetupProjectCreate()"
               title="Thêm cấu hình dự án mới"
               style="width:28px; height:28px; border-radius:50%; border:2px dashed #94a3b8; background:transparent; color:#64748b; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s;"
               onmouseover="this.style.borderColor='#0284c7';this.style.color='#0284c7';this.style.background='#f0f9ff';"
               onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';this.style.background='transparent';">+</button>
           </div>
-          <button type="button" id="setupTabEditBtn" onclick="openSetupProjectEditor(currentSetupProjectId)"
+          <button type="button" id="setupTabEditBtn" onclick="openSetupCurrentProjectEditor()"
             title="Chỉnh sửa thông số dự án đang xem"
             style="padding:5px 12px; border-radius:18px; border:1px solid #cbd5e1; background:#f8fafc; color:#0284c7; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.15s; flex-shrink:0;"
             onmouseover="this.style.background='#e0f2fe';this.style.borderColor='#0284c7';"
@@ -14691,8 +14691,20 @@
         }
       };
 
+      window.openSetupCurrentProjectEditor = function() {
+        openSetupProjectEditor(currentSetupProjectId);
+      };
+
+      window.openSetupProjectCreate = function() {
+        openSetupProjectEditor(null);
+      };
+
       // Mở hộp thoại chi tiết editor (Modal con riêng biệt)
       window.openSetupProjectEditor = function(projectId) {
+        if (projectId === undefined || projectId === "") {
+          projectId = currentSetupProjectId;
+        }
+
         const modal = document.getElementById("setupProjectEditorModalBackdrop");
         const title = document.getElementById("setupEditorTitle");
         const deleteBtn = document.getElementById("setupEditorDeleteBtn");
@@ -14700,31 +14712,42 @@
         const inputId = document.getElementById("editorProjectId");
         if (!modal) return;
 
-        const isBuiltIn = projectId && SETUP_PROJECTS.some(p => p.id.toUpperCase() === projectId.toUpperCase());
+        const isBuiltIn = projectId && SETUP_PROJECTS.some(p => p.id.toUpperCase() === String(projectId).toUpperCase());
 
         if (projectId) {
-          const proj = getAllSetupProjects().find(p => p.id.toUpperCase() === projectId.toUpperCase());
-          if (!proj) return;
+          let proj = getAllSetupProjects().find(p => p.id.toUpperCase() === String(projectId).toUpperCase());
+          if (!proj) {
+            proj = { id: String(projectId).toUpperCase(), badge: String(projectId).toUpperCase() + " DMS", serverUrl: "", companyCd: "", pass: "", serverId: "VN", installationUrl: "" };
+          }
+
           populateEditorProjectSelect(projectId);
           if (inputId) {
             inputId.value = proj.id;
             inputId.disabled = isBuiltIn;
           }
           if (selProj) selProj.disabled = isBuiltIn;
-          document.getElementById("editorProjectBadge").value = proj.badge || "";
-          document.getElementById("editorProjectServerUrl").value = proj.serverUrl || "";
-          document.getElementById("editorProjectCompanyCd").value = proj.companyCd || "";
-          document.getElementById("editorProjectPass").value = proj.pass || "";
-          document.getElementById("editorProjectServerId").value = proj.serverId || "";
-          document.getElementById("editorProjectInstallUrl").value = proj.installationUrl || "";
+
+          const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || "";
+          };
+          setVal("editorProjectBadge", proj.badge);
+          setVal("editorProjectServerUrl", proj.serverUrl);
+          setVal("editorProjectCompanyCd", proj.companyCd);
+          setVal("editorProjectPass", proj.pass);
+          setVal("editorProjectServerId", proj.serverId);
+          setVal("editorProjectInstallUrl", proj.installationUrl);
+
           if (title) title.innerHTML = `Chỉnh sửa thông số: <strong>${proj.id}</strong>`;
-          const hasCustomOverride = loadCustomSetupProjects().some(p => p.id.toUpperCase() === projectId.toUpperCase());
-          if (isBuiltIn) {
-            deleteBtn.style.display = hasCustomOverride ? "inline-flex" : "none";
-            deleteBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định';
-          } else {
-            deleteBtn.style.display = "inline-flex";
-            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Xoá dự án';
+          const hasCustomOverride = loadCustomSetupProjects().some(p => p.id.toUpperCase() === String(projectId).toUpperCase());
+          if (deleteBtn) {
+            if (isBuiltIn) {
+              deleteBtn.style.display = hasCustomOverride ? "inline-flex" : "none";
+              deleteBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Khôi phục mặc định';
+            } else {
+              deleteBtn.style.display = "inline-flex";
+              deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i> Xoá dự án';
+            }
           }
           modal._editingId = projectId;
         } else {
@@ -14750,7 +14773,7 @@
           }
 
           if (title) title.innerHTML = `Thêm thông số dự án hệ thống`;
-          deleteBtn.style.display = "none";
+          if (deleteBtn) deleteBtn.style.display = "none";
           modal._editingId = null;
         }
 
@@ -14823,6 +14846,7 @@
       // Chuyển tab dự án
       window.switchSetupTab = function(projectId) {
         currentSetupProjectId = projectId;
+        window.currentSetupProjectId = projectId;
         const proj = getCurrentSetupProject();
         if (!proj) return;
 
