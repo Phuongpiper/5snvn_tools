@@ -2005,7 +2005,7 @@
         hotline: buildSearchText(
           [row[hotlineCol], detailsVal].join(" "),
         ),
-        solution: buildSearchText(solutionFromDetails),
+        solution: buildSearchText(solutionFromDetails || detailsVal),
         project: projectVal,
       };
     }
@@ -2038,38 +2038,63 @@
 
     /**
      * Extract the Solution segment from a Call Details string.
-     * Format: [NVN-DMS]-[TYPE]_SOLUTION_..._NPP/HQ/ADMIN/distCode/longNum...
+     * Format: [PROJECT]-[TYPE]_SOLUTION_..._NPP/HQ/ADMIN/distCode/longNum...
      * Returns the raw solution text (not normalised).
      */
     function extractSolutionFromCallDetails(value) {
       const text = String(value || "").trim();
-      // Strip the [NVN-DMS]-[TYPE]_ prefix
-      const prefixMatch = text.match(/^\[NVN-DMS\]-\[[^\]]*\]_/);
-      if (!prefixMatch) return "";
-      const rest = text.slice(prefixMatch[0].length);
-      // Find the first terminator: _NPP, _HQ, _ADMIN, _Hotline, _OTRS,
-      // dist-code (_digits+G+digits) or long ticket number (_10+digits)
-      const terminatorRe = /_(NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+G\d+|\d{10,})/;
+      if (!text) return "";
+
+      // Match mọi prefix dự án như [NVN-DMS1]-[HH]_, [NVN-DMS]-[DC]_, [LVN-DMS]_[HH]_, [OTRS]_, v.v.
+      const prefixMatch = text.match(/^\[[^\]]+\](?:-\[[^\]]+\]|_[^\]]+\])?(?:_|:\s*|\s*-\s*|\s+)/i)
+        || text.match(/^\[[^\]]+\][_\s]*/i);
+      const rest = prefixMatch ? text.slice(prefixMatch[0].length) : text;
+
+      // Tìm vị trí kết thúc của Solution: _NPP, _HQ, _ADMIN, _Hotline, _OTRS, mã NV/dist hoặc số dài
+      const terminatorRe = /_(?:NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+[A-Z]\d+|\d{10,})/i;
       const m = rest.match(terminatorRe);
-      return m ? rest.slice(0, m.index).trim() : rest.trim();
+      const extracted = m ? rest.slice(0, m.index).trim() : rest.trim();
+      return extracted || rest.trim();
     }
 
     /* ─── Date sorting ─── */
     function getRowDateValue(row) {
-      if (!dateColumn) return 0;
-      return parseDisplayDate(row[dateColumn]);
+      if (!dateColumn || !row) return 0;
+      const val = parseDisplayDate(row[dateColumn]);
+      return Number.isFinite(val) ? val : 0;
     }
 
     function parseDisplayDate(value) {
       const text = String(value || "").trim();
-      /* dd/mm/yyyy */
-      const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (m) return Date.UTC(+m[3], +m[2] - 1, +m[1]);
-      /* Excel serial */
+      if (!text) return 0;
+
+      // 1. dd/mm/yyyy (hỗ trợ kèm giờ:phút:giây)
+      const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (m) {
+        const hh = m[4] ? +m[4] : 0;
+        const mm = m[5] ? +m[5] : 0;
+        const ss = m[6] ? +m[6] : 0;
+        return Date.UTC(+m[3], +m[2] - 1, +m[1], hh, mm, ss);
+      }
+
+      // 2. yyyy-mm-dd (hỗ trợ kèm giờ:phút:giây / ISO)
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+      if (iso) {
+        const hh = iso[4] ? +iso[4] : 0;
+        const mm = iso[5] ? +iso[5] : 0;
+        const ss = iso[6] ? +iso[6] : 0;
+        return Date.UTC(+iso[1], +iso[2] - 1, +iso[3], hh, mm, ss);
+      }
+
+      // 3. Số ngày Excel serial (từ 30000 ~ 1982 đến 70000 ~ 2091)
       const num = Number(text);
-      if (Number.isFinite(num) && num > 0) return num;
+      if (Number.isFinite(num) && num > 30000 && num < 70000) {
+        return Math.round((num - 25569) * 86400 * 1000);
+      }
+
+      // 4. Fallback Date.parse
       const parsed = Date.parse(text);
-      return Number.isNaN(parsed) ? 0 : parsed;
+      return Number.isFinite(parsed) ? parsed : 0;
     }
 
     function getLocalDateIso(d) {
@@ -2124,15 +2149,30 @@
 
     function displayDateToInputValue(value) {
       const text = String(value || "").trim();
-      const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (!text) return "";
+
+      const m = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       if (m) {
         return `${m[3]}-${String(m[2]).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
       }
 
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (iso) {
+        return `${iso[1]}-${String(iso[2]).padStart(2, "0")}-${String(iso[3]).padStart(2, "0")}`;
+      }
+
+      const num = Number(text);
+      if (Number.isFinite(num) && num > 30000 && num < 70000) {
+        const d = new Date(Math.round((num - 25569) * 86400 * 1000));
+        return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      }
+
       const parsed = Date.parse(text);
-      if (Number.isNaN(parsed)) return "";
-      const date = new Date(parsed);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      if (Number.isFinite(parsed)) {
+        const date = new Date(parsed);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      }
+      return "";
     }
 
     /* ─── Render ─── */
@@ -2155,10 +2195,14 @@
         project: projectFilterVal ? [projectFilterVal] : [],
       };
       const filtered = searchIndex
-        .map((entry, i) => ({ row: rows[i], entry }))
+        .map((entry, i) => ({ row: rows[i], entry, originalIndex: i }))
         .filter(({ entry }) => matchesFilters(entry, filters))
         .filter(({ row }) => matchesDateFilter(row))
-        .sort((a, b) => getRowDateValue(b.row) - getRowDateValue(a.row));
+        .sort((a, b) => {
+          const dateDiff = getRowDateValue(b.row) - getRowDateValue(a.row);
+          if (dateDiff !== 0) return dateDiff;
+          return a.originalIndex - b.originalIndex;
+        });
 
       const visible = filtered.slice(0, MAX_RENDER_ROWS);
 
@@ -2340,11 +2384,11 @@
      */
     function findSolutionRanges(plain, tokens) {
       if (!tokens.length) return [];
-      const prefixMatch = plain.match(/^\[NVN-DMS\]-\[[^\]]*\]_/);
-      if (!prefixMatch) return [];
-      const segmentStart = prefixMatch[0].length;
+      const prefixMatch = plain.match(/^\[[^\]]+\](?:-\[[^\]]+\]|_[^\]]+\])?(?:_|:\s*|\s*-\s*|\s+)/i)
+        || plain.match(/^\[[^\]]+\][_\s]*/i);
+      const segmentStart = prefixMatch ? prefixMatch[0].length : 0;
       const rest = plain.slice(segmentStart);
-      const terminatorRe = /_(NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+G\d+|\d{10,})/;
+      const terminatorRe = /_(?:NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+[A-Z]\d+|\d{10,})/i;
       const tm = rest.match(terminatorRe);
       const segmentText = tm ? rest.slice(0, tm.index) : rest;
       const ranges = [];
@@ -2597,7 +2641,7 @@
 
       // 1. Type
       let type = "HH";
-      const typeMatch = text.match(/\[NVN-DMS\]-\[(HH|DC)\]/i);
+      const typeMatch = text.match(/\[[^\]]+\]-\[(HH|DC)\]/i) || text.match(/\[(HH|DC)\]/i);
       if (typeMatch) {
         type = typeMatch[1].toUpperCase();
       } else if (/\bDC\b/i.test(text)) {
@@ -2607,8 +2651,8 @@
       // 2. Solution
       let solution = typeof extractSolutionFromCallDetails === "function" ? extractSolutionFromCallDetails(text) : "";
       if (!solution) {
-        const afterPrefix = text.replace(/^\[NVN-DMS\]-\[[^\]]*\][_\s]*/i, "");
-        const seg = afterPrefix.split(/_(?:NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+G\d+|\d{10,})/i)[0];
+        const afterPrefix = text.replace(/^\[[^\]]+\](?:-\[[^\]]+\])?[_\s]*/i, "");
+        const seg = afterPrefix.split(/_(?:NPP\s|HQ\s|ADMIN\b|Hotline\b|OTRS\b|\d+[A-Z]\d+|\d{10,})/i)[0];
         solution = (seg || "").trim();
       }
 
