@@ -1300,6 +1300,18 @@
       color: #172554;
     }
 
+    .hint-code-badge.purple {
+      color: #6b21a8;
+      background: #f3e8ff;
+      border-color: #e9d5ff;
+    }
+
+    .hint-code-badge.purple:hover {
+      background: #e9d5ff;
+      border-color: #d8b4fe;
+      color: #581c87;
+    }
+
     .btn-copy-chip {
       background: #ffffff;
       border: 1px solid #c7d2fe;
@@ -8986,6 +8998,16 @@
         showToast(`Đã sao chép ${label}: ${text}!`, "fa-copy");
       };
 
+      window.copyNvbhText = function (text, label = "Mã NVBH", event) {
+        if (event) {
+          event.stopPropagation();
+          event.preventDefault();
+        }
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        showToast(`Đã sao chép ${label}: ${text}!`, "fa-copy");
+      };
+
       function renderNppHint(item) {
         if (!item) return "";
         const safeIssueName = escapeHTML(item.issueName || item.name || "");
@@ -9146,7 +9168,8 @@
           const emp = projectNvbhList.find(n => n.code.toUpperCase() === formatted.toUpperCase());
           if (emp && emp.name) extraEmpName = ` · <span style="opacity:0.85;">${escapeHTML(emp.name)}</span>`;
         }
-        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong style="color:#7c3aed;">${escapeHTML(formatted)}</strong>${extraEmpName}`;
+        const safeFormatted = escapeHTML(formatted);
+        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> <span class="hint-npp-code-wrap">Mã NVBH: <strong class="hint-code-badge purple" onclick="window.copyNvbhText('${safeFormatted}', 'Mã NVBH', event)" title="Bấm để sao chép ${safeFormatted}">${safeFormatted}</strong> <button type="button" class="btn-copy-chip" onclick="window.copyNvbhText('${safeFormatted}', 'Mã NVBH', event)" title="Sao chép Mã NVBH: ${safeFormatted}"><i class="fa-regular fa-copy"></i></button></span>${extraEmpName}`;
       }
 
       /* ══════════════════════════════════════════════════════════════════════════
@@ -9382,8 +9405,10 @@
           }
         }
 
+        const safeItemCode = escapeHTML(item.code);
+        const safeItemName = escapeHTML(item.name || "");
         hintNvbh.className = "field-hint-chip success";
-        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> Mã NVBH: <strong style="color:#7c3aed;">${escapeHTML(item.code)}</strong> · ${escapeHTML(item.name || "")}`;
+        hintNvbh.innerHTML = `<i class="fa-solid fa-id-badge"></i> <span class="hint-npp-code-wrap">Mã NVBH: <strong class="hint-code-badge purple" onclick="window.copyNvbhText('${safeItemCode}', 'Mã NVBH', event)" title="Bấm để sao chép ${safeItemCode}">${safeItemCode}</strong> <button type="button" class="btn-copy-chip" onclick="window.copyNvbhText('${safeItemCode}', 'Mã NVBH', event)" title="Sao chép Mã NVBH: ${safeItemCode}"><i class="fa-regular fa-copy"></i></button></span>${safeItemName ? ` · ${safeItemName}` : ""}`;
         validateNvbh();
         validateRole();
         updateResultDisplay();
