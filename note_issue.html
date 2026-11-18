@@ -14638,11 +14638,25 @@
                 saveCustomSetupProjects(merged);
               }
 
-              // Cập nhật giao diện tabs nếu modal đang mở
+              // Cập nhật giao diện tabs nếu modal đang mở (chỉ cập nhật thông số dự án, KHÔNG reset input của user)
               const modal = document.getElementById("setupDeviceModalBackdrop");
               if (modal && modal.classList.contains("show")) {
                 renderSetupTabs();
-                switchSetupTab(currentSetupProjectId);
+                const proj = getCurrentSetupProject();
+                if (proj) {
+                  const serverUrlEl = document.getElementById("setupDeviceServerUrl");
+                  const companyCdEl = document.getElementById("setupDeviceCompanyCd");
+                  const passEl = document.getElementById("setupDevicePass");
+                  const serverIdEl = document.getElementById("setupDeviceServerId");
+                  const badgeEl = document.querySelector("#setupDeviceModalBackdrop .member-modal-header span[style*='background:#e0f2fe']");
+                  const installLink = document.getElementById("setupInstallationLink");
+                  if (serverUrlEl) serverUrlEl.textContent = proj.serverUrl;
+                  if (companyCdEl) companyCdEl.textContent = proj.companyCd;
+                  if (passEl) passEl.textContent = proj.pass;
+                  if (serverIdEl) serverIdEl.textContent = proj.serverId;
+                  if (badgeEl) badgeEl.textContent = proj.badge;
+                  if (installLink) installLink.href = proj.installationUrl || "#";
+                }
               }
             }
           }
@@ -14956,35 +14970,46 @@
         if (badgeEl) badgeEl.textContent = proj.badge;
         if (installLink) installLink.href = proj.installationUrl || "#";
 
-        // Reset User ID inputs khi đổi dự án
+        // Giữ nguyên User ID inputs đã nhập (KHÔNG reset về rỗng)
         const inputNppEl = document.getElementById("setupInputMaNpp");
         const inputNvbhEl = document.getElementById("setupInputMaNvbh");
         const inputRoleEl = document.getElementById("setupInputRole");
-        if (inputNppEl) inputNppEl.value = "";
-        if (inputNvbhEl) inputNvbhEl.value = "";
-        if (inputRoleEl) inputRoleEl.value = "";
-
-        updateSetupModalDisplay();
+        if (inputNppEl && !inputNppEl.value.trim() && inputNvbhEl && !inputNvbhEl.value.trim() && inputRoleEl && !inputRoleEl.value.trim()) {
+          const { maNpp, maNvbh, role } = getSetupDeviceValues();
+          if (inputNppEl) inputNppEl.value = maNpp;
+          if (inputNvbhEl) inputNvbhEl.value = maNvbh;
+          if (inputRoleEl) inputRoleEl.value = role;
+          if (role) onSetupModeChange("hq");
+          else onSetupModeChange("nvbh");
+        } else {
+          updateSetupModalDisplay();
+        }
       };
 
       function getSetupDeviceValues() {
         // 1. Kiểm tra ô HQ trước
-        const rawRole = inputRole ? inputRole.value.trim().toUpperCase() : "";
+        const rawRole = (inputRole ? inputRole.value : document.getElementById("inputRole")?.value || "").trim().toUpperCase();
 
         // 2. Mã NPP
         let maNpp = "";
         if (currentNppObj && currentNppObj.code) {
           maNpp = String(currentNppObj.code).trim();
-        } else if (inputNpp && inputNpp.value.trim()) {
-          const raw = inputNpp.value.trim();
+        } else {
+          const raw = (inputNpp ? inputNpp.value : document.getElementById("inputNpp")?.value || "").trim();
           if (/^\d+$/.test(raw)) {
             maNpp = raw;
           } else if (Array.isArray(dtList) && dtList.length > 0) {
             const low = raw.toLowerCase();
+            const cleanLow = low.replace(/^npp\s+/i, "").trim();
             const found = dtList.find(d =>
               (d.code && String(d.code).toLowerCase() === low) ||
-              (d.issueName && String(d.issueName).toLowerCase().includes(low)) ||
-              (d.name && String(d.name).toLowerCase().includes(low))
+              (d.issueName && String(d.issueName).toLowerCase() === low) ||
+              (d.name && String(d.name).toLowerCase() === low) ||
+              (d.issueName && String(d.issueName).toLowerCase().replace(/^npp\s+/i, "").trim() === cleanLow) ||
+              (d.name && String(d.name).toLowerCase().replace(/^npp\s+/i, "").trim() === cleanLow)
+            ) || dtList.find(d =>
+              (d.issueName && String(d.issueName).toLowerCase().includes(cleanLow)) ||
+              (d.name && String(d.name).toLowerCase().includes(cleanLow))
             );
             if (found && found.code) maNpp = String(found.code).trim();
             else maNpp = raw;
@@ -14993,14 +15018,29 @@
           }
         }
 
+        // Fallback đọc Mã NPP từ chip hintNpp nếu có
+        if (!maNpp) {
+          const hintText = document.getElementById("hintNpp")?.innerText || "";
+          const match = hintText.match(/Mã\s*NPP\s*:\s*([A-Za-z0-9]+)/i);
+          if (match) maNpp = match[1].trim();
+        }
+
         // 3. Mã NVBH
         let maNvbh = "";
-        const rawNvbh = inputNvbh ? inputNvbh.value.trim() : "";
+        const rawNvbh = (inputNvbh ? inputNvbh.value : document.getElementById("inputNvbh")?.value || "").trim();
         if (rawNvbh) {
           maNvbh = formatNvbh(rawNvbh);
           if (maNvbh.startsWith("[Chưa có Prefix]")) {
             maNvbh = maNvbh.replace("[Chưa có Prefix]", "");
           }
+          if (!maNvbh) maNvbh = rawNvbh;
+        }
+
+        // Fallback đọc Mã NVBH từ chip hintNvbh nếu có
+        if (!maNvbh) {
+          const hintText = document.getElementById("hintNvbh")?.innerText || "";
+          const match = hintText.match(/Mã\s*NVBH\s*:\s*([A-Za-z0-9]+)/i);
+          if (match) maNvbh = match[1].trim();
         }
 
         return { maNpp, maNvbh, role: rawRole };
@@ -15009,11 +15049,6 @@
       window.openSetupModal = function () {
         const modal = document.getElementById("setupDeviceModalBackdrop");
         if (!modal) return;
-
-        // Tải cập nhật mới nhất từ Cloud R2 (chạy ngầm)
-        if (typeof fetchSetupProjectsFromR2 === "function") {
-          fetchSetupProjectsFromR2(true);
-        }
 
         // Render tabs (bao gồm custom projects từ localStorage)
         renderSetupTabs();
@@ -15030,6 +15065,7 @@
 
         switchSetupTab(currentSetupProjectId);
 
+        // Luôn nạp thông số mới nhất từ form bên ngoài vào modal
         const { maNpp, maNvbh, role } = getSetupDeviceValues();
         const inputNppEl = document.getElementById("setupInputMaNpp");
         const inputNvbhEl = document.getElementById("setupInputMaNvbh");
@@ -15046,7 +15082,14 @@
           onSetupModeChange("nvbh");
         }
 
+        updateSetupModalDisplay();
+
         modal.classList.add("show");
+
+        // Tải cập nhật mới nhất từ Cloud R2 (chạy ngầm, không reset input)
+        if (typeof fetchSetupProjectsFromR2 === "function") {
+          fetchSetupProjectsFromR2(true);
+        }
       };
 
       window.closeSetupModal = function () {
