@@ -4153,48 +4153,6 @@
       color: #dc2626;
     }
 
-    .tchat-hdr-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding-top: 6px;
-      border-top: 1px dashed #e2e8f0;
-      font-size: 11.5px;
-    }
-
-    .tchat-my-identity-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid #e2e8f0;
-      background: #f8fafc;
-      color: #334155;
-      font-size: 11.5px;
-      font-weight: 600;
-      user-select: none;
-    }
-
-    .tchat-my-identity-badge i {
-      color: #4f46e5;
-      font-size: 11px;
-    }
-
-    .tchat-my-identity-badge .my-code {
-      color: #64748b;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 10.5px;
-      font-weight: 600;
-    }
-
-    .tchat-my-identity-badge.unset {
-      background: #fff7ed;
-      border-color: #fdba74;
-      color: #c2410c;
-    }
-
     /* Search & Pinned & Media drawers */
     .tchat-search-bar {
       display: none;
@@ -5116,16 +5074,6 @@
           </button>
         </div>
       </div>
-
-      <div class="tchat-hdr-bar">
-        <span class="tchat-my-identity-badge" id="badgeChatMyIdentity" title="Tự động lấy theo nhân viên đang đăng nhập trên máy (tab Note Issue)">
-          <i class="fa-solid fa-id-badge"></i>
-          <span id="txtChatMyIdentity">--</span>
-        </span>
-        <span style="color:#64748b; font-size:11px;" id="tchatRoomStatus">
-          <i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được
-        </span>
-      </div>
     </div>
 
     <!-- Search Bar -->
@@ -5376,12 +5324,9 @@
     const DRAWER_IDLE_LIMIT_MS = 150000; // Pause open-room polling after 2.5 min idle
 
     function recordDrawerActivity() {
-      const now = Date.now();
-      lastDrawerActiveAt = now;
+      lastDrawerActiveAt = Date.now();
       if (isDrawerIdlePaused && activeChatTaskId) {
         isDrawerIdlePaused = false;
-        const st = document.getElementById("tchatRoomStatus");
-        if (st) st.innerHTML = `<i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được`;
         fetchRoomMessages(activeChatTaskId, true);
       }
     }
@@ -5421,23 +5366,6 @@
       }
     }
 
-    /* ── Current Machine Employee Badge (Auto-synced from Note Issue) ── */
-    function updateChatIdentityButton() {
-      const badge = document.getElementById("badgeChatMyIdentity");
-      const txt = document.getElementById("txtChatMyIdentity");
-      if (!badge || !txt) return;
-      const me = getCurrentChatMember();
-      if (me && me.name) {
-        badge.classList.remove("unset");
-        txt.innerHTML = me.code
-          ? `<b>${esc(me.name)}</b> <span class="my-code">(${esc(me.code)})</span>`
-          : `<b>${esc(me.name)}</b>`;
-      } else {
-        badge.classList.add("unset");
-        txt.textContent = "Chưa chọn nhân viên bên Note Issue";
-      }
-    }
-
     /* ── Open / Close Task Chat Room ── */
     async function openTaskChat(taskId) {
       if (isReorderMode) return;
@@ -5470,8 +5398,6 @@
         issueEl.textContent = (t && t.issue) ? t.issue : `Task #${taskId}`;
       }
 
-      updateChatIdentityButton();
-
       document.getElementById("taskChatOverlay")?.classList.add("show");
       document.getElementById("taskChatDrawer")?.classList.add("show");
       document.getElementById("tchatBody").innerHTML = `<div class="state-box"><div class="spinner"></div><div>Đang tải tin nhắn...</div></div>`;
@@ -5483,18 +5409,12 @@
 
       lastDrawerActiveAt = Date.now();
       isDrawerIdlePaused = false;
-      const st = document.getElementById("tchatRoomStatus");
-      if (st) st.innerHTML = `<i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được`;
 
       if (chatPollTimer) clearInterval(chatPollTimer);
       chatPollTimer = setInterval(() => {
         if (!activeChatTaskId || document.visibilityState !== "visible") return;
         if (Date.now() - lastDrawerActiveAt >= DRAWER_IDLE_LIMIT_MS) {
-          if (!isDrawerIdlePaused) {
-            isDrawerIdlePaused = true;
-            const stEl = document.getElementById("tchatRoomStatus");
-            if (stEl) stEl.innerHTML = `<i class="fa-solid fa-moon" style="font-size:10px; color:#f59e0b;"></i> Tạm nghỉ đồng bộ (di chuột để tiếp tục)`;
-          }
+          isDrawerIdlePaused = true;
           return;
         }
         fetchRoomMessages(activeChatTaskId, true);
@@ -6779,7 +6699,6 @@
           renderTasks();
         }
       } else if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
-        updateChatIdentityButton();
         renderTasks();
         if (activeChatTaskId) renderChatMessages(false);
       }
@@ -6788,7 +6707,6 @@
     // Sync employee selection changes across tabs
     window.addEventListener("storage", (e) => {
       if (e.key === "dms_current_member" || e.key === "app_user_name") {
-        updateChatIdentityButton();
         renderTasks();
         if (activeChatTaskId) renderChatMessages(false);
       } else if (e.key === CHAT_META_LS_KEY && e.newValue) {
