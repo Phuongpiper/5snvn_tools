@@ -230,6 +230,39 @@ const server = http.createServer(function(req, res) {
     return;
   }
 
+  if (pathname === "/api/r2-task-chat") {
+    const chunks = [];
+    req.on("data", function(chunk) { chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)); });
+    req.on("end", async function() {
+      try {
+        const rawBuf = Buffer.concat(chunks);
+        req.rawBytes = new Uint8Array(rawBuf);
+        const ct = String((req.headers && req.headers["content-type"]) || "").toLowerCase();
+        if (rawBuf.length > 0 && (ct.includes("application/json") || ct.includes("text/"))) {
+          const text = rawBuf.toString("utf8");
+          try { req.body = JSON.parse(text); } catch(_) { req.body = text; }
+        }
+        res.status = function(code) { res.statusCode = code; return this; };
+        res.json = function(data) {
+          res.setHeader("Content-Type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(data));
+          return this;
+        };
+        res.send = function(data) {
+          res.end(Buffer.isBuffer(data) || data instanceof Uint8Array ? Buffer.from(data) : (typeof data === "string" ? data : JSON.stringify(data)));
+          return this;
+        };
+        delete require.cache[require.resolve("./api/r2-task-chat.js")];
+        const handler = require("./api/r2-task-chat.js");
+        await handler(req, res);
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ status: "error", message: err.message }));
+      }
+    });
+    return;
+  }
+
   if (pathname === "/api/r2-tasks") {
     let body = "";
     req.on("data", function(chunk) { body += chunk; });

@@ -324,6 +324,62 @@
       border-radius: 5px;
     }
 
+    .btn-action-chat {
+      position: relative;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #4f46e5;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action-chat:hover:not(:disabled) {
+      background: #e0e7ff;
+      border-color: #818cf8;
+      color: #3730a3;
+      transform: translateY(-1px);
+    }
+
+    .btn-action-chat.has-unread {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      color: #dc2626;
+      animation: chatBtnPulse 2s infinite;
+    }
+
+    @keyframes chatBtnPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25); }
+      50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+    }
+
+    .chat-btn-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      font-size: 9.5px;
+      font-weight: 800;
+      line-height: 16px;
+      text-align: center;
+      background: #64748b;
+      color: #ffffff;
+      border: 1.5px solid #ffffff;
+      pointer-events: none;
+    }
+
+    .chat-btn-badge.unread {
+      background: #ef4444;
+    }
+
     .btn-action-edit {
       background: #f1f5f9;
       border: 1px solid #e2e8f0;
@@ -721,7 +777,8 @@
     }
 
     .col-actions {
-      width: 80px;
+      width: 116px;
+      min-width: 112px;
       text-align: center;
     }
 
@@ -2584,6 +2641,9 @@
           : "";
         const priorityCellHtml = `<div class="priority-cell-wrap">${priorityBadge}${alertToggleBtn}</div>`;
 
+        const chatBadge = (typeof getTaskChatBadgeHtml === "function") ? getTaskChatBadgeHtml(t.id) : "";
+        const chatUnreadCls = (typeof hasTaskChatUnread === "function" && hasTaskChatUnread(t.id)) ? "has-unread" : "";
+
         tr.innerHTML = `
       <td class="col-stt">
         <span class="drag-handle" title="Kéo để đổi vị trí"><i class="fa-solid fa-bars"></i></span>
@@ -2598,6 +2658,7 @@
       <td class="col-status" style="text-align:center;">${statusBadge}</td>
       <td class="col-actions">
         <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
+          <button class="btn-action-chat ${chatUnreadCls}" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openTaskChat('${t.id}')" title="Phòng chat trao đổi của Task này"><i class="fa-solid fa-comments"></i>${chatBadge}</button>
           <button class="btn-action-edit" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openEditTask('${t.id}')" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
           <button class="btn-action-delete" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="deleteTask('${t.id}')" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
         </div>
@@ -3945,6 +4006,2791 @@
       if (isTaskTabActive) {
         startAutoSync();
       }
+    });
+  </script>
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- ── TASK CHAT ROOM SYSTEM (ZALO/SLACK-STYLE PER-TASK COLLABORATION) ── -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <style>
+    .tchat-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      backdrop-filter: blur(2px);
+      z-index: 9500;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
+    .tchat-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .tchat-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 520px;
+      max-width: 100vw;
+      background: #f8fafc;
+      border-left: 1px solid #cbd5e1;
+      box-shadow: -12px 0 36px rgba(15, 23, 42, 0.16);
+      z-index: 9550;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(104%);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), width 0.22s ease;
+    }
+
+    .tchat-drawer.show {
+      transform: translateX(0);
+    }
+
+    .tchat-drawer.wide {
+      width: 880px;
+    }
+
+    .tchat-drawer.drag-over::after {
+      content: "📎 Thả hình ảnh hoặc tệp vào đây để đính kèm";
+      position: absolute;
+      inset: 12px;
+      background: rgba(79, 70, 229, 0.92);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: 2.5px dashed #ffffff;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    /* Header */
+    .tchat-header {
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 14px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .tchat-hdr-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tchat-hdr-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tchat-hdr-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+
+    .tchat-hdr-issue {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #0f172a;
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .tchat-hdr-issue.expanded {
+      -webkit-line-clamp: unset;
+    }
+
+    .tchat-hdr-tools {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tchat-tool-btn {
+      width: 31px;
+      height: 31px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      position: relative;
+      transition: all 0.15s;
+    }
+
+    .tchat-tool-btn:hover,
+    .tchat-tool-btn.active {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: #4f46e5;
+    }
+
+    .tchat-tool-btn.close-btn:hover {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #dc2626;
+    }
+
+    .tchat-hdr-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #e2e8f0;
+      font-size: 11.5px;
+    }
+
+    .tchat-member-switcher {
+      position: relative;
+    }
+
+    .tchat-my-identity-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tchat-my-identity-btn:hover {
+      background: #e0e7ff;
+    }
+
+    .tchat-my-identity-btn.unset {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #c2410c;
+      animation: chatBtnPulse 2s infinite;
+    }
+
+    .tchat-member-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 230px;
+      max-height: 260px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14);
+      padding: 6px;
+      z-index: 60;
+    }
+
+    .tchat-member-menu.show {
+      display: block;
+    }
+
+    .tchat-member-opt {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      padding: 6px 9px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #1e293b;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .tchat-member-opt:hover {
+      background: #f1f5f9;
+    }
+
+    .tchat-member-opt.selected {
+      background: #eef2ff;
+      color: #4338ca;
+    }
+
+    /* Search & Pinned & Media drawers */
+    .tchat-search-bar {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .tchat-search-bar.show {
+      display: flex;
+    }
+
+    .tchat-search-bar input {
+      flex: 1;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 12.5px;
+      outline: none;
+    }
+
+    .tchat-search-bar input:focus {
+      border-color: #4f46e5;
+    }
+
+    .tchat-pinned-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 7px 14px;
+      background: #fffbeb;
+      border-bottom: 1px solid #fde68a;
+      font-size: 12px;
+      color: #92400e;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .tchat-pinned-bar.show {
+      display: flex;
+    }
+
+    .tchat-media-panel {
+      display: none;
+      flex-direction: column;
+      max-height: 280px;
+      overflow-y: auto;
+      background: #ffffff;
+      border-bottom: 2px solid #cbd5e1;
+      padding: 10px 14px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .tchat-media-panel.show {
+      display: flex;
+    }
+
+    .tchat-media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+      gap: 8px;
+    }
+
+    .tchat-media-thumb {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      position: relative;
+      background: #f1f5f9;
+    }
+
+    .tchat-media-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Message Stream */
+    .tchat-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.03) 0%, transparent 50%),
+        #f1f5f9;
+    }
+
+    .tchat-date-sep {
+      align-self: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid #e2e8f0;
+      padding: 2px 10px;
+      border-radius: 999px;
+      margin: 4px 0;
+    }
+
+    .tchat-msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 88%;
+      position: relative;
+    }
+
+    .tchat-msg-row.has-table {
+      max-width: 96%;
+    }
+
+    .tchat-msg-row.mine {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .tchat-msg-row.theirs {
+      align-self: flex-start;
+    }
+
+    .tchat-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #ffffff;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    }
+
+    .tchat-bubble-col {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .tchat-msg-row.mine .tchat-bubble-col {
+      align-items: flex-end;
+    }
+
+    .tchat-sender-line {
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      margin: 0 4px 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tchat-bubble {
+      position: relative;
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px 14px 14px 4px;
+      padding: 8px 11px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+      font-size: 13px;
+      line-height: 1.48;
+      word-break: break-word;
+      max-width: 100%;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    .tchat-msg-row.mine .tchat-bubble {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      color: #1e1b4b;
+      border-radius: 14px 14px 4px 14px;
+    }
+
+    .tchat-bubble.pinned {
+      border-color: #f59e0b !important;
+      box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25);
+    }
+
+    .tchat-bubble.flash-highlight {
+      box-shadow: 0 0 0 3px #6366f1 !important;
+      transition: box-shadow 0.2s;
+    }
+
+    .tchat-bubble.deleted {
+      background: #f8fafc !important;
+      border: 1px dashed #cbd5e1 !important;
+      color: #94a3b8 !important;
+      font-style: italic;
+      font-size: 12px;
+    }
+
+    .tchat-reply-quote {
+      border-left: 3px solid #6366f1;
+      background: rgba(99, 102, 241, 0.08);
+      border-radius: 4px 6px 6px 4px;
+      padding: 4px 8px;
+      margin-bottom: 6px;
+      font-size: 11.5px;
+      cursor: pointer;
+    }
+
+    .tchat-reply-quote b {
+      display: block;
+      color: #4338ca;
+      font-size: 11px;
+    }
+
+    .tchat-reply-quote span {
+      color: #475569;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .tchat-text {
+      white-space: pre-wrap;
+    }
+
+    .tchat-text a {
+      color: #2563eb;
+      text-decoration: underline;
+      font-weight: 500;
+    }
+
+    .tchat-mention {
+      display: inline-block;
+      padding: 0 5px;
+      border-radius: 4px;
+      background: rgba(79, 70, 229, 0.12);
+      color: #4338ca;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .tchat-mention.me {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    /* Pasted Excel Table inside Chat Bubble */
+    .tchat-excel-wrap {
+      margin-top: 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      overflow: hidden;
+      max-width: 100%;
+    }
+
+    .tchat-excel-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 9px;
+      background: #f0fdf4;
+      border-bottom: 1px solid #bbf7d0;
+      font-size: 11px;
+      font-weight: 700;
+      color: #166534;
+    }
+
+    .tchat-excel-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tchat-excel-btn {
+      border: 1px solid #86efac;
+      background: #ffffff;
+      color: #15803d;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tchat-excel-btn:hover {
+      background: #dcfce7;
+    }
+
+    .tchat-excel-scroll {
+      max-height: 280px;
+      overflow: auto;
+      max-width: 100%;
+    }
+
+    .tchat-excel-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 11.5px;
+      color: #0f172a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tchat-excel-table th,
+    .tchat-excel-table td {
+      border: 1px solid #e2e8f0;
+      padding: 4px 8px;
+      text-align: left;
+      white-space: nowrap;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tchat-excel-table th {
+      background: #f8fafc;
+      font-weight: 700;
+      color: #1e293b;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .tchat-excel-table tr:nth-child(even) td {
+      background: #fcfcfd;
+    }
+
+    /* Image & File Attachments inside Bubble */
+    .tchat-img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 6px;
+      margin-top: 6px;
+      max-width: 360px;
+    }
+
+    .tchat-img-item {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      cursor: zoom-in;
+      min-height: 80px;
+      max-height: 230px;
+    }
+
+    .tchat-img-item img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      max-height: 230px;
+      object-fit: cover;
+    }
+
+    .tchat-img-actions {
+      position: absolute;
+      right: 6px;
+      bottom: 6px;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .tchat-img-item:hover .tchat-img-actions {
+      opacity: 1;
+    }
+
+    .tchat-img-act-btn {
+      background: rgba(15, 23, 42, 0.78);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 7px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tchat-img-act-btn:hover {
+      background: #0f172a;
+    }
+
+    .tchat-file-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 6px;
+    }
+
+    .tchat-file-card {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      min-width: 220px;
+      max-width: 340px;
+    }
+
+    .tchat-file-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    .tchat-file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .tchat-file-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tchat-file-size {
+      font-size: 10.5px;
+      color: #64748b;
+    }
+
+    .tchat-file-dl {
+      padding: 5px 9px;
+      border-radius: 6px;
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #4338ca;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tchat-file-dl:hover {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+    }
+
+    /* Meta & Hover Action Bar & Reactions */
+    .tchat-meta-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      font-size: 10px;
+      color: #64748b;
+      justify-content: flex-end;
+    }
+
+    .tchat-hover-bar {
+      display: none;
+      align-items: center;
+      gap: 2px;
+      position: absolute;
+      top: -14px;
+      right: 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      padding: 2px 5px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+      z-index: 10;
+    }
+
+    .tchat-msg-row.mine .tchat-hover-bar {
+      right: auto;
+      left: 8px;
+    }
+
+    .tchat-msg-row:hover .tchat-hover-bar {
+      display: inline-flex;
+    }
+
+    .tchat-hov-btn {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      color: #475569;
+      line-height: 1;
+    }
+
+    .tchat-hov-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      transform: scale(1.12);
+    }
+
+    .tchat-reactions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 3px;
+    }
+
+    .tchat-react-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      cursor: pointer;
+      color: #334155;
+      font-weight: 600;
+    }
+
+    .tchat-react-chip.mine {
+      background: #eef2ff;
+      border-color: #818cf8;
+      color: #3730a3;
+    }
+
+    /* Composer Area */
+    .tchat-composer {
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      padding: 8px 12px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .tchat-context-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #eef2ff;
+      border-left: 3px solid #4f46e5;
+      font-size: 11.5px;
+      color: #312e81;
+    }
+
+    .tchat-context-banner.show {
+      display: flex;
+    }
+
+    .tchat-staged-tray {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 6px 8px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .tchat-staged-tray.show {
+      display: flex;
+    }
+
+    .tchat-staged-item {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 8px;
+      border-radius: 7px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      font-size: 11.5px;
+      max-width: 220px;
+    }
+
+    .tchat-staged-item img {
+      width: 38px;
+      height: 38px;
+      object-fit: cover;
+      border-radius: 5px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .tchat-staged-remove {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      font-size: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .tchat-staged-table-bar {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      font-size: 11.5px;
+      color: #166534;
+    }
+
+    .tchat-staged-table-bar.show {
+      display: flex;
+    }
+
+    .tchat-input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .tchat-compose-tools {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding-bottom: 3px;
+    }
+
+    .tchat-icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #64748b;
+      font-size: 15px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .tchat-icon-btn:hover {
+      background: #f1f5f9;
+      color: #4f46e5;
+    }
+
+    .tchat-textarea {
+      flex: 1;
+      min-height: 38px;
+      max-height: 130px;
+      padding: 8px 11px;
+      border-radius: 10px;
+      border: 1.5px solid #cbd5e1;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.4;
+      resize: none;
+      outline: none;
+      background: #f8fafc;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .tchat-textarea:focus {
+      border-color: #4f46e5;
+      background: #ffffff;
+    }
+
+    .tchat-send-btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: none;
+      background: #4f46e5;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .tchat-send-btn:hover:not(:disabled) {
+      background: #4338ca;
+    }
+
+    .tchat-send-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    /* @Mention & Emoji Popovers */
+    .tchat-mention-popup {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 12px;
+      width: 250px;
+      max-height: 220px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.15);
+      padding: 5px;
+      z-index: 40;
+    }
+
+    .tchat-mention-popup.show {
+      display: block;
+    }
+
+    .tchat-mention-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 6px 9px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #1e293b;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .tchat-mention-item:hover,
+    .tchat-mention-item.active {
+      background: #eef2ff;
+      color: #4338ca;
+    }
+
+    .tchat-emoji-popup {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 44px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.15);
+      padding: 8px;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      z-index: 40;
+    }
+
+    .tchat-emoji-popup.show {
+      display: grid;
+    }
+
+    .tchat-emoji-btn {
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: transparent;
+      border-radius: 6px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    .tchat-emoji-btn:hover {
+      background: #f1f5f9;
+      transform: scale(1.15);
+    }
+
+    /* Fullscreen Image Lightbox */
+    .tchat-lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.92);
+      z-index: 9999;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    .tchat-lightbox.show {
+      display: flex;
+    }
+
+    .tchat-lb-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      color: #f8fafc;
+      background: rgba(0, 0, 0, 0.35);
+    }
+
+    .tchat-lb-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tchat-lb-btn {
+      padding: 6px 11px;
+      border-radius: 7px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tchat-lb-btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+    }
+
+    .tchat-lb-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .tchat-lb-stage img {
+      max-width: 90vw;
+      max-height: 82vh;
+      object-fit: contain;
+      transition: transform 0.15s ease;
+      border-radius: 4px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .tchat-lb-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(15, 23, 42, 0.65);
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tchat-lb-nav:hover {
+      background: rgba(79, 70, 229, 0.85);
+    }
+
+    .tchat-lb-nav.prev { left: 18px; }
+    .tchat-lb-nav.next { right: 18px; }
+  </style>
+
+  <!-- Chat Overlay & Drawer -->
+  <div class="tchat-overlay" id="taskChatOverlay" onclick="closeTaskChat()"></div>
+  <aside class="tchat-drawer" id="taskChatDrawer" aria-label="Phòng chat Task">
+    <div class="tchat-header">
+      <div class="tchat-hdr-top">
+        <div class="tchat-hdr-title-wrap">
+          <div class="tchat-hdr-badges" id="tchatHdrBadges"></div>
+          <div class="tchat-hdr-issue" id="tchatHdrIssue" onclick="this.classList.toggle('expanded')" title="Bấm để xem đầy đủ nội dung Task"></div>
+        </div>
+        <div class="tchat-hdr-tools">
+          <button type="button" class="tchat-tool-btn" id="btnChatSearchToggle" onclick="toggleChatSearch()" title="Tìm kiếm tin nhắn trong phòng chat">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+          <button type="button" class="tchat-tool-btn" id="btnChatMediaToggle" onclick="toggleChatMediaPanel()" title="Kho Ảnh & Tệp đính kèm trong Task">
+            <i class="fa-regular fa-images"></i>
+          </button>
+          <button type="button" class="tchat-tool-btn" id="btnChatExpandToggle" onclick="toggleChatWideMode()" title="Mở rộng / Thu gọn khung chat">
+            <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+          </button>
+          <button type="button" class="tchat-tool-btn close-btn" onclick="closeTaskChat()" title="Đóng phòng chat (ESC)">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="tchat-hdr-bar">
+        <div class="tchat-member-switcher" id="tchatMemberSwitcher">
+          <button type="button" class="tchat-my-identity-btn" id="btnChatMyIdentity" onclick="toggleChatMemberMenu(event)" title="Chọn tên nhân viên của bạn khi gửi & nhận thông báo">
+            <i class="fa-solid fa-user-check"></i>
+            <span id="txtChatMyIdentity">Chọn nhân viên...</span>
+            <i class="fa-solid fa-chevron-down" style="font-size:9px;"></i>
+          </button>
+          <div class="tchat-member-menu" id="tchatMemberMenu"></div>
+        </div>
+        <span style="color:#64748b; font-size:11px;" id="tchatRoomStatus">
+          <i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được
+        </span>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="tchat-search-bar" id="tchatSearchBar">
+      <i class="fa-solid fa-magnifying-glass" style="color:#64748b; font-size:12px;"></i>
+      <input type="text" id="tchatSearchInput" placeholder="Nhập từ khoá cần tìm trong đoạn chat..." oninput="renderChatMessages()" />
+      <button type="button" class="btn-outline btn-sm" onclick="clearChatSearch()">Đóng</button>
+    </div>
+
+    <!-- Pinned Banner -->
+    <div class="tchat-pinned-bar" id="tchatPinnedBar" onclick="cyclePinnedMessage()">
+      <div style="display:flex; align-items:center; gap:7px; min-width:0; flex:1;">
+        <i class="fa-solid fa-thumbtack" style="color:#d97706;"></i>
+        <span id="tchatPinnedText" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;"></span>
+      </div>
+      <span id="tchatPinnedCount" style="font-size:10.5px; font-weight:700; background:#fef3c7; padding:1px 7px; border-radius:999px; border:1px solid #fcd34d;"></span>
+    </div>
+
+    <!-- Shared Media & Files Drawer -->
+    <div class="tchat-media-panel" id="tchatMediaPanel"></div>
+
+    <!-- Messages Body -->
+    <div class="tchat-body" id="tchatBody"></div>
+
+    <!-- Composer -->
+    <div class="tchat-composer">
+      <!-- @Mention Autocomplete -->
+      <div class="tchat-mention-popup" id="tchatMentionPopup"></div>
+      <!-- Quick Emoji Picker -->
+      <div class="tchat-emoji-popup" id="tchatEmojiPopup"></div>
+
+      <!-- Reply / Edit Context Banner -->
+      <div class="tchat-context-banner" id="tchatContextBanner">
+        <div style="min-width:0; flex:1;">
+          <strong id="tchatContextTitle" style="display:block; font-size:11px;"></strong>
+          <span id="tchatContextSub" style="display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#475569;"></span>
+        </div>
+        <button type="button" class="tchat-hov-btn" onclick="cancelChatContext()" title="Huỷ"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- Staged Pasted Excel Table Bar -->
+      <div class="tchat-staged-table-bar" id="tchatStagedTableBar">
+        <div style="display:flex; align-items:center; gap:7px; min-width:0;">
+          <i class="fa-solid fa-table" style="color:#16a34a;"></i>
+          <span id="tchatStagedTableInfo" style="font-weight:700;"></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+          <button type="button" class="tchat-excel-btn" id="btnSwitchExcelToImg" style="display:none;" onclick="switchStagedTableToImage()" title="Gửi dưới dạng hình chụp từ Excel thay vì bảng">
+            <i class="fa-regular fa-image"></i> Gửi dạng Ảnh
+          </button>
+          <button type="button" class="tchat-staged-remove" onclick="clearStagedTable()" title="Xoá bảng đính kèm">&times;</button>
+        </div>
+      </div>
+
+      <!-- Staged Files / Pasted Images Tray -->
+      <div class="tchat-staged-tray" id="tchatStagedTray"></div>
+
+      <!-- Input Row -->
+      <div class="tchat-input-row">
+        <div class="tchat-compose-tools">
+          <input type="file" id="tchatFileInput" multiple style="display:none;" onchange="handleChatFileSelect(event)" />
+          <button type="button" class="tchat-icon-btn" onclick="document.getElementById('tchatFileInput').click()" title="Đính kèm hình ảnh / tệp tin (Excel, PDF, ZIP, ảnh...)">
+            <i class="fa-solid fa-paperclip"></i>
+          </button>
+          <button type="button" class="tchat-icon-btn" onclick="toggleChatEmojiPopup(event)" title="Chèn biểu tượng cảm xúc">
+            <i class="fa-regular fa-face-smile"></i>
+          </button>
+          <button type="button" class="tchat-icon-btn" onclick="triggerMentionButton(event)" title="Nhắc tên thành viên (@)">
+            <i class="fa-solid fa-at"></i>
+          </button>
+        </div>
+        <textarea class="tchat-textarea" id="tchatInput" rows="1"
+          placeholder="Nhập tin nhắn, @tên, dán ảnh hoặc bảng Excel (Ctrl+V)..."
+          oninput="onChatInputChanged(event)"
+          onkeydown="onChatInputKeydown(event)"></textarea>
+        <button type="button" class="tchat-send-btn" id="btnChatSend" onclick="submitChatMessage()">
+          <i class="fa-solid fa-paper-plane"></i> Gửi
+        </button>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#94a3b8; padding:0 2px;">
+        <span>Mẹo: <b>Ctrl+V</b> để dán ảnh chụp màn hình hoặc bảng Excel · Kéo thả tệp vào khung chat</span>
+        <span><b>Enter</b> gửi · <b>Shift+Enter</b> xuống dòng</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Image Lightbox Viewer -->
+  <div class="tchat-lightbox" id="chatImageLightbox" onclick="if(event.target===this)closeChatLightbox()">
+    <div class="tchat-lb-top">
+      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <i class="fa-regular fa-image"></i>
+        <span id="lbImgTitle" style="font-weight:700; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:45vw;"></span>
+        <span id="lbImgCounter" style="font-size:12px; color:#94a3b8;"></span>
+      </div>
+      <div class="tchat-lb-tools">
+        <button type="button" class="tchat-lb-btn" onclick="zoomLightbox(-0.25)" title="Thu nhỏ"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+        <button type="button" class="tchat-lb-btn" onclick="resetLightboxTransform()" title="100%">100%</button>
+        <button type="button" class="tchat-lb-btn" onclick="zoomLightbox(0.25)" title="Phóng to"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+        <button type="button" class="tchat-lb-btn" onclick="rotateLightbox()" title="Xoay ảnh 90°"><i class="fa-solid fa-rotate-right"></i> Xoay</button>
+        <a class="tchat-lb-btn" id="lbDownloadLink" href="#" download style="background:#4f46e5; border-color:#6366f1;">
+          <i class="fa-solid fa-download"></i> Lưu ảnh về máy
+        </a>
+        <button type="button" class="tchat-lb-btn" onclick="closeChatLightbox()" title="Đóng (ESC)"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+    <div class="tchat-lb-stage" onwheel="onLightboxWheel(event)">
+      <button type="button" class="tchat-lb-nav prev" id="lbPrevBtn" onclick="stepLightbox(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <img id="lbImgEl" src="" alt="Preview" />
+      <button type="button" class="tchat-lb-nav next" id="lbNextBtn" onclick="stepLightbox(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <script>
+    /* ══════════════════════════════════════════════════════════════════════════
+       TASK CHAT ROOM CONTROLLER
+    ══════════════════════════════════════════════════════════════════════════ */
+    const CHAT_META_LS_KEY = "dms_task_chat_meta";
+    const QUICK_EMOJIS = [
+      "👍", "❤️", "🔥", "✅", "👀", "🎉", "🙏",
+      "😄", "😂", "🤝", "⚡", "📌", "⚠️", "🚀",
+      "💯", "👏", "🤔", "😥", "🆗", "📎", "💬"
+    ];
+    const REACTION_BAR_EMOJIS = ["👍", "❤️", "🔥", "✅", "👀"];
+
+    let chatRoomsMeta = {};
+    try { chatRoomsMeta = JSON.parse(localStorage.getItem(CHAT_META_LS_KEY) || "{}") || {}; } catch (_) { chatRoomsMeta = {}; }
+
+    let activeChatTaskId = null;
+    let activeChatMessages = [];
+    let activeChatUpdatedAt = 0;
+    let chatPollTimer = null;
+    let chatMetaPollTimer = null;
+
+    let stagedFiles = []; // [{ id, file, previewUrl, isImage }]
+    let stagedTableData = null; // { headers, rows, tsv }
+    let stagedExcelFallbackImage = null; // File (PNG screenshot from Excel clipboard if available)
+    let chatReplyTarget = null; // { id, senderName, preview }
+    let chatEditTargetId = null;
+    let pinnedCycleIdx = 0;
+
+    // Lightbox state
+    let lbImagesList = [];
+    let lbCurrentIdx = 0;
+    let lbScale = 1;
+    let lbRotation = 0;
+
+    let chatBroadcast = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        chatBroadcast = new BroadcastChannel("R2_TASK_CHAT_SYNC");
+        chatBroadcast.onmessage = (e) => {
+          if (!e.data) return;
+          if (e.data.type === "CHAT_UPDATED") {
+            fetchChatMetaSummary(true);
+            if (activeChatTaskId && String(e.data.taskId) === String(activeChatTaskId)) {
+              fetchRoomMessages(activeChatTaskId, true);
+            }
+          }
+        };
+      }
+    } catch (_) {}
+
+    function getChatEndpoint() {
+      let base = "";
+      if (window.location.protocol === "file:" && WORKER_API_URL) {
+        try { base = new URL(WORKER_API_URL).origin; } catch (_) { base = ""; }
+      }
+      return base + "/api/r2-task-chat";
+    }
+
+    function buildChatFileUrl(key, fileName, download = false) {
+      const ep = getChatEndpoint();
+      return `${ep}?action=file&key=${encodeURIComponent(key)}&name=${encodeURIComponent(fileName || "file")}${download ? "&download=1" : ""}`;
+    }
+
+    /* ── Current Employee Identity (Synced with DMS Hub / Note Issue) ── */
+    function getCurrentChatMember() {
+      try {
+        const raw = localStorage.getItem("dms_current_member");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.name) {
+            return { name: String(parsed.name).trim(), code: String(parsed.code || "").trim() };
+          }
+        }
+        const uName = (localStorage.getItem("app_user_name") || "").trim();
+        const uCode = (localStorage.getItem("app_user_code") || "").trim();
+        if (uName) return { name: uName, code: uCode };
+      } catch (_) {}
+      return null;
+    }
+
+    function setCurrentChatMember(name, code = "") {
+      const cleanName = String(name || "").trim();
+      const cleanCode = String(code || "").trim();
+      if (!cleanName) return;
+      const obj = { name: cleanName, code: cleanCode };
+      try {
+        localStorage.setItem("dms_current_member", JSON.stringify(obj));
+        localStorage.setItem("app_user_name", cleanName);
+        if (cleanCode) localStorage.setItem("app_user_code", cleanCode);
+      } catch (_) {}
+      updateChatIdentityButton();
+      if (activeChatTaskId) {
+        markTaskChatRead(activeChatTaskId);
+        renderChatMessages(false);
+      }
+      renderTasks();
+    }
+
+    function getReadMapStorageKey() {
+      const me = getCurrentChatMember();
+      const suffix = me ? (me.code || me.name).toLowerCase().replace(/[^a-z0-9]/g, "_") : "guest";
+      return "dms_chat_read_" + suffix;
+    }
+
+    function getChatReadMap() {
+      try { return JSON.parse(localStorage.getItem(getReadMapStorageKey()) || "{}") || {}; }
+      catch (_) { return {}; }
+    }
+
+    function markTaskChatRead(taskId) {
+      if (!taskId) return;
+      const map = getChatReadMap();
+      const meta = chatRoomsMeta[String(taskId)];
+      map[String(taskId)] = Math.max(Date.now(), (meta && meta.lastAt) ? Number(meta.lastAt) + 1 : Date.now());
+      try { localStorage.setItem(getReadMapStorageKey(), JSON.stringify(map)); } catch (_) {}
+      renderTasks();
+      notifyParentChatSync();
+    }
+
+    function hasTaskChatUnread(taskId) {
+      const meta = chatRoomsMeta[String(taskId)];
+      if (!meta || !meta.count || !meta.lastAt) return false;
+      const me = getCurrentChatMember();
+      if (me && meta.lastSenderName && meta.lastSenderName.toLowerCase() === me.name.toLowerCase()) {
+        return false;
+      }
+      const readMap = getChatReadMap();
+      const readTs = Number(readMap[String(taskId)] || 0);
+      return Number(meta.lastAt) > readTs;
+    }
+
+    function getTaskChatBadgeHtml(taskId) {
+      const meta = chatRoomsMeta[String(taskId)];
+      if (!meta || !meta.count) return "";
+      const unread = hasTaskChatUnread(taskId);
+      const label = meta.count > 99 ? "99+" : meta.count;
+      return `<span class="chat-btn-badge ${unread ? 'unread' : ''}">${label}</span>`;
+    }
+
+    window.hasTaskChatUnread = hasTaskChatUnread;
+    window.getTaskChatBadgeHtml = getTaskChatBadgeHtml;
+
+    function notifyParentChatSync() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "TASK_CHAT_META_UPDATED" }, "*");
+        }
+      } catch (_) {}
+    }
+
+    async function fetchChatMetaSummary(silent = true) {
+      try {
+        const ep = getChatEndpoint();
+        const r = await fetch(`${ep}?action=meta&t=${Date.now()}`, { cache: "no-cache" });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d && d.status === "success" && d.meta) {
+          const prevJson = JSON.stringify(chatRoomsMeta);
+          chatRoomsMeta = d.meta;
+          const nextJson = JSON.stringify(chatRoomsMeta);
+          if (prevJson !== nextJson) {
+            try { localStorage.setItem(CHAT_META_LS_KEY, nextJson); } catch (_) {}
+            if (activeChatTaskId && chatRoomsMeta[String(activeChatTaskId)]) {
+              markTaskChatRead(activeChatTaskId);
+            } else {
+              renderTasks();
+            }
+            notifyParentChatSync();
+          }
+        }
+      } catch (_) {
+        if (!silent) toast("Không thể tải trạng thái phòng chat", "w");
+      }
+    }
+
+    /* ── Employee Switcher Dropdown in Chat Header ── */
+    function updateChatIdentityButton() {
+      const btn = document.getElementById("btnChatMyIdentity");
+      const txt = document.getElementById("txtChatMyIdentity");
+      if (!btn || !txt) return;
+      const me = getCurrentChatMember();
+      if (me && me.name) {
+        btn.classList.remove("unset");
+        txt.textContent = `Chat tên: ${me.name}`;
+      } else {
+        btn.classList.add("unset");
+        txt.textContent = "Chọn tên của bạn...";
+      }
+    }
+
+    function toggleChatMemberMenu(ev) {
+      if (ev) ev.stopPropagation();
+      const menu = document.getElementById("tchatMemberMenu");
+      if (!menu) return;
+      const isShowing = menu.classList.contains("show");
+      if (isShowing) {
+        menu.classList.remove("show");
+        return;
+      }
+      const me = getCurrentChatMember();
+      const members = (Array.isArray(allMembers) && allMembers.length) ? allMembers : [];
+      if (!members.length) {
+        menu.innerHTML = `<div style="padding:10px; font-size:12px; color:#64748b; text-align:center;">Chưa có danh sách nhân viên</div>`;
+      } else {
+        menu.innerHTML = `<div style="padding:4px 8px; font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase;">Chọn tên nhân viên của bạn</div>` +
+          members.map(m => {
+            const isSel = me && me.name.toLowerCase() === m.name.toLowerCase();
+            return `<button type="button" class="tchat-member-opt ${isSel ? 'selected' : ''}" data-name="${esc(m.name)}" data-code="${esc(m.code || '')}">
+              <span><i class="fa-solid fa-user" style="font-size:10px; margin-right:6px; opacity:0.7;"></i>${esc(m.name)}</span>
+              <span style="font-size:10.5px; color:#64748b; font-family:monospace;">${esc(m.code || '')}</span>
+            </button>`;
+          }).join("");
+        menu.querySelectorAll(".tchat-member-opt").forEach(opt => {
+          opt.addEventListener("click", () => {
+            setCurrentChatMember(opt.dataset.name, opt.dataset.code);
+            menu.classList.remove("show");
+            toast(`Đang chat với tên: ${opt.dataset.name}`, "s");
+          });
+        });
+      }
+      menu.classList.add("show");
+    }
+
+    /* ── Open / Close Task Chat Room ── */
+    async function openTaskChat(taskId) {
+      if (isReorderMode) return;
+      const t = allTasks.find(x => String(x.id) === String(taskId) || Number(x.id) === Number(taskId));
+      activeChatTaskId = String(taskId);
+      activeChatMessages = [];
+      activeChatUpdatedAt = 0;
+      cancelChatContext();
+      clearAllStagedAttachments();
+      clearChatSearch();
+      document.getElementById("tchatMediaPanel")?.classList.remove("show");
+      document.getElementById("btnChatMediaToggle")?.classList.remove("active");
+
+      // Render Header
+      const badgesEl = document.getElementById("tchatHdrBadges");
+      const issueEl = document.getElementById("tchatHdrIssue");
+      if (badgesEl) {
+        const projHtml = (t && t.project)
+          ? `<span class="badge" style="${getProjectStyle(t.project)} margin:0;"><i class="fa-solid fa-folder" style="font-size:10px;"></i> ${esc(t.project)}</span>`
+          : "";
+        const prioCls = { P1: "badge-p1", P2: "badge-p2", P3: "badge-p3" }[(t && t.priority) || "P3"] || "badge-p3";
+        const prioHtml = `<span class="badge ${prioCls}" style="margin:0;">${esc((t && t.priority) || "P3")}</span>`;
+        const assigneesHtml = (t && Array.isArray(t.assignees) && t.assignees.length)
+          ? t.assignees.map(a => `<span class="badge badge-member" style="${getMemberStyle(a)} margin:0; font-size:10.5px;">${esc(a)}</span>`).join("")
+          : "";
+        badgesEl.innerHTML = `${projHtml}${prioHtml}${assigneesHtml}`;
+      }
+      if (issueEl) {
+        issueEl.classList.remove("expanded");
+        issueEl.textContent = (t && t.issue) ? t.issue : `Task #${taskId}`;
+      }
+
+      updateChatIdentityButton();
+
+      document.getElementById("taskChatOverlay")?.classList.add("show");
+      document.getElementById("taskChatDrawer")?.classList.add("show");
+      document.getElementById("tchatBody").innerHTML = `<div class="state-box"><div class="spinner"></div><div>Đang tải tin nhắn...</div></div>`;
+
+      await fetchRoomMessages(activeChatTaskId, false);
+      markTaskChatRead(activeChatTaskId);
+
+      setTimeout(() => document.getElementById("tchatInput")?.focus(), 160);
+
+      if (chatPollTimer) clearInterval(chatPollTimer);
+      chatPollTimer = setInterval(() => {
+        if (activeChatTaskId && document.visibilityState === "visible") {
+          fetchRoomMessages(activeChatTaskId, true);
+        }
+      }, 3500);
+    }
+    window.openTaskChat = openTaskChat;
+
+    function closeTaskChat() {
+      activeChatTaskId = null;
+      if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+      document.getElementById("taskChatOverlay")?.classList.remove("show");
+      document.getElementById("taskChatDrawer")?.classList.remove("show");
+      document.getElementById("tchatMemberMenu")?.classList.remove("show");
+      document.getElementById("tchatMentionPopup")?.classList.remove("show");
+      document.getElementById("tchatEmojiPopup")?.classList.remove("show");
+    }
+    window.closeTaskChat = closeTaskChat;
+
+    function toggleChatWideMode() {
+      const dr = document.getElementById("taskChatDrawer");
+      const btn = document.getElementById("btnChatExpandToggle");
+      if (!dr) return;
+      dr.classList.toggle("wide");
+      if (btn) btn.classList.toggle("active", dr.classList.contains("wide"));
+    }
+
+    function toggleChatSearch() {
+      const bar = document.getElementById("tchatSearchBar");
+      const btn = document.getElementById("btnChatSearchToggle");
+      if (!bar) return;
+      const show = !bar.classList.contains("show");
+      bar.classList.toggle("show", show);
+      if (btn) btn.classList.toggle("active", show);
+      if (show) {
+        setTimeout(() => document.getElementById("tchatSearchInput")?.focus(), 60);
+      } else {
+        clearChatSearch();
+      }
+    }
+
+    function clearChatSearch() {
+      const inp = document.getElementById("tchatSearchInput");
+      if (inp) inp.value = "";
+      document.getElementById("tchatSearchBar")?.classList.remove("show");
+      document.getElementById("btnChatSearchToggle")?.classList.remove("active");
+      if (activeChatTaskId) renderChatMessages(false);
+    }
+
+    /* ── Fetch & Render Messages ── */
+    async function fetchRoomMessages(taskId, silent = false) {
+      try {
+        const ep = getChatEndpoint();
+        const r = await fetch(`${ep}?action=messages&taskId=${encodeURIComponent(taskId)}&t=${Date.now()}`, { cache: "no-cache" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const d = await r.json();
+        if (String(taskId) !== String(activeChatTaskId)) return;
+        if (d && d.status === "success") {
+          const newUpdatedAt = Number(d.updatedAt || 0);
+          const msgs = Array.isArray(d.messages) ? d.messages : [];
+          if (silent && newUpdatedAt === activeChatUpdatedAt && msgs.length === activeChatMessages.length) {
+            return;
+          }
+          const bodyEl = document.getElementById("tchatBody");
+          const wasNearBottom = !bodyEl || (bodyEl.scrollHeight - bodyEl.scrollTop - bodyEl.clientHeight < 110);
+          activeChatMessages = msgs;
+          activeChatUpdatedAt = newUpdatedAt;
+          renderChatMessages(!silent || wasNearBottom);
+          updatePinnedBanner();
+          if (document.getElementById("tchatMediaPanel")?.classList.contains("show")) {
+            renderChatMediaPanel();
+          }
+          markTaskChatRead(taskId);
+        }
+      } catch (err) {
+        if (!silent) {
+          document.getElementById("tchatBody").innerHTML = `<div class="state-box" style="color:var(--danger);">Lỗi tải phòng chat: ${esc(err.message)}</div>`;
+        }
+      }
+    }
+
+    function getAvatarColor(name) {
+      const colors = ["#4f46e5", "#0284c7", "#059669", "#d97706", "#db2777", "#7c3aed", "#0d9488", "#dc2626"];
+      let h = 0;
+      const s = String(name || "");
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+      return colors[Math.abs(h) % colors.length];
+    }
+
+    function getInitials(name) {
+      const parts = String(name || "?").trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      return String(name || "?").slice(0, 2).toUpperCase();
+    }
+
+    function formatFileSize(bytes) {
+      const n = Number(bytes) || 0;
+      if (n < 1024) return n + " B";
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
+      return (n / (1024 * 1024)).toFixed(2) + " MB";
+    }
+
+    function getFileIconMeta(name) {
+      const ext = String(name || "").split(".").pop().toLowerCase();
+      if (["xlsx", "xls", "csv"].includes(ext)) return { icon: "fa-file-excel", bg: "#dcfce7", color: "#15803d" };
+      if (ext === "pdf") return { icon: "fa-file-pdf", bg: "#fee2e2", color: "#dc2626" };
+      if (["doc", "docx"].includes(ext)) return { icon: "fa-file-word", bg: "#dbeafe", color: "#1d4ed8" };
+      if (["zip", "rar", "7z"].includes(ext)) return { icon: "fa-file-zipper", bg: "#fef3c7", color: "#b45309" };
+      return { icon: "fa-file-lines", bg: "#f1f5f9", color: "#475569" };
+    }
+
+    function formatChatTextHtml(rawText) {
+      const me = getCurrentChatMember();
+      let safe = esc(rawText || "");
+      // Linkify URLs
+      safe = safe.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+      // Highlight @Mentions
+      safe = safe.replace(/@(Tất cả|ALL|[A-Za-zÀ-ỹ0-9_.\- ]+?)(?=[,\s.!?:;\n]|$)/g, (full, mName) => {
+        const trimmed = mName.trim();
+        const isMe = me && (trimmed.toLowerCase() === "tất cả" || trimmed.toLowerCase() === "all" || trimmed.toLowerCase() === me.name.toLowerCase());
+        return `<span class="tchat-mention ${isMe ? 'me' : ''}">@${trimmed}</span>`;
+      });
+      return safe;
+    }
+
+    function renderExcelTableHtml(msgId, tableData) {
+      if (!tableData || !Array.isArray(tableData.rows)) return "";
+      const headers = Array.isArray(tableData.headers) ? tableData.headers : [];
+      const rows = tableData.rows;
+      const colCount = Math.max(headers.length, ...(rows.map(r => Array.isArray(r) ? r.length : 0)), 1);
+      const totalRows = rows.length + (headers.length ? 1 : 0);
+
+      let thHtml = "";
+      if (headers.length) {
+        thHtml = `<thead><tr>${headers.map(h => `<th title="${esc(h)}">${esc(h)}</th>`).join("")}</tr></thead>`;
+      }
+      const tbHtml = `<tbody>${rows.map(r => `<tr>${(Array.isArray(r) ? r : []).map(c => `<td title="${esc(c)}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+      return `
+        <div class="tchat-excel-wrap">
+          <div class="tchat-excel-hdr">
+            <span><i class="fa-solid fa-table"></i> Bảng Excel (${totalRows} dòng × ${colCount} cột)</span>
+            <div class="tchat-excel-actions">
+              <button type="button" class="tchat-excel-btn" onclick="copyChatTableTsv('${esc(msgId)}')" title="Sao chép bảng để dán lại vào Excel">
+                <i class="fa-regular fa-copy"></i> Copy bảng
+              </button>
+              <button type="button" class="tchat-excel-btn" onclick="downloadChatTableCsv('${esc(msgId)}')" title="Tải bảng về máy mở bằng Excel (.csv)">
+                <i class="fa-solid fa-download"></i> Lưu Excel
+              </button>
+            </div>
+          </div>
+          <div class="tchat-excel-scroll">
+            <table class="tchat-excel-table">${thHtml}${tbHtml}</table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderChatMessages(scrollToBottom = true) {
+      const bodyEl = document.getElementById("tchatBody");
+      if (!bodyEl) return;
+
+      const me = getCurrentChatMember();
+      const q = (document.getElementById("tchatSearchInput")?.value || "").trim().toLowerCase();
+
+      // Collect all room images for Lightbox navigation
+      lbImagesList = [];
+      activeChatMessages.forEach(m => {
+        if (!m.deleted && Array.isArray(m.attachments)) {
+          m.attachments.forEach(a => {
+            if (a.isImage && a.key) {
+              lbImagesList.push({
+                key: a.key,
+                name: a.name || "image.png",
+                url: buildChatFileUrl(a.key, a.name, false),
+                downloadUrl: buildChatFileUrl(a.key, a.name, true),
+                sender: m.senderName
+              });
+            }
+          });
+        }
+      });
+
+      const list = q
+        ? activeChatMessages.filter(m => !m.deleted && (
+            (m.text && m.text.toLowerCase().includes(q)) ||
+            (m.senderName && m.senderName.toLowerCase().includes(q)) ||
+            (Array.isArray(m.attachments) && m.attachments.some(a => (a.name || "").toLowerCase().includes(q))) ||
+            (m.tableData && (m.tableData.tsv || "").toLowerCase().includes(q))
+          ))
+        : activeChatMessages;
+
+      if (!list.length) {
+        bodyEl.innerHTML = `
+          <div class="state-box" style="margin:auto; background:transparent;">
+            <i class="fa-regular fa-comments" style="font-size:34px; color:#cbd5e1;"></i>
+            <div style="font-weight:700; color:#475569;">${q ? "Không tìm thấy tin nhắn phù hợp" : "Chưa có trao đổi nào trong Task này"}</div>
+            <div style="font-size:12px; color:#94a3b8;">Hãy gửi tin nhắn, dán ảnh chụp màn hình hoặc bảng Excel (Ctrl+V) để bắt đầu trao đổi!</div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = "";
+      let lastDateLabel = "";
+
+      list.forEach(m => {
+        const d = new Date(Number(m.createdAt || Date.now()));
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        const dateKey = `${dd}/${mm}/${yyyy}`;
+        if (dateKey !== lastDateLabel) {
+          lastDateLabel = dateKey;
+          html += `<div class="tchat-date-sep">${dateKey}</div>`;
+        }
+
+        const isMine = !!(me && m.senderName && m.senderName.toLowerCase() === me.name.toLowerCase());
+        const hh = String(d.getHours()).padStart(2, "0");
+        const min = String(d.getMinutes()).padStart(2, "0");
+        const timeStr = `${hh}:${min}`;
+        const hasTable = !!(m.tableData && Array.isArray(m.tableData.rows) && m.tableData.rows.length);
+
+        if (m.deleted) {
+          html += `
+            <div class="tchat-msg-row ${isMine ? 'mine' : 'theirs'}" id="cmsg_${esc(m.id)}">
+              ${!isMine ? `<div class="tchat-avatar" style="background:${getAvatarColor(m.senderName)};">${esc(getInitials(m.senderName))}</div>` : ''}
+              <div class="tchat-bubble-col">
+                ${!isMine ? `<div class="tchat-sender-line">${esc(m.senderName)}</div>` : ''}
+                <div class="tchat-bubble deleted"><i class="fa-solid fa-rotate-left"></i> Tin nhắn đã được thu hồi · ${timeStr}</div>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Reply quote
+        const replyHtml = (m.replyTo && m.replyTo.id)
+          ? `<div class="tchat-reply-quote" onclick="scrollToChatMessage('${esc(m.replyTo.id)}')">
+               <b><i class="fa-solid fa-reply" style="font-size:9px;"></i> ${esc(m.replyTo.senderName || '')}</b>
+               <span>${esc(m.replyTo.preview || '')}</span>
+             </div>`
+          : "";
+
+        // Text
+        const textHtml = m.text ? `<div class="tchat-text">${formatChatTextHtml(m.text)}</div>` : "";
+
+        // Table
+        const tableHtml = hasTable ? renderExcelTableHtml(m.id, m.tableData) : "";
+
+        // Attachments
+        const atts = Array.isArray(m.attachments) ? m.attachments : [];
+        const imgAtts = atts.filter(a => a.isImage && a.key);
+        const fileAtts = atts.filter(a => !a.isImage && a.key);
+
+        let imgsHtml = "";
+        if (imgAtts.length) {
+          imgsHtml = `<div class="tchat-img-grid">${imgAtts.map(a => {
+            const viewUrl = buildChatFileUrl(a.key, a.name, false);
+            const dlUrl = buildChatFileUrl(a.key, a.name, true);
+            return `
+              <div class="tchat-img-item" onclick="openChatLightboxByKey('${esc(a.key)}')">
+                <img src="${viewUrl}" alt="${esc(a.name)}" loading="lazy" />
+                <div class="tchat-img-actions" onclick="event.stopPropagation()">
+                  <a class="tchat-img-act-btn" href="${dlUrl}" download="${esc(a.name)}" title="Lưu ảnh về máy">
+                    <i class="fa-solid fa-download"></i> Lưu
+                  </a>
+                </div>
+              </div>
+            `;
+          }).join("")}</div>`;
+        }
+
+        let filesHtml = "";
+        if (fileAtts.length) {
+          filesHtml = `<div class="tchat-file-list">${fileAtts.map(a => {
+            const metaIcon = getFileIconMeta(a.name);
+            const dlUrl = buildChatFileUrl(a.key, a.name, true);
+            return `
+              <div class="tchat-file-card">
+                <div class="tchat-file-icon" style="background:${metaIcon.bg}; color:${metaIcon.color};">
+                  <i class="fa-solid ${metaIcon.icon}"></i>
+                </div>
+                <div class="tchat-file-info">
+                  <div class="tchat-file-name" title="${esc(a.name)}">${esc(a.name)}</div>
+                  <div class="tchat-file-size">${formatFileSize(a.size)}</div>
+                </div>
+                <a class="tchat-file-dl" href="${dlUrl}" download="${esc(a.name)}" title="Lưu tệp về máy">
+                  <i class="fa-solid fa-download"></i> Lưu về
+                </a>
+              </div>
+            `;
+          }).join("")}</div>`;
+        }
+
+        // Reactions
+        const reactEntries = Object.entries(m.reactions || {}).filter(([, arr]) => Array.isArray(arr) && arr.length > 0);
+        const reactionsHtml = reactEntries.length
+          ? `<div class="tchat-reactions-row">${reactEntries.map(([emo, users]) => {
+              const iReacted = me && users.some(u => u.toLowerCase() === me.name.toLowerCase());
+              return `<button type="button" class="tchat-react-chip ${iReacted ? 'mine' : ''}" onclick="toggleChatReaction('${esc(m.id)}', '${esc(emo)}')" title="${esc(users.join(', '))}">${emo} <span>${users.length}</span></button>`;
+            }).join("")}</div>`
+          : "";
+
+        // Hover actions
+        const reactBtns = REACTION_BAR_EMOJIS.map(emo =>
+          `<button type="button" class="tchat-hov-btn" onclick="toggleChatReaction('${esc(m.id)}', '${emo}')" title="Thả ${emo}">${emo}</button>`
+        ).join("");
+
+        const ownBtns = isMine
+          ? `${m.text ? `<button type="button" class="tchat-hov-btn" onclick="startEditChatMessage('${esc(m.id)}')" title="Sửa tin nhắn"><i class="fa-solid fa-pen"></i></button>` : ''}
+             <button type="button" class="tchat-hov-btn" onclick="recallChatMessage('${esc(m.id)}')" title="Thu hồi tin nhắn" style="color:#ef4444;"><i class="fa-solid fa-trash-can"></i></button>`
+          : "";
+
+        html += `
+          <div class="tchat-msg-row ${isMine ? 'mine' : 'theirs'} ${hasTable ? 'has-table' : ''}" id="cmsg_${esc(m.id)}">
+            ${!isMine ? `<div class="tchat-avatar" style="background:${getAvatarColor(m.senderName)};" title="${esc(m.senderName)}">${esc(getInitials(m.senderName))}</div>` : ''}
+            <div class="tchat-bubble-col">
+              ${!isMine ? `<div class="tchat-sender-line"><span>${esc(m.senderName)}</span></div>` : ''}
+              <div class="tchat-bubble ${m.pinned ? 'pinned' : ''}">
+                <div class="tchat-hover-bar">
+                  ${reactBtns}
+                  <button type="button" class="tchat-hov-btn" onclick="startReplyChatMessage('${esc(m.id)}')" title="Trả lời"><i class="fa-solid fa-reply"></i></button>
+                  <button type="button" class="tchat-hov-btn" onclick="togglePinChatMessage('${esc(m.id)}')" title="${m.pinned ? 'Bỏ ghim' : 'Ghim tin nhắn'}"><i class="fa-solid fa-thumbtack" style="${m.pinned ? 'color:#d97706;' : ''}"></i></button>
+                  ${m.text ? `<button type="button" class="tchat-hov-btn" onclick="copyChatMessageText('${esc(m.id)}')" title="Sao chép nội dung"><i class="fa-regular fa-copy"></i></button>` : ''}
+                  ${ownBtns}
+                </div>
+                ${replyHtml}
+                ${textHtml}
+                ${tableHtml}
+                ${imgsHtml}
+                ${filesHtml}
+                <div class="tchat-meta-line">
+                  ${m.pinned ? `<span title="Đã ghim bởi ${esc(m.pinnedBy || '')}" style="color:#d97706; font-weight:700;"><i class="fa-solid fa-thumbtack"></i> Đã ghim</span>` : ''}
+                  ${m.editedAt ? `<span>(đã sửa)</span>` : ''}
+                  <span>${timeStr}</span>
+                </div>
+              </div>
+              ${reactionsHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      bodyEl.innerHTML = html;
+      if (scrollToBottom) {
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+      }
+    }
+
+    function scrollToChatMessage(msgId) {
+      const el = document.getElementById("cmsg_" + msgId);
+      if (!el) {
+        toast("Không tìm thấy tin nhắn gốc", "w");
+        return;
+      }
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const bubble = el.querySelector(".tchat-bubble");
+      if (bubble) {
+        bubble.classList.add("flash-highlight");
+        setTimeout(() => bubble.classList.remove("flash-highlight"), 1400);
+      }
+    }
+
+    function updatePinnedBanner() {
+      const bar = document.getElementById("tchatPinnedBar");
+      const txt = document.getElementById("tchatPinnedText");
+      const cnt = document.getElementById("tchatPinnedCount");
+      if (!bar || !txt || !cnt) return;
+      const pinnedList = activeChatMessages.filter(m => !m.deleted && m.pinned);
+      if (!pinnedList.length) {
+        bar.classList.remove("show");
+        return;
+      }
+      if (pinnedCycleIdx >= pinnedList.length) pinnedCycleIdx = 0;
+      const cur = pinnedList[pinnedCycleIdx];
+      const preview = cur.text || (cur.tableData ? "📊 Bảng dữ liệu Excel" : "📎 Tệp đính kèm");
+      txt.textContent = `${cur.senderName}: ${preview}`;
+      cnt.textContent = `${pinnedList.length} ghim`;
+      bar.classList.add("show");
+    }
+
+    function cyclePinnedMessage() {
+      const pinnedList = activeChatMessages.filter(m => !m.deleted && m.pinned);
+      if (!pinnedList.length) return;
+      const target = pinnedList[pinnedCycleIdx % pinnedList.length];
+      pinnedCycleIdx = (pinnedCycleIdx + 1) % pinnedList.length;
+      updatePinnedBanner();
+      scrollToChatMessage(target.id);
+    }
+
+    /* ── Shared Media & Files Drawer ── */
+    function toggleChatMediaPanel() {
+      const panel = document.getElementById("tchatMediaPanel");
+      const btn = document.getElementById("btnChatMediaToggle");
+      if (!panel) return;
+      const show = !panel.classList.contains("show");
+      panel.classList.toggle("show", show);
+      if (btn) btn.classList.toggle("active", show);
+      if (show) renderChatMediaPanel();
+    }
+
+    function renderChatMediaPanel() {
+      const panel = document.getElementById("tchatMediaPanel");
+      if (!panel) return;
+      const imgs = [];
+      const files = [];
+      activeChatMessages.forEach(m => {
+        if (m.deleted || !Array.isArray(m.attachments)) return;
+        m.attachments.forEach(a => {
+          if (!a.key) return;
+          if (a.isImage) imgs.push({ ...a, sender: m.senderName });
+          else files.push({ ...a, sender: m.senderName });
+        });
+      });
+
+      if (!imgs.length && !files.length) {
+        panel.innerHTML = `<div style="text-align:center; padding:12px; color:#64748b; font-size:12px;">Chưa có hình ảnh hay tệp nào được gửi trong Task này.</div>`;
+        return;
+      }
+
+      let out = `<div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; color:#1e293b;">
+        <span><i class="fa-solid fa-photo-film" style="color:#4f46e5;"></i> Kho Ảnh (${imgs.length}) &amp; Tệp tin (${files.length})</span>
+        <button type="button" class="btn-outline btn-sm" onclick="toggleChatMediaPanel()">Đóng</button>
+      </div>`;
+
+      if (imgs.length) {
+        out += `<div class="tchat-media-grid">${imgs.map(a => `
+          <div class="tchat-media-thumb" onclick="openChatLightboxByKey('${esc(a.key)}')" title="${esc(a.name)} (${esc(a.sender)})">
+            <img src="${buildChatFileUrl(a.key, a.name, false)}" loading="lazy" />
+          </div>
+        `).join("")}</div>`;
+      }
+      if (files.length) {
+        out += `<div style="display:flex; flex-direction:column; gap:5px;">${files.map(a => {
+          const ic = getFileIconMeta(a.name);
+          return `<div class="tchat-file-card" style="max-width:100%;">
+            <div class="tchat-file-icon" style="background:${ic.bg}; color:${ic.color};"><i class="fa-solid ${ic.icon}"></i></div>
+            <div class="tchat-file-info">
+              <div class="tchat-file-name">${esc(a.name)}</div>
+              <div class="tchat-file-size">${formatFileSize(a.size)} · gửi bởi ${esc(a.sender)}</div>
+            </div>
+            <a class="tchat-file-dl" href="${buildChatFileUrl(a.key, a.name, true)}" download="${esc(a.name)}"><i class="fa-solid fa-download"></i> Lưu về</a>
+          </div>`;
+        }).join("")}</div>`;
+      }
+      panel.innerHTML = out;
+    }
+
+    /* ── Copy / Download Excel Table inside Chat ── */
+    function copyChatTableTsv(msgId) {
+      const m = activeChatMessages.find(x => x.id === msgId);
+      if (!m || !m.tableData) return;
+      const tsv = m.tableData.tsv || [
+        ...(m.tableData.headers && m.tableData.headers.length ? [m.tableData.headers.join("\t")] : []),
+        ...(m.tableData.rows || []).map(r => (Array.isArray(r) ? r.join("\t") : ""))
+      ].join("\n");
+      navigator.clipboard.writeText(tsv).then(() => {
+        toast("📋 Đã sao chép bảng! Bạn có thể Ctrl+V thẳng vào Excel.", "s");
+      });
+    }
+    window.copyChatTableTsv = copyChatTableTsv;
+
+    function downloadChatTableCsv(msgId) {
+      const m = activeChatMessages.find(x => x.id === msgId);
+      if (!m || !m.tableData) return;
+      const allRows = [
+        ...(m.tableData.headers && m.tableData.headers.length ? [m.tableData.headers] : []),
+        ...(m.tableData.rows || [])
+      ];
+      const csvContent = "\uFEFF" + allRows.map(row =>
+        (Array.isArray(row) ? row : []).map(cell => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+      ).join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Bang_Task_${activeChatTaskId || "data"}_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast("📥 Đã tải bảng Excel (.csv) về máy!", "s");
+    }
+    window.downloadChatTableCsv = downloadChatTableCsv;
+
+    /* ── Clipboard Paste (Images + Excel Tables!) & Drag-Drop & File Input ── */
+    function parseClipboardExcelTable(htmlStr, plainStr) {
+      // 1. Try HTML <table> from Excel / Google Sheets / Web
+      if (htmlStr && /<table[\s>]/i.test(htmlStr)) {
+        try {
+          const doc = new DOMParser().parseFromString(htmlStr, "text/html");
+          const tbl = doc.querySelector("table");
+          if (tbl) {
+            const trs = Array.from(tbl.querySelectorAll("tr"));
+            const parsedRows = [];
+            trs.forEach(tr => {
+              const cells = Array.from(tr.querySelectorAll("th, td")).map(c =>
+                String(c.innerText || c.textContent || "").replace(/\r?\n+/g, " ").trim()
+              );
+              if (cells.some(v => v !== "")) parsedRows.push(cells);
+            });
+            if (parsedRows.length >= 1 && (parsedRows[0].length >= 2 || parsedRows.length >= 2)) {
+              const tsv = parsedRows.map(r => r.join("\t")).join("\n");
+              return {
+                headers: parsedRows[0],
+                rows: parsedRows.slice(1),
+                tsv
+              };
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 2. Try TSV (tab-separated lines) from plain text
+      if (plainStr && plainStr.includes("\t")) {
+        const lines = plainStr.replace(/\r\n/g, "\n").split("\n").filter(l => l.trim() !== "");
+        if (lines.length >= 2 && lines.every(l => l.includes("\t"))) {
+          const parsedRows = lines.map(l => l.split("\t").map(c => c.trim()));
+          return {
+            headers: parsedRows[0],
+            rows: parsedRows.slice(1),
+            tsv: lines.join("\n")
+          };
+        }
+      }
+      return null;
+    }
+
+    function addFilesToStaged(fileList) {
+      Array.from(fileList || []).forEach(file => {
+        if (!file) return;
+        if (file.size > 25 * 1024 * 1024) {
+          toast(`Tệp "${file.name}" vượt quá 25MB!`, "w");
+          return;
+        }
+        let finalFile = file;
+        if (!file.name || file.name === "image.png" || file.name === "blob") {
+          const ext = (file.type && file.type.split("/")[1]) ? file.type.split("/")[1].replace("jpeg", "jpg") : "png";
+          const now = new Date();
+          const stamp = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+          finalFile = new File([file], `anh_dan_${stamp}.${ext}`, { type: file.type || "image/png" });
+        }
+        const isImg = /^image\//i.test(finalFile.type);
+        const previewUrl = isImg ? URL.createObjectURL(finalFile) : "";
+        stagedFiles.push({
+          id: "st_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+          file: finalFile,
+          previewUrl,
+          isImage: isImg
+        });
+      });
+      renderStagedTray();
+    }
+
+    function renderStagedTray() {
+      const tray = document.getElementById("tchatStagedTray");
+      if (!tray) return;
+      if (!stagedFiles.length) {
+        tray.classList.remove("show");
+        tray.innerHTML = "";
+        return;
+      }
+      tray.classList.add("show");
+      tray.innerHTML = stagedFiles.map(item => `
+        <div class="tchat-staged-item">
+          ${item.isImage ? `<img src="${item.previewUrl}" alt="preview" />` : `<i class="fa-solid ${getFileIconMeta(item.file.name).icon}" style="font-size:18px; color:#4f46e5;"></i>`}
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.file.name)}</div>
+            <div style="font-size:10px; color:#64748b;">${formatFileSize(item.file.size)}</div>
+          </div>
+          <button type="button" class="tchat-staged-remove" onclick="removeStagedFile('${item.id}')" title="Xoá">&times;</button>
+        </div>
+      `).join("");
+    }
+
+    function removeStagedFile(stId) {
+      const idx = stagedFiles.findIndex(x => x.id === stId);
+      if (idx >= 0) {
+        if (stagedFiles[idx].previewUrl) URL.revokeObjectURL(stagedFiles[idx].previewUrl);
+        stagedFiles.splice(idx, 1);
+        renderStagedTray();
+      }
+    }
+    window.removeStagedFile = removeStagedFile;
+
+    function renderStagedTableBar() {
+      const bar = document.getElementById("tchatStagedTableBar");
+      const info = document.getElementById("tchatStagedTableInfo");
+      const switchBtn = document.getElementById("btnSwitchExcelToImg");
+      if (!bar || !info) return;
+      if (!stagedTableData) {
+        bar.classList.remove("show");
+        return;
+      }
+      const totalRows = (stagedTableData.rows ? stagedTableData.rows.length : 0) + (stagedTableData.headers && stagedTableData.headers.length ? 1 : 0);
+      const cols = (stagedTableData.headers && stagedTableData.headers.length) || 1;
+      info.textContent = `Đã dán bảng Excel (${totalRows} dòng × ${cols} cột)`;
+      if (switchBtn) {
+        switchBtn.style.display = stagedExcelFallbackImage ? "inline-flex" : "none";
+      }
+      bar.classList.add("show");
+    }
+
+    function switchStagedTableToImage() {
+      if (!stagedExcelFallbackImage) return;
+      const imgFile = stagedExcelFallbackImage;
+      clearStagedTable();
+      addFilesToStaged([imgFile]);
+      toast("🖼 Đã chuyển sang gửi dưới dạng hình ảnh!", "s");
+    }
+    window.switchStagedTableToImage = switchStagedTableToImage;
+
+    function clearStagedTable() {
+      stagedTableData = null;
+      stagedExcelFallbackImage = null;
+      renderStagedTableBar();
+    }
+    window.clearStagedTable = clearStagedTable;
+
+    function clearAllStagedAttachments() {
+      stagedFiles.forEach(it => { if (it.previewUrl) URL.revokeObjectURL(it.previewUrl); });
+      stagedFiles = [];
+      stagedTableData = null;
+      stagedExcelFallbackImage = null;
+      renderStagedTray();
+      renderStagedTableBar();
+    }
+
+    function handleChatFileSelect(ev) {
+      const files = ev.target.files;
+      if (files && files.length) addFilesToStaged(files);
+      ev.target.value = "";
+      document.getElementById("tchatInput")?.focus();
+    }
+    window.handleChatFileSelect = handleChatFileSelect;
+
+    // Global Paste Listener when Chat Drawer is Open
+    document.addEventListener("paste", (e) => {
+      if (!activeChatTaskId) return;
+      const drawer = document.getElementById("taskChatDrawer");
+      if (!drawer || !drawer.classList.contains("show")) return;
+      // Ignore if pasting into search input
+      if (document.activeElement && document.activeElement.id === "tchatSearchInput") return;
+
+      const cd = e.clipboardData;
+      if (!cd) return;
+
+      const htmlData = cd.getData("text/html") || "";
+      const plainData = cd.getData("text/plain") || "";
+      const items = Array.from(cd.items || []);
+      const fileItems = items.filter(it => it.kind === "file").map(it => it.getAsFile()).filter(Boolean);
+
+      // 1. Check Excel / Spreadsheet table paste first!
+      const excelTable = parseClipboardExcelTable(htmlData, plainData);
+      if (excelTable) {
+        e.preventDefault();
+        stagedTableData = excelTable;
+        stagedExcelFallbackImage = fileItems.find(f => /^image\//i.test(f.type)) || null;
+        renderStagedTableBar();
+        toast("📊 Đã dán định dạng bảng Excel vào khung chat!", "s");
+        document.getElementById("tchatInput")?.focus();
+        return;
+      }
+
+      // 2. Direct clipboard images / files
+      if (fileItems.length > 0) {
+        e.preventDefault();
+        addFilesToStaged(fileItems);
+        toast(`📎 Đã dán ${fileItems.length} tệp/hình ảnh từ clipboard!`, "s");
+        document.getElementById("tchatInput")?.focus();
+      }
+    });
+
+    // Drag & Drop onto Chat Drawer
+    (function setupChatDragDrop() {
+      const drawer = document.getElementById("taskChatDrawer");
+      if (!drawer) return;
+      let dragDepth = 0;
+      drawer.addEventListener("dragenter", (e) => {
+        if (!activeChatTaskId) return;
+        e.preventDefault();
+        dragDepth++;
+        drawer.classList.add("drag-over");
+      });
+      drawer.addEventListener("dragover", (e) => {
+        if (!activeChatTaskId) return;
+        e.preventDefault();
+      });
+      drawer.addEventListener("dragleave", () => {
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) drawer.classList.remove("drag-over");
+      });
+      drawer.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dragDepth = 0;
+        drawer.classList.remove("drag-over");
+        if (!activeChatTaskId) return;
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+          addFilesToStaged(e.dataTransfer.files);
+        }
+      });
+    })();
+
+    /* ── @Mention & Emoji Helpers ── */
+    function toggleChatEmojiPopup(ev) {
+      if (ev) ev.stopPropagation();
+      const pop = document.getElementById("tchatEmojiPopup");
+      if (!pop) return;
+      const show = !pop.classList.contains("show");
+      if (show && !pop.innerHTML) {
+        pop.innerHTML = QUICK_EMOJIS.map(e => `<button type="button" class="tchat-emoji-btn" onclick="insertChatEmoji('${e}')">${e}</button>`).join("");
+      }
+      pop.classList.toggle("show", show);
+    }
+    window.toggleChatEmojiPopup = toggleChatEmojiPopup;
+
+    function insertChatEmoji(emo) {
+      const inp = document.getElementById("tchatInput");
+      if (!inp) return;
+      const start = inp.selectionStart || inp.value.length;
+      const end = inp.selectionEnd || inp.value.length;
+      inp.value = inp.value.slice(0, start) + emo + inp.value.slice(end);
+      inp.focus();
+      inp.selectionStart = inp.selectionEnd = start + emo.length;
+      document.getElementById("tchatEmojiPopup")?.classList.remove("show");
+      autoResizeChatInput(inp);
+    }
+    window.insertChatEmoji = insertChatEmoji;
+
+    function triggerMentionButton(ev) {
+      if (ev) ev.stopPropagation();
+      const inp = document.getElementById("tchatInput");
+      if (!inp) return;
+      const val = inp.value;
+      const needSpace = val.length > 0 && !/\s$/.test(val);
+      inp.value = val + (needSpace ? " @" : "@");
+      inp.focus();
+      showMentionSuggestions("");
+    }
+    window.triggerMentionButton = triggerMentionButton;
+
+    function showMentionSuggestions(filterStr) {
+      const pop = document.getElementById("tchatMentionPopup");
+      if (!pop) return;
+      const q = String(filterStr || "").toLowerCase();
+      const curTask = allTasks.find(t => String(t.id) === String(activeChatTaskId));
+      const assignees = (curTask && Array.isArray(curTask.assignees)) ? curTask.assignees : [];
+
+      const candidates = [{ name: "Tất cả", badge: "Mọi người" }];
+      (allMembers || []).forEach(m => {
+        const isAssigned = assignees.some(a => a.toLowerCase() === m.name.toLowerCase());
+        candidates.push({ name: m.name, badge: isAssigned ? "Phụ trách" : (m.code || "") });
+      });
+
+      const filtered = candidates.filter(c => !q || c.name.toLowerCase().includes(q));
+      if (!filtered.length) {
+        pop.classList.remove("show");
+        return;
+      }
+
+      pop.innerHTML = filtered.map(c => `
+        <button type="button" class="tchat-mention-item" data-mname="${esc(c.name)}">
+          <span>@${esc(c.name)}</span>
+          <span style="font-size:10px; color:#64748b;">${esc(c.badge)}</span>
+        </button>
+      `).join("");
+
+      pop.querySelectorAll(".tchat-mention-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+          applyMentionSelection(btn.dataset.mname);
+        });
+      });
+      pop.classList.add("show");
+    }
+
+    function applyMentionSelection(memberName) {
+      const inp = document.getElementById("tchatInput");
+      const pop = document.getElementById("tchatMentionPopup");
+      if (!inp) return;
+      const pos = inp.selectionStart || inp.value.length;
+      const before = inp.value.slice(0, pos);
+      const after = inp.value.slice(pos);
+      const replaced = before.replace(/@([^\s@]*)$/, `@${memberName} `);
+      inp.value = replaced + after;
+      inp.focus();
+      inp.selectionStart = inp.selectionEnd = replaced.length;
+      if (pop) pop.classList.remove("show");
+    }
+
+    function autoResizeChatInput(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = Math.min(130, Math.max(38, el.scrollHeight)) + "px";
+    }
+
+    function onChatInputChanged(ev) {
+      const inp = ev.target;
+      autoResizeChatInput(inp);
+      const pos = inp.selectionStart || 0;
+      const before = inp.value.slice(0, pos);
+      const m = before.match(/(?:^|\s)@([^\s@]*)$/);
+      if (m) {
+        showMentionSuggestions(m[1]);
+      } else {
+        document.getElementById("tchatMentionPopup")?.classList.remove("show");
+      }
+    }
+    window.onChatInputChanged = onChatInputChanged;
+
+    function onChatInputKeydown(ev) {
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        const pop = document.getElementById("tchatMentionPopup");
+        if (pop && pop.classList.contains("show")) {
+          const first = pop.querySelector(".tchat-mention-item");
+          if (first) {
+            ev.preventDefault();
+            applyMentionSelection(first.dataset.mname);
+            return;
+          }
+        }
+        ev.preventDefault();
+        submitChatMessage();
+      } else if (ev.key === "Escape") {
+        if (chatReplyTarget || chatEditTargetId) {
+          cancelChatContext();
+        }
+      }
+    }
+    window.onChatInputKeydown = onChatInputKeydown;
+
+    /* ── Reply / Edit / Recall / Pin / Reactions ── */
+    function startReplyChatMessage(msgId) {
+      const m = activeChatMessages.find(x => x.id === msgId);
+      if (!m) return;
+      chatEditTargetId = null;
+      const preview = m.text || (m.tableData ? "📊 Bảng dữ liệu Excel" : "📎 Tệp đính kèm");
+      chatReplyTarget = { id: m.id, senderName: m.senderName, preview: preview.slice(0, 120) };
+      const banner = document.getElementById("tchatContextBanner");
+      document.getElementById("tchatContextTitle").textContent = `↩ Đang trả lời ${m.senderName}`;
+      document.getElementById("tchatContextSub").textContent = chatReplyTarget.preview;
+      banner?.classList.add("show");
+      document.getElementById("tchatInput")?.focus();
+    }
+    window.startReplyChatMessage = startReplyChatMessage;
+
+    function startEditChatMessage(msgId) {
+      const m = activeChatMessages.find(x => x.id === msgId);
+      if (!m) return;
+      chatReplyTarget = null;
+      chatEditTargetId = m.id;
+      const banner = document.getElementById("tchatContextBanner");
+      document.getElementById("tchatContextTitle").textContent = `✏️ Đang chỉnh sửa tin nhắn`;
+      document.getElementById("tchatContextSub").textContent = m.text || "";
+      banner?.classList.add("show");
+      const inp = document.getElementById("tchatInput");
+      if (inp) {
+        inp.value = m.text || "";
+        autoResizeChatInput(inp);
+        inp.focus();
+      }
+    }
+    window.startEditChatMessage = startEditChatMessage;
+
+    function cancelChatContext() {
+      chatReplyTarget = null;
+      chatEditTargetId = null;
+      document.getElementById("tchatContextBanner")?.classList.remove("show");
+    }
+    window.cancelChatContext = cancelChatContext;
+
+    function copyChatMessageText(msgId) {
+      const m = activeChatMessages.find(x => x.id === msgId);
+      if (!m || !m.text) return;
+      navigator.clipboard.writeText(m.text).then(() => toast("Đã sao chép nội dung tin nhắn!", "s"));
+    }
+    window.copyChatMessageText = copyChatMessageText;
+
+    async function recallChatMessage(msgId) {
+      if (!confirm("Thu hồi tin nhắn này? Mọi thành viên sẽ thấy tin nhắn đã được thu hồi.")) return;
+      try {
+        const r = await fetch(getChatEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete_message", taskId: activeChatTaskId, msgId })
+        });
+        const d = await r.json();
+        if (d && d.status === "success") {
+          if (d.roomSummary) {
+            chatRoomsMeta[String(activeChatTaskId)] = d.roomSummary;
+            try { localStorage.setItem(CHAT_META_LS_KEY, JSON.stringify(chatRoomsMeta)); } catch (_) {}
+          }
+          await fetchRoomMessages(activeChatTaskId, false);
+          broadcastChatUpdate(activeChatTaskId);
+          toast("Đã thu hồi tin nhắn!", "s");
+        }
+      } catch (err) {
+        toast("Lỗi thu hồi: " + err.message, "e");
+      }
+    }
+    window.recallChatMessage = recallChatMessage;
+
+    async function togglePinChatMessage(msgId) {
+      const me = getCurrentChatMember();
+      if (!me) {
+        toast("Vui lòng chọn tên nhân viên của bạn trước!", "w");
+        toggleChatMemberMenu();
+        return;
+      }
+      try {
+        const r = await fetch(getChatEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "toggle_pin", taskId: activeChatTaskId, msgId, memberName: me.name })
+        });
+        const d = await r.json();
+        if (d && d.status === "success") {
+          await fetchRoomMessages(activeChatTaskId, false);
+          broadcastChatUpdate(activeChatTaskId);
+          toast(d.pinned ? "📌 Đã ghim tin nhắn!" : "Đã bỏ ghim tin nhắn!", "s");
+        }
+      } catch (err) {
+        toast("Lỗi ghim tin nhắn: " + err.message, "e");
+      }
+    }
+    window.togglePinChatMessage = togglePinChatMessage;
+
+    async function toggleChatReaction(msgId, emoji) {
+      const me = getCurrentChatMember();
+      if (!me) {
+        toast("Vui lòng chọn tên nhân viên của bạn ở góc trên phòng chat!", "w");
+        toggleChatMemberMenu();
+        return;
+      }
+      try {
+        const r = await fetch(getChatEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "toggle_reaction", taskId: activeChatTaskId, msgId, emoji, memberName: me.name })
+        });
+        const d = await r.json();
+        if (d && d.status === "success") {
+          const msg = activeChatMessages.find(x => x.id === msgId);
+          if (msg) msg.reactions = d.reactions || {};
+          renderChatMessages(false);
+          broadcastChatUpdate(activeChatTaskId);
+        }
+      } catch (_) {}
+    }
+    window.toggleChatReaction = toggleChatReaction;
+
+    /* ── Extract @Mentions & Submit Message ── */
+    function extractMentionsFromText(text) {
+      const found = new Set();
+      if (!text) return [];
+      if (/@(tất cả|all)\b/i.test(text)) found.add("ALL");
+      (allMembers || []).forEach(m => {
+        if (m.name && text.toLowerCase().includes("@" + m.name.toLowerCase())) {
+          found.add(m.name);
+        }
+      });
+      return Array.from(found);
+    }
+
+    function broadcastChatUpdate(taskId) {
+      try {
+        if (chatBroadcast) chatBroadcast.postMessage({ type: "CHAT_UPDATED", taskId: String(taskId), ts: Date.now() });
+      } catch (_) {}
+      notifyParentChatSync();
+    }
+
+    async function uploadSingleChatFile(taskId, file) {
+      const ep = getChatEndpoint();
+      const url = `${ep}?action=upload_file&taskId=${encodeURIComponent(taskId)}&name=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || "application/octet-stream")}`;
+      const buf = await file.arrayBuffer();
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": file.type || "application/octet-stream" },
+        body: buf
+      });
+      const d = await r.json();
+      if (!r.ok || !d || d.status !== "success") {
+        throw new Error((d && d.message) || `Tải tệp ${file.name} thất bại`);
+      }
+      return d.attachment;
+    }
+
+    async function submitChatMessage() {
+      if (!activeChatTaskId) return;
+      const me = getCurrentChatMember();
+      if (!me || !me.name) {
+        toast("Vui lòng chọn tên nhân viên của bạn trước khi gửi tin nhắn!", "w");
+        toggleChatMemberMenu();
+        return;
+      }
+
+      const inp = document.getElementById("tchatInput");
+      const text = (inp ? inp.value : "").trim();
+      const btn = document.getElementById("btnChatSend");
+
+      // Edit mode
+      if (chatEditTargetId) {
+        if (!text) {
+          toast("Nội dung sửa không được để trống!", "w");
+          return;
+        }
+        btn.disabled = true;
+        try {
+          const r = await fetch(getChatEndpoint(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "edit_message",
+              taskId: activeChatTaskId,
+              msgId: chatEditTargetId,
+              text,
+              mentions: extractMentionsFromText(text)
+            })
+          });
+          const d = await r.json();
+          if (d && d.status === "success") {
+            inp.value = "";
+            autoResizeChatInput(inp);
+            cancelChatContext();
+            await fetchRoomMessages(activeChatTaskId, false);
+            broadcastChatUpdate(activeChatTaskId);
+          } else {
+            toast((d && d.message) || "Lỗi sửa tin nhắn", "e");
+          }
+        } catch (err) {
+          toast("Lỗi kết nối: " + err.message, "e");
+        } finally {
+          btn.disabled = false;
+        }
+        return;
+      }
+
+      if (!text && stagedFiles.length === 0 && !stagedTableData) return;
+
+      btn.disabled = true;
+      const origHtml = btn.innerHTML;
+      try {
+        const uploadedAttachments = [];
+        if (stagedFiles.length > 0) {
+          for (let i = 0; i < stagedFiles.length; i++) {
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Tải ${i + 1}/${stagedFiles.length}...`;
+            const att = await uploadSingleChatFile(activeChatTaskId, stagedFiles[i].file);
+            uploadedAttachments.push(att);
+          }
+        }
+
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...`;
+        const payload = {
+          action: "send_message",
+          taskId: activeChatTaskId,
+          senderName: me.name,
+          senderCode: me.code || "",
+          text,
+          tableData: stagedTableData,
+          attachments: uploadedAttachments,
+          mentions: extractMentionsFromText(text),
+          replyTo: chatReplyTarget
+        };
+
+        const r = await fetch(getChatEndpoint(), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (!r.ok || !d || d.status !== "success") {
+          throw new Error((d && d.message) || "Không gửi được tin nhắn");
+        }
+
+        if (inp) {
+          inp.value = "";
+          autoResizeChatInput(inp);
+        }
+        cancelChatContext();
+        clearAllStagedAttachments();
+
+        if (d.message) {
+          activeChatMessages.push(d.message);
+          activeChatUpdatedAt = Number(d.updatedAt || Date.now());
+          renderChatMessages(true);
+        }
+        if (d.roomSummary) {
+          chatRoomsMeta[String(activeChatTaskId)] = d.roomSummary;
+          try { localStorage.setItem(CHAT_META_LS_KEY, JSON.stringify(chatRoomsMeta)); } catch (_) {}
+        }
+        markTaskChatRead(activeChatTaskId);
+        broadcastChatUpdate(activeChatTaskId);
+      } catch (err) {
+        toast("Lỗi gửi tin nhắn: " + err.message, "e");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+        document.getElementById("tchatInput")?.focus();
+      }
+    }
+    window.submitChatMessage = submitChatMessage;
+
+    /* ── Fullscreen Lightbox Image Viewer ── */
+    function openChatLightboxByKey(key) {
+      const idx = lbImagesList.findIndex(x => x.key === key);
+      if (idx === -1) return;
+      lbCurrentIdx = idx;
+      lbScale = 1;
+      lbRotation = 0;
+      renderLightboxSlide();
+      document.getElementById("chatImageLightbox")?.classList.add("show");
+    }
+    window.openChatLightboxByKey = openChatLightboxByKey;
+
+    function renderLightboxSlide() {
+      const item = lbImagesList[lbCurrentIdx];
+      if (!item) return;
+      const img = document.getElementById("lbImgEl");
+      const title = document.getElementById("lbImgTitle");
+      const counter = document.getElementById("lbImgCounter");
+      const dl = document.getElementById("lbDownloadLink");
+      if (img) {
+        img.src = item.url;
+        img.style.transform = `scale(${lbScale}) rotate(${lbRotation}deg)`;
+      }
+      if (title) title.textContent = item.name;
+      if (counter) counter.textContent = `(${lbCurrentIdx + 1}/${lbImagesList.length})`;
+      if (dl) {
+        dl.href = item.downloadUrl;
+        dl.setAttribute("download", item.name);
+      }
+      document.getElementById("lbPrevBtn").style.display = lbImagesList.length > 1 ? "flex" : "none";
+      document.getElementById("lbNextBtn").style.display = lbImagesList.length > 1 ? "flex" : "none";
+    }
+
+    function stepLightbox(delta) {
+      if (!lbImagesList.length) return;
+      lbCurrentIdx = (lbCurrentIdx + delta + lbImagesList.length) % lbImagesList.length;
+      lbScale = 1;
+      lbRotation = 0;
+      renderLightboxSlide();
+    }
+    window.stepLightbox = stepLightbox;
+
+    function zoomLightbox(delta) {
+      lbScale = Math.min(5, Math.max(0.25, lbScale + delta));
+      const img = document.getElementById("lbImgEl");
+      if (img) img.style.transform = `scale(${lbScale}) rotate(${lbRotation}deg)`;
+    }
+    window.zoomLightbox = zoomLightbox;
+
+    function rotateLightbox() {
+      lbRotation = (lbRotation + 90) % 360;
+      const img = document.getElementById("lbImgEl");
+      if (img) img.style.transform = `scale(${lbScale}) rotate(${lbRotation}deg)`;
+    }
+    window.rotateLightbox = rotateLightbox;
+
+    function resetLightboxTransform() {
+      lbScale = 1;
+      lbRotation = 0;
+      const img = document.getElementById("lbImgEl");
+      if (img) img.style.transform = `scale(1) rotate(0deg)`;
+    }
+    window.resetLightboxTransform = resetLightboxTransform;
+
+    function onLightboxWheel(ev) {
+      ev.preventDefault();
+      zoomLightbox(ev.deltaY < 0 ? 0.2 : -0.2);
+    }
+    window.onLightboxWheel = onLightboxWheel;
+
+    function closeChatLightbox() {
+      document.getElementById("chatImageLightbox")?.classList.remove("show");
+    }
+    window.closeChatLightbox = closeChatLightbox;
+
+    // Close popups on outside click & ESC
+    document.addEventListener("click", (e) => {
+      const sw = document.getElementById("tchatMemberSwitcher");
+      if (sw && !sw.contains(e.target)) {
+        document.getElementById("tchatMemberMenu")?.classList.remove("show");
+      }
+      const emoPop = document.getElementById("tchatEmojiPopup");
+      if (emoPop && !emoPop.contains(e.target)) {
+        emoPop.classList.remove("show");
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        const lb = document.getElementById("chatImageLightbox");
+        if (lb && lb.classList.contains("show")) {
+          closeChatLightbox();
+          return;
+        }
+        if (activeChatTaskId) {
+          closeTaskChat();
+        }
+      } else if (document.getElementById("chatImageLightbox")?.classList.contains("show")) {
+        if (e.key === "ArrowLeft") stepLightbox(-1);
+        if (e.key === "ArrowRight") stepLightbox(1);
+      }
+    });
+
+    // Listen to OPEN_TASK_CHAT from parent DMS Hub toast
+    window.addEventListener("message", (e) => {
+      if (e.data && e.data.type === "OPEN_TASK_CHAT" && e.data.taskId) {
+        const openWhenReady = () => {
+          if (allTasks && allTasks.length) openTaskChat(e.data.taskId);
+          else setTimeout(() => openTaskChat(e.data.taskId), 450);
+        };
+        openWhenReady();
+      }
+    });
+
+    // Sync employee selection changes across tabs
+    window.addEventListener("storage", (e) => {
+      if (e.key === "dms_current_member" || e.key === "app_user_name") {
+        updateChatIdentityButton();
+        renderTasks();
+        if (activeChatTaskId) renderChatMessages(false);
+      } else if (e.key === CHAT_META_LS_KEY && e.newValue) {
+        try {
+          chatRoomsMeta = JSON.parse(e.newValue) || {};
+          renderTasks();
+        } catch (_) {}
+      }
+    });
+
+    // Initial meta load & periodic background check
+    window.addEventListener("load", () => {
+      fetchChatMetaSummary(true);
+      chatMetaPollTimer = setInterval(() => {
+        if (document.visibilityState === "visible") {
+          fetchChatMetaSummary(true);
+        }
+      }, 20000);
     });
   </script>
 </body>

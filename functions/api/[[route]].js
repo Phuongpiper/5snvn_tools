@@ -24,6 +24,7 @@ const CORS_HEADERS = {
 const HANDLERS = {
   "r2-issues": require("../../api/r2-issues.js"),
   "r2-tasks": require("../../api/r2-tasks.js"),
+  "r2-task-chat": require("../../api/r2-task-chat.js"),
   "r2-dt": require("../../api/r2-dt.js"),
   "r2-settings": require("../../api/r2-settings.js"),
   "r2-temp-issues": require("../../api/r2-temp-issues.js"),
@@ -58,7 +59,6 @@ async function runNodeHandler(handler, request, env) {
   if (request.method !== "GET" && request.method !== "HEAD" && request.body) {
     const arrayBuf = await request.arrayBuffer();
     bodyBytes = new Uint8Array(arrayBuf);
-    bodyText = new TextDecoder().decode(bodyBytes);
   }
 
   const headers = {};
@@ -72,7 +72,10 @@ async function runNodeHandler(handler, request, env) {
   }
 
   let parsedBody = undefined;
-  if (bodyBytes.length > 0) {
+  const reqContentType = (headers["content-type"] || "").toLowerCase();
+  const isBinaryUpload = bodyBytes.length > 0 && !reqContentType.includes("application/json") && !reqContentType.includes("text/") && !reqContentType.includes("application/x-www-form-urlencoded");
+  if (bodyBytes.length > 0 && !isBinaryUpload) {
+    bodyText = new TextDecoder().decode(bodyBytes);
     try {
       parsedBody = JSON.parse(bodyText);
     } catch (_) {
@@ -92,6 +95,9 @@ async function runNodeHandler(handler, request, env) {
     query: query,
     body: parsedBody,
     rawBody: bodyText,
+    rawBytes: bodyBytes,
+    env: env,
+    isWorkerAdapter: true,
     clientIp: clientIp
   };
 

@@ -2673,6 +2673,7 @@
         <button class="tab-button" type="button" title="Task Pending NVN" data-frame-target="taskPendingFrame">
           <i class="fa-solid fa-list-check"></i>
           <span class="tab-btn-label">Task Pending NVN</span>
+          <span id="sidebarTaskChatBadge" style="display:none; margin-left:auto; background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; line-height:1.4;" title="Tin nhắn mới trong Task Pending">0</span>
           <span class="tab-dot" title="Có công việc cần theo dõi"></span>
         </button>
 
@@ -5242,6 +5243,198 @@
       // Initialize: apply from localStorage immediately (instant), then sync from R2
       applyHiddenTabsConfig();
       loadHiddenTabsFromR2();
+    })();
+  </script>
+
+  <!-- ── Global Task Chat Per-Employee Notification Monitor ── -->
+  <script>
+    (function () {
+      const CHAT_META_LS_KEY = "dms_task_chat_meta";
+      const CHAT_NOTIFIED_MSG_KEY = "dms_task_chat_notified_msgs";
+
+      function getCurrentMember() {
+        try {
+          const raw = localStorage.getItem("dms_current_member");
+          if (raw) {
+            const p = JSON.parse(raw);
+            if (p && p.name) return { name: String(p.name).trim(), code: String(p.code || "").trim() };
+          }
+          const uName = (localStorage.getItem("app_user_name") || "").trim();
+          const uCode = (localStorage.getItem("app_user_code") || "").trim();
+          if (uName) return { name: uName, code: uCode };
+        } catch (_) {}
+        return null;
+      }
+
+      function getReadMap() {
+        const me = getCurrentMember();
+        const suffix = me ? (me.code || me.name).toLowerCase().replace(/[^a-z0-9]/g, "_") : "guest";
+        try { return JSON.parse(localStorage.getItem("dms_chat_read_" + suffix) || "{}") || {}; }
+        catch (_) { return {}; }
+      }
+
+      function getNotifiedIds() {
+        try { return JSON.parse(localStorage.getItem(CHAT_NOTIFIED_MSG_KEY) || "{}") || {}; }
+        catch (_) { return {}; }
+      }
+
+      function saveNotifiedIds(map) {
+        try { localStorage.setItem(CHAT_NOTIFIED_MSG_KEY, JSON.stringify(map)); } catch (_) {}
+      }
+
+      function jumpToTaskChat(taskId) {
+        const pendingBtn = document.querySelector('[data-frame-target="taskPendingFrame"]');
+        if (pendingBtn) pendingBtn.click();
+        const frame = document.getElementById("taskPendingFrame");
+        const sendOpen = () => {
+          try {
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({ type: "OPEN_TASK_CHAT", taskId: String(taskId) }, "*");
+            }
+          } catch (_) {}
+        };
+        sendOpen();
+        setTimeout(sendOpen, 350);
+      }
+
+      function showChatToast(taskId, taskTitle, summary, isMentionOrAssigned) {
+        const box = document.getElementById("gNotifyBox");
+        if (!box) return;
+        const el = document.createElement("div");
+        el.className = `g-toast ${isMentionOrAssigned ? "p1" : "p3"}`;
+        el.style.cursor = "pointer";
+        const safeSender = String(summary.lastSenderName || "Thành viên").replace(/</g, "&lt;");
+        const safeTitle = String(taskTitle || `Task #${taskId}`).slice(0, 65).replace(/</g, "&lt;");
+        const safePreview = String(summary.lastPreview || "Tin nhắn mới").slice(0, 85).replace(/</g, "&lt;");
+        const tagText = isMentionOrAssigned ? "💬 Tin nhắn cho bạn trong Task" : "💬 Tin nhắn mới trong Task";
+        el.innerHTML = `
+          <div class="g-toast-icon">💬</div>
+          <div class="g-toast-body">
+            <div class="g-toast-priority">${tagText} · <b>${safeSender}</b></div>
+            <div class="g-toast-title">${safePreview}</div>
+            <div class="g-toast-sub">📋 ${safeTitle} · <u style="color:#4f46e5;">Bấm để mở chat</u></div>
+          </div>
+        `;
+        el.addEventListener("click", () => {
+          el.remove();
+          jumpToTaskChat(taskId);
+        });
+        box.prepend(el);
+        setTimeout(() => { try { el.remove(); } catch (_) {} }, 8000);
+
+        if (document.visibilityState !== "visible" && typeof Notification !== "undefined" && Notification.permission === "granted") {
+          try {
+            const n = new Notification(`${safeSender} (Chat Task)`, {
+              body: `${summary.lastPreview || "Tin nhắn mới"}\n📋 ${taskTitle || ""}`,
+              tag: `task-chat-${taskId}`
+            });
+            n.onclick = () => { window.focus(); n.close(); jumpToTaskChat(taskId); };
+          } catch (_) {}
+        }
+      }
+
+      function updateSidebarUnreadIndicator(meta) {
+        const btn = document.querySelector('[data-frame-target="taskPendingFrame"]');
+        if (!btn) return;
+        let pill = document.getElementById("sbTaskChatUnreadPill");
+        if (!pill) {
+          pill = document.createElement("span");
+          pill.id = "sbTaskChatUnreadPill";
+          pill.style.cssText = "display:none; margin-left:auto; background:#ef4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:999px; line-height:1.4; flex-shrink:0;";
+          const dot = btn.querySelector(".tab-dot");
+          if (dot) btn.insertBefore(pill, dot);
+          else btn.appendChild(pill);
+        }
+        const me = getCurrentMember();
+        const readMap = getReadMap();
+        let unreadRooms = 0;
+        Object.entries(meta || {}).forEach(([tid, info]) => {
+          if (!info || !info.count || !info.lastAt) return;
+          if (me && info.lastSenderName && info.lastSenderName.toLowerCase() === me.name.toLowerCase()) return;
+          if (Number(info.lastAt) > Number(readMap[tid] || 0)) unreadRooms++;
+        });
+        const dot = btn.querySelector(".tab-dot");
+        if (unreadRooms > 0) {
+          pill.textContent = `💬 ${unreadRooms}`;
+          pill.style.display = "inline-flex";
+          pill.title = `Có ${unreadRooms} phòng chat Task có tin nhắn chưa đọc`;
+          if (dot) dot.style.display = "none";
+        } else {
+          pill.style.display = "none";
+          if (dot) dot.style.display = "";
+        }
+      }
+
+      let isFirstCheck = true;
+
+      async function checkChatMetaAndNotify() {
+        try {
+          const r = await fetch(`/api/r2-task-chat?action=meta&t=${Date.now()}`, { cache: "no-cache" });
+          if (!r.ok) return;
+          const d = await r.json();
+          if (!d || d.status !== "success" || !d.meta) return;
+
+          const meta = d.meta;
+          try { localStorage.setItem(CHAT_META_LS_KEY, JSON.stringify(meta)); } catch (_) {}
+          updateSidebarUnreadIndicator(meta);
+
+          const me = getCurrentMember();
+          const notified = getNotifiedIds();
+          let tasks = [];
+          try { tasks = JSON.parse(localStorage.getItem("app_tasks_data") || "[]") || []; } catch (_) {}
+
+          let changed = false;
+          Object.entries(meta).forEach(([tid, info]) => {
+            if (!info || !info.lastMsgId) return;
+            if (isFirstCheck) {
+              if (!notified[tid]) { notified[tid] = info.lastMsgId; changed = true; }
+              return;
+            }
+            if (notified[tid] === info.lastMsgId) return;
+            notified[tid] = info.lastMsgId;
+            changed = true;
+
+            // Skip toast for own messages
+            if (me && info.lastSenderName && info.lastSenderName.toLowerCase() === me.name.toLowerCase()) {
+              return;
+            }
+
+            const taskObj = tasks.find(t => String(t.id) === String(tid));
+            const taskTitle = taskObj ? taskObj.issue : `Task #${tid}`;
+            const mentions = Array.isArray(info.lastMentions) ? info.lastMentions : [];
+            const isMentioned = !!(me && (mentions.includes("ALL") || mentions.some(m => m.toLowerCase() === me.name.toLowerCase())));
+            const isAssigned = !!(me && taskObj && Array.isArray(taskObj.assignees) && taskObj.assignees.some(a => a.toLowerCase() === me.name.toLowerCase()));
+
+            showChatToast(tid, taskTitle, info, isMentioned || isAssigned);
+          });
+
+          isFirstCheck = false;
+          if (changed) saveNotifiedIds(notified);
+        } catch (_) {}
+      }
+
+      window.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "TASK_CHAT_META_UPDATED") {
+          try {
+            const meta = JSON.parse(localStorage.getItem(CHAT_META_LS_KEY) || "{}");
+            updateSidebarUnreadIndicator(meta);
+          } catch (_) {}
+        }
+      });
+
+      try {
+        if (typeof BroadcastChannel !== "undefined") {
+          const ch = new BroadcastChannel("R2_TASK_CHAT_SYNC");
+          ch.onmessage = () => checkChatMetaAndNotify();
+        }
+      } catch (_) {}
+
+      document.addEventListener("DOMContentLoaded", () => {
+        checkChatMetaAndNotify();
+        setInterval(() => {
+          if (document.visibilityState === "visible") checkChatMetaAndNotify();
+        }, 15000);
+      });
     })();
   </script>
 </body>
