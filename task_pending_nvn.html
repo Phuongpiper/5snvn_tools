@@ -580,8 +580,8 @@
     }
 
     .col-status {
-      width: 115px;
-      min-width: 115px;
+      width: 130px;
+      min-width: 130px;
       text-align: center;
       white-space: nowrap;
     }
@@ -638,11 +638,19 @@
       border: 1px solid #fca5a5;
     }
 
+    .status-cell-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
     .status-updated-time {
       display: block;
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 3px;
+      font-size: 10.5px;
+      font-weight: 500;
+      color: #64748b;
+      line-height: 1.2;
       text-align: center;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       white-space: nowrap;
@@ -2353,17 +2361,22 @@
         } else if (t.status === "Cố định") {
           statusBadge = `<span class="badge badge-fixed"><i class="fa-solid fa-thumbtack" style="font-size:10px;"></i> Cố định</span>`;
         } else {
-          const updTs = t.updated_at || null;
+          const updTs = t.updated_at || t.created_at || (Number(t.id) > 1000000000000 ? Number(t.id) : null);
           let updLabel = "";
           if (updTs) {
             const d = new Date(Number(updTs));
-            const dd = String(d.getDate()).padStart(2, "0");
-            const mm = String(d.getMonth() + 1).padStart(2, "0");
-            const hh = String(d.getHours()).padStart(2, "0");
-            const min = String(d.getMinutes()).padStart(2, "0");
-            updLabel = `<span class="status-updated-time" title="Lần cập nhật cuối: ${dd}/${mm}/${d.getFullYear()} ${hh}:${min}"><i class="fa-solid fa-rotate" style="font-size:9px; margin-right:2px;"></i>${dd}/${mm} ${hh}:${min}</span>`;
+            if (!isNaN(d.getTime())) {
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const yyyy = d.getFullYear();
+              const hh = String(d.getHours()).padStart(2, "0");
+              const min = String(d.getMinutes()).padStart(2, "0");
+              const fullTime = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+              const tip = t.updated_at ? `Cập nhật lần cuối: ${fullTime}` : `Tạo lúc: ${fullTime}`;
+              updLabel = `<span class="status-updated-time" title="${tip}">${fullTime}</span>`;
+            }
           }
-          statusBadge = `<span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>${updLabel}`;
+          statusBadge = `<div class="status-cell-wrap"><span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>${updLabel}</div>`;
         }
 
         const pClass = priorityClasses[t.priority] || "badge-p3";

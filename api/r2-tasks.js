@@ -278,6 +278,7 @@ module.exports = async function handler(req, res) {
           const newTask = {
             id: nowTs, // ID dựa trên timestamp
             created_at: nowTs,
+            updated_at: nowTs,
             project: (project || "").trim(),
             deadline: deadline || "",
             issue: issue || "",
