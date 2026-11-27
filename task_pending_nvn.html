@@ -4163,80 +4163,36 @@
       font-size: 11.5px;
     }
 
-    .tchat-member-switcher {
-      position: relative;
-    }
-
-    .tchat-my-identity-btn {
+    .tchat-my-identity-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 3px 9px;
+      padding: 3px 10px;
       border-radius: 999px;
-      border: 1px solid #c7d2fe;
-      background: #eef2ff;
-      color: #3730a3;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #334155;
       font-size: 11.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
+      font-weight: 600;
+      user-select: none;
     }
 
-    .tchat-my-identity-btn:hover {
-      background: #e0e7ff;
+    .tchat-my-identity-badge i {
+      color: #4f46e5;
+      font-size: 11px;
     }
 
-    .tchat-my-identity-btn.unset {
+    .tchat-my-identity-badge .my-code {
+      color: #64748b;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 10.5px;
+      font-weight: 600;
+    }
+
+    .tchat-my-identity-badge.unset {
       background: #fff7ed;
       border-color: #fdba74;
       color: #c2410c;
-      animation: chatBtnPulse 2s infinite;
-    }
-
-    .tchat-member-menu {
-      display: none;
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      min-width: 230px;
-      max-height: 260px;
-      overflow-y: auto;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14);
-      padding: 6px;
-      z-index: 60;
-    }
-
-    .tchat-member-menu.show {
-      display: block;
-    }
-
-    .tchat-member-opt {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      width: 100%;
-      padding: 6px 9px;
-      border: none;
-      background: transparent;
-      border-radius: 6px;
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #1e293b;
-      cursor: pointer;
-      text-align: left;
-    }
-
-    .tchat-member-opt:hover {
-      background: #f1f5f9;
-    }
-
-    .tchat-member-opt.selected {
-      background: #eef2ff;
-      color: #4338ca;
     }
 
     /* Search & Pinned & Media drawers */
@@ -5162,14 +5118,10 @@
       </div>
 
       <div class="tchat-hdr-bar">
-        <div class="tchat-member-switcher" id="tchatMemberSwitcher">
-          <button type="button" class="tchat-my-identity-btn" id="btnChatMyIdentity" onclick="toggleChatMemberMenu(event)" title="Chọn tên nhân viên của bạn khi gửi & nhận thông báo">
-            <i class="fa-solid fa-user-check"></i>
-            <span id="txtChatMyIdentity">Chọn nhân viên...</span>
-            <i class="fa-solid fa-chevron-down" style="font-size:9px;"></i>
-          </button>
-          <div class="tchat-member-menu" id="tchatMemberMenu"></div>
-        </div>
+        <span class="tchat-my-identity-badge" id="badgeChatMyIdentity" title="Tự động lấy theo nhân viên đang đăng nhập trên máy (tab Note Issue)">
+          <i class="fa-solid fa-id-badge"></i>
+          <span id="txtChatMyIdentity">--</span>
+        </span>
         <span style="color:#64748b; font-size:11px;" id="tchatRoomStatus">
           <i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được
         </span>
@@ -5366,24 +5318,6 @@
       return null;
     }
 
-    function setCurrentChatMember(name, code = "") {
-      const cleanName = String(name || "").trim();
-      const cleanCode = String(code || "").trim();
-      if (!cleanName) return;
-      const obj = { name: cleanName, code: cleanCode };
-      try {
-        localStorage.setItem("dms_current_member", JSON.stringify(obj));
-        localStorage.setItem("app_user_name", cleanName);
-        if (cleanCode) localStorage.setItem("app_user_code", cleanCode);
-      } catch (_) {}
-      updateChatIdentityButton();
-      if (activeChatTaskId) {
-        markTaskChatRead(activeChatTaskId);
-        renderChatMessages(false);
-      }
-      renderTasks();
-    }
-
     function getReadMapStorageKey() {
       const me = getCurrentChatMember();
       const suffix = me ? (me.code || me.name).toLowerCase().replace(/[^a-z0-9]/g, "_") : "guest";
@@ -5461,52 +5395,21 @@
       }
     }
 
-    /* ── Employee Switcher Dropdown in Chat Header ── */
+    /* ── Current Machine Employee Badge (Auto-synced from Note Issue) ── */
     function updateChatIdentityButton() {
-      const btn = document.getElementById("btnChatMyIdentity");
+      const badge = document.getElementById("badgeChatMyIdentity");
       const txt = document.getElementById("txtChatMyIdentity");
-      if (!btn || !txt) return;
+      if (!badge || !txt) return;
       const me = getCurrentChatMember();
       if (me && me.name) {
-        btn.classList.remove("unset");
-        txt.textContent = `Chat tên: ${me.name}`;
+        badge.classList.remove("unset");
+        txt.innerHTML = me.code
+          ? `<b>${esc(me.name)}</b> <span class="my-code">(${esc(me.code)})</span>`
+          : `<b>${esc(me.name)}</b>`;
       } else {
-        btn.classList.add("unset");
-        txt.textContent = "Chọn tên của bạn...";
+        badge.classList.add("unset");
+        txt.textContent = "Chưa chọn nhân viên bên Note Issue";
       }
-    }
-
-    function toggleChatMemberMenu(ev) {
-      if (ev) ev.stopPropagation();
-      const menu = document.getElementById("tchatMemberMenu");
-      if (!menu) return;
-      const isShowing = menu.classList.contains("show");
-      if (isShowing) {
-        menu.classList.remove("show");
-        return;
-      }
-      const me = getCurrentChatMember();
-      const members = (Array.isArray(allMembers) && allMembers.length) ? allMembers : [];
-      if (!members.length) {
-        menu.innerHTML = `<div style="padding:10px; font-size:12px; color:#64748b; text-align:center;">Chưa có danh sách nhân viên</div>`;
-      } else {
-        menu.innerHTML = `<div style="padding:4px 8px; font-size:10.5px; font-weight:700; color:#64748b; text-transform:uppercase;">Chọn tên nhân viên của bạn</div>` +
-          members.map(m => {
-            const isSel = me && me.name.toLowerCase() === m.name.toLowerCase();
-            return `<button type="button" class="tchat-member-opt ${isSel ? 'selected' : ''}" data-name="${esc(m.name)}" data-code="${esc(m.code || '')}">
-              <span><i class="fa-solid fa-user" style="font-size:10px; margin-right:6px; opacity:0.7;"></i>${esc(m.name)}</span>
-              <span style="font-size:10.5px; color:#64748b; font-family:monospace;">${esc(m.code || '')}</span>
-            </button>`;
-          }).join("");
-        menu.querySelectorAll(".tchat-member-opt").forEach(opt => {
-          opt.addEventListener("click", () => {
-            setCurrentChatMember(opt.dataset.name, opt.dataset.code);
-            menu.classList.remove("show");
-            toast(`Đang chat với tên: ${opt.dataset.name}`, "s");
-          });
-        });
-      }
-      menu.classList.add("show");
     }
 
     /* ── Open / Close Task Chat Room ── */
@@ -5566,7 +5469,6 @@
       if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
       document.getElementById("taskChatOverlay")?.classList.remove("show");
       document.getElementById("taskChatDrawer")?.classList.remove("show");
-      document.getElementById("tchatMemberMenu")?.classList.remove("show");
       document.getElementById("tchatMentionPopup")?.classList.remove("show");
       document.getElementById("tchatEmojiPopup")?.classList.remove("show");
     }
@@ -6458,8 +6360,7 @@
     async function togglePinChatMessage(msgId) {
       const me = getCurrentChatMember();
       if (!me) {
-        toast("Vui lòng chọn tên nhân viên của bạn trước!", "w");
-        toggleChatMemberMenu();
+        toast("Chưa xác định nhân viên của máy — vui lòng chọn nhân viên ở tab Note Issue!", "w");
         return;
       }
       try {
@@ -6483,8 +6384,7 @@
     async function toggleChatReaction(msgId, emoji) {
       const me = getCurrentChatMember();
       if (!me) {
-        toast("Vui lòng chọn tên nhân viên của bạn ở góc trên phòng chat!", "w");
-        toggleChatMemberMenu();
+        toast("Chưa xác định nhân viên của máy — vui lòng chọn nhân viên ở tab Note Issue!", "w");
         return;
       }
       try {
@@ -6544,8 +6444,7 @@
       if (!activeChatTaskId) return;
       const me = getCurrentChatMember();
       if (!me || !me.name) {
-        toast("Vui lòng chọn tên nhân viên của bạn trước khi gửi tin nhắn!", "w");
-        toggleChatMemberMenu();
+        toast("Chưa xác định nhân viên của máy — vui lòng chọn nhân viên ở tab Note Issue trước!", "w");
         return;
       }
 
@@ -6732,10 +6631,6 @@
 
     // Close popups on outside click & ESC
     document.addEventListener("click", (e) => {
-      const sw = document.getElementById("tchatMemberSwitcher");
-      if (sw && !sw.contains(e.target)) {
-        document.getElementById("tchatMemberMenu")?.classList.remove("show");
-      }
       const emoPop = document.getElementById("tchatEmojiPopup");
       if (emoPop && !emoPop.contains(e.target)) {
         emoPop.classList.remove("show");
@@ -6758,7 +6653,7 @@
       }
     });
 
-    // Listen to OPEN_TASK_CHAT from parent DMS Hub toast
+    // Listen to OPEN_TASK_CHAT and TAB_ACTIVATED from parent DMS Hub
     window.addEventListener("message", (e) => {
       if (e.data && e.data.type === "OPEN_TASK_CHAT" && e.data.taskId) {
         const openWhenReady = () => {
@@ -6766,6 +6661,10 @@
           else setTimeout(() => openTaskChat(e.data.taskId), 450);
         };
         openWhenReady();
+      } else if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
+        updateChatIdentityButton();
+        renderTasks();
+        if (activeChatTaskId) renderChatMessages(false);
       }
     });
 
