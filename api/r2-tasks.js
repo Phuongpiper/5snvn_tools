@@ -253,6 +253,7 @@ module.exports = async function handler(req, res) {
             currentData.tasks[taskIndex] = {
               id: Number(id),
               created_at: existingTask.created_at || existingTask.id || Date.now(),
+              updated_at: Date.now(),
               // Preserve custom position/order set by drag-and-drop reorder
               position: existingTask.position !== undefined ? existingTask.position : taskIndex + 1,
               order: existingTask.order !== undefined ? existingTask.order : taskIndex + 1,

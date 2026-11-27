@@ -638,6 +638,17 @@
       border: 1px solid #fca5a5;
     }
 
+    .status-updated-time {
+      display: block;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 3px;
+      text-align: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: nowrap;
+      letter-spacing: -0.2px;
+    }
+
     .badge-done {
       background: var(--done-bg);
       color: var(--done-txt);
@@ -2130,6 +2141,7 @@
             return {
               id: t.id,
               created_at: t.created_at || (Number(t.id) > 1000000000000 ? Number(t.id) : Date.now()),
+              updated_at: t.updated_at || null,
               position: t.position !== undefined ? Number(t.position) : (t.order !== undefined ? Number(t.order) : 0),
               project: (t.project || "").trim(),
               deadline: dl,
@@ -2341,7 +2353,17 @@
         } else if (t.status === "Cố định") {
           statusBadge = `<span class="badge badge-fixed"><i class="fa-solid fa-thumbtack" style="font-size:10px;"></i> Cố định</span>`;
         } else {
-          statusBadge = `<span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>`;
+          const updTs = t.updated_at || null;
+          let updLabel = "";
+          if (updTs) {
+            const d = new Date(Number(updTs));
+            const dd = String(d.getDate()).padStart(2, "0");
+            const mm = String(d.getMonth() + 1).padStart(2, "0");
+            const hh = String(d.getHours()).padStart(2, "0");
+            const min = String(d.getMinutes()).padStart(2, "0");
+            updLabel = `<span class="status-updated-time" title="Lần cập nhật cuối: ${dd}/${mm}/${d.getFullYear()} ${hh}:${min}"><i class="fa-solid fa-rotate" style="font-size:9px; margin-right:2px;"></i>${dd}/${mm} ${hh}:${min}</span>`;
+          }
+          statusBadge = `<span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>${updLabel}`;
         }
 
         const pClass = priorityClasses[t.priority] || "badge-p3";
@@ -2358,7 +2380,7 @@
       <td class="col-issue">${esc(t.issue)}</td>
       <td class="col-note">${esc(t.note || "")}</td>
       <td class="col-assignee">${badgesHtml || '<span style="color:var(--text-muted)">—</span>'}</td>
-      <td class="col-status">${statusBadge}</td>
+      <td class="col-status" style="text-align:center;">${statusBadge}</td>
       <td class="col-actions">
         <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
           <button class="btn-action-edit" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openEditTask('${t.id}')" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
