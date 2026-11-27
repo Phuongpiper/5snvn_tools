@@ -580,8 +580,8 @@
     }
 
     .col-status {
-      width: 130px;
-      min-width: 130px;
+      width: 145px;
+      min-width: 145px;
       text-align: center;
       white-space: nowrap;
     }
@@ -638,23 +638,61 @@
       border: 1px solid #fca5a5;
     }
 
-    .status-cell-wrap {
+    .status-pending-card {
       display: inline-flex;
       flex-direction: column;
-      align-items: center;
-      gap: 3px;
+      align-items: stretch;
+      border-radius: 10px;
+      border: 1px solid #fecaca;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(239, 68, 68, 0.06);
+      min-width: 118px;
     }
 
-    .status-updated-time {
-      display: block;
-      font-size: 10.5px;
-      font-weight: 500;
-      color: #64748b;
-      line-height: 1.2;
-      text-align: center;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    .status-pending-top {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 3px 10px;
+      background: var(--pending-bg);
+      color: var(--pending-txt);
+      font-size: 11.5px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .status-pending-time {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 3px 9px;
+      background: #ffffff;
+      border-top: 1px solid #fecaca;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-variant-numeric: tabular-nums;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.25;
+      color: #475569;
       white-space: nowrap;
-      letter-spacing: -0.2px;
+    }
+
+    .status-pending-time i {
+      font-size: 9px;
+      color: #94a3b8;
+    }
+
+    .status-pending-time .upd-dot {
+      color: #cbd5e1;
+      font-weight: 700;
+    }
+
+    .status-pending-time .upd-hm {
+      color: #0f172a;
+      font-weight: 700;
     }
 
     .badge-done {
@@ -2362,7 +2400,7 @@
           statusBadge = `<span class="badge badge-fixed"><i class="fa-solid fa-thumbtack" style="font-size:10px;"></i> Cố định</span>`;
         } else {
           const updTs = t.updated_at || t.created_at || (Number(t.id) > 1000000000000 ? Number(t.id) : null);
-          let updLabel = "";
+          let updHtml = "";
           if (updTs) {
             const d = new Date(Number(updTs));
             if (!isNaN(d.getTime())) {
@@ -2371,12 +2409,19 @@
               const yyyy = d.getFullYear();
               const hh = String(d.getHours()).padStart(2, "0");
               const min = String(d.getMinutes()).padStart(2, "0");
-              const fullTime = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-              const tip = t.updated_at ? `Cập nhật lần cuối: ${fullTime}` : `Tạo lúc: ${fullTime}`;
-              updLabel = `<span class="status-updated-time" title="${tip}">${fullTime}</span>`;
+              const dateStr = `${dd}/${mm}/${yyyy}`;
+              const timeStr = `${hh}:${min}`;
+              const tip = t.updated_at
+                ? `Cập nhật lần cuối: ${dateStr} ${timeStr}`
+                : `Tạo lúc: ${dateStr} ${timeStr}`;
+              updHtml = `<div class="status-pending-time" title="${tip}"><i class="fa-solid fa-rotate"></i><span>${dateStr}</span><span class="upd-dot">·</span><span class="upd-hm">${timeStr}</span></div>`;
             }
           }
-          statusBadge = `<div class="status-cell-wrap"><span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>${updLabel}</div>`;
+          if (updHtml) {
+            statusBadge = `<div class="status-pending-card"><div class="status-pending-top"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</div>${updHtml}</div>`;
+          } else {
+            statusBadge = `<span class="badge badge-pending"><i class="fa-solid fa-clock" style="font-size:10px;"></i> Pending</span>`;
+          }
         }
 
         const pClass = priorityClasses[t.priority] || "badge-p3";
