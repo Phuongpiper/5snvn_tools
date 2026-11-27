@@ -1388,11 +1388,29 @@
       return base + "/api/r2-dt?project=" + encodeURIComponent(p);
     }
 
+    // Kiểm tra xem trang có đang là tab active hay không
+    function checkIsTabActive() {
+      if (window.self === window.top) return true;
+      try {
+        if (window.frameElement) {
+          return window.frameElement.classList.contains("active");
+        }
+      } catch (_) {}
+      return false;
+    }
+
+    // Biến đánh dấu tab DT có đang được active không
+    // Mặc định false: AutoSync KHÔNG chạy khi mới load, chỉ bật khi vào tab
+    let isDtTabActive = false;
+
     function initApp() {
       loadState();
       renderTable();
-      fetchDtFromCloud(false, currentDtProject);
-      startDtAutoSync();
+      isDtTabActive = checkIsTabActive();
+      if (isDtTabActive) {
+        fetchDtFromCloud(false, currentDtProject);
+        startDtAutoSync();
+      }
       setupEventListeners();
       loadDtProjectsAndRenderTabs();
     }
@@ -1523,6 +1541,8 @@
     }
 
     function safeWindowSync() {
+      // Chỉ sync khi tab DT đang active
+      if (!isDtTabActive) return;
       if (Date.now() - lastLocalEditTime < 2500) return;
       if (cloudSaveTimer || isCloudSaving) return;
       fetchDtFromCloud(true, currentDtProject);
@@ -1531,11 +1551,26 @@
     window.addEventListener("pageshow", safeWindowSync);
     window.addEventListener("focus", safeWindowSync);
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") safeWindowSync();
+      if (document.visibilityState === "hidden") {
+        stopDtAutoSync();
+      } else if (isDtTabActive) {
+        safeWindowSync();
+        startDtAutoSync();
+      }
     });
     window.addEventListener("message", (e) => {
+      if (!e.data) return;
       if (e.data === "tab-activated" || e.data?.type === "TAB_ACTIVATED") {
-        safeWindowSync();
+        // Người dùng vào tab DT: đánh dấu active, fetch và bật AutoSync
+        isDtTabActive = true;
+        fetchDtFromCloud(false, currentDtProject);
+        startDtAutoSync();
+        console.log("[DT AutoSync] Tab activated → AutoSync ON");
+      } else if (e.data === "tab-deactivated" || e.data?.type === "TAB_DEACTIVATED") {
+        // Người dùng rời khỏi tab DT: tắt AutoSync
+        isDtTabActive = false;
+        stopDtAutoSync();
+        console.log("[DT AutoSync] Tab deactivated → AutoSync OFF");
       }
     });
 
@@ -1783,14 +1818,6 @@
       }
     }
 
-    // Lắng nghe kích hoạt tab từ DMS Hub
-    window.addEventListener("message", (e) => {
-      if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
-        startDtAutoSync();
-      } else if (e.data && e.data.type === "TAB_DEACTIVATED") {
-        stopDtAutoSync();
-      }
-    });
 
     async function forceSyncWithCloud() {
       showAutoSaveIndicator("saving");

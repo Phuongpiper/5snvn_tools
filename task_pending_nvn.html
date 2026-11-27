@@ -1127,6 +1127,94 @@
       font-size: 13.5px;
     }
 
+    .proj-color-btn-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: var(--card);
+      border: 1px solid var(--border);
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .proj-color-btn-wrap:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .proj-color-native-input {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .proj-quick-colors {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 3px;
+      flex-wrap: wrap;
+    }
+
+    .proj-color-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+    }
+
+    .proj-color-dot:hover {
+      transform: scale(1.3);
+    }
+
+    .proj-color-dot.active {
+      border-color: #0f172a;
+      transform: scale(1.2);
+    }
+
+    .project-new-color-wrap {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--card);
+      flex-shrink: 0;
+      transition: border-color 0.15s ease;
+    }
+
+    .project-new-color-wrap:hover {
+      border-color: var(--accent);
+    }
+
+    .project-new-color-input {
+      position: absolute;
+      top: -6px;
+      left: -6px;
+      width: 48px;
+      height: 48px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+
     .member-actions {
       display: flex;
       gap: 6px;
@@ -1708,11 +1796,14 @@
         <button onclick="closeProjectModal()" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
-        <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <div style="display:flex; gap:8px; margin-bottom:12px; align-items:center;">
           <input type="text" class="fc" id="newProjectName" placeholder="Tên dự án..." style="flex:1;"
             onkeydown="if(event.key==='Enter'){event.preventDefault();addProject();}" />
           <input type="text" class="fc" id="newProjectSystem" placeholder="Hệ thống (VD: DMS1, DMS)..."
             style="width:140px;" />
+          <div class="project-new-color-wrap" title="Chọn màu cho dự án mới">
+            <input type="color" id="newProjectColor" value="#6366f1" class="project-new-color-input" title="Chọn màu cho dự án mới" />
+          </div>
           <button class="btn-primary" onclick="addProject()" style="padding:8px 14px; white-space:nowrap;"><i
               class="fa-solid fa-folder-plus"></i> Thêm</button>
         </div>
@@ -2139,10 +2230,75 @@
       { bg: "#f1f5f9", color: "#334155", border: "#cbd5e1" }, // Slate
     ];
 
+    function hexToBadgeStyle(hex) {
+      if (!hex || typeof hex !== 'string') return null;
+      let h = hex.trim();
+      if (!h.startsWith('#')) h = '#' + h;
+      if (!/^#[0-9A-Fa-f]{6}$/.test(h) && !/^#[0-9A-Fa-f]{3}$/.test(h)) return null;
+      if (h.length === 4) {
+        h = '#' + h[1] + h[1] + h[2] + h[2] + h[3] + h[3];
+      }
+      const r = parseInt(h.slice(1, 3), 16);
+      const g = parseInt(h.slice(3, 5), 16);
+      const b = parseInt(h.slice(5, 7), 16);
+      
+      const lum = (r * 299 + g * 587 + b * 114) / 1000;
+      const textCol = lum > 175 
+        ? `rgb(${Math.max(0, Math.floor(r * 0.6))}, ${Math.max(0, Math.floor(g * 0.6))}, ${Math.max(0, Math.floor(b * 0.6))})`
+        : h;
+
+      return {
+        bg: `rgba(${r}, ${g}, ${b}, 0.12)`,
+        border: `rgba(${r}, ${g}, ${b}, 0.35)`,
+        color: textCol,
+        hex: h
+      };
+    }
+
+    const DEFAULT_PROJECT_COLORS = {
+      "NVN": "#6366f1",
+      "LVN": "#0284c7",
+      "CPTH": "#10b981",
+      "FNB": "#ec4899",
+      "Nội bộ": "#8b5cf6",
+      "Asian Shine": "#06b6d4",
+      "Syngenta": "#84cc16",
+      "Haleon": "#3b82f6"
+    };
+    const PRESET_PROJECT_COLORS = [
+      "#6366f1", "#0284c7", "#3b82f6", "#06b6d4",
+      "#10b981", "#84cc16", "#eab308", "#ea580c",
+      "#ef4444", "#ec4899", "#8b5cf6", "#64748b"
+    ];
+
+    function getProjectColorValue(projectName, explicitColor) {
+      if (explicitColor && String(explicitColor).trim()) return explicitColor.trim();
+      const pList = (Array.isArray(allProjects) && allProjects.length) ? allProjects : (function() {
+        try { return JSON.parse(localStorage.getItem("app_projects_data") || "[]"); } catch(_) { return []; }
+      })();
+      const pObj = pList.find(p => (p.name || "").toLowerCase() === (projectName || "").toLowerCase());
+      if (pObj && pObj.color) return pObj.color;
+      if (DEFAULT_PROJECT_COLORS[projectName]) return DEFAULT_PROJECT_COLORS[projectName];
+      let hash = 0;
+      const s = String(projectName || "").trim();
+      for (let i = 0; i < s.length; i++) {
+        hash = (hash << 5) - hash + s.charCodeAt(i);
+        hash |= 0;
+      }
+      return PRESET_PROJECT_COLORS[Math.abs(hash) % PRESET_PROJECT_COLORS.length];
+    }
+
     function getProjectStyle(name) {
       if (!name) return "";
-      let hash = 0;
       const str = String(name).trim();
+      const col = getProjectColorValue(str);
+      if (col) {
+        const st = hexToBadgeStyle(col);
+        if (st) {
+          return `background-color:${st.bg}; color:${st.color}; border:1px solid ${st.border}; font-weight:700;`;
+        }
+      }
+      let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = (hash << 5) - hash + str.charCodeAt(i);
         hash |= 0;
@@ -2849,32 +3005,103 @@
         li.className = "member-list-item";
         const mCount = Array.isArray(p.members) ? p.members.length : 0;
         const membersSummary = mCount > 0 ? p.members.join(", ") : "Chưa có NV";
+        const projColor = getProjectColorValue(p.name, p.color);
+        const quickDotsHtml = PRESET_PROJECT_COLORS.map(c => `
+          <span class="proj-color-dot ${c.toLowerCase() === projColor.toLowerCase() ? 'active' : ''}" 
+                style="background-color: ${c};" 
+                data-name="${esc(p.name)}" 
+                data-color="${c}" 
+                title="Chọn màu ${c}"></span>
+        `).join("");
+
         li.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:2px; min-width:110px;">
-        <span class="member-name"><i class="fa-solid fa-folder" style="color:var(--accent);margin-right:6px;"></i>${esc(p.name)}</span>
-        <span style="font-size:10px; color:var(--text-muted); white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis;" title="${esc(membersSummary)}"><i class="fa-solid fa-users" style="font-size:9px;"></i> ${mCount} NV: ${esc(membersSummary)}</span>
-      </div>
-      <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; gap:6px; margin:0 8px;">
-        <span style="font-size:11px; color:var(--text-muted);">Hệ thống:</span>
-        <input type="text" class="fc" value="${esc(p.system || '')}" placeholder="DMS1, DMS, FPIT" style="width:120px; font-size:12px; padding:3px 6px; font-family:monospace; font-weight:700;" onchange="updateProjectSystem('${esc(p.name)}', this.value)" />
-      </div>
-      <div class="member-actions">
-        <button class="btn-danger btn-sm" data-name="${esc(p.name)}" onclick="deleteProject(this.dataset.name)" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
-      </div>
-    `;
+          <div style="display:flex; flex-direction:column; gap:2px; min-width:130px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div class="proj-color-btn-wrap" title="Đổi màu dự án (${esc(projColor)})">
+                <i class="fa-solid fa-folder" style="color:${esc(projColor)}; font-size:13px;"></i>
+                <input type="color" class="proj-color-native-input" data-name="${esc(p.name)}" value="${esc(projColor)}" title="Đổi màu dự án" />
+              </div>
+              <span class="member-name">${esc(p.name)}</span>
+            </div>
+            <div class="proj-quick-colors" title="Chọn nhanh màu">
+              ${quickDotsHtml}
+            </div>
+            <span style="font-size:10px; color:var(--text-muted); white-space:nowrap; max-width:160px; overflow:hidden; text-overflow:ellipsis; margin-top:2px;" title="${esc(membersSummary)}"><i class="fa-solid fa-users" style="font-size:9px;"></i> ${mCount} NV: ${esc(membersSummary)}</span>
+          </div>
+          <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; gap:6px; margin:0 8px;">
+            <span style="font-size:11px; color:var(--text-muted);">Hệ thống:</span>
+            <input type="text" class="fc" value="${esc(p.system || '')}" placeholder="DMS1, DMS, FPIT" style="width:110px; font-size:12px; padding:3px 6px; font-family:monospace; font-weight:700;" onchange="updateProjectSystem('${esc(p.name)}', this.value)" />
+          </div>
+          <div class="member-actions">
+            <button class="btn-danger btn-sm" data-name="${esc(p.name)}" onclick="deleteProject(this.dataset.name)" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+
+        li.querySelector(".proj-color-native-input")?.addEventListener("change", (e) => {
+          updateProjectColor(p.name, e.target.value);
+        });
+
+        li.querySelectorAll(".proj-color-dot").forEach(dot => {
+          dot.addEventListener("click", (e) => {
+            e.stopPropagation();
+            updateProjectColor(p.name, dot.dataset.color);
+          });
+        });
+
         ul.appendChild(li);
       });
+    }
+
+    async function updateProjectColor(name, color) {
+      try {
+        const p = allProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
+        if (p) p.color = color;
+        try { localStorage.setItem("app_projects_data", JSON.stringify(allProjects)); } catch (e) { }
+        renderProjectList();
+        renderTasks();
+        const members = p && Array.isArray(p.members) ? p.members : [];
+        const system = p ? p.system : "";
+        const res = await apiPost({ action: "update_project", name, system, color, members });
+        if (res.status === "success") {
+          toast(`Đã đổi màu cho "${name}"!`, "s");
+          try {
+            if (typeof BroadcastChannel !== "undefined") {
+              new BroadcastChannel("DMS_MEMBERS_SYNC").postMessage({ type: "projects" });
+            }
+          } catch (_) { }
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: "DATA_UPDATED", entity: "projects" }, "*");
+            }
+          } catch (_) { }
+        } else {
+          toast("Lỗi cập nhật màu!", "e");
+        }
+      } catch (_) {
+        toast("Lỗi kết nối máy chủ", "e");
+      }
     }
 
     async function updateProjectSystem(name, system) {
       try {
         const p = allProjects.find(item => item.name.toLowerCase() === name.toLowerCase());
         const members = p && Array.isArray(p.members) ? p.members : [];
-        const res = await apiPost({ action: "update_project", name, system: system.trim(), members });
+        const color = p ? (p.color || "") : "";
+        const res = await apiPost({ action: "update_project", name, system: system.trim(), color, members });
         if (res.status === "success") {
           if (p) p.system = system.trim();
           try { localStorage.setItem("app_projects_data", JSON.stringify(allProjects)); } catch (e) { }
           toast(`Đã cập nhật hệ thống cho "${name}"!`, "s");
+          try {
+            if (typeof BroadcastChannel !== "undefined") {
+              new BroadcastChannel("DMS_MEMBERS_SYNC").postMessage({ type: "projects" });
+            }
+          } catch (_) { }
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: "DATA_UPDATED", entity: "projects" }, "*");
+            }
+          } catch (_) { }
         }
       } catch (_) { }
     }
@@ -2882,16 +3109,28 @@
     async function addProject() {
       const input = document.getElementById("newProjectName");
       const inputSys = document.getElementById("newProjectSystem");
+      const inputColor = document.getElementById("newProjectColor");
       const name = input.value.trim();
       const system = inputSys ? inputSys.value.trim() : "";
+      const color = (inputColor ? inputColor.value : "#6366f1").trim();
       if (!name) { toast("Nhập tên dự án!", "w"); return; }
       try {
-        const res = await apiPost({ action: "add_project", name, system, members: [] });
+        const res = await apiPost({ action: "add_project", name, system, color, members: [] });
         if (res.status === "success") {
           toast(`Đã thêm dự án "${name}"!`, "s");
           input.value = "";
           if (inputSys) inputSys.value = "";
           loadProjects();
+          try {
+            if (typeof BroadcastChannel !== "undefined") {
+              new BroadcastChannel("DMS_MEMBERS_SYNC").postMessage({ type: "projects" });
+            }
+          } catch (_) { }
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ type: "DATA_UPDATED", entity: "projects" }, "*");
+            }
+          } catch (_) { }
         } else { toast("Lỗi: " + (res.message || "không rõ"), "e"); }
       } catch { toast("Lỗi kết nối!", "e"); }
     }
@@ -3319,10 +3558,22 @@
       }
     }
 
+    function checkIsTabActive() {
+      if (window.self === window.top) return true;
+      try {
+        if (window.frameElement) {
+          return window.frameElement.classList.contains("active");
+        }
+      } catch (_) {}
+      return false;
+    }
+
+    let isTaskTabActive = false;
+
     function handleVisibilityChange() {
       if (document.visibilityState === "hidden") {
         stopAutoSync();
-      } else {
+      } else if (isTaskTabActive) {
         checkTasksEtag();
         startAutoSync();
       }
@@ -3333,9 +3584,11 @@
     // Lắng nghe kích hoạt tab từ DMS Hub
     window.addEventListener("message", (e) => {
       if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
+        isTaskTabActive = true;
         checkTasksEtag();
         startAutoSync();
-      } else if (e.data && e.data.type === "TAB_DEACTIVATED") {
+      } else if (e.data && (e.data.type === "TAB_DEACTIVATED" || e.data === "tab-deactivated")) {
+        isTaskTabActive = false;
         stopAutoSync();
       }
     });
@@ -3351,13 +3604,39 @@
         openProjectModal();
       } else if (e.data?.type === "OPEN_MEMBER_MODAL") {
         openMemberModal();
+      } else if (e.data?.type === "DATA_UPDATED" && (e.data?.entity === "projects" || !e.data?.entity)) {
+        loadProjects().then(() => renderTasks());
+      }
+    });
+
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const ch = new BroadcastChannel("DMS_MEMBERS_SYNC");
+        ch.onmessage = (e) => {
+          if (e.data && (e.data.type === "projects" || e.data.type === "members")) {
+            loadProjects().then(() => renderTasks());
+          }
+        };
+      }
+    } catch (_) { }
+
+    window.addEventListener("storage", (e) => {
+      if (e.key === "app_projects_data") {
+        try {
+          allProjects = JSON.parse(e.newValue || "[]");
+          renderProjectList();
+          renderTasks();
+        } catch (_) { }
       }
     });
 
     window.addEventListener("load", async () => {
       await autoDetectTaskUrl();
       loadAll();
-      startAutoSync();
+      isTaskTabActive = checkIsTabActive();
+      if (isTaskTabActive) {
+        startAutoSync();
+      }
     });
   </script>
 </body>

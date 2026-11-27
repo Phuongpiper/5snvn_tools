@@ -90,14 +90,14 @@ const CORS = {
 
 // Đọc dữ liệu hiện tại từ R2, fallback về object trống nếu chưa có hoặc lỗi
 const DEFAULT_SYSTEM_PROJECTS = [
-  { name: 'NVN', system: 'DMS1' },
-  { name: 'LVN', system: 'DMS' },
-  { name: 'CPTH', system: 'FPIT' },
-  { name: 'FNB', system: '' },
-  { name: 'Nội bộ', system: '' },
-  { name: 'Asian Shine', system: '' },
-  { name: 'Syngenta', system: '' },
-  { name: 'Haleon', system: '' }
+  { name: 'NVN', system: 'DMS1', color: '#6366f1' },
+  { name: 'LVN', system: 'DMS', color: '#0284c7' },
+  { name: 'CPTH', system: 'FPIT', color: '#10b981' },
+  { name: 'FNB', system: 'FNB', color: '#ec4899' },
+  { name: 'Nội bộ', system: 'NB', color: '#8b5cf6' },
+  { name: 'Asian Shine', system: 'WSM', color: '#06b6d4' },
+  { name: 'Syngenta', system: 'WSM', color: '#84cc16' },
+  { name: 'Haleon', system: 'DMS', color: '#3b82f6' }
 ];
 
 async function getTasksData() {
@@ -190,6 +190,14 @@ module.exports = async function handler(req, res) {
             if (up === "NVN") p.system = "DMS1";
             else if (up === "LVN") p.system = "DMS";
             else if (up === "CPTH") p.system = "FPIT";
+            else if (up === "FNB") p.system = "FNB";
+            else if (up.includes("NOI BO") || up.includes("NỘI BỘ")) p.system = "NB";
+            else if (up.includes("ASIAN") || up.includes("SYNGENTA")) p.system = "WSM";
+            else if (up.includes("HALEON")) p.system = "DMS";
+          }
+          if (!p.color) {
+            const def = DEFAULT_SYSTEM_PROJECTS.find(d => d.name.toLowerCase() === (p.name || "").toLowerCase());
+            if (def && def.color) p.color = def.color;
           }
           if (!Array.isArray(p.members)) {
             p.members = [];
@@ -421,6 +429,7 @@ module.exports = async function handler(req, res) {
       if (action === "add_project") {
         const name = (payload.name || "").trim();
         const system = (payload.system !== undefined ? payload.system : "").trim();
+        const color = (payload.color !== undefined ? payload.color : "").trim();
         const members = Array.isArray(payload.members) ? payload.members : [];
         if (!name) return res.status(400).json({ status: "error", message: "Tên dự án không được để trống" });
         if (!currentData.projects) currentData.projects = [];
@@ -428,7 +437,7 @@ module.exports = async function handler(req, res) {
         const exists = currentData.projects.some(p => p.name.toLowerCase() === name.toLowerCase());
         if (exists) return res.status(400).json({ status: "error", message: "Dự án đã tồn tại" });
         
-        currentData.projects.push({ name, system, members });
+        currentData.projects.push({ name, system, color, members });
         await saveTasksData(currentData);
         return res.status(200).json({ status: "success", projects: currentData.projects });
       }
@@ -436,6 +445,7 @@ module.exports = async function handler(req, res) {
       if (action === "update_project") {
         const name = (payload.name || "").trim();
         const system = payload.system !== undefined ? payload.system : null;
+        const color = payload.color !== undefined ? payload.color : null;
         const newName = (payload.newName || "").trim();
         const members = payload.members !== undefined ? (Array.isArray(payload.members) ? payload.members : []) : undefined;
         if (!name) return res.status(400).json({ status: "error", message: "Tên dự án không được để trống" });
@@ -444,11 +454,17 @@ module.exports = async function handler(req, res) {
         let proj = currentData.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
         if (!proj) {
           // If project didn't exist yet, create it
-          proj = { name, system: system !== null ? system.trim() : "", members: members !== undefined ? members : [] };
+          proj = { 
+            name, 
+            system: system !== null ? system.trim() : "", 
+            color: color !== null ? color.trim() : "",
+            members: members !== undefined ? members : [] 
+          };
           currentData.projects.push(proj);
         } else {
           if (newName) proj.name = newName;
           if (system !== null) proj.system = system.trim();
+          if (color !== null) proj.color = color.trim();
           if (members !== undefined) proj.members = members;
         }
         await saveTasksData(currentData);

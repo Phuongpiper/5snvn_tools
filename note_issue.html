@@ -6193,8 +6193,49 @@
       function getProjectColor(projectName) {
         if (!projectName) return "#4F46E5";
         const clean = (typeof normalizeStr === "function" ? normalizeStr(projectName) : projectName).toUpperCase().trim();
+        try {
+          const raw = localStorage.getItem("app_projects_data");
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) {
+              const found = list.find(p => (typeof p === "object" && p && p.name && (p.name.toUpperCase().trim() === clean || p.name.toLowerCase() === projectName.toLowerCase())));
+              if (found && found.color) return found.color;
+            }
+          }
+        } catch (_) {}
         return PROJECT_COLOR_MAP[clean] || PROJECT_COLOR_MAP[projectName.toUpperCase().trim()] || "#0284c7";
       }
+
+      function refreshProjectStyles() {
+        try {
+          const cur = typeof getSelectedProject === "function" ? getSelectedProject() : "NVN";
+          if (typeof setSelectedProject === "function") setSelectedProject(cur);
+          if (typeof renderProjectDropdown === "function") renderProjectDropdown();
+        } catch (_) {}
+      }
+
+      window.addEventListener("message", (e) => {
+        if (e.data && (e.data.type === "DATA_UPDATED" && (e.data.entity === "projects" || !e.data.entity))) {
+          refreshProjectStyles();
+        }
+      });
+
+      try {
+        if (typeof BroadcastChannel !== "undefined") {
+          const ch = new BroadcastChannel("DMS_MEMBERS_SYNC");
+          ch.onmessage = (e) => {
+            if (e.data && (e.data.type === "projects" || e.data.type === "members")) {
+              refreshProjectStyles();
+            }
+          };
+        }
+      } catch (_) { }
+
+      window.addEventListener("storage", (e) => {
+        if (e.key === "app_projects_data") {
+          refreshProjectStyles();
+        }
+      });
 
       function toggleProjectDropdown() {
         const wrapper = document.getElementById("projectPickerWrapper");
