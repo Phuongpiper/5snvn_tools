@@ -3931,7 +3931,7 @@
         <i class="fa-solid fa-note-sticky"></i>
       </div>
       <div class="brand-info">
-        <h1>Note Issue Studio <span class="brand-badge">PROD 2.0</span></h1>
+        <h1>Note Issue Studio</h1>
       </div>
     </div>
 
@@ -4242,9 +4242,6 @@
                   <i class="fa-solid fa-cloud" id="iconTempCloud"></i> <span id="textTempCloud">Cloud R2</span>
                 </span>
               </div>
-              <p style="font-size:11.5px; color:var(--text-muted); margin:2px 0 0 0; white-space:nowrap;"
-                title="Danh sách tạm lưu trữ hoàn toàn trên Cloud R2 theo nhân viên. Nhấn Đồng bộ để chuyển vào Issue & Call Log.">
-                Lưu trữ đám mây Cloud R2 · Nhấn <strong>Đồng bộ</strong> để chuyển vào Call Log &amp; Issue</p>
             </div>
           </div>
 
@@ -4253,14 +4250,6 @@
               <i class="fa-solid fa-magnifying-glass temp-search-icon"></i>
               <input type="text" id="searchTempInput" class="temp-search-input" placeholder="Lọc danh sách tạm..." />
             </div>
-            <button type="button" class="btn-temp-action" id="btnExportExcel"
-              title="Xuất toàn bộ ghi chú ra file Excel">
-              <i class="fa-solid fa-file-excel" style="color: #10b981;"></i> Xuất Excel
-            </button>
-            <button type="button" class="btn-temp-action" id="btnCopyAllTemp"
-              title="Sao chép toàn bộ danh sách để gửi đi">
-              <i class="fa-solid fa-copy"></i> Sao chép tất cả
-            </button>
             <button type="button" class="btn-temp-action danger" id="btnClearAllTemp" title="Xoá toàn bộ danh sách tạm">
               <i class="fa-solid fa-trash-can"></i> Xoá hết
             </button>
@@ -4270,10 +4259,6 @@
               <span>Đồng bộ</span>
               <span id="badgeBtnSyncCount"
                 style="display:none; margin-left:4px; font-size:10px; font-weight:800; background:#ea580c; color:#fff; padding:1px 6px; border-radius:10px;">0</span>
-            </button>
-            <button type="button" class="btn-temp-action" id="btnOpenStatsFromTemp" onclick="switchStudioView('stats')"
-              title="Xem thống kê số lượng Issue theo nhân viên">
-              <i class="fa-solid fa-chart-pie" style="color:#8b5cf6;"></i> Số lượng theo NV
             </button>
           </div>
         </div>
@@ -6554,8 +6539,6 @@
       const tempTbody = document.getElementById("tempTbody");
       const badgeTempCount = document.getElementById("badgeTempCount");
       const searchTempInput = document.getElementById("searchTempInput");
-      const btnExportExcel = document.getElementById("btnExportExcel");
-      const btnCopyAllTemp = document.getElementById("btnCopyAllTemp");
       const btnClearAllTemp = document.getElementById("btnClearAllTemp");
       const btnSyncR2Temp = document.getElementById("btnSyncR2Temp");
       const navTotalIssuesBadge = document.getElementById("navTotalIssuesBadge");
@@ -13720,50 +13703,6 @@
       document.getElementById("btnClearStatsSearch")?.addEventListener("click", () => {
         if (statsSearchInput) statsSearchInput.value = "";
         renderStatsPage();
-      });
-
-      // Export Excel Temp
-      btnExportExcel.addEventListener("click", () => {
-        if (tempNotes.length === 0) {
-          showToast("Danh sách tạm trống, chưa có dữ liệu để xuất!", "fa-triangle-exclamation");
-          return;
-        }
-        try {
-          const rows = tempNotes.map((n, idx) => ({
-            "STT": idx + 1,
-            "TRẠNG THÁI ĐỒNG BỘ": (typeof isTempNoteSynced === "function" && isTempNoteSynced(n)) ? "Đã đồng bộ" : "Chưa đồng bộ",
-            "MÃ NHÂN VIÊN": n.memberCode || currentSelectedMember?.code || "",
-            "TÊN NHÂN VIÊN": n.memberName || currentSelectedMember?.name || "",
-            "KẾT QUẢ NOTE ISSUE": n.result,
-            "NGÀY NOTE": n.date,
-            "TÊN SOLUTION": n.fields?.solution || "",
-            "LOẠI (TYPE)": n.fields?.type || "",
-            "NHÀ PHÂN PHỐI": n.fields?.npp || "",
-            "MÃ NVBH": n.fields?.nvbh || "",
-            "SUP/HQ/ADMIN": n.fields?.role || "",
-            "HOTLINE": n.fields?.hotline || ""
-          }));
-          const ws = XLSX.utils.json_to_sheet(rows);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Danh sach ghi chu");
-          const filename = `Note_Issue_${getTodayString().replace(/\//g, "-")}.xlsx`;
-          XLSX.writeFile(wb, filename);
-          showToast(`Đã xuất ${tempNotes.length} dòng ghi chú ra Excel!`);
-        } catch (err) {
-          console.error(err);
-          showToast("Lỗi khi xuất file Excel", "fa-triangle-exclamation");
-        }
-      });
-
-      // Copy All Temp
-      btnCopyAllTemp.addEventListener("click", () => {
-        if (tempNotes.length === 0) {
-          showToast("Danh sách tạm trống!", "fa-triangle-exclamation");
-          return;
-        }
-        const allText = tempNotes.map(n => n.result).join("\n");
-        navigator.clipboard.writeText(allText);
-        showToast(`Đã sao chép tất cả ${tempNotes.length} dòng ghi chú!`);
       });
 
       // Clear All Temp (Chỉ xoá danh sách tạm của nhân viên hiện tại trên R2 & Local)

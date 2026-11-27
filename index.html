@@ -710,69 +710,6 @@
       }
     }
 
-    /* Search */
-    .search-container {
-      position: relative;
-      display: inline-block;
-    }
-
-    .search-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      width: 320px;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
-      z-index: 10001;
-      padding: 10px;
-      animation: dropdownSlideDown 0.15s ease-out;
-    }
-
-    .search-dropdown.show {
-      display: block;
-    }
-
-    .search-input-box {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #f8fafc;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 0 10px;
-      height: 38px;
-      transition: all 0.15s ease;
-    }
-
-    .search-input-box:focus-within {
-      border-color: #2563eb;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    }
-
-    .search-input-box input {
-      border: none;
-      outline: none;
-      background: transparent;
-      width: 100%;
-      font-size: 13px;
-      font-family: inherit;
-      color: #0f172a;
-    }
-
-    .search-esc-hint {
-      font-size: 10px;
-      font-weight: 700;
-      color: #94a3b8;
-      background: #f1f5f9;
-      padding: 2px 5px;
-      border-radius: 4px;
-      border: 1px solid #e2e8f0;
-    }
-
     /* Notifications group */
     .topbar-notif-group {
       display: flex;
@@ -2894,21 +2831,6 @@
 
         <!-- Right side utilities -->
         <div class="workspace-right">
-          <!-- Search -->
-          <div class="search-container" id="topbarSearchContainer">
-            <button class="wh-icon-btn" id="topbarSearchBtn" type="button" title="Tìm kiếm nhanh">
-              <i class="fa-solid fa-magnifying-glass"></i>
-            </button>
-            <div class="search-dropdown" id="topbarSearchDropdown">
-              <div class="search-input-box">
-                <i class="fa-solid fa-magnifying-glass" style="color:#94a3b8; font-size:13px;"></i>
-                <input type="text" id="topbarSearchInput" placeholder="Tìm nhanh giải pháp, NPP, số ĐT..."
-                  autocomplete="off" />
-                <span class="search-esc-hint">ESC</span>
-              </div>
-            </div>
-          </div>
-
           <!-- Notifications -->
           <div class="topbar-notif-group">
             <!-- Upcoming Tasks -->
@@ -3997,17 +3919,12 @@
         const upcomingBtn = document.getElementById("upcomingBtn");
         const upcomingDropdown = document.getElementById("upcomingDropdown");
 
-        const topbarSearchBtn = document.getElementById("topbarSearchBtn");
-        const topbarSearchDropdown = document.getElementById("topbarSearchDropdown");
-        const topbarSearchInput = document.getElementById("topbarSearchInput");
-
         const topbarAppsBtn = document.getElementById("topbarAppsBtn");
         const topbarAppsDropdown = document.getElementById("topbarAppsDropdown");
 
         const allDropdownPairs = [
           { btn: bellBtn, menu: bellDropdown },
           { btn: upcomingBtn, menu: upcomingDropdown },
-          { btn: topbarSearchBtn, menu: topbarSearchDropdown },
           { btn: topbarAppsBtn, menu: topbarAppsDropdown }
         ];
 
@@ -4032,43 +3949,10 @@
               if (!isShowing) {
                 menu.classList.add("show");
                 btn.classList.add("active");
-                if (btn === topbarSearchBtn && topbarSearchInput) {
-                  setTimeout(() => topbarSearchInput.focus(), 60);
-                }
               }
             });
           }
         });
-
-        // Search in active frame handler
-        if (topbarSearchInput) {
-          topbarSearchInput.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-              topbarSearchDropdown?.classList.remove("show");
-              topbarSearchBtn?.classList.remove("active");
-            } else if (e.key === "Enter") {
-              const query = topbarSearchInput.value.trim();
-              const activeFrame = document.querySelector(".tab-frame.active");
-              if (activeFrame && activeFrame.contentWindow) {
-                try {
-                  activeFrame.contentWindow.postMessage({ type: "GLOBAL_SEARCH", query }, "*");
-                  const doc = activeFrame.contentDocument || activeFrame.contentWindow.document;
-                  if (doc) {
-                    const searchInput = doc.querySelector("input[type='search'], input[type='text']:not([readonly])");
-                    if (searchInput) {
-                      searchInput.value = query;
-                      searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-                      searchInput.dispatchEvent(new Event("change", { bubbles: true }));
-                      searchInput.focus();
-                    }
-                  }
-                } catch (_) { }
-              }
-              topbarSearchDropdown?.classList.remove("show");
-              topbarSearchBtn?.classList.remove("active");
-            }
-          });
-        }
 
         // Apps reload and profile reload handlers
         document.getElementById("btnAppHardReload")?.addEventListener("click", () => {
