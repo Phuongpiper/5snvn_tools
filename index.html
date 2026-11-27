@@ -3357,6 +3357,7 @@
 
       /* ── Core: check time window + alert_time gate ── */
       function shouldAlert(task, lastMs, nowMs) {
+        if (task.alert_enabled === false) return false;
         const now = new Date(nowMs);
         const freq = task.alert_frequency;
 
@@ -3508,6 +3509,7 @@
 
         tasks.forEach(task => {
           if (task.status === "Done") return;
+          if (task.alert_enabled === false) return;
           const last = ts[task.id] || ts[String(task.id)] || 0;
 
           if (shouldAlert(task, last, nowMs)) {
@@ -3547,6 +3549,8 @@
           window.dispatchEvent(new Event("storage"));
         }
       }
+
+      window.checkAndNotifyTasks = checkAndNotify;
 
       document.addEventListener("DOMContentLoaded", async () => {
         await requestNotifPermission();
@@ -3632,6 +3636,7 @@
         const FREQ_MS_BELL = { "once": 0, "1_day": 86400000, "3_days": 259200000, "1_week": 604800000, "2_weeks": 1209600000, "1_month": 2592000000 };
         return tasks.filter(t => {
           if (t.status === "Done") return false;
+          if (t.alert_enabled === false) return false;
           const deadlineIso = parseToIsoDate(t.deadline);
           const isOverdue = !!(deadlineIso && deadlineIso < todayIsoStr);
           if (!notified[t.id] && !notified[String(t.id)]) return false;
@@ -3766,6 +3771,7 @@
       /* ── Upcoming Tasks Logic ── */
       function isTaskUpcomingToday(task, lastMs, nowMs) {
         if (task.status === "Done") return false;
+        if (task.alert_enabled === false) return false;
 
         const now = new Date(nowMs);
         const freq = task.alert_frequency;
@@ -4119,6 +4125,35 @@
           updateBellUI();
           updateUpcomingUI();
         });
+
+        async function syncTasksFromCloudForBell() {
+          try {
+            const r = await fetch(`/api/r2-tasks?action=read_tasks&t=${Date.now()}`, { cache: "no-cache" });
+            if (!r.ok) return;
+            const d = await r.json();
+            if (d && d.status === "success" && Array.isArray(d.tasks || d.data)) {
+              const rawTasks = d.tasks || d.data;
+              const normalized = rawTasks.map(t => ({
+                ...t,
+                alert_enabled: t.alert_enabled !== false
+              }));
+              localStorage.setItem(LS_TASKS_KEY, JSON.stringify(normalized));
+              updateBellUI();
+              updateUpcomingUI();
+            }
+          } catch (_) { }
+        }
+
+        syncTasksFromCloudForBell();
+
+        try {
+          if (typeof BroadcastChannel !== "undefined") {
+            const tasksCh = new BroadcastChannel("R2_TASKS_SYNC");
+            tasksCh.onmessage = () => {
+              syncTasksFromCloudForBell();
+            };
+          }
+        } catch (_) { }
 
         setInterval(() => {
           updateBellUI();

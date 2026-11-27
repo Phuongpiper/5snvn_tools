@@ -226,7 +226,7 @@ module.exports = async function handler(req, res) {
       const currentData = await getTasksData();
 
       if (action === "save_task") {
-        const { id, project, deadline, issue, note, assignees, status, priority, alert_time, alert_frequency, alert_days, alert_specific_date } = payload;
+        const { id, project, deadline, issue, note, assignees, status, priority, alert_time, alert_frequency, alert_days, alert_specific_date, alert_enabled } = payload;
         let taskStatus = "Pending";
         const rawStatus = String(status || "").trim();
         if (rawStatus.toLowerCase() === "done") {
@@ -250,6 +250,9 @@ module.exports = async function handler(req, res) {
           const taskIndex = currentData.tasks.findIndex(t => Number(t.id) === Number(id));
           if (taskIndex !== -1) {
             const existingTask = currentData.tasks[taskIndex];
+            const taskAlertEnabled = alert_enabled !== undefined
+              ? Boolean(alert_enabled)
+              : (existingTask.alert_enabled !== undefined ? Boolean(existingTask.alert_enabled) : true);
             currentData.tasks[taskIndex] = {
               id: Number(id),
               created_at: existingTask.created_at || existingTask.id || Date.now(),
@@ -264,6 +267,7 @@ module.exports = async function handler(req, res) {
               assignees: Array.isArray(assignees) ? assignees : [],
               status: taskStatus,
               priority: taskPriority,
+              alert_enabled: taskAlertEnabled,
               alert_time: taskAlertTime,
               alert_frequency: taskAlertFreq,
               alert_days: taskAlertDays,
@@ -275,6 +279,7 @@ module.exports = async function handler(req, res) {
         } else {
           // Add task new
           const nowTs = Date.now();
+          const taskAlertEnabled = alert_enabled !== undefined ? Boolean(alert_enabled) : true;
           const newTask = {
             id: nowTs, // ID dựa trên timestamp
             created_at: nowTs,
@@ -286,6 +291,7 @@ module.exports = async function handler(req, res) {
             assignees: Array.isArray(assignees) ? assignees : [],
             status: taskStatus,
             priority: taskPriority,
+            alert_enabled: taskAlertEnabled,
             alert_time: taskAlertTime,
             alert_frequency: taskAlertFreq,
             alert_days: taskAlertDays,
@@ -296,6 +302,21 @@ module.exports = async function handler(req, res) {
         const savedTaskId = id ? Number(id) : currentData.tasks[currentData.tasks.length - 1].id;
         await saveTasksData(currentData);
         return res.status(200).json({ status: "success", id: savedTaskId });
+      }
+
+      if (action === "toggle_task_alert") {
+        const { id, alert_enabled } = payload;
+        const taskIndex = currentData.tasks.findIndex(t => String(t.id) === String(id) || Number(t.id) === Number(id));
+        if (taskIndex === -1) {
+          return res.status(404).json({ status: "error", message: "Không tìm thấy task" });
+        }
+        currentData.tasks[taskIndex].alert_enabled = Boolean(alert_enabled);
+        await saveTasksData(currentData);
+        return res.status(200).json({
+          status: "success",
+          id: currentData.tasks[taskIndex].id,
+          alert_enabled: currentData.tasks[taskIndex].alert_enabled
+        });
       }
 
       if (action === "delete_task") {

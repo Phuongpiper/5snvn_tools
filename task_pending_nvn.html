@@ -553,8 +553,142 @@
     }
 
     .col-priority {
-      width: 75px;
+      width: 105px;
+      min-width: 100px;
       text-align: center;
+      white-space: nowrap;
+    }
+
+    .priority-cell-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .priority-cell-wrap .badge {
+      margin: 0;
+    }
+
+    .btn-toggle-alert {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      flex-shrink: 0;
+      padding: 0;
+      outline: none;
+    }
+
+    .btn-toggle-alert.is-on {
+      background: #fff7ed;
+      color: #ea580c;
+      border: 1px solid #fdba74;
+      box-shadow: 0 1px 2px rgba(234, 88, 12, 0.08);
+    }
+
+    .btn-toggle-alert.is-on:hover:not(:disabled) {
+      background: #ffedd5;
+      border-color: #fb923c;
+      color: #c2410c;
+      transform: translateY(-1px);
+    }
+
+    .btn-toggle-alert.is-off {
+      background: #f8fafc;
+      color: #94a3b8;
+      border: 1px dashed #cbd5e1;
+    }
+
+    .btn-toggle-alert.is-off:hover:not(:disabled) {
+      background: #f1f5f9;
+      color: #475569;
+      border-style: solid;
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+    }
+
+    .alert-enable-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      margin-top: 8px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .alert-enable-bar:hover {
+      border-color: var(--accent-bdr);
+      background: #f1f5f9;
+    }
+
+    .alert-enable-bar.is-active {
+      background: #fff7ed;
+      border-color: #fdba74;
+    }
+
+    .alert-enable-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .alert-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .alert-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .alert-switch-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #cbd5e1;
+      border-radius: 20px;
+      transition: 0.2s;
+    }
+
+    .alert-switch-slider::before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #ffffff;
+      border-radius: 50%;
+      transition: 0.2s;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    }
+
+    .alert-switch input:checked + .alert-switch-slider {
+      background-color: #ea580c;
+    }
+
+    .alert-switch input:checked + .alert-switch-slider::before {
+      transform: translateX(16px);
     }
 
     .col-deadline {
@@ -1788,48 +1922,61 @@
               <div class="member-dropdown" id="msDropdown" style="display:none;"></div>
             </div>
           </div>
-          <!-- Alert settings row -->
-          <div class="form-row" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:4px;">
-            <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-regular fa-clock"
-                  style="color:var(--accent);"></i> Giờ cảnh báo</label>
-              <input type="time" class="fc" id="tAlertTime" value="09:00" />
+          <!-- Alert enable toggle -->
+          <label class="alert-enable-bar is-active" id="alertEnableBar" for="tAlertEnabled">
+            <span class="alert-enable-left">
+              <i class="fa-solid fa-bell" id="alertEnableIcon" style="color:#ea580c;"></i>
+              <span>Bật thông báo khẩn cấp / nhắc hẹn</span>
+            </span>
+            <span class="alert-switch">
+              <input type="checkbox" id="tAlertEnabled" checked onchange="onAlertEnabledChange()" />
+              <span class="alert-switch-slider"></span>
+            </span>
+          </label>
+          <div id="alertConfigFields">
+            <!-- Alert settings row -->
+            <div class="form-row" style="grid-template-columns:1fr 1fr; gap:12px; margin-top:8px;">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:6px;"><i class="fa-regular fa-clock"
+                    style="color:var(--accent);"></i> Giờ cảnh báo</label>
+                <input type="time" class="fc" id="tAlertTime" value="09:00" />
+              </div>
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-bell"
+                    style="color:var(--accent);"></i> Tần suất nhắc</label>
+                <select class="fc" id="tAlertFrequency" onchange="onAlertFreqChange()">
+                  <option value="once">Một lần (Ngày cụ thể)</option>
+                  <option value="1_day">Mỗi 1 ngày</option>
+                  <option value="3_days">Mỗi 3 ngày</option>
+                  <option value="1_week" selected>Mỗi 1 tuần</option>
+                  <option value="2_weeks">Mỗi 2 tuần</option>
+                  <option value="1_month">Mỗi 1 tháng</option>
+                </select>
+              </div>
             </div>
-            <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-bell"
-                  style="color:var(--accent);"></i> Tần suất nhắc</label>
-              <select class="fc" id="tAlertFrequency" onchange="onAlertFreqChange()">
-                <option value="once">Một lần (Ngày cụ thể)</option>
-                <option value="1_day">Mỗi 1 ngày</option>
-                <option value="3_days">Mỗi 3 ngày</option>
-                <option value="1_week" selected>Mỗi 1 tuần</option>
-                <option value="2_weeks">Mỗi 2 tuần</option>
-                <option value="1_month">Mỗi 1 tháng</option>
-              </select>
+            <!-- Alert specific date row (shown only for 'once') -->
+            <div id="alertSpecificDateRow" class="form-row"
+              style="grid-template-columns:1fr; gap:12px; margin-top:4px; display:none;">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-day"
+                    style="color:var(--accent);"></i> Ngày cảnh báo cụ thể</label>
+                <input type="date" class="fc" id="tAlertSpecificDate" />
+              </div>
             </div>
-          </div>
-          <!-- Alert specific date row (shown only for 'once') -->
-          <div id="alertSpecificDateRow" class="form-row"
-            style="grid-template-columns:1fr; gap:12px; margin-top:4px; display:none;">
-            <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-day"
-                  style="color:var(--accent);"></i> Ngày cảnh báo cụ thể</label>
-              <input type="date" class="fc" id="tAlertSpecificDate" />
-            </div>
-          </div>
-          <!-- Alert days row (shown only for 1_week / 2_weeks) -->
-          <div id="alertDaysRow" class="form-row" style="grid-template-columns:1fr; gap:12px; margin-top:4px;">
-            <div class="fg">
-              <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-days"
-                  style="color:var(--accent);"></i> Ngày nhắc trong tuần (Thứ 2 - Thứ 7)</label>
-              <select class="fc" id="tAlertDays">
-                <option value="mon">Thứ Hai</option>
-                <option value="tue">Thứ Ba</option>
-                <option value="wed">Thứ Tư</option>
-                <option value="thu">Thứ Năm</option>
-                <option value="fri">Thứ Sáu</option>
-                <option value="sat">Thứ Bảy</option>
-              </select>
+            <!-- Alert days row (shown only for 1_week / 2_weeks) -->
+            <div id="alertDaysRow" class="form-row" style="grid-template-columns:1fr; gap:12px; margin-top:4px;">
+              <div class="fg">
+                <label style="display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-calendar-days"
+                    style="color:var(--accent);"></i> Ngày nhắc trong tuần (Thứ 2 - Thứ 7)</label>
+                <select class="fc" id="tAlertDays">
+                  <option value="mon">Thứ Hai</option>
+                  <option value="tue">Thứ Ba</option>
+                  <option value="wed">Thứ Tư</option>
+                  <option value="thu">Thứ Năm</option>
+                  <option value="fri">Thứ Sáu</option>
+                  <option value="sat">Thứ Bảy</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -2196,6 +2343,7 @@
               assignees: Array.isArray(t.assignees) ? t.assignees : [],
               status: statusVal,
               priority,
+              alert_enabled: t.alert_enabled !== false,
               alert_time: t.alert_time || "09:00",
               alert_frequency: t.alert_frequency || "1_week",
               alert_days: alertDays,
@@ -2212,6 +2360,7 @@
           allTasks = newTasks;
           // Cache tasks to localStorage for global notification system
           try { localStorage.setItem("app_tasks_data", JSON.stringify(allTasks)); } catch (e) { }
+          syncParentAlertUI();
           applyFilters();
         } else {
           if (!silent) {
@@ -2426,6 +2575,14 @@
 
         const pClass = priorityClasses[t.priority] || "badge-p3";
         const priorityBadge = `<span class="badge ${pClass}">${t.priority || "P3"}</span>`;
+        const isAlertOn = t.alert_enabled !== false;
+        const alertTip = isAlertOn
+          ? `Đang BẬT thông báo khẩn cấp (${t.alert_time || "09:00"}) — Bấm để tắt`
+          : `Đang TẮT thông báo khẩn cấp — Bấm để bật`;
+        const alertToggleBtn = t.status !== "Done"
+          ? `<button type="button" class="btn-toggle-alert ${isAlertOn ? 'is-on' : 'is-off'}" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="toggleTaskAlert('${t.id}', event)" title="${alertTip}"><i class="fa-solid ${isAlertOn ? 'fa-bell' : 'fa-bell-slash'}"></i></button>`
+          : "";
+        const priorityCellHtml = `<div class="priority-cell-wrap">${priorityBadge}${alertToggleBtn}</div>`;
 
         tr.innerHTML = `
       <td class="col-stt">
@@ -2433,7 +2590,7 @@
         <span class="stt-num">${i + 1}</span>
       </td>
       <td class="col-project">${projectBadge}</td>
-      <td class="col-priority">${priorityBadge}</td>
+      <td class="col-priority">${priorityCellHtml}</td>
       <td class="col-deadline"><span class="${dlClass}">${esc(dlLabel)}</span></td>
       <td class="col-issue">${esc(t.issue)}</td>
       <td class="col-note">${esc(t.note || "")}</td>
@@ -2823,6 +2980,69 @@
     /* ──────────────────────────────────────────────────────────────────────────
        TASK MODAL
     ────────────────────────────────────────────────────────────────────────── */
+    function syncParentAlertUI(runCheck = false) {
+      try {
+        if (window.parent && window.parent !== window) {
+          if (runCheck && typeof window.parent.checkAndNotifyTasks === "function") {
+            window.parent.checkAndNotifyTasks();
+          }
+          if (typeof window.parent.updateBellUI === "function") window.parent.updateBellUI();
+          if (typeof window.parent.updateUpcomingUI === "function") window.parent.updateUpcomingUI();
+        }
+      } catch (_) { }
+    }
+
+    async function toggleTaskAlert(id, ev) {
+      if (ev) ev.stopPropagation();
+      if (isReorderMode) return;
+      const t = allTasks.find(x => String(x.id) === String(id) || Number(x.id) === Number(id));
+      if (!t) return;
+
+      const prevVal = t.alert_enabled !== false;
+      const nextVal = !prevVal;
+      t.alert_enabled = nextVal;
+
+      try { localStorage.setItem("app_tasks_data", JSON.stringify(allTasks)); } catch (e) { }
+      renderTasks();
+      syncParentAlertUI(nextVal);
+
+      try {
+        const res = await apiPost({
+          action: "toggle_task_alert",
+          id: Number(t.id) || t.id,
+          alert_enabled: nextVal
+        });
+        if (res && res.status === "success") {
+          toast(nextVal ? "🔔 Đã bật thông báo khẩn cấp cho task!" : "🔕 Đã tắt thông báo khẩn cấp cho task!", "s");
+        } else {
+          throw new Error((res && res.message) || "Không thể cập nhật");
+        }
+      } catch (err) {
+        t.alert_enabled = prevVal;
+        try { localStorage.setItem("app_tasks_data", JSON.stringify(allTasks)); } catch (e) { }
+        renderTasks();
+        syncParentAlertUI(false);
+        toast("Lỗi lưu trạng thái thông báo: " + err.message, "e");
+      }
+    }
+
+    function onAlertEnabledChange() {
+      const chk = document.getElementById("tAlertEnabled");
+      const bar = document.getElementById("alertEnableBar");
+      const icon = document.getElementById("alertEnableIcon");
+      const fields = document.getElementById("alertConfigFields");
+      const enabled = !chk || chk.checked;
+      if (bar) bar.classList.toggle("is-active", enabled);
+      if (icon) {
+        icon.className = enabled ? "fa-solid fa-bell" : "fa-solid fa-bell-slash";
+        icon.style.color = enabled ? "#ea580c" : "#94a3b8";
+      }
+      if (fields) {
+        fields.style.opacity = enabled ? "1" : "0.45";
+        fields.style.pointerEvents = enabled ? "auto" : "none";
+      }
+    }
+
     function openTaskModal() {
       document.getElementById("taskModalTitle").textContent = "Thêm Task mới";
       document.getElementById("editId").value = "";
@@ -2832,6 +3052,9 @@
       document.getElementById("tNote").value = "";
       document.getElementById("tStatus").value = (currentTaskTab === "fixed") ? "Cố định" : "Pending";
       document.getElementById("tPriority").value = "P3";
+      const chkAlert = document.getElementById("tAlertEnabled");
+      if (chkAlert) chkAlert.checked = true;
+      onAlertEnabledChange();
       document.getElementById("tAlertTime").value = "09:00";
       document.getElementById("tAlertFrequency").value = "1_week";
       document.getElementById("tAlertDays").value = "mon";
@@ -2880,6 +3103,9 @@
       document.getElementById("tNote").value = t.note || "";
       document.getElementById("tStatus").value = t.status || "Pending";
       document.getElementById("tPriority").value = t.priority || "P3";
+      const chkAlert = document.getElementById("tAlertEnabled");
+      if (chkAlert) chkAlert.checked = t.alert_enabled !== false;
+      onAlertEnabledChange();
       document.getElementById("tAlertTime").value = t.alert_time || "09:00";
       document.getElementById("tAlertFrequency").value = t.alert_frequency || "1_week";
       document.getElementById("tAlertDays").value = t.alert_days || "mon";
@@ -2920,6 +3146,8 @@
       const note = document.getElementById("tNote").value.trim();
       const status = document.getElementById("tStatus").value;
       const priority = document.getElementById("tPriority").value;
+      const chkAlert = document.getElementById("tAlertEnabled");
+      const alert_enabled = chkAlert ? chkAlert.checked : true;
       const alert_time = document.getElementById("tAlertTime").value || "09:00";
       const alert_frequency = document.getElementById("tAlertFrequency").value || "1_week";
       const freqHasDays = ["1_week", "2_weeks"].includes(alert_frequency);
@@ -2938,7 +3166,7 @@
         project,
         deadline, issue, note,
         assignees: selectedAssignees,
-        status, priority, alert_time, alert_frequency, alert_days, alert_specific_date
+        status, priority, alert_enabled, alert_time, alert_frequency, alert_days, alert_specific_date
       };
       if (id) payload.id = parseInt(id);
 
