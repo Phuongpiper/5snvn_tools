@@ -1087,76 +1087,6 @@
       font-size: 13.5px;
     }
 
-    /* Utilities Dropdown */
-    .utilities-container {
-      position: relative;
-      display: inline-block;
-    }
-
-    .utilities-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      width: 260px;
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
-      z-index: 10001;
-      padding: 8px;
-      overflow: hidden;
-      animation: dropdownSlideDown 0.15s ease-out;
-    }
-
-    .utilities-dropdown.show {
-      display: block;
-    }
-
-    .util-dropdown-header {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #94a3b8;
-      padding: 6px 10px 4px;
-    }
-
-    .util-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: #334155;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      text-align: left;
-      transition: all 0.15s ease;
-      font-family: inherit;
-    }
-
-    .util-menu-item:hover {
-      background: #f1f5f9;
-      color: #0f172a;
-    }
-
-    .util-menu-item i {
-      font-size: 14px;
-      width: 20px;
-      text-align: center;
-    }
-
-    .util-divider {
-      height: 1px;
-      background: #e2e8f0;
-      margin: 6px 0;
-    }
-
     /* ═══════════════════════════════════════════════════════
          GLOBAL PRIORITY TOAST SYSTEM
       ═══════════════════════════════════════════════════════ */
@@ -2866,20 +2796,6 @@
             </div>
           </div>
 
-          <!-- App Utilities -->
-          <div class="utilities-container" id="topbarUtilitiesContainer">
-            <button class="wh-icon-btn" id="topbarAppsBtn" type="button" title="Tiện ích & Quản trị">
-              <i class="fa-solid fa-table-cells"></i>
-            </button>
-            <div class="utilities-dropdown" id="topbarAppsDropdown">
-              <div class="util-dropdown-header">Hệ thống</div>
-              <button class="util-menu-item" id="btnAppHardReload" type="button" title="Tải lại toàn bộ hệ thống">
-                <i class="fa-solid fa-arrows-rotate" style="color:#10b981;"></i>
-                <span>Tải lại trang (Reload)</span>
-              </button>
-            </div>
-          </div>
-
           <!-- Divider -->
           <div style="width:1px; height:22px; background:#e2e8f0; flex-shrink:0;"></div>
 
@@ -3919,13 +3835,9 @@
         const upcomingBtn = document.getElementById("upcomingBtn");
         const upcomingDropdown = document.getElementById("upcomingDropdown");
 
-        const topbarAppsBtn = document.getElementById("topbarAppsBtn");
-        const topbarAppsDropdown = document.getElementById("topbarAppsDropdown");
-
         const allDropdownPairs = [
           { btn: bellBtn, menu: bellDropdown },
-          { btn: upcomingBtn, menu: upcomingDropdown },
-          { btn: topbarAppsBtn, menu: topbarAppsDropdown }
+          { btn: upcomingBtn, menu: upcomingDropdown }
         ];
 
         function closeAllDropdowns(exceptMenu) {
@@ -3952,12 +3864,6 @@
               }
             });
           }
-        });
-
-        // Apps reload and profile reload handlers
-        document.getElementById("btnAppHardReload")?.addEventListener("click", () => {
-          closeAllDropdowns();
-          window.location.reload();
         });
 
         // Tự động đóng dropdown khi click ra ngoài hoặc click vào bên trong iframe
