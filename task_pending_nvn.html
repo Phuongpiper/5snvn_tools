@@ -370,14 +370,10 @@
       font-weight: 800;
       line-height: 16px;
       text-align: center;
-      background: #64748b;
+      background: #ef4444;
       color: #ffffff;
       border: 1.5px solid #ffffff;
       pointer-events: none;
-    }
-
-    .chat-btn-badge.unread {
-      background: #ef4444;
     }
 
     .btn-action-edit {
@@ -2641,8 +2637,12 @@
           : "";
         const priorityCellHtml = `<div class="priority-cell-wrap">${priorityBadge}${alertToggleBtn}</div>`;
 
+        const chatUnreadCount = (typeof getTaskChatUnreadCount === "function") ? getTaskChatUnreadCount(t.id) : 0;
         const chatBadge = (typeof getTaskChatBadgeHtml === "function") ? getTaskChatBadgeHtml(t.id) : "";
-        const chatUnreadCls = (typeof hasTaskChatUnread === "function" && hasTaskChatUnread(t.id)) ? "has-unread" : "";
+        const chatUnreadCls = chatUnreadCount > 0 ? "has-unread" : "";
+        const chatBtnTitle = chatUnreadCount > 0
+          ? `Có ${chatUnreadCount} tin nhắn chưa đọc — Bấm để xem`
+          : "Phòng chat trao đổi của Task này";
 
         tr.innerHTML = `
       <td class="col-stt">
@@ -2658,7 +2658,7 @@
       <td class="col-status" style="text-align:center;">${statusBadge}</td>
       <td class="col-actions">
         <div style="display: flex; justify-content: center; align-items: center; gap: 6px;">
-          <button class="btn-action-chat ${chatUnreadCls}" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openTaskChat('${t.id}')" title="Phòng chat trao đổi của Task này"><i class="fa-solid fa-comments"></i>${chatBadge}</button>
+          <button class="btn-action-chat ${chatUnreadCls}" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openTaskChat('${t.id}')" title="${chatBtnTitle}"><i class="fa-solid fa-comments"></i>${chatBadge}</button>
           <button class="btn-action-edit" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="openEditTask('${t.id}')" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
           <button class="btn-action-delete" ${isReorderMode ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} onclick="deleteTask('${t.id}')" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
         </div>
@@ -5277,36 +5277,67 @@
       catch (_) { return {}; }
     }
 
+    function isSameChatMember(me, senderName, senderCode) {
+      if (!me) return false;
+      if (me.code && senderCode && me.code.toLowerCase() === String(senderCode).toLowerCase()) return true;
+      if (me.name && senderName && me.name.toLowerCase() === String(senderName).toLowerCase()) return true;
+      return false;
+    }
+
     function markTaskChatRead(taskId) {
       if (!taskId) return;
       const map = getChatReadMap();
       const meta = chatRoomsMeta[String(taskId)];
-      map[String(taskId)] = Math.max(Date.now(), (meta && meta.lastAt) ? Number(meta.lastAt) + 1 : Date.now());
+      let maxTs = (meta && meta.lastAt) ? Number(meta.lastAt) : 0;
+      if (meta && Array.isArray(meta.recent)) {
+        for (const it of meta.recent) {
+          if (Number(it[0] || 0) > maxTs) maxTs = Number(it[0]);
+        }
+      }
+      if (activeChatTaskId && String(activeChatTaskId) === String(taskId) && activeChatMessages.length) {
+        for (const m of activeChatMessages) {
+          if (Number(m.createdAt || 0) > maxTs) maxTs = Number(m.createdAt);
+        }
+      }
+      map[String(taskId)] = Math.max(Date.now(), maxTs + 1);
       try { localStorage.setItem(getReadMapStorageKey(), JSON.stringify(map)); } catch (_) {}
       renderTasks();
       notifyParentChatSync();
     }
 
-    function hasTaskChatUnread(taskId) {
+    function getTaskChatUnreadCount(taskId) {
       const meta = chatRoomsMeta[String(taskId)];
-      if (!meta || !meta.count || !meta.lastAt) return false;
+      if (!meta || !meta.count || !meta.lastAt) return 0;
       const me = getCurrentChatMember();
-      if (me && meta.lastSenderName && meta.lastSenderName.toLowerCase() === me.name.toLowerCase()) {
-        return false;
-      }
       const readMap = getChatReadMap();
       const readTs = Number(readMap[String(taskId)] || 0);
-      return Number(meta.lastAt) > readTs;
+      if (Array.isArray(meta.recent) && meta.recent.length > 0) {
+        let unread = 0;
+        for (const item of meta.recent) {
+          const ts = Number(item[0] || 0);
+          if (ts > readTs && !isSameChatMember(me, item[1], item[2])) {
+            unread++;
+          }
+        }
+        return unread;
+      }
+      if (Number(meta.lastAt) <= readTs) return 0;
+      if (isSameChatMember(me, meta.lastSenderName, meta.lastSenderCode)) return 0;
+      return 1;
+    }
+
+    function hasTaskChatUnread(taskId) {
+      return getTaskChatUnreadCount(taskId) > 0;
     }
 
     function getTaskChatBadgeHtml(taskId) {
-      const meta = chatRoomsMeta[String(taskId)];
-      if (!meta || !meta.count) return "";
-      const unread = hasTaskChatUnread(taskId);
-      const label = meta.count > 99 ? "99+" : meta.count;
-      return `<span class="chat-btn-badge ${unread ? 'unread' : ''}">${label}</span>`;
+      const unreadCount = getTaskChatUnreadCount(taskId);
+      if (unreadCount <= 0) return "";
+      const label = unreadCount > 99 ? "99+" : unreadCount;
+      return `<span class="chat-btn-badge unread">${label}</span>`;
     }
 
+    window.getTaskChatUnreadCount = getTaskChatUnreadCount;
     window.hasTaskChatUnread = hasTaskChatUnread;
     window.getTaskChatBadgeHtml = getTaskChatBadgeHtml;
 

@@ -5332,6 +5332,29 @@
         }
       }
 
+      function isSameMember(me, senderName, senderCode) {
+        if (!me) return false;
+        if (me.code && senderCode && me.code.toLowerCase() === String(senderCode).toLowerCase()) return true;
+        if (me.name && senderName && me.name.toLowerCase() === String(senderName).toLowerCase()) return true;
+        return false;
+      }
+
+      function countRoomUnread(info, me, readTs) {
+        if (!info || !info.count || !info.lastAt) return 0;
+        const rTs = Number(readTs || 0);
+        if (Array.isArray(info.recent) && info.recent.length > 0) {
+          let c = 0;
+          for (const item of info.recent) {
+            const ts = Number(item[0] || 0);
+            if (ts > rTs && !isSameMember(me, item[1], item[2])) c++;
+          }
+          return c;
+        }
+        if (Number(info.lastAt) <= rTs) return 0;
+        if (isSameMember(me, info.lastSenderName, info.lastSenderCode)) return 0;
+        return 1;
+      }
+
       function updateSidebarUnreadIndicator(meta) {
         const btn = document.querySelector('[data-frame-target="taskPendingFrame"]');
         if (!btn) return;
@@ -5346,17 +5369,20 @@
         }
         const me = getCurrentMember();
         const readMap = getReadMap();
+        let totalUnread = 0;
         let unreadRooms = 0;
         Object.entries(meta || {}).forEach(([tid, info]) => {
-          if (!info || !info.count || !info.lastAt) return;
-          if (me && info.lastSenderName && info.lastSenderName.toLowerCase() === me.name.toLowerCase()) return;
-          if (Number(info.lastAt) > Number(readMap[tid] || 0)) unreadRooms++;
+          const c = countRoomUnread(info, me, readMap[tid]);
+          if (c > 0) {
+            totalUnread += c;
+            unreadRooms++;
+          }
         });
         const dot = btn.querySelector(".tab-dot");
-        if (unreadRooms > 0) {
-          pill.textContent = `💬 ${unreadRooms}`;
+        if (totalUnread > 0) {
+          pill.textContent = `💬 ${totalUnread > 99 ? "99+" : totalUnread}`;
           pill.style.display = "inline-flex";
-          pill.title = `Có ${unreadRooms} phòng chat Task có tin nhắn chưa đọc`;
+          pill.title = `Có ${totalUnread} tin nhắn chưa đọc tại ${unreadRooms} phòng chat Task`;
           if (dot) dot.style.display = "none";
         } else {
           pill.style.display = "none";
@@ -5424,6 +5450,7 @@
           } catch (_) {}
 
           const me = getCurrentMember();
+          const readMap = getReadMap();
           const notified = getNotifiedIds();
           let tasks = [];
           try { tasks = JSON.parse(localStorage.getItem("app_tasks_data") || "[]") || []; } catch (_) {}
@@ -5439,7 +5466,10 @@
             notified[tid] = info.lastMsgId;
             changed = true;
 
-            if (me && info.lastSenderName && info.lastSenderName.toLowerCase() === me.name.toLowerCase()) {
+            if (isSameMember(me, info.lastSenderName, info.lastSenderCode)) {
+              return;
+            }
+            if (countRoomUnread(info, me, readMap[tid]) <= 0) {
               return;
             }
 

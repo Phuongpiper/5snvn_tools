@@ -306,9 +306,16 @@ function computeRoomMetaSummary(room) {
       lastSenderName: "",
       lastSenderCode: "",
       lastPreview: "",
-      lastMentions: []
+      lastMentions: [],
+      recent: []
     };
   }
+
+  const recent = activeMsgs.slice(-50).map(m => [
+    Number(m.createdAt || 0),
+    String(m.senderName || ""),
+    String(m.senderCode || "")
+  ]);
 
   return {
     count: activeMsgs.length,
@@ -318,7 +325,8 @@ function computeRoomMetaSummary(room) {
     lastSenderName: lastMsg.senderName || "",
     lastSenderCode: lastMsg.senderCode || "",
     lastPreview: buildMessagePreview(lastMsg),
-    lastMentions: Array.isArray(lastMsg.mentions) ? lastMsg.mentions : []
+    lastMentions: Array.isArray(lastMsg.mentions) ? lastMsg.mentions : [],
+    recent
   };
 }
 
