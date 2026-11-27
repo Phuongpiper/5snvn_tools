@@ -5370,13 +5370,39 @@
       } catch (_) {}
     }
 
+    let lastChatMetaVersion = "";
+    let lastDrawerActiveAt = Date.now();
+    let isDrawerIdlePaused = false;
+    const DRAWER_IDLE_LIMIT_MS = 150000; // Pause open-room polling after 2.5 min idle
+
+    function recordDrawerActivity() {
+      const now = Date.now();
+      lastDrawerActiveAt = now;
+      if (isDrawerIdlePaused && activeChatTaskId) {
+        isDrawerIdlePaused = false;
+        const st = document.getElementById("tchatRoomStatus");
+        if (st) st.innerHTML = `<i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được`;
+        fetchRoomMessages(activeChatTaskId, true);
+      }
+    }
+
+    ["mousemove", "mousedown", "keydown", "touchstart", "wheel"].forEach(ev => {
+      window.addEventListener(ev, recordDrawerActivity, { passive: true });
+    });
+
     async function fetchChatMetaSummary(silent = true) {
       try {
         const ep = getChatEndpoint();
-        const r = await fetch(`${ep}?action=meta&t=${Date.now()}`, { cache: "no-cache" });
+        const vParam = lastChatMetaVersion ? `&v=${encodeURIComponent(lastChatMetaVersion)}` : "";
+        const r = await fetch(`${ep}?action=meta${vParam}&t=${Date.now()}`, {
+          cache: "no-cache",
+          headers: lastChatMetaVersion ? { "If-None-Match": lastChatMetaVersion } : {}
+        });
+        if (r.status === 304) return;
         if (!r.ok) return;
         const d = await r.json();
         if (d && d.status === "success" && d.meta) {
+          if (d.version) lastChatMetaVersion = d.version;
           const prevJson = JSON.stringify(chatRoomsMeta);
           chatRoomsMeta = d.meta;
           const nextJson = JSON.stringify(chatRoomsMeta);
@@ -5455,12 +5481,24 @@
 
       setTimeout(() => document.getElementById("tchatInput")?.focus(), 160);
 
+      lastDrawerActiveAt = Date.now();
+      isDrawerIdlePaused = false;
+      const st = document.getElementById("tchatRoomStatus");
+      if (st) st.innerHTML = `<i class="fa-solid fa-users" style="font-size:10px;"></i> Mọi thành viên đều xem được`;
+
       if (chatPollTimer) clearInterval(chatPollTimer);
       chatPollTimer = setInterval(() => {
-        if (activeChatTaskId && document.visibilityState === "visible") {
-          fetchRoomMessages(activeChatTaskId, true);
+        if (!activeChatTaskId || document.visibilityState !== "visible") return;
+        if (Date.now() - lastDrawerActiveAt >= DRAWER_IDLE_LIMIT_MS) {
+          if (!isDrawerIdlePaused) {
+            isDrawerIdlePaused = true;
+            const stEl = document.getElementById("tchatRoomStatus");
+            if (stEl) stEl.innerHTML = `<i class="fa-solid fa-moon" style="font-size:10px; color:#f59e0b;"></i> Tạm nghỉ đồng bộ (di chuột để tiếp tục)`;
+          }
+          return;
         }
-      }, 3500);
+        fetchRoomMessages(activeChatTaskId, true);
+      }, 8000);
     }
     window.openTaskChat = openTaskChat;
 
@@ -5508,7 +5546,11 @@
     async function fetchRoomMessages(taskId, silent = false) {
       try {
         const ep = getChatEndpoint();
-        const r = await fetch(`${ep}?action=messages&taskId=${encodeURIComponent(taskId)}&t=${Date.now()}`, { cache: "no-cache" });
+        const sinceParam = (silent && activeChatUpdatedAt > 0 && String(taskId) === String(activeChatTaskId))
+          ? `&since=${activeChatUpdatedAt}`
+          : "";
+        const r = await fetch(`${ep}?action=messages&taskId=${encodeURIComponent(taskId)}${sinceParam}&t=${Date.now()}`, { cache: "no-cache" });
+        if (r.status === 304) return; // Unchanged on server — 0 bytes downloaded!
         if (!r.ok) throw new Error("HTTP " + r.status);
         const d = await r.json();
         if (String(taskId) !== String(activeChatTaskId)) return;
@@ -5984,30 +6026,95 @@
       return null;
     }
 
-    function addFilesToStaged(fileList) {
-      Array.from(fileList || []).forEach(file => {
-        if (!file) return;
-        if (file.size > 25 * 1024 * 1024) {
-          toast(`Tệp "${file.name}" vượt quá 25MB!`, "w");
-          return;
+    /* ── Auto Client-Side Image Compression (Saves ~85-92% R2 Storage & Bandwidth) ── */
+    async function compressChatImageIfNeeded(file) {
+      try {
+        if (!file || !/^image\/(png|jpe?g|webp|bmp)$/i.test(file.type)) return { file, savedFrom: 0 };
+        if (file.size <= 180 * 1024) return { file, savedFrom: 0 }; // Already light (<180KB)
+
+        const bitmap = (typeof createImageBitmap === "function")
+          ? await createImageBitmap(file)
+          : await new Promise((resolve, reject) => {
+              const img = new Image();
+              const objUrl = URL.createObjectURL(file);
+              img.onload = () => { URL.revokeObjectURL(objUrl); resolve(img); };
+              img.onerror = (err) => { URL.revokeObjectURL(objUrl); reject(err); };
+              img.src = objUrl;
+            });
+
+        const origW = bitmap.width || bitmap.naturalWidth || 0;
+        const origH = bitmap.height || bitmap.naturalHeight || 0;
+        if (!origW || !origH) return { file, savedFrom: 0 };
+
+        const MAX_DIM = 1920;
+        let targetW = origW;
+        let targetH = origH;
+        if (origW > MAX_DIM || origH > MAX_DIM) {
+          const ratio = Math.min(MAX_DIM / origW, MAX_DIM / origH);
+          targetW = Math.round(origW * ratio);
+          targetH = Math.round(origH * ratio);
         }
-        let finalFile = file;
-        if (!file.name || file.name === "image.png" || file.name === "blob") {
-          const ext = (file.type && file.type.split("/")[1]) ? file.type.split("/")[1].replace("jpeg", "jpg") : "png";
-          const now = new Date();
-          const stamp = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-          finalFile = new File([file], `anh_dan_${stamp}.${ext}`, { type: file.type || "image/png" });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff"; // Preserve clean white background for transparent PNGs
+        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+        if (typeof bitmap.close === "function") bitmap.close();
+
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.86));
+        if (!blob || blob.size >= file.size * 0.9) {
+          return { file, savedFrom: 0 };
         }
-        const isImg = /^image\//i.test(finalFile.type);
-        const previewUrl = isImg ? URL.createObjectURL(finalFile) : "";
-        stagedFiles.push({
-          id: "st_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
-          file: finalFile,
-          previewUrl,
-          isImage: isImg
-        });
-      });
-      renderStagedTray();
+
+        const baseName = String(file.name || "image").replace(/\.[^.]+$/, "");
+        const compressedFile = new File([blob], `${baseName}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+        return { file: compressedFile, savedFrom: file.size };
+      } catch (_) {
+        return { file, savedFrom: 0 };
+      }
+    }
+
+    const activeCompressions = new Set();
+
+    async function addFilesToStaged(fileList) {
+      const task = (async () => {
+        const incoming = Array.from(fileList || []).filter(Boolean);
+        for (const file of incoming) {
+          if (file.size > 25 * 1024 * 1024) {
+            toast(`Tệp "${file.name}" vượt quá 25MB!`, "w");
+            continue;
+          }
+          let namedFile = file;
+          if (!file.name || file.name === "image.png" || file.name === "blob") {
+            const ext = (file.type && file.type.split("/")[1]) ? file.type.split("/")[1].replace("jpeg", "jpg") : "png";
+            const now = new Date();
+            const stamp = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+            namedFile = new File([file], `anh_dan_${stamp}.${ext}`, { type: file.type || "image/png" });
+          }
+          const { file: finalFile, savedFrom } = await compressChatImageIfNeeded(namedFile);
+          const isImg = /^image\//i.test(finalFile.type);
+          const previewUrl = isImg ? URL.createObjectURL(finalFile) : "";
+          stagedFiles.push({
+            id: "st_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+            file: finalFile,
+            savedFrom,
+            previewUrl,
+            isImage: isImg
+          });
+        }
+        renderStagedTray();
+      })();
+      activeCompressions.add(task);
+      try {
+        await task;
+      } finally {
+        activeCompressions.delete(task);
+      }
     }
 
     function renderStagedTray() {
@@ -6024,7 +6131,7 @@
           ${item.isImage ? `<img src="${item.previewUrl}" alt="preview" />` : `<i class="fa-solid ${getFileIconMeta(item.file.name).icon}" style="font-size:18px; color:#4f46e5;"></i>`}
           <div style="min-width:0; flex:1;">
             <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(item.file.name)}</div>
-            <div style="font-size:10px; color:#64748b;">${formatFileSize(item.file.size)}</div>
+            <div style="font-size:10px; color:#64748b;">${formatFileSize(item.file.size)}${item.savedFrom ? ` <span style="color:#16a34a;">(nén từ ${formatFileSize(item.savedFrom)})</span>` : ""}</div>
           </div>
           <button type="button" class="tchat-staged-remove" onclick="removeStagedFile('${item.id}')" title="Xoá">&times;</button>
         </div>
@@ -6489,6 +6596,9 @@
         return;
       }
 
+      if (activeCompressions.size > 0) {
+        await Promise.allSettled(Array.from(activeCompressions));
+      }
       if (!text && stagedFiles.length === 0 && !stagedTableData) return;
 
       btn.disabled = true;
@@ -6661,6 +6771,13 @@
           else setTimeout(() => openTaskChat(e.data.taskId), 450);
         };
         openWhenReady();
+      } else if (e.data && e.data.type === "CHAT_META_PUSH" && e.data.meta) {
+        chatRoomsMeta = e.data.meta;
+        if (activeChatTaskId && chatRoomsMeta[String(activeChatTaskId)]) {
+          markTaskChatRead(activeChatTaskId);
+        } else {
+          renderTasks();
+        }
       } else if (e.data && (e.data.type === "TAB_ACTIVATED" || e.data === "tab-activated")) {
         updateChatIdentityButton();
         renderTasks();
@@ -6682,14 +6799,26 @@
       }
     });
 
-    // Initial meta load & periodic background check
+    // Initial meta load & standalone-only background check (when inside DMS Hub iframe, parent index.html pushes meta!)
     window.addEventListener("load", () => {
-      fetchChatMetaSummary(true);
-      chatMetaPollTimer = setInterval(() => {
-        if (document.visibilityState === "visible") {
-          fetchChatMetaSummary(true);
-        }
-      }, 20000);
+      if (window.self === window.top) {
+        fetchChatMetaSummary(true);
+        chatMetaPollTimer = setInterval(() => {
+          if (document.visibilityState === "visible" && (Date.now() - lastDrawerActiveAt < 180000)) {
+            fetchChatMetaSummary(true);
+          }
+        }, 50000);
+      } else {
+        try {
+          const cached = JSON.parse(localStorage.getItem(CHAT_META_LS_KEY) || "{}");
+          if (cached && Object.keys(cached).length) {
+            chatRoomsMeta = cached;
+            renderTasks();
+          } else {
+            fetchChatMetaSummary(true);
+          }
+        } catch (_) {}
+      }
     });
   </script>
 </body>

@@ -5365,17 +5365,63 @@
       }
 
       let isFirstCheck = true;
+      let lastMetaVersion = "";
+      let lastCheckAt = 0;
+      let lastUserActiveAt = Date.now();
+      const IDLE_STOP_MS = 180000; // Pause background polling after 3 minutes of user inactivity
 
-      async function checkChatMetaAndNotify() {
+      function markUserActive() {
+        const now = Date.now();
+        const wasIdle = (now - lastUserActiveAt) >= IDLE_STOP_MS;
+        lastUserActiveAt = now;
+        if (wasIdle && document.visibilityState === "visible" && (now - lastCheckAt > 25000)) {
+          checkChatMetaAndNotify();
+        }
+      }
+
+      ["mousemove", "mousedown", "keydown", "touchstart"].forEach(ev => {
+        window.addEventListener(ev, markUserActive, { passive: true });
+      });
+
+      function bindIframeActivity() {
+        document.querySelectorAll(".tab-frame").forEach(frame => {
+          const attach = () => {
+            try {
+              ["mousemove", "mousedown", "keydown"].forEach(ev => {
+                frame.contentWindow?.addEventListener(ev, markUserActive, { passive: true });
+              });
+            } catch (_) {}
+          };
+          attach();
+          frame.addEventListener("load", attach);
+        });
+      }
+
+      async function checkChatMetaAndNotify(force = false) {
         try {
-          const r = await fetch(`/api/r2-task-chat?action=meta&t=${Date.now()}`, { cache: "no-cache" });
+          lastCheckAt = Date.now();
+          const vParam = (!force && lastMetaVersion) ? `&v=${encodeURIComponent(lastMetaVersion)}` : "";
+          const r = await fetch(`/api/r2-task-chat?action=meta${vParam}&t=${Date.now()}`, {
+            cache: "no-cache",
+            headers: (!force && lastMetaVersion) ? { "If-None-Match": lastMetaVersion } : {}
+          });
+          if (r.status === 304) return; // Unchanged — 0 bytes, 0 CPU!
           if (!r.ok) return;
           const d = await r.json();
           if (!d || d.status !== "success" || !d.meta) return;
 
+          if (d.version) lastMetaVersion = d.version;
           const meta = d.meta;
           try { localStorage.setItem(CHAT_META_LS_KEY, JSON.stringify(meta)); } catch (_) {}
           updateSidebarUnreadIndicator(meta);
+
+          // Push directly to Task Pending iframe so iframe needs ZERO duplicate meta polling!
+          try {
+            const taskFrame = document.getElementById("taskPendingFrame");
+            if (taskFrame && taskFrame.contentWindow) {
+              taskFrame.contentWindow.postMessage({ type: "CHAT_META_PUSH", meta }, "*");
+            }
+          } catch (_) {}
 
           const me = getCurrentMember();
           const notified = getNotifiedIds();
@@ -5393,7 +5439,6 @@
             notified[tid] = info.lastMsgId;
             changed = true;
 
-            // Skip toast for own messages
             if (me && info.lastSenderName && info.lastSenderName.toLowerCase() === me.name.toLowerCase()) {
               return;
             }
@@ -5421,18 +5466,29 @@
         }
       });
 
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          lastUserActiveAt = Date.now();
+          if (Date.now() - lastCheckAt > 25000) checkChatMetaAndNotify();
+        }
+      });
+
       try {
         if (typeof BroadcastChannel !== "undefined") {
           const ch = new BroadcastChannel("R2_TASK_CHAT_SYNC");
-          ch.onmessage = () => checkChatMetaAndNotify();
+          ch.onmessage = () => checkChatMetaAndNotify(true);
         }
       } catch (_) {}
 
       document.addEventListener("DOMContentLoaded", () => {
+        bindIframeActivity();
         checkChatMetaAndNotify();
+        // Unified single background poller: every 50s ONLY when visible & user not idle
         setInterval(() => {
-          if (document.visibilityState === "visible") checkChatMetaAndNotify();
-        }, 15000);
+          if (document.visibilityState === "visible" && (Date.now() - lastUserActiveAt < IDLE_STOP_MS)) {
+            checkChatMetaAndNotify();
+          }
+        }, 50000);
       });
     })();
   </script>

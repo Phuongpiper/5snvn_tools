@@ -7,6 +7,30 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME_DYLAN || process.env.R2_BUCKET
 
 const META_KEY = "task_chats/_meta.json";
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25 MB per file
+const CACHE_TTL_MS = 25000; // 25s Worker isolate RAM cache to save >95% R2 Class B reads
+const MAX_CACHED_ROOMS = 40;
+
+function getMemCache() {
+  if (!globalThis.__DMS_TASK_CHAT_CACHE__) {
+    globalThis.__DMS_TASK_CHAT_CACHE__ = {
+      meta: null,
+      metaTs: 0,
+      metaTag: "",
+      rooms: new Map() // taskId -> { data, ts }
+    };
+  }
+  return globalThis.__DMS_TASK_CHAT_CACHE__;
+}
+
+function computeMetaTag(metaObj) {
+  const str = JSON.stringify(metaObj || {});
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `W/"m_${(h >>> 0).toString(16)}_${str.length}"`;
+}
 
 const MIME_BY_EXT = {
   png: "image/png",
@@ -201,6 +225,54 @@ async function r2DeleteKey(env, key) {
   } catch (_) {}
 }
 
+async function getCachedMeta(env) {
+  const cache = getMemCache();
+  const now = Date.now();
+  if (cache.meta && (now - cache.metaTs < CACHE_TTL_MS)) {
+    return { meta: cache.meta, etag: cache.metaTag };
+  }
+  const { data } = await r2GetJson(env, META_KEY, {});
+  const safeMeta = (data && typeof data === "object") ? data : {};
+  cache.meta = safeMeta;
+  cache.metaTs = now;
+  cache.metaTag = computeMetaTag(safeMeta);
+  return { meta: safeMeta, etag: cache.metaTag };
+}
+
+async function saveMetaThroughCache(env, nextMeta) {
+  const cache = getMemCache();
+  cache.meta = nextMeta;
+  cache.metaTs = Date.now();
+  cache.metaTag = computeMetaTag(nextMeta);
+  await r2PutJson(env, META_KEY, nextMeta);
+}
+
+async function getCachedRoom(env, taskId) {
+  const cache = getMemCache();
+  const now = Date.now();
+  const hit = cache.rooms.get(taskId);
+  if (hit && (now - hit.ts < CACHE_TTL_MS)) {
+    return hit.data;
+  }
+  const roomKey = `task_chats/room_${taskId}.json`;
+  const { data } = await r2GetJson(env, roomKey, { taskId, updatedAt: 0, messages: [] });
+  const safeRoom = (data && typeof data === "object") ? data : { taskId, updatedAt: 0, messages: [] };
+  if (!Array.isArray(safeRoom.messages)) safeRoom.messages = [];
+  if (cache.rooms.size >= MAX_CACHED_ROOMS) {
+    const oldestKey = cache.rooms.keys().next().value;
+    if (oldestKey) cache.rooms.delete(oldestKey);
+  }
+  cache.rooms.set(taskId, { data: safeRoom, ts: now });
+  return safeRoom;
+}
+
+async function saveRoomThroughCache(env, taskId, room) {
+  const cache = getMemCache();
+  cache.rooms.set(taskId, { data: room, ts: Date.now() });
+  const roomKey = `task_chats/room_${taskId}.json`;
+  await r2PutJson(env, roomKey, room);
+}
+
 function buildMessagePreview(msg) {
   if (!msg || msg.deleted) return "Tin nhắn đã thu hồi";
   if (msg.text && msg.text.trim()) {
@@ -313,12 +385,16 @@ module.exports = async function handler(req, res) {
 
     // ── 2. GET / HEAD META SUMMARY OF ALL CHAT ROOMS ─────────────────────────
     if ((req.method === "GET" || req.method === "HEAD") && (action === "meta" || !action)) {
-      const { data: meta, etag } = await r2GetJson(env, META_KEY, {});
+      const { meta, etag } = await getCachedMeta(env);
       if (etag) res.setHeader("ETag", etag);
+      const clientTag = (req.headers && req.headers["if-none-match"]) || query.v || "";
+      if (clientTag && etag && clientTag === etag) {
+        return res.status(304).end();
+      }
       if (req.method === "HEAD") {
         return res.status(200).end();
       }
-      return res.status(200).json({ status: "success", meta: meta || {} });
+      return res.status(200).json({ status: "success", version: etag, meta: meta || {} });
     }
 
     // ── 3. GET MESSAGES FOR A SPECIFIC TASK ROOM ─────────────────────────────
@@ -327,13 +403,21 @@ module.exports = async function handler(req, res) {
       if (!taskId) {
         return res.status(400).json({ status: "error", message: "Thiếu taskId" });
       }
-      const roomKey = `task_chats/room_${taskId}.json`;
-      const { data: room, etag } = await r2GetJson(env, roomKey, { taskId, updatedAt: 0, messages: [] });
-      if (etag) res.setHeader("ETag", etag);
+      const room = await getCachedRoom(env, taskId);
+      const roomUpdatedAt = Number(room.updatedAt || 0);
+      const roomTag = `W/"r_${taskId}_${roomUpdatedAt}_${(room.messages || []).length}"`;
+      res.setHeader("ETag", roomTag);
+
+      const sinceTs = Number(query.since || 0);
+      const clientIfNone = (req.headers && req.headers["if-none-match"]) || "";
+      if ((sinceTs > 0 && roomUpdatedAt > 0 && sinceTs === roomUpdatedAt) || (clientIfNone && clientIfNone === roomTag)) {
+        return res.status(304).end();
+      }
+
       return res.status(200).json({
         status: "success",
         taskId,
-        updatedAt: room.updatedAt || 0,
+        updatedAt: roomUpdatedAt,
         messages: Array.isArray(room.messages) ? room.messages : []
       });
     }
@@ -403,8 +487,7 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ status: "error", message: "Thiếu taskId" });
       }
 
-      const roomKey = `task_chats/room_${taskId}.json`;
-      const { data: room } = await r2GetJson(env, roomKey, { taskId, updatedAt: 0, messages: [] });
+      const room = await getCachedRoom(env, taskId);
       if (!Array.isArray(room.messages)) room.messages = [];
 
       if (bodyAction === "send_message") {
@@ -461,13 +544,13 @@ module.exports = async function handler(req, res) {
         room.messages.push(newMsg);
         room.updatedAt = nowTs;
 
-        const { data: meta } = await r2GetJson(env, META_KEY, {});
-        const nextMeta = meta && typeof meta === "object" ? meta : {};
+        const { meta } = await getCachedMeta(env);
+        const nextMeta = Object.assign({}, meta || {});
         nextMeta[taskId] = computeRoomMetaSummary(room);
 
         await Promise.all([
-          r2PutJson(env, roomKey, room),
-          r2PutJson(env, META_KEY, nextMeta)
+          saveRoomThroughCache(env, taskId, room),
+          saveMetaThroughCache(env, nextMeta)
         ]);
 
         return res.status(200).json({
@@ -495,13 +578,13 @@ module.exports = async function handler(req, res) {
         msg.editedAt = Date.now();
         room.updatedAt = msg.editedAt;
 
-        const { data: meta } = await r2GetJson(env, META_KEY, {});
-        const nextMeta = meta && typeof meta === "object" ? meta : {};
+        const { meta } = await getCachedMeta(env);
+        const nextMeta = Object.assign({}, meta || {});
         nextMeta[taskId] = computeRoomMetaSummary(room);
 
         await Promise.all([
-          r2PutJson(env, roomKey, room),
-          r2PutJson(env, META_KEY, nextMeta)
+          saveRoomThroughCache(env, taskId, room),
+          saveMetaThroughCache(env, nextMeta)
         ]);
 
         return res.status(200).json({ status: "success", message: msg, roomSummary: nextMeta[taskId] });
@@ -522,13 +605,13 @@ module.exports = async function handler(req, res) {
         msg.editedAt = Date.now();
         room.updatedAt = msg.editedAt;
 
-        const { data: meta } = await r2GetJson(env, META_KEY, {});
-        const nextMeta = meta && typeof meta === "object" ? meta : {};
+        const { meta } = await getCachedMeta(env);
+        const nextMeta = Object.assign({}, meta || {});
         nextMeta[taskId] = computeRoomMetaSummary(room);
 
         await Promise.all([
-          r2PutJson(env, roomKey, room),
-          r2PutJson(env, META_KEY, nextMeta),
+          saveRoomThroughCache(env, taskId, room),
+          saveMetaThroughCache(env, nextMeta),
           ...oldAttachments.map(a => a.key ? r2DeleteKey(env, a.key) : Promise.resolve())
         ]);
 
@@ -554,7 +637,7 @@ module.exports = async function handler(req, res) {
           msg.reactions[emoji].push(memberName);
         }
         room.updatedAt = Date.now();
-        await r2PutJson(env, roomKey, room);
+        await saveRoomThroughCache(env, taskId, room);
         return res.status(200).json({ status: "success", msgId, reactions: msg.reactions, updatedAt: room.updatedAt });
       }
 
@@ -569,13 +652,13 @@ module.exports = async function handler(req, res) {
         msg.pinnedBy = msg.pinned ? memberName : "";
         room.updatedAt = Date.now();
 
-        const { data: meta } = await r2GetJson(env, META_KEY, {});
-        const nextMeta = meta && typeof meta === "object" ? meta : {};
+        const { meta } = await getCachedMeta(env);
+        const nextMeta = Object.assign({}, meta || {});
         nextMeta[taskId] = computeRoomMetaSummary(room);
 
         await Promise.all([
-          r2PutJson(env, roomKey, room),
-          r2PutJson(env, META_KEY, nextMeta)
+          saveRoomThroughCache(env, taskId, room),
+          saveMetaThroughCache(env, nextMeta)
         ]);
 
         return res.status(200).json({ status: "success", msgId, pinned: msg.pinned, pinnedBy: msg.pinnedBy, roomSummary: nextMeta[taskId] });
